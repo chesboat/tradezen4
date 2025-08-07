@@ -77,7 +77,7 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
   onClose,
   editingAccount
 }) => {
-  const { addAccount, updateAccount, removeAccount } = useAccountFilterActions();
+  const { addAccount, updateAccount, removeAccount, setSelectedAccount } = useAccountFilterActions();
   const accounts = useAccounts();
   
   const [form, setForm] = useState<AccountForm>({
@@ -239,9 +239,12 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
       };
 
       if (editingAccount) {
-        updateAccount(editingAccount.id, accountData);
+        await updateAccount(editingAccount.id, accountData);
       } else {
-        addAccount(accountData);
+        const newAccount = await addAccount(accountData);
+        if (newAccount && newAccount.id) {
+          setSelectedAccount(newAccount.id);
+        }
       }
 
       onClose();
@@ -321,7 +324,7 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
                 onChange={(e) => updateForm('name', e.target.value)}
                 placeholder="e.g., Live Trading Account"
                 className={cn(
-                  "w-full px-3 py-2 border rounded-lg transition-colors",
+                  "w-full px-3 py-2 border rounded-lg transition-colors bg-background text-foreground placeholder:text-muted-foreground",
                   "focus:outline-none focus:ring-2 focus:ring-primary/50",
                   errors.name 
                     ? "border-red-500 focus:border-red-500" 
@@ -374,7 +377,7 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
                   onChange={(e) => updateForm('balance', e.target.value)}
                   placeholder="10000"
                   className={cn(
-                    "w-full px-3 py-2 border rounded-lg transition-colors",
+                    "w-full px-3 py-2 border rounded-lg transition-colors bg-background text-foreground placeholder:text-muted-foreground",
                     "focus:outline-none focus:ring-2 focus:ring-primary/50",
                     errors.balance 
                       ? "border-red-500 focus:border-red-500" 
@@ -394,7 +397,7 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
                 <select
                   value={form.currency}
                   onChange={(e) => updateForm('currency', e.target.value)}
-                  className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                  className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-background text-foreground"
                 >
                   {CURRENCIES.map((currency) => (
                     <option key={currency} value={currency}>
@@ -416,7 +419,7 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
                   value={form.propFirm}
                   onChange={(e) => updateForm('propFirm', e.target.value)}
                   className={cn(
-                    "w-full px-3 py-2 border rounded-lg transition-colors",
+                    "w-full px-3 py-2 border rounded-lg transition-colors bg-background text-foreground",
                     "focus:outline-none focus:ring-2 focus:ring-primary/50",
                     errors.propFirm 
                       ? "border-red-500 focus:border-red-500" 
@@ -436,7 +439,7 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
                   value={form.broker}
                   onChange={(e) => updateForm('broker', e.target.value)}
                   placeholder="e.g., Interactive Brokers, TD Ameritrade"
-                  className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                  className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-background text-foreground placeholder:text-muted-foreground"
                 />
               )}
               {errors.propFirm && (
@@ -485,7 +488,7 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
                       onChange={(e) => updateForm('dailyLossLimit', e.target.value)}
                       placeholder="500"
                       className={cn(
-                        "w-full px-3 py-2 border rounded-lg transition-colors",
+                        "w-full px-3 py-2 border rounded-lg transition-colors bg-background text-foreground placeholder:text-muted-foreground",
                         "focus:outline-none focus:ring-2 focus:ring-primary/50",
                         errors.dailyLossLimit 
                           ? "border-red-500 focus:border-red-500" 
@@ -510,7 +513,7 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
                       onChange={(e) => updateForm('maxDrawdown', e.target.value)}
                       placeholder="2500"
                       className={cn(
-                        "w-full px-3 py-2 border rounded-lg transition-colors",
+                        "w-full px-3 py-2 border rounded-lg transition-colors bg-background text-foreground placeholder:text-muted-foreground",
                         "focus:outline-none focus:ring-2 focus:ring-primary/50",
                         errors.maxDrawdown 
                           ? "border-red-500 focus:border-red-500" 
@@ -540,7 +543,7 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
                           onChange={(e) => updateForm('profitTarget', e.target.value)}
                           placeholder="5000"
                           className={cn(
-                            "w-full px-3 py-2 border rounded-lg transition-colors",
+                            "w-full px-3 py-2 border rounded-lg transition-colors bg-background text-foreground placeholder:text-muted-foreground",
                             "focus:outline-none focus:ring-2 focus:ring-primary/50",
                             errors.profitTarget 
                               ? "border-red-500 focus:border-red-500" 
@@ -563,7 +566,7 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
                           value={form.minTradingDays}
                           onChange={(e) => updateForm('minTradingDays', e.target.value)}
                           placeholder="5"
-                          className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                          className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-background text-foreground"
                         />
                       </div>
                     </div>
@@ -573,39 +576,39 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
                   <div className="grid grid-cols-3 gap-3">
                     <div className="space-y-1">
                       <label className="text-xs font-medium text-muted-foreground">Profit Split (%)</label>
-                      <input
+                       <input
                         type="number"
                         min="0"
                         max="100"
                         value={form.profitSplit}
                         onChange={(e) => updateForm('profitSplit', e.target.value)}
                         placeholder="80"
-                        className="w-full px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-1 focus:ring-primary/50 focus:border-primary"
+                         className="w-full px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-1 focus:ring-primary/50 focus:border-primary bg-background text-foreground"
                       />
                     </div>
 
                     <div className="space-y-1">
                       <label className="text-xs font-medium text-muted-foreground">Current DD</label>
-                      <input
+                       <input
                         type="number"
                         step="0.01"
                         min="0"
                         value={form.currentDrawdown}
                         onChange={(e) => updateForm('currentDrawdown', e.target.value)}
                         placeholder="0"
-                        className="w-full px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-1 focus:ring-primary/50 focus:border-primary"
+                         className="w-full px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-1 focus:ring-primary/50 focus:border-primary bg-background text-foreground"
                       />
                     </div>
 
                     <div className="space-y-1">
                       <label className="text-xs font-medium text-muted-foreground">Days Trading</label>
-                      <input
+                       <input
                         type="number"
                         min="0"
                         value={form.daysTrading}
                         onChange={(e) => updateForm('daysTrading', e.target.value)}
                         placeholder="0"
-                        className="w-full px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-1 focus:ring-primary/50 focus:border-primary"
+                         className="w-full px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-1 focus:ring-primary/50 focus:border-primary bg-background text-foreground"
                       />
                     </div>
                   </div>
