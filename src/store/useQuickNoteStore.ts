@@ -1,21 +1,13 @@
 import { create } from 'zustand';
-import { QuickNote, MoodType } from '@/types';
+import { QuickNote } from '@/types';
+import { QuickNoteState } from '@/types/stores';
 import { FirestoreService } from '@/lib/firestore';
 
 const quickNoteService = new FirestoreService<QuickNote>('quickNotes');
 
-interface QuickNoteState {
-  notes: QuickNote[];
-  addNote: (note: Omit<QuickNote, 'id' | 'createdAt' | 'updatedAt'>) => Promise<QuickNote>;
-  updateNote: (id: string, updates: Partial<QuickNote>) => Promise<void>;
-  deleteNote: (id: string) => Promise<void>;
-  getNotesByAccount: (accountId: string) => QuickNote[];
-  getNotesByTag: (tag: string) => QuickNote[];
-  initializeNotes: () => Promise<void>;
-}
-
 export const useQuickNoteStore = create<QuickNoteState>((set, get) => ({
   notes: [],
+  allTags: [],
 
   initializeNotes: async () => {
     try {
@@ -25,10 +17,17 @@ export const useQuickNoteStore = create<QuickNoteState>((set, get) => ({
         createdAt: new Date(note.createdAt),
         updatedAt: new Date(note.updatedAt),
       }));
-      set({ notes: formattedNotes.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()) });
+      
+      // Extract all unique tags
+      const tags = [...new Set(formattedNotes.flatMap(note => note.tags))];
+      
+      set({ 
+        notes: formattedNotes.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
+        allTags: tags
+      });
     } catch (error) {
       console.error('Failed to initialize notes:', error);
-      set({ notes: [] });
+      set({ notes: [], allTags: [] });
     }
   },
 
@@ -48,7 +47,12 @@ export const useQuickNoteStore = create<QuickNoteState>((set, get) => ({
       };
 
       const currentNotes = get().notes;
-      set({ notes: [formattedNote, ...currentNotes] });
+      const newTags = [...new Set([...get().allTags, ...note.tags])];
+      
+      set({ 
+        notes: [formattedNote, ...currentNotes],
+        allTags: newTags
+      });
       return formattedNote;
     } catch (error) {
       console.error('Failed to add note:', error);
@@ -70,7 +74,11 @@ export const useQuickNoteStore = create<QuickNoteState>((set, get) => ({
           ? { ...note, ...updates, updatedAt: new Date() }
           : note
       );
-      set({ notes: updatedNotes });
+
+      // Update tags if needed
+      const allTags = [...new Set(updatedNotes.flatMap(note => note.tags))];
+      
+      set({ notes: updatedNotes, allTags });
     } catch (error) {
       console.error('Failed to update note:', error);
       throw error;
@@ -82,7 +90,11 @@ export const useQuickNoteStore = create<QuickNoteState>((set, get) => ({
       await quickNoteService.delete(id);
       const currentNotes = get().notes;
       const updatedNotes = currentNotes.filter(note => note.id !== id);
-      set({ notes: updatedNotes });
+      
+      // Update tags
+      const allTags = [...new Set(updatedNotes.flatMap(note => note.tags))];
+      
+      set({ notes: updatedNotes, allTags });
     } catch (error) {
       console.error('Failed to delete note:', error);
       throw error;
@@ -96,6 +108,32 @@ export const useQuickNoteStore = create<QuickNoteState>((set, get) => ({
   getNotesByTag: (tag) => {
     return get().notes.filter(note => note.tags.includes(tag));
   },
+
+  getNotesForDate: (date) => {
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+    
+    return get().notes.filter(note => {
+      const noteDate = new Date(note.createdAt);
+      return noteDate >= startOfDay && noteDate <= endOfDay;
+    });
+  },
+
+  removeTag: (tagToRemove) => {
+    const currentNotes = get().notes;
+    const updatedNotes = currentNotes.map(note => ({
+      ...note,
+      tags: note.tags.filter(tag => tag !== tagToRemove)
+    }));
+    
+    // Update all tags
+    const allTags = [...new Set(updatedNotes.flatMap(note => note.tags))];
+    
+    set({ notes: updatedNotes, allTags });
+  }
 }));
 
 // Initialize notes when auth state changes
@@ -105,8 +143,12 @@ export const initializeQuickNoteStore = async () => {
 
 // Selector hooks for performance optimization
 export const useNotes = () => useQuickNoteStore((state) => state.notes);
-export const useNoteActions = () => useQuickNoteStore((state) => ({
-  addNote: state.addNote,
-  updateNote: state.updateNote,
-  deleteNote: state.deleteNote,
+export const useQuickNoteTags = () => useQuickNoteStore((state) => ({
+  allTags: state.allTags,
+  removeTag: state.removeTag
+}));
+export const useQuickNoteModal = () => useQuickNoteStore((state) => ({
+  isOpen: state.isOpen,
+  openModal: state.openModal,
+  closeModal: state.closeModal
 }));
