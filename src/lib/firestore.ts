@@ -28,7 +28,11 @@ export class FirestoreService<T extends FirestoreDocument> {
 
   private getUserId(): string {
     const user = auth.currentUser;
-    if (!user) throw new Error('User must be authenticated');
+    if (!user) {
+      console.error('FirestoreService: No authenticated user found');
+      throw new Error('User must be authenticated');
+    }
+    console.log('FirestoreService: Current user ID:', user.uid);
     return user.uid;
   }
 
@@ -38,15 +42,24 @@ export class FirestoreService<T extends FirestoreDocument> {
   }
 
   async create(data: Omit<T, 'id'>): Promise<T> {
-    const docRef = doc(this.getCollection());
-    const documentData = {
+    try {
+      console.log('FirestoreService: Starting create with data:', data);
+      const docRef = doc(this.getCollection());
+      console.log('FirestoreService: Created doc reference:', docRef.path);
+      const documentData = {
       ...data,
       id: docRef.id,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
+    console.log('FirestoreService: Attempting to save document:', documentData);
     await setDoc(docRef, documentData);
+    console.log('FirestoreService: Document saved successfully');
     return documentData as unknown as T;
+    } catch (error) {
+      console.error('FirestoreService: Error creating document:', error);
+      throw error;
+    }
   }
 
   async update(id: string, data: Partial<T>): Promise<void> {

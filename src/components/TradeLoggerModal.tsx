@@ -226,7 +226,12 @@ export const TradeLoggerModal: React.FC<TradeLoggerModalProps> = ({
   };
 
   const handleSave = async () => {
-    if (!selectedAccountId || !formData.result) return;
+    console.log('Starting trade save...', { formData, selectedAccountId });
+    
+    if (!selectedAccountId || !formData.result) {
+      console.warn('Missing required data:', { selectedAccountId, result: formData.result });
+      return;
+    }
 
     setIsLoading(true);
 
@@ -275,8 +280,10 @@ export const TradeLoggerModal: React.FC<TradeLoggerModalProps> = ({
           accountId: selectedAccountId,
         });
       } else {
-        const newTrade = await addTrade(tradeData);
-        addActivity({
+              console.log('Attempting to add trade with data:', tradeData);
+      const newTrade = await addTrade(tradeData);
+      console.log('Trade added successfully:', newTrade);
+      addActivity({
           type: 'trade',
           title: `${formData.symbol} ${formData.direction.toUpperCase()} - ${formData.result.toUpperCase()}`,
           description: `${formData.result === 'win' ? 'Won' : formData.result === 'loss' ? 'Lost' : 'Broke even on'} ${formatCurrency(Math.abs(tradeData.pnl!))}`,

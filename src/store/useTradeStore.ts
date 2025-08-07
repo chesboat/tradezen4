@@ -47,6 +47,7 @@ export const useTradeStore = create<TradeState>((set, get) => ({
   // Add new trade
   addTrade: async (trade: Omit<Trade, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
+      console.log('useTradeStore: Starting addTrade with data:', trade);
       const now = new Date().toISOString();
       const newTrade = await tradeService.create({
         ...trade,
