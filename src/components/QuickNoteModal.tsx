@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, FileText, Tag, Smile, Link, Save, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MoodType } from '@/types';
-import type { Timeout } from '@/types/utils';
+type Timeout = ReturnType<typeof setTimeout>;
 import { useQuickNoteStore, useQuickNoteModal, useQuickNoteTags } from '@/store/useQuickNoteStore';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
 import { useActivityLogStore } from '@/store/useActivityLogStore';
