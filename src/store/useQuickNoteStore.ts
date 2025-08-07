@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { QuickNote } from '@/types';
 import { QuickNoteState } from '@/types/stores';
 import { FirestoreService } from '@/lib/firestore';
+import { useQuickNoteModalStore } from './useQuickNoteModalStore';
 
 const quickNoteService = new FirestoreService<QuickNote>('quickNotes');
 
@@ -147,8 +148,7 @@ export const useQuickNoteTags = () => useQuickNoteStore((state) => ({
   allTags: state.allTags,
   removeTag: state.removeTag
 }));
-export const useQuickNoteModal = () => useQuickNoteStore((state) => ({
-  isOpen: state.isOpen,
-  openModal: state.openModal,
-  closeModal: state.closeModal
-}));
+export const useQuickNoteModal = () => {
+  const { isOpen, openModal, closeModal } = useQuickNoteModalStore();
+  return { isOpen, openModal, closeModal };
+};

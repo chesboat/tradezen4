@@ -71,7 +71,7 @@ export const initializeDefaultAccounts = () => {
     };
     
     // Don't await since this is initialization
-    addAccount(defaultAccount).catch(console.error);
+    addAccount(defaultAccount);
   }
 };
 

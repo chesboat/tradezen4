@@ -17,23 +17,18 @@ export const useActivityLogStore = create<ActivityLogState>((set, get) => ({
     set({ isExpanded: expanded });
   },
 
-  addActivity: async (activity) => {
+  addActivity: (activity) => {
     try {
-      const now = new Date().toISOString();
-      const newActivity = await activityLogService.create({
+      const now = new Date();
+      const newActivity = {
         ...activity,
+        id: Date.now().toString(),
         createdAt: now,
         updatedAt: now,
-      });
-
-      const formattedActivity = {
-        ...newActivity,
-        createdAt: new Date(newActivity.createdAt),
-        updatedAt: new Date(newActivity.updatedAt),
       };
 
       const currentActivities = get().activities;
-      set({ activities: [formattedActivity, ...currentActivities.slice(0, 99)] }); // Keep only 100 most recent
+      set({ activities: [newActivity, ...currentActivities.slice(0, 99)] }); // Keep only 100 most recent
     } catch (error) {
       console.error('Failed to add activity:', error);
     }

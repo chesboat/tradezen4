@@ -11,7 +11,7 @@ export interface ActivityLogState {
   activities: ActivityLogEntry[];
   toggleActivityLog: () => void;
   setActivityLogExpanded: (expanded: boolean) => void;
-  addActivity: (activity: Omit<ActivityLogEntry, 'id' | 'createdAt'>) => void;
+  addActivity: (activity: Omit<ActivityLogEntry, 'id' | 'createdAt' | 'updatedAt'>) => void;
   clearActivities: () => void;
 }
 
