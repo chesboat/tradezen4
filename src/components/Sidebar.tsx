@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { 
   Home, 
   Calendar, 
@@ -89,40 +89,51 @@ const navItems: NavItem[] = [
   },
 ];
 
-const sidebarVariants = {
-  expanded: {
-    width: 280,
-    transition: {
-      duration: 0.3,
-      ease: [0.4, 0, 0.2, 1],
+const createVariants = (reduced: boolean) => {
+  const baseDuration = reduced ? 0 : 0.25;
+  return {
+    sidebar: {
+      expanded: {
+        width: 280,
+        transition: {
+          duration: baseDuration,
+          ease: [0.4, 0, 0.2, 1],
+        },
+      },
+      collapsed: {
+        width: 80,
+        transition: {
+          duration: baseDuration,
+          ease: [0.4, 0, 0.2, 1],
+        },
+      },
     },
-  },
-  collapsed: {
-    width: 80,
-    transition: {
-      duration: 0.3,
-      ease: [0.4, 0, 0.2, 1],
+    content: {
+      expanded: {
+        opacity: 1,
+        transition: {
+          duration: baseDuration,
+          delay: reduced ? 0 : 0.05,
+        },
+      },
+      collapsed: {
+        opacity: 0,
+        transition: {
+          duration: reduced ? 0 : 0.1,
+        },
+      },
     },
-  },
-};
-
-const contentVariants = {
-  expanded: {
-    opacity: 1,
-    transition: {
-      duration: 0.2,
-      delay: 0.1,
-    },
-  },
-  collapsed: {
-    opacity: 0,
-    transition: {
-      duration: 0.1,
-    },
-  },
+  };
 };
 
 export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
+  const reducedMotion = useReducedMotion();
+  const { sidebar: sidebarVariants, content: contentVariants } = React.useMemo(
+    () => createVariants(!!reducedMotion),
+    [reducedMotion]
+  );
+  const hoverScale = reducedMotion ? undefined : { scale: 1.02 };
+  const tapScale = reducedMotion ? undefined : { scale: 0.98 };
   const { isExpanded, toggleSidebar } = useSidebarStore();
   const { currentView, setCurrentView } = useNavigationStore();
   const { openModal: openQuickNote } = useQuickNoteModal();
@@ -167,12 +178,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
         )}
         onClick={() => handleNavItemClick(item)}
       >
-        <Icon className="w-5 h-5 flex-shrink-0" />
+        <Icon className={cn('w-5 h-5 flex-shrink-0', isActive ? 'text-primary-foreground' : 'text-foreground')} />
         {isExpanded && (
           <div className="flex items-center justify-between flex-1 min-w-0">
             <span className="font-medium text-sm truncate">{item.label}</span>
             {item.badge && (
-              <span className="bg-primary-500 text-white text-xs px-2 py-1 rounded-full ml-2 flex-shrink-0">
+              <span className="bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full ml-2 flex-shrink-0">
                 {item.badge}
               </span>
             )}
@@ -231,8 +242,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
           <motion.button
             className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors"
             onClick={toggleSidebar}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={hoverScale}
+            whileTap={tapScale}
           >
             {isExpanded ? (
               <ChevronLeft className="w-5 h-5" />
@@ -300,7 +311,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
               </button>
               
               <button
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-accent/50 text-muted-foreground hover:text-accent-foreground transition-colors duration-200"
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors duration-200"
                 onClick={handleQuickNote}
               >
                 <FileText className="w-5 h-5" />
@@ -308,7 +319,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
               </button>
               
               <button
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-accent/50 text-muted-foreground hover:text-accent-foreground transition-colors duration-200"
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors duration-200"
                 onClick={() => setIsTagManagerOpen(true)}
               >
                 <Tag className="w-5 h-5" />
@@ -346,8 +357,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
             <div className="flex items-center gap-2">
               <motion.button
                 className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                whileHover={hoverScale}
+                whileTap={tapScale}
               >
                 <Settings className="w-4 h-4" />
                 <span className="text-sm">Settings</span>
@@ -355,8 +366,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
               
               <motion.button
                 className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                whileHover={hoverScale}
+                whileTap={tapScale}
               >
                 <HelpCircle className="w-4 h-4" />
                 <span className="text-sm">Help</span>
