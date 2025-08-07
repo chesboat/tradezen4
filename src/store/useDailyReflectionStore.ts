@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { MoodType } from '@/types';
 import { localStorage, STORAGE_KEYS, generateId } from '@/lib/localStorageUtils';
+import { getGroupIdsFromAnySelection } from '@/store/useAccountFilterStore';
 
 interface MoodEntry {
   id: string;
@@ -43,6 +44,9 @@ interface DailyReflectionState {
   addReflection: (reflection: Omit<DailyReflectionData, 'id' | 'createdAt' | 'updatedAt'>) => DailyReflectionData;
   updateReflection: (id: string, updates: Partial<DailyReflectionData>) => void;
   deleteReflection: (id: string) => void;
+  // Group-aware helpers
+  upsertReflectionForSelection: (date: string, updates: Partial<DailyReflectionData>, selectedAccountId: string) => void;
+  addMoodEntryForSelection: (date: string, mood: MoodType, trigger: string | undefined, relatedId: string | undefined, timestamp: Date | undefined, selectedAccountId: string) => void;
   
   // Mood timeline actions
   addMoodEntry: (date: string, mood: MoodType, trigger?: string, relatedId?: string, timestamp?: Date, accountId?: string) => void;
@@ -130,6 +134,35 @@ export const useDailyReflectionStore = create<DailyReflectionState>()(
         get().saveToStorage();
       },
 
+      // Create or update the same reflection data across a selection (single or group)
+      upsertReflectionForSelection: (date, updates, selectedAccountId) => {
+        const groupIds = getGroupIdsFromAnySelection(selectedAccountId);
+        const { reflections } = get();
+        const now = new Date();
+        const ensure = (accountId: string) => {
+          let ref = reflections.find(r => r.date === date && r.accountId === accountId);
+          if (!ref) {
+            ref = get().addReflection({
+              date,
+              reflection: updates.reflection ?? '',
+              keyFocus: updates.keyFocus ?? '',
+              isComplete: updates.isComplete ?? false,
+              moodTimeline: updates.moodTimeline ?? [],
+              streakCount: 0,
+              xpEarned: 0,
+              aiSummary: updates.aiSummary,
+              goals: updates.goals,
+              lessons: updates.lessons,
+              reflectionTags: updates.reflectionTags ?? [],
+              accountId,
+            });
+          } else {
+            get().updateReflection(ref.id, { ...updates, updatedAt: now });
+          }
+        };
+        groupIds.forEach(ensure);
+      },
+
       deleteReflection: (id) => {
         set((state) => ({
           reflections: state.reflections.filter((reflection) => reflection.id !== id),
@@ -183,6 +216,12 @@ export const useDailyReflectionStore = create<DailyReflectionState>()(
 
         const updatedMoodTimeline = [...reflection.moodTimeline, newMoodEntry];
         get().updateReflection(reflection.id, { moodTimeline: updatedMoodTimeline });
+      },
+
+      // Add a mood entry to all accounts in the selection
+      addMoodEntryForSelection: (date, mood, trigger, relatedId, timestamp, selectedAccountId) => {
+        const ids = getGroupIdsFromAnySelection(selectedAccountId);
+        ids.forEach((accountId) => get().addMoodEntry(date, mood, trigger, relatedId, timestamp, accountId));
       },
 
       getMoodTimeline: (date) => {

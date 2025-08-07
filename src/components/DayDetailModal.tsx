@@ -69,6 +69,8 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
     reflections,
     getMoodTimeline,
     addMoodEntry,
+    addMoodEntryForSelection,
+    upsertReflectionForSelection,
     getReflectionStreak,
     cleanupDuplicateMoodEntries,
     addReflection,
@@ -212,7 +214,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
       if (trade.mood && !processedTradesRef.current.has(trade.id)) {
         const trigger = trade.result === 'win' ? 'trade-win' : 
                        trade.result === 'loss' ? 'trade-loss' : 'trade-breakeven';
-        addMoodEntry(dateString, trade.mood, trigger, trade.id, new Date(trade.entryTime), selectedAccountId);
+        addMoodEntryForSelection(dateString, trade.mood, trigger, trade.id, new Date(trade.entryTime), selectedAccountId!);
         processedTradesRef.current.add(trade.id);
       }
     });
@@ -224,7 +226,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
     
     dayNotes.forEach(note => {
       if (note.mood && !processedNotesRef.current.has(note.id)) {
-        addMoodEntry(dateString, note.mood, 'note', note.id, new Date(note.createdAt), selectedAccountId);
+        addMoodEntryForSelection(dateString, note.mood, 'note', note.id, new Date(note.createdAt), selectedAccountId!);
         processedNotesRef.current.add(note.id);
       }
     });
@@ -575,30 +577,19 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
   const setFocusFromSuggestion = (focusText: string) => {
     if (!selectedAccountId) return;
     
-    if (dailyReflection) {
-      updateReflection(dailyReflection.id, { keyFocus: focusText });
-    } else {
-      const newReflection = addReflection({
-        date: dateString,
-        reflection: '',
-        keyFocus: focusText,
-        isComplete: false,
-        moodTimeline: [],
-        streakCount: getReflectionStreak(selectedAccountId),
-        xpEarned: 0,
-        reflectionTags: [],
-        accountId: selectedAccountId,
-      });
-      
-      addActivity({
-        type: 'reflection',
-        title: 'Focus Set',
-        description: `Set tomorrow's focus: ${focusText}`,
-        xpEarned: 10,
-        relatedId: newReflection.id,
-        accountId: selectedAccountId,
-      });
-    }
+    upsertReflectionForSelection(dateString, {
+      keyFocus: focusText,
+      isComplete: dailyReflection?.isComplete ?? false,
+    }, selectedAccountId);
+    
+    addActivity({
+      type: 'reflection',
+      title: 'Focus Set',
+      description: `Set tomorrow's focus: ${focusText}`,
+      xpEarned: 10,
+      relatedId: dailyReflection?.id,
+      accountId: selectedAccountId,
+    });
   };
 
   // More legacy reflection functions removed - now handled by ReflectionHub

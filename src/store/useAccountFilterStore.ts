@@ -111,3 +111,20 @@ export const getAccountIdsForSelection = (selectedId: string | null): string[] =
   }
   return [selectedId];
 };
+
+// Get the full group (leader first) for any account selection (single or group)
+export const getGroupIdsFromAnySelection = (selectedId: string | null): string[] => {
+  const { accounts } = useAccountFilterStore.getState();
+  if (!selectedId) return [];
+  if (selectedId.startsWith('group:')) {
+    return getAccountIdsForSelection(selectedId);
+  }
+  // If this account is a leader
+  const leader = accounts.find(a => a.id === selectedId && (a.linkedAccountIds?.length || 0) > 0);
+  if (leader) return [leader.id, ...(leader.linkedAccountIds || [])];
+  // If this account is a follower in someone's group
+  const parentLeader = accounts.find(a => (a.linkedAccountIds || []).includes(selectedId));
+  if (parentLeader) return [parentLeader.id, ...(parentLeader.linkedAccountIds || [])];
+  // No group found, return just this account
+  return [selectedId];
+};
