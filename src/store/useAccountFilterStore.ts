@@ -56,42 +56,35 @@ export const useAccountFilterStore = create<AccountFilterState>((set, get) => ({
   }
 }));
 
-// Initialize default accounts
+// Initialize accounts from Firestore and ensure a default exists if none
 export const initializeDefaultAccounts = async () => {
-  console.log('Initializing default accounts...');
-  const { accounts, addAccount, setSelectedAccount } = useAccountFilterStore.getState();
-  
-  if (accounts.length === 0) {
-    console.log('No accounts found, creating default account...');
-    const defaultAccount = {
-      name: 'Demo Account',
-      type: 'demo' as const,
-      balance: 10000,
-      currency: 'USD',
-      broker: 'Demo Broker',
-      isActive: true,
-      accountId: 'demo-account-1'
-    };
-    
-    try {
-      const newAccount = await addAccount(defaultAccount);
-      console.log('Default account created:', newAccount);
+  console.log('Initializing accounts...');
+  const { setSelectedAccount } = useAccountFilterStore.getState();
+  try {
+    // Load all accounts from Firestore
+    const fetched = await accountService.getAll();
+    useAccountFilterStore.setState({ accounts: fetched });
+    console.log('Loaded accounts:', fetched);
+
+    const state = useAccountFilterStore.getState();
+    if (state.accounts.length === 0) {
+      console.log('No accounts found, creating default demo account...');
+      const defaultAccount = {
+        name: 'Demo Account',
+        type: 'demo' as const,
+        balance: 10000,
+        currency: 'USD',
+        broker: 'Demo Broker',
+        isActive: true,
+      };
+      const newAccount = await state.addAccount(defaultAccount);
       setSelectedAccount(newAccount.id);
-      console.log('Selected account set to:', newAccount.id);
-    } catch (error) {
-      console.error('Failed to create default account:', error);
+    } else if (!state.selectedAccountId) {
+      const active = state.accounts.find(a => a.isActive) || state.accounts[0];
+      setSelectedAccount(active.id);
     }
-  } else {
-    console.log('Existing accounts found:', accounts);
-    // If there are accounts but none selected, select the first active one
-    const { selectedAccountId } = useAccountFilterStore.getState();
-    if (!selectedAccountId) {
-      const activeAccount = accounts.find(acc => acc.isActive);
-      if (activeAccount) {
-        console.log('Setting selected account to first active account:', activeAccount.id);
-        setSelectedAccount(activeAccount.id);
-      }
-    }
+  } catch (error) {
+    console.error('Failed to initialize accounts:', error);
   }
 };
 
