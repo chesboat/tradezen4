@@ -29,6 +29,7 @@ interface AccountForm {
   currency: string;
   broker: string;
   isActive: boolean;
+  linkedAccountIds?: string[];
   
   // Prop account fields
   propFirm: string;
@@ -87,6 +88,7 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
     currency: 'USD',
     broker: '',
     isActive: true,
+    linkedAccountIds: [],
     
     // Prop account fields
     propFirm: '',
@@ -134,6 +136,7 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
         currency: 'USD',
         broker: '',
         isActive: true,
+        linkedAccountIds: [],
         
         // Prop account fields
         propFirm: '',
@@ -224,6 +227,7 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
         // Only include broker if non-empty
         ...(form.broker.trim() ? { broker: form.broker.trim() } : {}),
         isActive: form.isActive,
+        ...(form.linkedAccountIds && form.linkedAccountIds.length > 0 ? { linkedAccountIds: form.linkedAccountIds } : {}),
         
         // Prop account fields (only include if prop account)
         ...(form.type === 'prop' && {
@@ -647,6 +651,39 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
                   )}
                 />
               </button>
+            </div>
+
+            {/* Linked Accounts */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Linked Accounts (copytrading)</label>
+              <p className="text-xs text-muted-foreground">Trades logged to this account will also be added to the selected linked accounts.</p>
+              <div className="grid grid-cols-1 gap-2">
+                {accounts
+                  .filter(acc => !editingAccount || acc.id !== editingAccount.id)
+                  .map(acc => (
+                  <button
+                    key={acc.id}
+                    type="button"
+                    onClick={() => {
+                      const current = new Set(form.linkedAccountIds || []);
+                      if (current.has(acc.id)) current.delete(acc.id); else current.add(acc.id);
+                      updateForm('linkedAccountIds', Array.from(current));
+                    }}
+                    className={cn(
+                      "p-3 text-left border rounded-lg transition-all",
+                      form.linkedAccountIds?.includes(acc.id)
+                        ? "border-primary bg-primary/10 shadow-sm"
+                        : "border-border hover:border-primary/50"
+                    )}
+                  >
+                    <div className="font-medium">{acc.name}</div>
+                    <div className="text-xs text-muted-foreground">{acc.type} • {acc.currency}</div>
+                  </button>
+                ))}
+                {accounts.length <= 1 && (
+                  <div className="text-xs text-muted-foreground">Add another account to enable linking.</div>
+                )}
+              </div>
             </div>
 
             </form>

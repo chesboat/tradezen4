@@ -68,6 +68,39 @@ export const useTradeStore = create<TradeState>((set, get) => ({
       const currentTrades = get().trades;
       const updatedTrades = [formattedTrade, ...currentTrades];
       set({ trades: updatedTrades });
+
+      // Replicate to linked accounts if the source account has links
+      try {
+        const { accounts } = (await import('./useAccountFilterStore')).useAccountFilterStore.getState();
+        const sourceAccount = accounts.find(a => a.id === trade.accountId);
+        const linkedIds = sourceAccount?.linkedAccountIds || [];
+        if (linkedIds.length > 0) {
+          console.log('Replicating trade to linked accounts:', linkedIds);
+          await Promise.all(
+            linkedIds.map(async (accountId) => {
+              const replicated = await tradeService.create({
+                ...trade,
+                accountId,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                entryTime: trade.entryTime instanceof Date ? trade.entryTime.toISOString() : trade.entryTime,
+                exitTime: trade.exitTime instanceof Date ? trade.exitTime.toISOString() : trade.exitTime,
+              } as unknown as Trade);
+
+              const formattedReplicated = {
+                ...replicated,
+                createdAt: new Date(replicated.createdAt),
+                updatedAt: new Date(replicated.updatedAt),
+                entryTime: new Date(replicated.entryTime),
+                exitTime: replicated.exitTime ? new Date(replicated.exitTime) : undefined,
+              };
+              set({ trades: [formattedReplicated, ...get().trades] });
+            })
+          );
+        }
+      } catch (replicationError) {
+        console.error('Failed to replicate trade to linked accounts:', replicationError);
+      }
       return formattedTrade;
     } catch (error) {
       console.error('Failed to add trade:', error);

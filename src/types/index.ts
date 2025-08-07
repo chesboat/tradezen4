@@ -109,6 +109,9 @@ export interface TradingAccount extends FirestoreDocument {
   currentDrawdown?: number;
   daysTrading?: number;
   minTradingDays?: number;
+  // If set on a primary account, any trade logged to this account
+  // will be replicated to each of these linked account IDs
+  linkedAccountIds?: string[];
 }
 
 export interface CalendarDay {
