@@ -23,6 +23,7 @@ export const useAccountFilterStore = create<AccountFilterState>((set, get) => ({
       });
       const currentAccounts = get().accounts;
       set({ accounts: [...currentAccounts, newAccount] });
+      return newAccount;
     } catch (error) {
       console.error('Failed to add account:', error);
       throw error;
@@ -56,10 +57,12 @@ export const useAccountFilterStore = create<AccountFilterState>((set, get) => ({
 }));
 
 // Initialize default accounts
-export const initializeDefaultAccounts = () => {
-  const { accounts, addAccount } = useAccountFilterStore.getState();
+export const initializeDefaultAccounts = async () => {
+  console.log('Initializing default accounts...');
+  const { accounts, addAccount, setSelectedAccount } = useAccountFilterStore.getState();
   
   if (accounts.length === 0) {
+    console.log('No accounts found, creating default account...');
     const defaultAccount = {
       name: 'Demo Account',
       type: 'demo' as const,
@@ -70,8 +73,25 @@ export const initializeDefaultAccounts = () => {
       accountId: 'demo-account-1'
     };
     
-    // Don't await since this is initialization
-    addAccount(defaultAccount);
+    try {
+      const newAccount = await addAccount(defaultAccount);
+      console.log('Default account created:', newAccount);
+      setSelectedAccount(newAccount.id);
+      console.log('Selected account set to:', newAccount.id);
+    } catch (error) {
+      console.error('Failed to create default account:', error);
+    }
+  } else {
+    console.log('Existing accounts found:', accounts);
+    // If there are accounts but none selected, select the first active one
+    const { selectedAccountId } = useAccountFilterStore.getState();
+    if (!selectedAccountId) {
+      const activeAccount = accounts.find(acc => acc.isActive);
+      if (activeAccount) {
+        console.log('Setting selected account to first active account:', activeAccount.id);
+        setSelectedAccount(activeAccount.id);
+      }
+    }
   }
 };
 

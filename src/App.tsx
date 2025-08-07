@@ -33,12 +33,22 @@ function AppContent() {
 
   // Initialize data when user is authenticated
   React.useEffect(() => {
-    if (currentUser) {
-      initializeDefaultAccounts();
-      initializeDefaultQuests();
-      initializeTradeStore();
-      initializeProfile(currentUser.uid, currentUser.email || undefined);
-    }
+    const initializeData = async () => {
+      if (currentUser) {
+        console.log('Starting app initialization for user:', currentUser.uid);
+        try {
+          await initializeDefaultAccounts();
+          await initializeDefaultQuests();
+          await initializeTradeStore();
+          await initializeProfile(currentUser.uid, currentUser.email || undefined);
+          console.log('App initialization completed successfully');
+        } catch (error) {
+          console.error('Error during app initialization:', error);
+        }
+      }
+    };
+    
+    initializeData();
   }, [currentUser, initializeProfile]);
 
   // Render current view

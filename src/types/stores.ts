@@ -19,7 +19,7 @@ export interface AccountFilterState {
   selectedAccountId: string | null;
   accounts: TradingAccount[];
   setSelectedAccount: (accountId: string | null) => void;
-  addAccount: (account: Omit<TradingAccount, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  addAccount: (account: Omit<TradingAccount, 'id' | 'createdAt' | 'updatedAt'>) => Promise<TradingAccount>;
   updateAccount: (id: string, updates: Partial<TradingAccount>) => void;
   removeAccount: (id: string) => void;
 }
