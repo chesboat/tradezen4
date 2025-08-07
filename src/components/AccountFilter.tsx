@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { ChevronDown, Check, Plus, CreditCard, Edit3 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAccountFilterStore, initializeDefaultAccounts } from '@/store/useAccountFilterStore';
@@ -22,6 +22,39 @@ export const AccountFilter: React.FC<AccountFilterProps> = ({ className }) => {
   } = useAccountFilterStore();
 
   const selectedAccount = accounts.find(acc => acc.id === selectedAccountId);
+
+  // Compute link roles
+  const leaderIds = useMemo(() => {
+    const set = new Set<string>();
+    accounts.forEach(a => {
+      if (a.linkedAccountIds && a.linkedAccountIds.length > 0) set.add(a.id);
+    });
+    return set;
+  }, [accounts]);
+
+  const followerIds = useMemo(() => {
+    const set = new Set<string>();
+    accounts.forEach(a => {
+      (a.linkedAccountIds || []).forEach(id => set.add(id));
+    });
+    return set;
+  }, [accounts]);
+
+  const renderLinkBadge = (account: TradingAccount) => {
+    const isLeader = leaderIds.has(account.id);
+    const isFollower = followerIds.has(account.id);
+    if (!isLeader && !isFollower) return null;
+    const label = isLeader && isFollower ? 'L/F' : isLeader ? 'L' : 'F';
+    const title = isLeader && isFollower ? 'Leader & Follower' : isLeader ? 'Leader' : 'Follower';
+    return (
+      <span
+        title={title}
+        className="ml-2 inline-flex items-center px-1.5 py-0.5 text-[10px] rounded-full bg-primary/10 text-primary border border-primary/20"
+      >
+        {label}
+      </span>
+    );
+  };
 
   // Initialize default accounts on first load
   useEffect(() => {
@@ -136,8 +169,9 @@ export const AccountFilter: React.FC<AccountFilterProps> = ({ className }) => {
           <div className="flex items-center gap-2 flex-1">
             <span className="text-sm">{getAccountIcon(selectedAccount)}</span>
             <div className="flex-1 text-left">
-              <div className="text-sm font-medium text-foreground">
+              <div className="text-sm font-medium text-foreground flex items-center">
                 {selectedAccount.name}
+                {renderLinkBadge(selectedAccount)}
               </div>
               <div className="text-xs text-muted-foreground">
                 {getAccountTypeLabel(selectedAccount.type)} • {selectedAccount.currency}
@@ -185,8 +219,9 @@ export const AccountFilter: React.FC<AccountFilterProps> = ({ className }) => {
                 >
                   <span className="text-sm">{getAccountIcon(account)}</span>
                   <div className="flex-1 text-left">
-                    <div className="text-sm font-medium text-popover-foreground">
+                    <div className="text-sm font-medium text-popover-foreground flex items-center">
                       {account.name}
+                      {renderLinkBadge(account)}
                     </div>
                     <div className="text-xs text-muted-foreground">
                       {getAccountTypeLabel(account.type)} • {account.currency}
