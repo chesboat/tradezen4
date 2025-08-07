@@ -71,7 +71,7 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
     // Try to load existing profile from storage
     const existingProfile = get().loadFromStorage(userId);
     
-    if (!existingProfile) {
+    if (!get().profile) {
       // Create new profile
       const newProfile: UserProfile = {
         id: userId,
@@ -214,11 +214,11 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
   loadFromStorage: (userId) => {
     try {
       const stored = localStorage.getItem(`${STORAGE_KEYS.USER_PROFILE}_${userId}`, null);
-      if (stored) {
-        const profile = {
+      if (stored && typeof stored === 'object') {
+        const profile: UserProfile = {
           ...stored,
-          joinedAt: new Date(stored.joinedAt),
-        };
+          joinedAt: new Date(stored.joinedAt || new Date()),
+        } as UserProfile;
         set({ profile });
         return profile;
       }
