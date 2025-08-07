@@ -14,7 +14,7 @@ import {
   BookOpen
 } from 'lucide-react';
 import { useTradeStore } from '@/store/useTradeStore';
-import { useAccountFilterStore } from '@/store/useAccountFilterStore';
+import { useAccountFilterStore, getAccountIdsForSelection } from '@/store/useAccountFilterStore';
 import { useQuickNoteStore } from '@/store/useQuickNoteStore';
 import { useDailyReflectionStore } from '@/store/useDailyReflectionStore';
 import { CalendarDay, WeeklySummary, MoodType } from '@/types';
@@ -52,8 +52,10 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
     // Get trades for this day
     const dayTrades = trades.filter(trade => {
       const tradeDate = new Date(trade.entryTime);
-      return tradeDate >= dayStart && tradeDate <= dayEnd &&
-             (!selectedAccountId || trade.accountId === selectedAccountId);
+      if (!(tradeDate >= dayStart && tradeDate <= dayEnd)) return false;
+      if (!selectedAccountId) return true;
+      const ids = getAccountIdsForSelection(selectedAccountId);
+      return ids.includes(trade.accountId);
     });
     
     // Calculate day statistics
@@ -81,14 +83,20 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                           avgMoodScore >= 1.5 ? 'poor' : 'terrible';
     
     // Get notes for this day
-    const dayNotes = getNotesForDate(date)
-      .filter(note => !selectedAccountId || note.accountId === selectedAccountId);
+    const dayNotes = getNotesForDate(date).filter(note => {
+      if (!selectedAccountId) return true;
+      const ids = getAccountIdsForSelection(selectedAccountId);
+      return ids.includes(note.accountId);
+    });
     
     // Check if a reflection exists for this day
     const dateString = date.toISOString().split('T')[0];
-    const hasReflection = reflections.find(r => 
-      r.date === dateString && (!selectedAccountId || r.accountId === selectedAccountId)
-    ) !== undefined;
+    const hasReflection = reflections.find(r => {
+      if (r.date !== dateString) return false;
+      if (!selectedAccountId) return true;
+      const ids = getAccountIdsForSelection(selectedAccountId);
+      return ids.includes(r.accountId);
+    }) !== undefined;
     
     return {
       date,

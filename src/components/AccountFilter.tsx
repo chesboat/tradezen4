@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { ChevronDown, Check, Plus, CreditCard, Edit3 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAccountFilterStore, initializeDefaultAccounts } from '@/store/useAccountFilterStore';
+import { Users } from 'lucide-react';
 import { AccountManagementModal } from './AccountManagementModal';
 import { TradingAccount } from '@/types';
 
@@ -286,6 +287,35 @@ export const AccountFilter: React.FC<AccountFilterProps> = ({ className }) => {
                   </div>
                 </motion.button>
               )})}
+
+              {/* Group totals under each leader */}
+              {accounts.filter(a => (a.linkedAccountIds || []).length > 0).map((leader) => {
+                const groupId = `group:${leader.id}`;
+                const isSelected = selectedAccountId === groupId;
+                return (
+                  <motion.button
+                    key={groupId}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 hover:bg-accent transition-colors group ${
+                      isSelected ? 'bg-accent' : ''
+                    } pl-6`}
+                    onClick={() => handleAccountSelect(groupId)}
+                    whileHover={{ x: 2 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Users className="w-4 h-4 text-muted-foreground" />
+                    <div className="flex-1 text-left">
+                      <div className="text-sm font-medium text-popover-foreground flex items-center">
+                        {leader.name} Total
+                        <span className="ml-2 inline-flex items-center px-1.5 py-0.5 text-[10px] rounded-full bg-primary/10 text-primary border border-primary/20">Group</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground">Includes {1 + (leader.linkedAccountIds?.length || 0)} accounts</div>
+                    </div>
+                    {isSelected && (
+                      <Check className="w-4 h-4 text-primary" />
+                    )}
+                  </motion.button>
+                );
+              })}
               
               {accounts.length === 0 && (
                 <div className="px-3 py-6 text-center text-sm text-muted-foreground">
