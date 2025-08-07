@@ -16,7 +16,7 @@ import {
   Clock
 } from 'lucide-react';
 import { useTradeStore } from '@/store/useTradeStore';
-import { useAccountFilterStore } from '@/store/useAccountFilterStore';
+import { useAccountFilterStore, getAccountIdsForSelection } from '@/store/useAccountFilterStore';
 import { useQuestStore } from '@/store/useQuestStore';
 import { addDemoTradesToAccount } from '@/utils/demoDataGenerator';
 import { formatCurrency } from '@/lib/localStorageUtils';
@@ -112,8 +112,12 @@ export const Dashboard: React.FC = () => {
     return true;
   });
 
-  // Calculate real KPIs
-  const filteredTrades = trades.filter(trade => !selectedAccountId || trade.accountId === selectedAccountId);
+  // Calculate real KPIs (respect group selection)
+  const filteredTrades = React.useMemo(() => {
+    if (!selectedAccountId) return trades;
+    const ids = getAccountIdsForSelection(selectedAccountId);
+    return trades.filter(trade => ids.includes(trade.accountId));
+  }, [trades, selectedAccountId]);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   

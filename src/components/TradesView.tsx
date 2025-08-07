@@ -28,7 +28,7 @@ import {
   Minus
 } from 'lucide-react';
 import { useTradeStore } from '@/store/useTradeStore';
-import { useAccountFilterStore } from '@/store/useAccountFilterStore';
+import { useAccountFilterStore, getAccountIdsForSelection } from '@/store/useAccountFilterStore';
 import { useTradeLoggerModal } from '@/hooks/useTradeLoggerModal';
 import { Trade, TradeResult, MoodType } from '@/types';
 import { formatCurrency, formatRelativeTime, getMoodColor, getMoodEmoji } from '@/lib/localStorageUtils';
@@ -93,7 +93,11 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
 
   // Filter and sort trades
   const filteredTrades = useMemo(() => {
-    let filtered = trades;
+    let filtered = (() => {
+      if (!selectedAccountId || selectedAccountId === 'all') return trades;
+      const ids = getAccountIdsForSelection(selectedAccountId);
+      return trades.filter(t => ids.includes(t.accountId));
+    })();
 
     // Apply filters
     if (filters.search) {
@@ -114,7 +118,8 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
     }
 
     if (filters.account !== 'all') {
-      filtered = filtered.filter(trade => trade.accountId === filters.account);
+      const ids = getAccountIdsForSelection(filters.account);
+      filtered = filtered.filter(trade => ids.includes(trade.accountId));
     }
 
     if (filters.mood !== 'all') {
