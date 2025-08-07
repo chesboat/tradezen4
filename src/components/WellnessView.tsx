@@ -22,6 +22,7 @@ import { useAccountFilterStore } from '@/store/useAccountFilterStore';
 import { useDailyReflectionStore } from '@/store/useDailyReflectionStore';
 import { useQuestStore } from '@/store/useQuestStore';
 import { WellnessActionType, MoodType } from '@/types';
+import { Timeout } from '@/types/utils';
 import { getMoodColor, getMoodEmoji, localStorage, STORAGE_KEYS } from '@/lib/localStorageUtils';
 import { cn } from '@/lib/utils';
 
@@ -233,7 +234,7 @@ export const WellnessView: React.FC = () => {
     let interval: number;
     
     if (breathingSession.isActive) {
-      interval = setInterval(() => {
+      interval = window.setInterval(() => {
         setBreathingSession(prev => {
           if (prev.timeRemaining <= 100) {
             // Move to next phase
@@ -278,7 +279,7 @@ export const WellnessView: React.FC = () => {
     let interval: number;
     
     if (isSessionActive && activeActivity) {
-      interval = setInterval(() => {
+      interval = window.setInterval(() => {
         setSessionTimer(prev => prev + 1);
       }, 1000);
     }

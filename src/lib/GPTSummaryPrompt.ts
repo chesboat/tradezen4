@@ -104,7 +104,7 @@ You are an expert trading coach. Analyze this week's trading performance and pro
 - Total Trades: ${totalTrades}
 - Win Rate: ${winRate}%
 - Weekly P&L: ${formatCurrency(totalPnL)}
-- Trading Days: ${new Set(weeklyTrades.map(t => t.entryTime.toDateString())).size}
+  - Trading Days: ${new Set(weeklyTrades.map(t => new Date(t.entryTime).toDateString())).size}
 
 ## 🔍 Pattern Analysis
 Analyze the trading patterns, identify:

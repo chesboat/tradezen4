@@ -275,7 +275,7 @@ export const TradeLoggerModal: React.FC<TradeLoggerModalProps> = ({
           accountId: selectedAccountId,
         });
       } else {
-        const newTrade = addTrade(tradeData);
+        const newTrade = await addTrade(tradeData);
         addActivity({
           type: 'trade',
           title: `${formData.symbol} ${formData.direction.toUpperCase()} - ${formData.result.toUpperCase()}`,

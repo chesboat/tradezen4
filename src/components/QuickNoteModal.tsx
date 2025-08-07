@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, FileText, Tag, Smile, Link, Save, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MoodType } from '@/types';
+import { Timeout } from '@/types/utils';
 import { useQuickNoteStore, useQuickNoteModal, useQuickNoteTags } from '@/store/useQuickNoteStore';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
 import { useActivityLogStore } from '@/store/useActivityLogStore';
@@ -93,7 +94,7 @@ export const QuickNoteModal: React.FC<QuickNoteModalProps> = ({
         clearTimeout(autoSaveTimeoutRef.current);
       }
 
-      autoSaveTimeoutRef.current = setTimeout(() => {
+      autoSaveTimeoutRef.current = window.setTimeout(() => {
         saveDraft(formData);
         setAutoSaveStatus('saved');
         
@@ -161,7 +162,7 @@ export const QuickNoteModal: React.FC<QuickNoteModalProps> = ({
       if (editingNoteId) {
         updateNote(editingNoteId, noteData);
       } else {
-        const newNote = addNote(noteData);
+        const newNote = await addNote(noteData);
         
         // Add to activity log
         addActivity({

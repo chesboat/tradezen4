@@ -363,8 +363,8 @@ export const addDemoTradesToAccount = async (accountId: string) => {
   
   // Add trades one by one to populate activity log
   demoTrades.forEach((trade, index) => {
-    setTimeout(() => {
-      const addedTrade = addTrade({
+    setTimeout(async () => {
+      const addedTrade = await addTrade({
         symbol: trade.symbol,
         direction: trade.direction,
         entryPrice: trade.entryPrice,

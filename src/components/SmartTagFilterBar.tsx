@@ -233,7 +233,7 @@ export const SmartTagFilterBar: React.FC<SmartTagFilterBarProps> = ({ className 
                   transition={{ duration: 0.2, delay: index * 0.02 }}
                   className="relative group"
                 >
-                  <button
+                  <motion.button
                     onClick={() => handleTagClick(tag)}
                     className={cn(
                       'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200',

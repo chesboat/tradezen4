@@ -46,7 +46,7 @@ export class FirestoreService<T extends FirestoreDocument> {
       updatedAt: new Date().toISOString(),
     };
     await setDoc(docRef, documentData);
-    return documentData as T;
+    return documentData as unknown as T;
   }
 
   async update(id: string, data: Partial<T>): Promise<void> {
@@ -65,17 +65,17 @@ export class FirestoreService<T extends FirestoreDocument> {
   async getById(id: string): Promise<T | null> {
     const docRef = doc(this.getCollection(), id);
     const docSnap = await getDoc(docRef);
-    return docSnap.exists() ? docSnap.data() as T : null;
+    return docSnap.exists() ? { ...docSnap.data(), id: docSnap.id } as T : null;
   }
 
   async getAll(): Promise<T[]> {
     const querySnapshot = await getDocs(this.getCollection());
-    return querySnapshot.docs.map(doc => doc.data() as T);
+    return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }) as T);
   }
 
   async query(constraints: QueryConstraint[]): Promise<T[]> {
     const q = query(this.getCollection(), ...constraints);
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => doc.data() as T);
+    return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }) as T);
   }
 }

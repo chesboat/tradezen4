@@ -36,7 +36,7 @@ import { useActivityLogStore } from '@/store/useActivityLogStore';
 import { useDailyReflectionStore } from '@/store/useDailyReflectionStore';
 import { useQuestStore } from '@/store/useQuestStore';
 import { generateDailyFocus } from '@/lib/ai/generateDailyFocus';
-import { CalendarDay, TradeResult } from '@/types';
+import { CalendarDay, TradeResult, MoodType } from '@/types';
 import { formatCurrency, formatDate, getMoodColor, formatTime } from '@/lib/localStorageUtils';
 
 import { cn } from '@/lib/utils';
@@ -323,10 +323,10 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
 
   // Note: handleAddQuickNote replaced with inline quick note functionality
 
-  const handleAddKeyFocusAsQuest = () => {
+  const handleAddKeyFocusAsQuest = async () => {
     if (!dailyReflection?.keyFocus) return;
     
-    const questId = addQuest({
+    const quest = await addQuest({
       title: `Daily Focus: ${new Date().toLocaleDateString()}`,
       description: dailyReflection.keyFocus,
       type: 'daily',
@@ -339,7 +339,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
     });
     
     // Pin the quest to make it appear in the pinned section
-    pinQuest(questId);
+    pinQuest(quest.id);
     
     addActivity({
       type: 'quest',
@@ -369,12 +369,12 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
           summary = `Mood started ${startMood}`;
           
           // Find significant changes
-          const changes = [];
+          const changes: string[] = [];
           for (let i = 1; i < moodTimeline.length; i++) {
             const prev = moodTimeline[i-1];
             const curr = moodTimeline[i];
             if (prev.mood !== curr.mood) {
-              const direction = getMoodDirection(prev.mood, curr.mood);
+              const direction = getMoodDirection(prev.mood as string, curr.mood as string);
               changes.push(`${direction} to ${curr.mood}${curr.trigger ? ` after ${formatTrigger(curr.trigger)}` : ''}`);
             }
           }
@@ -442,23 +442,24 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
     
     setIsAddingQuickNote(true);
     try {
-      const newNote = {
-        content: quickNoteText.trim(),
-        tags: [],
-        mood: quickNoteMood as any,
-        accountId: selectedAccountId,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-      
-      const savedNote = useQuickNoteStore.getState().addNote(newNote);
+          const newNote = {
+      content: quickNoteText.trim(),
+      tags: [],
+      mood: quickNoteMood as any,
+      accountId: selectedAccountId,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    const savedNote = await useQuickNoteStore.getState().addNote(newNote);
+      const noteId = typeof savedNote === 'object' ? savedNote.id : savedNote;
       
       addActivity({
         type: 'note',
         title: 'Quick Note Added',
         description: quickNoteText.trim().slice(0, 50) + (quickNoteText.length > 50 ? '...' : ''),
         xpEarned: 5,
-        relatedId: savedNote.id,
+        relatedId: noteId,
         accountId: selectedAccountId,
       });
       
@@ -527,41 +528,14 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
       
       // Generate AI focus suggestions
       const suggestions = await Promise.all([
-        generateDailyFocus({
-          recentTrades: accountTrades,
-          recentNotes: accountNotes,
-          currentMood,
-          previousFocusAreas,
-          completedQuests,
-          winRate,
-          totalPnL,
-          avgRiskAmount
-        }),
-        generateDailyFocus({
-          recentTrades: accountTrades,
-          recentNotes: accountNotes,
-          currentMood,
-          previousFocusAreas,
-          completedQuests,
-          winRate,
-          totalPnL,
-          avgRiskAmount
-        }),
-        generateDailyFocus({
-          recentTrades: accountTrades,
-          recentNotes: accountNotes,
-          currentMood,
-          previousFocusAreas,
-          completedQuests,
-          winRate,
-          totalPnL,
-          avgRiskAmount
-        })
+        generateDailyFocus(currentMood as MoodType),
+        generateDailyFocus(currentMood as MoodType),
+        generateDailyFocus(currentMood as MoodType)
       ]);
       
       // Remove duplicates and set suggestions
-      const uniqueSuggestions = [...new Set(suggestions)];
-      setFocusSuggestions(uniqueSuggestions.slice(0, 3));
+      const uniqueSuggestions = [...new Set(suggestions.flat())];
+      setFocusSuggestions(uniqueSuggestions.slice(0, 3).map(s => s.toString()));
       
     } catch (error) {
       console.error('Failed to generate AI focus suggestions:', error);

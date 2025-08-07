@@ -34,6 +34,7 @@ interface JournalDayCardProps {
     avgRR: number;
   };
   hasReflection: boolean;
+  quickNotesCount: number;
   isToday: boolean;
   isExpanded: boolean;
   onToggleExpanded: () => void;
@@ -184,7 +185,7 @@ export const JournalDayCard: React.FC<JournalDayCardProps> = ({
   const handleAddInlineNote = () => {
     if (!inlineNoteText.trim() || !selectedAccountId) return;
     
-    addInlineNote(inlineNoteText, selectedAccountId, dateObj);
+    addInlineNote(inlineNoteText, selectedAccountId || 'all');
     
     setInlineNoteText('');
     setIsInlineInputFocused(false);
@@ -204,10 +205,10 @@ export const JournalDayCard: React.FC<JournalDayCardProps> = ({
   };
 
   // Pin key focus as quest
-  const handlePinKeyFocus = () => {
+  const handlePinKeyFocus = async () => {
     if (!reflection?.keyFocus || !selectedAccountId) return;
     
-    const questId = addQuest({
+    const quest = await addQuest({
       title: 'Daily Focus',
       description: reflection.keyFocus,
       type: 'daily',
@@ -219,7 +220,7 @@ export const JournalDayCard: React.FC<JournalDayCardProps> = ({
       accountId: selectedAccountId,
     });
     
-    pinQuest(questId);
+    pinQuest(quest.id);
     
     addActivity({
       type: 'quest',

@@ -61,8 +61,8 @@ export const TagManager: React.FC<TagManagerProps> = ({ isOpen, onClose }) => {
         stats.set(tag, {
           count: current.count + 1,
           lastUsed: current.lastUsed ? 
-            (note.createdAt > current.lastUsed ? note.createdAt : current.lastUsed) : 
-            note.createdAt,
+            (new Date(note.createdAt) > current.lastUsed ? new Date(note.createdAt) : current.lastUsed) : 
+            new Date(note.createdAt),
           notes: [...current.notes, note.id]
         });
       });
@@ -339,7 +339,7 @@ export const TagManager: React.FC<TagManagerProps> = ({ isOpen, onClose }) => {
                         {stats.lastUsed && (
                           <span className="flex items-center gap-1">
                             <Calendar className="w-3 h-3" />
-                            {stats.lastUsed.toLocaleDateString()}
+                            {new Date(stats.lastUsed).toLocaleDateString()}
                           </span>
                         )}
                       </div>

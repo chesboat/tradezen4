@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { QuestState, Quest, Trade } from '@/types';
+import { Quest, Trade, QuickNote, MoodType } from '@/types';
+import { QuestState } from '@/types/stores';
 import { localStorage, STORAGE_KEYS, generateId } from '@/lib/localStorageUtils';
 import { generateQuestSuggestions } from '@/lib/ai/generateQuestSuggestions';
 
@@ -25,7 +26,7 @@ export const useQuestStore = create<QuestState>((set, get) => ({
   pinnedQuests: localStorage.getItem(STORAGE_KEYS.PINNED_QUESTS, []),
 
   // Add new quest
-  addQuest: (quest: Omit<Quest, 'id' | 'createdAt' | 'updatedAt'>) => {
+  addQuest: async (quest: Omit<Quest, 'id' | 'createdAt' | 'updatedAt'>) => {
     const newQuest: Quest = {
       ...quest,
       id: generateId(),
@@ -39,11 +40,11 @@ export const useQuestStore = create<QuestState>((set, get) => ({
     set({ quests: updatedQuests });
     localStorage.setItem(STORAGE_KEYS.QUESTS, updatedQuests);
     
-    return newQuest.id; // Return the quest ID for pinning
+    return newQuest; // Return the quest for pinning
   },
 
   // Update existing quest
-  updateQuest: (id: string, updates: Partial<Quest>) => {
+  updateQuest: async (id: string, updates: Partial<Quest>) => {
     const currentQuests = get().quests;
     const updatedQuests = currentQuests.map(quest => 
       quest.id === id 
@@ -56,7 +57,7 @@ export const useQuestStore = create<QuestState>((set, get) => ({
   },
 
   // Complete quest
-  completeQuest: (id: string) => {
+  completeQuest: async (id: string) => {
     const currentQuests = get().quests;
     const currentPinnedQuests = get().pinnedQuests;
     
@@ -81,7 +82,7 @@ export const useQuestStore = create<QuestState>((set, get) => ({
   },
 
   // Cancel quest (user-initiated)
-  cancelQuest: (id: string) => {
+  cancelQuest: async (id: string) => {
     const currentQuests = get().quests;
     const updatedQuests = currentQuests.map(quest => 
       quest.id === id 
@@ -98,7 +99,7 @@ export const useQuestStore = create<QuestState>((set, get) => ({
   },
 
   // Mark quest as failed (system or user-initiated)
-  failQuest: (id: string) => {
+  failQuest: async (id: string) => {
     const currentQuests = get().quests;
     const updatedQuests = currentQuests.map(quest => 
       quest.id === id 
@@ -187,7 +188,7 @@ export const useQuestStore = create<QuestState>((set, get) => ({
       quest.title === 'Daily Focus' &&
       quest.accountId === accountId &&
       quest.status !== 'completed' &&
-      quest.createdAt.toDateString() === today
+      (typeof quest.createdAt === 'string' ? new Date(quest.createdAt) : quest.createdAt).toDateString() === today
     );
 
     return dailyFocusQuests; // Return quests that can be updated
@@ -298,7 +299,7 @@ export const useQuestStore = create<QuestState>((set, get) => ({
   },
 
   // Generate daily quests (now with AI support)
-  generateDailyQuests: async (trades: Trade[] = [], notes: any[] = [], currentMood: any = 'neutral', forceRegenerate: boolean = false) => {
+  generateDailyQuests: async (trades: Trade[] = [], notes: QuickNote[] = [], currentMood: MoodType = 'neutral', forceRegenerate: boolean = false) => {
     const currentQuests = get().quests;
     const today = new Date();
     const todayDateString = today.toDateString();
@@ -306,7 +307,7 @@ export const useQuestStore = create<QuestState>((set, get) => ({
     // Check if daily quests already exist for today
     const todayQuests = currentQuests.filter(quest => 
       quest.type === 'daily' && 
-      quest.createdAt.toDateString() === todayDateString
+      (typeof quest.createdAt === 'string' ? new Date(quest.createdAt) : quest.createdAt).toDateString() === todayDateString
     );
     
     if (todayQuests.length === 0 || forceRegenerate) {

@@ -131,8 +131,8 @@ export const Dashboard: React.FC = () => {
   const winRate = filteredTrades.length > 0 ? (winningTrades / filteredTrades.length) * 100 : 0;
 
   // Generate trend data for sparklines
-  const generateDailyPnLTrend = () => {
-    const days = [];
+  const generateDailyPnLTrend = (): number[] => {
+    const days: number[] = [];
     for (let i = 6; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
@@ -145,13 +145,13 @@ export const Dashboard: React.FC = () => {
       });
       
       const dayPnL = dayTrades.reduce((sum, trade) => sum + (trade.pnl || 0), 0);
-      days.push(dayPnL);
+      days.push(dayPnL as number);
     }
     return days;
   };
 
-  const generateWeeklyPnLTrend = () => {
-    const weeks = [];
+  const generateWeeklyPnLTrend = (): number[] => {
+    const weeks: number[] = [];
     for (let i = 6; i >= 0; i--) {
       const endDate = new Date();
       endDate.setDate(endDate.getDate() - (i * 7));
@@ -164,13 +164,13 @@ export const Dashboard: React.FC = () => {
       });
       
       const weekPnL = weekTrades.reduce((sum, trade) => sum + (trade.pnl || 0), 0);
-      weeks.push(weekPnL);
+      weeks.push(weekPnL as number);
     }
     return weeks;
   };
 
-  const generateTradeCountTrend = () => {
-    const days = [];
+  const generateTradeCountTrend = (): number[] => {
+    const days: number[] = [];
     for (let i = 6; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
@@ -182,7 +182,7 @@ export const Dashboard: React.FC = () => {
         return tradeDate.getTime() === date.getTime();
       });
       
-      days.push(dayTrades.length);
+      days.push(dayTrades.length as number);
     }
     return days;
   };

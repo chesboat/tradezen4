@@ -101,7 +101,7 @@ PERFORMANCE DATA:
 
 RECENT TRADES ANALYSIS:
 ${request.recentTrades.slice(-5).map(trade => 
-  `- ${trade.symbol} ${trade.direction}: ${trade.result} ($${trade.pnl.toFixed(2)}, Risk: $${trade.riskAmount})`
+  `- ${trade.symbol} ${trade.direction}: ${trade.result} ($${(trade.pnl || 0).toFixed(2)}, Risk: $${trade.riskAmount})`
 ).join('\n')}
 
 RECENT NOTES:
