@@ -29,6 +29,12 @@ export const useActivityLogStore = create<ActivityLogState>((set, get) => ({
 
       const currentActivities = get().activities;
       set({ activities: [newActivity, ...currentActivities.slice(0, 99)] }); // Keep only 100 most recent
+      
+      // Trigger user profile stats refresh after adding activity
+      // Import dynamically to avoid circular dependencies
+      import('./useUserProfileStore').then(({ useUserProfileStore }) => {
+        useUserProfileStore.getState().refreshStats();
+      });
     } catch (error) {
       console.error('Failed to add activity:', error);
     }

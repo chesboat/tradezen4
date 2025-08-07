@@ -20,6 +20,7 @@ import { useTheme } from './hooks/useTheme';
 import { useTradeLoggerModal } from './hooks/useTradeLoggerModal';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { initializeTradeStore } from './store/useTradeStore';
+import { useUserProfileStore } from './store/useUserProfileStore';
 
 function AppContent() {
   const { isExpanded: sidebarExpanded } = useSidebarStore();
@@ -28,6 +29,7 @@ function AppContent() {
   const { theme } = useTheme();
   const tradeLoggerModal = useTradeLoggerModal();
   const { currentUser } = useAuth();
+  const { initializeProfile } = useUserProfileStore();
 
   // Initialize data when user is authenticated
   React.useEffect(() => {
@@ -35,8 +37,9 @@ function AppContent() {
       initializeDefaultAccounts();
       initializeDefaultQuests();
       initializeTradeStore();
+      initializeProfile(currentUser.uid, currentUser.email || undefined);
     }
-  }, [currentUser]);
+  }, [currentUser, initializeProfile]);
 
   // Render current view
   const renderCurrentView = () => {

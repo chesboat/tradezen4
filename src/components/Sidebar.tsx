@@ -21,6 +21,7 @@ import {
 import { useSidebarStore } from '@/store/useSidebarStore';
 import { useNavigationStore } from '@/store/useNavigationStore';
 import { useQuickNoteModal } from '@/store/useQuickNoteStore';
+import { useUserProfileStore, getUserDisplayName, getFormattedLevel } from '@/store/useUserProfileStore';
 import { cn } from '@/lib/utils';
 import { AccountFilter } from './AccountFilter';
 import { SearchBar } from './SearchBar';
@@ -125,7 +126,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
   const { isExpanded, toggleSidebar } = useSidebarStore();
   const { currentView, setCurrentView } = useNavigationStore();
   const { openModal: openQuickNote } = useQuickNoteModal();
+  const { profile, refreshStats } = useUserProfileStore();
   const [isTagManagerOpen, setIsTagManagerOpen] = useState(false);
+
+  // Refresh user stats when component mounts
+  useEffect(() => {
+    refreshStats();
+  }, [refreshStats]);
 
   const handleQuickNote = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -327,8 +334,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
                 <User className="w-4 h-4 text-white" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium text-card-foreground">John Trader</p>
-                <p className="text-xs text-muted-foreground">Level 12 • 2,450 XP</p>
+                <p className="text-sm font-medium text-card-foreground">
+                  {profile?.displayName || getUserDisplayName()}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {profile ? `Level ${profile.level} • ${profile.totalXP.toLocaleString()} XP` : getFormattedLevel()}
+                </p>
               </div>
             </div>
             
