@@ -1,4 +1,4 @@
-import { Trade, QuickNote, Quest, ActivityLogEntry, TradingAccount } from './index';
+import { Trade, QuickNote, Quest, ActivityLogEntry, TradingAccount, JournalEntry } from './index';
 
 export interface SidebarState {
   isExpanded: boolean;
@@ -59,4 +59,12 @@ export interface QuickNoteModalState {
   isOpen: boolean;
   openModal: () => void;
   closeModal: () => void;
+}
+
+export interface JournalStoreState {
+  entries: JournalEntry[];
+  addEntry: (entry: Omit<JournalEntry, 'id' | 'createdAt' | 'updatedAt'>) => Promise<JournalEntry>;
+  updateEntry: (id: string, updates: Partial<JournalEntry>) => Promise<void>;
+  deleteEntry: (id: string) => Promise<void>;
+  getEntryByDate: (date: string) => JournalEntry | undefined;
 }

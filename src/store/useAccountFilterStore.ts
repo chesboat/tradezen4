@@ -15,7 +15,12 @@ export const useAccountFilterStore = create<AccountFilterState>((set, get) => ({
 
   addAccount: async (account) => {
     try {
-      const newAccount = await accountService.create(account);
+      const now = new Date().toISOString();
+      const newAccount = await accountService.create({
+        ...account,
+        createdAt: now,
+        updatedAt: now,
+      });
       const currentAccounts = get().accounts;
       set({ accounts: [...currentAccounts, newAccount] });
     } catch (error) {
@@ -48,4 +53,33 @@ export const useAccountFilterStore = create<AccountFilterState>((set, get) => ({
       throw error;
     }
   }
+}));
+
+// Initialize default accounts
+export const initializeDefaultAccounts = () => {
+  const { accounts, addAccount } = useAccountFilterStore.getState();
+  
+  if (accounts.length === 0) {
+    const defaultAccount = {
+      name: 'Demo Account',
+      type: 'demo' as const,
+      balance: 10000,
+      currency: 'USD',
+      broker: 'Demo Broker',
+      isActive: true,
+      accountId: 'demo-account-1'
+    };
+    
+    // Don't await since this is initialization
+    addAccount(defaultAccount).catch(console.error);
+  }
+};
+
+// Selector hooks
+export const useAccounts = () => useAccountFilterStore((state) => state.accounts);
+export const useAccountFilterActions = () => useAccountFilterStore((state) => ({
+  setSelectedAccount: state.setSelectedAccount,
+  addAccount: state.addAccount,
+  updateAccount: state.updateAccount,
+  removeAccount: state.removeAccount,
 }));

@@ -215,3 +215,15 @@ export interface ReflectionTemplateData extends FirestoreDocument {
   totalXP: number;
   accountId: string;
 }
+
+export interface JournalEntry extends FirestoreDocument {
+  date: string;
+  aiSummary?: string;
+  userReflection?: string;
+  isComplete: boolean;
+  mood?: MoodType;
+  tags: string[];
+  goals?: string;
+  lessons?: string;
+  accountId: string;
+}
