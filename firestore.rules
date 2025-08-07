@@ -1,0 +1,50 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function to check if the document belongs to the current user
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // User data structure
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+    
+    // Trades collection under each user
+    match /users/{userId}/trades/{tradeId} {
+      allow read, write: if isOwner(userId);
+    }
+    
+    // Quick notes collection under each user
+    match /users/{userId}/quickNotes/{noteId} {
+      allow read, write: if isOwner(userId);
+    }
+    
+    // Journal entries collection under each user
+    match /users/{userId}/journalEntries/{entryId} {
+      allow read, write: if isOwner(userId);
+    }
+    
+    // Quests collection under each user
+    match /users/{userId}/quests/{questId} {
+      allow read, write: if isOwner(userId);
+    }
+    
+    // Trading accounts collection under each user
+    match /users/{userId}/tradingAccounts/{accountId} {
+      allow read, write: if isOwner(userId);
+    }
+    
+    // Default deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

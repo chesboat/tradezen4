@@ -1,0 +1,175 @@
+{
+  "builtInTemplates": [
+    {
+      "id": "big-win-breakdown",
+      "name": "Big Win Breakdown",
+      "description": "Deep dive analysis of your most successful trades",
+      "emoji": "🏆",
+      "category": "performance",
+      "isDefault": true,
+      "blocks": [
+        {
+          "id": "winning-trade",
+          "title": "The Winning Trade",
+          "prompt": "Describe the setup, entry, and execution of your best trade today",
+          "emoji": "💰",
+          "order": 1,
+          "isRequired": true,
+          "placeholder": "What made this trade stand out? Walk through your thought process from setup identification to exit..."
+        },
+        {
+          "id": "success-factors",
+          "title": "What Made It Work",
+          "prompt": "Which specific skills or decisions led to this success?",
+          "emoji": "🎯",
+          "order": 2,
+          "isRequired": true,
+          "placeholder": "Was it your patience, technical analysis, risk management, or emotional control? Be specific..."
+        },
+        {
+          "id": "replication-strategy",
+          "title": "How to Replicate",
+          "prompt": "What patterns can you systematize for future trades?",
+          "emoji": "🔄",
+          "order": 3,
+          "isRequired": true,
+          "placeholder": "What rules or criteria can you extract from this success to repeat it consistently?"
+        },
+        {
+          "id": "scaling-approach",
+          "title": "Scaling the Approach",
+          "prompt": "How can you apply this success to larger positions or more setups?",
+          "emoji": "📈",
+          "order": 4,
+          "isRequired": false,
+          "placeholder": "How might you scale this strategy while maintaining the same risk profile?"
+        }
+      ]
+    },
+    {
+      "id": "loss-review-deep",
+      "name": "Loss Review & Learning",
+      "description": "Extract maximum value from losing trades",
+      "emoji": "🔍",
+      "category": "learning",
+      "isDefault": true,
+      "blocks": [
+        {
+          "id": "losing-trade-analysis",
+          "title": "The Losing Trade",
+          "prompt": "What happened with your worst trade today?",
+          "emoji": "📉",
+          "order": 1,
+          "isRequired": true,
+          "placeholder": "Describe the setup, your reasoning, and how the trade played out..."
+        },
+        {
+          "id": "failure-points",
+          "title": "Where It Went Wrong",
+          "prompt": "What specific mistakes led to this loss?",
+          "emoji": "⚠️",
+          "order": 2,
+          "isRequired": true,
+          "placeholder": "Was it poor entry timing, lack of patience, ignoring signals, or something else?"
+        },
+        {
+          "id": "lessons-extracted",
+          "title": "Lessons Learned",
+          "prompt": "What can you learn to prevent this pattern?",
+          "emoji": "💡",
+          "order": 3,
+          "isRequired": true,
+          "placeholder": "What knowledge or skill can you develop to avoid this mistake in the future?"
+        },
+        {
+          "id": "prevention-strategy",
+          "title": "Prevention System",
+          "prompt": "What rules or alerts will help you avoid this mistake?",
+          "emoji": "🛡️",
+          "order": 4,
+          "isRequired": true,
+          "placeholder": "Create specific, actionable rules you can follow to prevent this from happening again..."
+        }
+      ]
+    },
+    {
+      "id": "mindset-reset",
+      "name": "Mindset Reset",
+      "description": "Focus on mental game and emotional control",
+      "emoji": "🧠",
+      "category": "mindset",
+      "isDefault": true,
+      "blocks": [
+        {
+          "id": "mental-state",
+          "title": "Current Mental State",
+          "prompt": "How are you feeling emotionally and mentally right now?",
+          "emoji": "🎭",
+          "order": 1,
+          "isRequired": true,
+          "placeholder": "Describe your emotional state, stress level, confidence, and overall mental clarity..."
+        },
+        {
+          "id": "stress-triggers",
+          "title": "Stress Triggers",
+          "prompt": "What situations or thoughts created stress today?",
+          "emoji": "⚡",
+          "order": 2,
+          "isRequired": true,
+          "placeholder": "Identify specific moments, trades, or thoughts that triggered negative emotions..."
+        },
+        {
+          "id": "positive-reframes",
+          "title": "Positive Reframes",
+          "prompt": "How can you view today's challenges differently?",
+          "emoji": "🔄",
+          "order": 3,
+          "isRequired": true,
+          "placeholder": "Reframe setbacks as learning opportunities and find the silver lining in difficult moments..."
+        },
+        {
+          "id": "mental-prep",
+          "title": "Mental Prep for Tomorrow",
+          "prompt": "What mindset will serve you best tomorrow?",
+          "emoji": "🚀",
+          "order": 4,
+          "isRequired": false,
+          "placeholder": "Set your mental intention and attitude for tomorrow's trading session..."
+        }
+      ]
+    }
+  ],
+  "aiPromptTemplates": {
+    "generateInsightTemplate": {
+      "systemPrompt": "You are an expert trading coach and psychologist specializing in trader development and insight generation. Based on trading day context, generate customized reflection prompts that explore both mindset and execution.",
+      "userPromptTemplate": "Based on this trading day:\n- P&L: {{pnl}}\n- {{tradeCount}} trades taken{{tradeDetails}}\n- Mood started {{startMood}} → ended {{endMood}}\n- Journal tags: {{tags}}\n\nGenerate a customized insight template for the trader to reflect, including 3–5 reflection prompts that explore both mindset and execution. Format as JSON with blocks containing id, title, prompt, emoji, and order.",
+      "exampleResponse": {
+        "templateName": "Revenge Trading Recovery",
+        "emoji": "⚔️",
+        "blocks": [
+          {
+            "id": "trigger-analysis",
+            "title": "What Triggered the Revenge",
+            "prompt": "What specific moment or loss made you want to 'get back' at the market?",
+            "emoji": "🎯",
+            "order": 1
+          },
+          {
+            "id": "emotional-state",
+            "title": "Emotional State Check",
+            "prompt": "How did anger or frustration affect your decision-making process?",
+            "emoji": "😤",
+            "order": 2
+          },
+          {
+            "id": "damage-assessment",
+            "title": "Damage Assessment",
+            "prompt": "What was the real cost of trading emotionally today?",
+            "emoji": "💸",
+            "order": 3
+          }
+        ]
+      }
+    }
+  }
+}
