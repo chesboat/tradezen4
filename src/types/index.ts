@@ -1,5 +1,3 @@
-import React from 'react';
-
 export type TradeDirection = 'long' | 'short';
 export type TradeResult = 'win' | 'loss' | 'breakeven';
 export type MoodType = 'excellent' | 'good' | 'neutral' | 'poor' | 'terrible';
@@ -102,8 +100,6 @@ export interface TradingAccount extends FirestoreDocument {
   currency: string;
   broker?: string;
   isActive: boolean;
-  
-  // Prop account specific fields
   propFirm?: string;
   accountPhase?: 'evaluation' | 'funded' | 'breached' | 'passed';
   dailyLossLimit?: number;
@@ -115,19 +111,107 @@ export interface TradingAccount extends FirestoreDocument {
   minTradingDays?: number;
 }
 
-// Store types
-export interface TradeState {
+export interface CalendarDay {
+  date: Date;
+  pnl: number;
+  tradesCount: number;
+  avgRR: number;
+  xpEarned: number;
+  mood: MoodType;
+  quickNotesCount: number;
+  hasNews: boolean;
+  hasReflection: boolean;
+  winRate: number;
+  isOtherMonth?: boolean;
+}
+
+export interface WeeklySummary {
+  weekStart: Date;
+  weekEnd: Date;
+  totalPnl: number;
+  totalXP: number;
+  avgMood: MoodType;
+  tradesCount: number;
+  winRate: number;
+  avgRR: number;
+  activeDays: number;
+  weekNumber: number;
+}
+
+export interface TooltipProps {
+  content: string;
+  children: React.ReactNode;
+  position?: 'top' | 'bottom' | 'left' | 'right';
+}
+
+export interface GPTSummaryPrompt {
   trades: Trade[];
-  addTrade: (trade: Omit<Trade, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Trade>;
-  updateTrade: (id: string, updates: Partial<Trade>) => Promise<void>;
-  deleteTrade: (id: string) => Promise<void>;
-  getTradesByAccount: (accountId: string) => Trade[];
-  getTradesByDateRange: (startDate: Date, endDate: Date) => Trade[];
-  getTradesBySymbol: (symbol: string) => Trade[];
-  getOpenTrades: () => Trade[];
-  getClosedTrades: () => Trade[];
-  calculatePnL: (trade: Trade) => number;
-  autoCalculateResult: (trade: Trade) => TradeResult;
-  getRecentTrades: () => Trade[];
-  initializeTrades: () => Promise<void>;
+  quickNotes: QuickNote[];
+  mood: MoodType;
+  date: Date;
+}
+
+export interface DailyJournalData {
+  trades: Trade[];
+  notes: QuickNote[];
+  stats: {
+    totalPnL: number;
+    winRate: number;
+    totalXP: number;
+    moodTrend: string;
+    tradeCount: number;
+  };
+}
+
+export interface CustomTemplate extends FirestoreDocument {
+  name: string;
+  description?: string;
+  emoji?: string;
+  blocks: TemplateBlock[];
+  isDefault: boolean;
+  category: 'mindset' | 'performance' | 'learning' | 'custom';
+  accountId: string;
+  usageCount: number;
+}
+
+export interface TemplateBlock {
+  id: string;
+  title: string;
+  prompt: string;
+  emoji?: string;
+  order: number;
+  isRequired: boolean;
+  placeholder?: string;
+}
+
+export interface InsightBlock extends FirestoreDocument {
+  title: string;
+  content: string;
+  tags?: string[];
+  emoji?: string;
+  xpEarned?: number;
+  order: number;
+  isExpanded: boolean;
+  templateId?: string;
+  templateBlockId?: string;
+  isFavorite?: boolean;
+}
+
+export interface FavoriteBlock extends FirestoreDocument {
+  templateId: string;
+  templateBlockId: string;
+  title: string;
+  prompt: string;
+  emoji?: string;
+  order: number;
+  accountId: string;
+}
+
+export interface ReflectionTemplateData extends FirestoreDocument {
+  date: string;
+  insightBlocks: InsightBlock[];
+  aiGeneratedSuggestions?: string[];
+  completionScore: number;
+  totalXP: number;
+  accountId: string;
 }
