@@ -213,12 +213,12 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
 
   loadFromStorage: (userId) => {
     try {
-      const stored = localStorage.getItem(`${STORAGE_KEYS.USER_PROFILE}_${userId}`, null);
-      if (stored && typeof stored === 'object') {
+      const stored = localStorage.getItem(`${STORAGE_KEYS.USER_PROFILE}_${userId}`, null as UserProfile | null);
+      if (stored) {
         const profile: UserProfile = {
           ...stored,
-          joinedAt: new Date(stored.joinedAt || new Date()),
-        } as UserProfile;
+          joinedAt: stored.joinedAt instanceof Date ? stored.joinedAt : new Date(stored.joinedAt || new Date()),
+        };
         set({ profile });
         return profile;
       }
