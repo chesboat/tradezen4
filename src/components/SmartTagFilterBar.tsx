@@ -261,7 +261,7 @@ export const SmartTagFilterBar: React.FC<SmartTagFilterBarProps> = ({ className 
                     {isSelected && (
                       <X className="w-3 h-3 ml-0.5" />
                     )}
-                  </button>
+                  </motion.button>
 
                   {/* Pin Toggle Button */}
                   <button
