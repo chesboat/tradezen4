@@ -33,5 +33,101 @@ export interface Trade extends FirestoreDocument {
   accountId: string;
 }
 
-// Rest of the types remain unchanged...
-[Previous content from line 32 to the end]
+export interface QuickNote extends FirestoreDocument {
+  content: string;
+  tags: string[];
+  mood?: MoodType;
+  attachedToTradeId?: string;
+  accountId: string;
+}
+
+export interface Quest extends FirestoreDocument {
+  title: string;
+  description: string;
+  type: 'daily' | 'weekly' | 'monthly' | 'achievement';
+  status: QuestStatus;
+  progress: number;
+  maxProgress: number;
+  xpReward: number;
+  dueDate?: Date | string;
+  completedAt?: Date | string;
+  accountId: string;
+}
+
+export interface WellnessAction extends FirestoreDocument {
+  type: WellnessActionType;
+  title: string;
+  description?: string;
+  duration?: number; // in minutes
+  xpReward: number;
+  completedAt: Date | string;
+  accountId: string;
+}
+
+export interface XPLog extends FirestoreDocument {
+  amount: number;
+  source: 'trade' | 'quest' | 'wellness' | 'reflection' | 'streak';
+  description: string;
+  relatedId?: string; // ID of the related trade, quest, etc.
+  accountId: string;
+}
+
+export interface ActivityLogEntry extends FirestoreDocument {
+  type: ActivityType;
+  title: string;
+  description?: string;
+  xpEarned?: number;
+  relatedId?: string;
+  accountId: string;
+}
+
+export interface DailyReflection extends FirestoreDocument {
+  date: Date | string;
+  trades: Trade[];
+  quickNotes: QuickNote[];
+  mood: MoodType;
+  pnl: number;
+  winRate: number;
+  avgRR: number;
+  lessonsLearned: string[];
+  goalsForTomorrow: string[];
+  aiSummary?: string;
+  accountId: string;
+}
+
+export interface TradingAccount extends FirestoreDocument {
+  name: string;
+  type: 'demo' | 'live' | 'paper' | 'prop';
+  balance: number;
+  currency: string;
+  broker?: string;
+  isActive: boolean;
+  
+  // Prop account specific fields
+  propFirm?: string;
+  accountPhase?: 'evaluation' | 'funded' | 'breached' | 'passed';
+  dailyLossLimit?: number;
+  maxDrawdown?: number;
+  profitTarget?: number;
+  profitSplit?: number;
+  currentDrawdown?: number;
+  daysTrading?: number;
+  minTradingDays?: number;
+}
+
+// Store types
+export interface TradeState {
+  trades: Trade[];
+  addTrade: (trade: Omit<Trade, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Trade>;
+  updateTrade: (id: string, updates: Partial<Trade>) => Promise<void>;
+  deleteTrade: (id: string) => Promise<void>;
+  getTradesByAccount: (accountId: string) => Trade[];
+  getTradesByDateRange: (startDate: Date, endDate: Date) => Trade[];
+  getTradesBySymbol: (symbol: string) => Trade[];
+  getOpenTrades: () => Trade[];
+  getClosedTrades: () => Trade[];
+  calculatePnL: (trade: Trade) => number;
+  autoCalculateResult: (trade: Trade) => TradeResult;
+  getRecentTrades: () => Trade[];
+  initializeTrades: () => Promise<void>;
+}
