@@ -22,7 +22,7 @@ import { useAccountFilterStore } from '@/store/useAccountFilterStore';
 import { useDailyReflectionStore } from '@/store/useDailyReflectionStore';
 import { useQuestStore } from '@/store/useQuestStore';
 import { WellnessActionType, MoodType } from '@/types';
-import { Timeout } from '@/types/utils';
+import type { Timeout } from '@/types/utils';
 import { getMoodColor, getMoodEmoji, localStorage, STORAGE_KEYS } from '@/lib/localStorageUtils';
 import { cn } from '@/lib/utils';
 

@@ -445,6 +445,7 @@ export const useReflectionTemplateStore = create<ReflectionTemplateState>()(
           order: get().favoriteBlocks.filter(f => f.accountId === accountId).length + 1,
           accountId,
           createdAt: new Date(),
+          updatedAt: new Date(),
         };
 
         set((state) => ({
@@ -634,6 +635,7 @@ export const useReflectionTemplateStore = create<ReflectionTemplateState>()(
             const parsedFavoriteBlocks = storedFavoriteBlocks.map((favorite: any) => ({
               ...favorite,
               createdAt: new Date(favorite.createdAt),
+              updatedAt: new Date(favorite.updatedAt),
             }));
             set({ favoriteBlocks: parsedFavoriteBlocks });
           }

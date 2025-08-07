@@ -188,7 +188,7 @@ const generateSmartLocalQuests = (request: QuestSuggestionRequest): Promise<Ques
   }
 
   // Emotional Control Quests
-  if (currentMood === 'frustrated' || currentMood === 'anxious' || hasRecentLosses) {
+  if (currentMood === 'terrible' || currentMood === 'poor' || hasRecentLosses) {
     quests.push({
       title: 'Patience Builder',
       description: 'Wait at least 10 minutes between trades to avoid emotional decisions',
@@ -248,5 +248,10 @@ const generateSmartLocalQuests = (request: QuestSuggestionRequest): Promise<Ques
   }
 
   console.log('⚡ Generated smart local quests:', quests.map(q => q.title));
-  return Promise.resolve(quests);
+  return Promise.resolve(quests.map(quest => ({
+    ...quest,
+    id: '',
+    createdAt: new Date(),
+    updatedAt: new Date()
+  })));
 };
