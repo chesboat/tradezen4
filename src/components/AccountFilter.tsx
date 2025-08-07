@@ -40,6 +40,21 @@ export const AccountFilter: React.FC<AccountFilterProps> = ({ className }) => {
     return set;
   }, [accounts]);
 
+  // Leaders first, then followers, then others; then alphabetical
+  const sortedAccounts = useMemo(() => {
+    const clone = [...accounts];
+    clone.sort((a, b) => {
+      const aLeader = leaderIds.has(a.id) ? 1 : 0;
+      const bLeader = leaderIds.has(b.id) ? 1 : 0;
+      if (aLeader !== bLeader) return bLeader - aLeader;
+      const aFollower = followerIds.has(a.id) ? 1 : 0;
+      const bFollower = followerIds.has(b.id) ? 1 : 0;
+      if (aFollower !== bFollower) return bFollower - aFollower;
+      return a.name.localeCompare(b.name);
+    });
+    return clone;
+  }, [accounts, leaderIds, followerIds]);
+
   const renderLinkBadge = (account: TradingAccount) => {
     const isLeader = leaderIds.has(account.id);
     const isFollower = followerIds.has(account.id);
@@ -207,7 +222,7 @@ export const AccountFilter: React.FC<AccountFilterProps> = ({ className }) => {
             exit="hidden"
           >
             <div className="py-2 max-h-64 overflow-y-auto">
-              {accounts.map((account) => (
+              {sortedAccounts.map((account) => (
                 <motion.button
                   key={account.id}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 hover:bg-accent transition-colors group ${
