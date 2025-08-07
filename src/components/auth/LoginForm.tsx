@@ -28,8 +28,9 @@ export function LoginForm() {
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
-      await signInWithGoogle();
-      toast.success('Successfully logged in with Google!');
+      const result = await signInWithGoogle();
+      const displayName = result.user.displayName || result.user.email?.split('@')[0] || 'User';
+      toast.success(`Welcome back, ${displayName}!`);
     } catch (error: any) {
       const message = error.message || 'Failed to log in with Google.';
       toast.error(message);
@@ -42,8 +43,9 @@ export function LoginForm() {
   const handleAppleSignIn = async () => {
     setAppleLoading(true);
     try {
-      await signInWithApple();
-      toast.success('Successfully logged in with Apple!');
+      const result = await signInWithApple();
+      const displayName = result.user.displayName || result.user.email?.split('@')[0] || 'User';
+      toast.success(`Welcome back, ${displayName}!`);
     } catch (error: any) {
       const message = error.message || 'Failed to log in with Apple.';
       toast.error(message);

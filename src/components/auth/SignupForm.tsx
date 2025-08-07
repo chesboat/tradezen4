@@ -35,8 +35,9 @@ export function SignupForm() {
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
-      await signInWithGoogle();
-      toast.success('Successfully signed up with Google!');
+      const result = await signInWithGoogle();
+      const displayName = result.user.displayName || result.user.email?.split('@')[0] || 'User';
+      toast.success(`Welcome, ${displayName}! Your account has been created.`);
     } catch (error: any) {
       const message = error.message || 'Failed to sign up with Google.';
       toast.error(message);
@@ -49,8 +50,9 @@ export function SignupForm() {
   const handleAppleSignIn = async () => {
     setAppleLoading(true);
     try {
-      await signInWithApple();
-      toast.success('Successfully signed up with Apple!');
+      const result = await signInWithApple();
+      const displayName = result.user.displayName || result.user.email?.split('@')[0] || 'User';
+      toast.success(`Welcome, ${displayName}! Your account has been created.`);
     } catch (error: any) {
       const message = error.message || 'Failed to sign up with Apple.';
       toast.error(message);

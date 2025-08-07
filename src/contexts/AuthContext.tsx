@@ -11,13 +11,15 @@ import {
 } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 
+import { UserCredential } from 'firebase/auth';
+
 interface AuthContextType {
   currentUser: User | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
-  signInWithGoogle: () => Promise<void>;
-  signInWithApple: () => Promise<void>;
+  signInWithGoogle: () => Promise<UserCredential>;
+  signInWithApple: () => Promise<UserCredential>;
   logout: () => Promise<void>;
 }
 
