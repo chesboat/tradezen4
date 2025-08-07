@@ -30,8 +30,9 @@ export function LoginForm() {
     try {
       await signInWithGoogle();
       toast.success('Successfully logged in with Google!');
-    } catch (error) {
-      toast.error('Failed to log in with Google.');
+    } catch (error: any) {
+      const message = error.message || 'Failed to log in with Google.';
+      toast.error(message);
       console.error('Google login error:', error);
     } finally {
       setGoogleLoading(false);
@@ -43,8 +44,9 @@ export function LoginForm() {
     try {
       await signInWithApple();
       toast.success('Successfully logged in with Apple!');
-    } catch (error) {
-      toast.error('Failed to log in with Apple.');
+    } catch (error: any) {
+      const message = error.message || 'Failed to log in with Apple.';
+      toast.error(message);
       console.error('Apple login error:', error);
     } finally {
       setAppleLoading(false);

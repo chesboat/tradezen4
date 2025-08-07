@@ -37,8 +37,9 @@ export function SignupForm() {
     try {
       await signInWithGoogle();
       toast.success('Successfully signed up with Google!');
-    } catch (error) {
-      toast.error('Failed to sign up with Google.');
+    } catch (error: any) {
+      const message = error.message || 'Failed to sign up with Google.';
+      toast.error(message);
       console.error('Google signup error:', error);
     } finally {
       setGoogleLoading(false);
@@ -50,8 +51,9 @@ export function SignupForm() {
     try {
       await signInWithApple();
       toast.success('Successfully signed up with Apple!');
-    } catch (error) {
-      toast.error('Failed to sign up with Apple.');
+    } catch (error: any) {
+      const message = error.message || 'Failed to sign up with Apple.';
+      toast.error(message);
       console.error('Apple signup error:', error);
     } finally {
       setAppleLoading(false);
