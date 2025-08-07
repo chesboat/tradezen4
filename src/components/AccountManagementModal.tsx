@@ -216,21 +216,22 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
     setIsSubmitting(true);
     
     try {
-      const accountData = {
+      const accountData: any = {
         name: form.name.trim(),
         type: form.type,
         balance: parseFloat(form.balance),
         currency: form.currency,
-        broker: form.broker.trim() || undefined,
+        // Only include broker if non-empty
+        ...(form.broker.trim() ? { broker: form.broker.trim() } : {}),
         isActive: form.isActive,
         
         // Prop account fields (only include if prop account)
         ...(form.type === 'prop' && {
-          propFirm: form.propFirm.trim(),
+          ...(form.propFirm.trim() ? { propFirm: form.propFirm.trim() } : {}),
           accountPhase: form.accountPhase,
           dailyLossLimit: parseFloat(form.dailyLossLimit),
           maxDrawdown: parseFloat(form.maxDrawdown),
-          profitTarget: form.profitTarget ? parseFloat(form.profitTarget) : undefined,
+          ...(form.profitTarget ? { profitTarget: parseFloat(form.profitTarget) } : {}),
           profitSplit: parseFloat(form.profitSplit),
           currentDrawdown: parseFloat(form.currentDrawdown),
           daysTrading: parseInt(form.daysTrading),

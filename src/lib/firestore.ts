@@ -19,6 +19,32 @@ export interface FirestoreDocument {
   [key: string]: any;
 }
 
+// Remove undefined values recursively so Firestore doesn't reject writes
+function removeUndefined<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value.map((item) => removeUndefined(item)) as unknown as T;
+  }
+  if (value && typeof value === 'object' && !(value instanceof Date)) {
+    const result: Record<string, unknown> = {};
+    for (const [key, v] of Object.entries(value as Record<string, unknown>)) {
+      if (v === undefined) continue;
+      const cleaned = removeUndefined(v as unknown as T);
+      // Only assign non-empty objects or non-object values
+      if (
+        cleaned &&
+        typeof cleaned === 'object' &&
+        !(cleaned instanceof Date) &&
+        Object.keys(cleaned as Record<string, unknown>).length === 0
+      ) {
+        continue;
+      }
+      result[key] = cleaned as unknown as T;
+    }
+    return result as unknown as T;
+  }
+  return value;
+}
+
 export class FirestoreService<T extends FirestoreDocument> {
   private collectionName: string;
 
@@ -46,12 +72,13 @@ export class FirestoreService<T extends FirestoreDocument> {
       console.log('FirestoreService: Starting create with data:', data);
       const docRef = doc(this.getCollection());
       console.log('FirestoreService: Created doc reference:', docRef.path);
-      const documentData = {
-      ...data,
-      id: docRef.id,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+      const baseData = {
+        ...data,
+        id: docRef.id,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      } as unknown as T;
+      const documentData = removeUndefined(baseData) as unknown as T;
     console.log('FirestoreService: Attempting to save document:', documentData);
     await setDoc(docRef, documentData);
     console.log('FirestoreService: Document saved successfully');
@@ -64,10 +91,11 @@ export class FirestoreService<T extends FirestoreDocument> {
 
   async update(id: string, data: Partial<T>): Promise<void> {
     const docRef = doc(this.getCollection(), id);
-    await updateDoc(docRef, {
+    const updateData = removeUndefined({
       ...data,
       updatedAt: new Date().toISOString(),
-    });
+    }) as Partial<T> as unknown as { [x: string]: any };
+    await updateDoc(docRef, updateData);
   }
 
   async delete(id: string): Promise<void> {
