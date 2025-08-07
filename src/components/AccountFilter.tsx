@@ -40,20 +40,32 @@ export const AccountFilter: React.FC<AccountFilterProps> = ({ className }) => {
     return set;
   }, [accounts]);
 
-  // Leaders first, then followers, then others; then alphabetical
-  const sortedAccounts = useMemo(() => {
-    const clone = [...accounts];
-    clone.sort((a, b) => {
-      const aLeader = leaderIds.has(a.id) ? 1 : 0;
-      const bLeader = leaderIds.has(b.id) ? 1 : 0;
-      if (aLeader !== bLeader) return bLeader - aLeader;
-      const aFollower = followerIds.has(a.id) ? 1 : 0;
-      const bFollower = followerIds.has(b.id) ? 1 : 0;
-      if (aFollower !== bFollower) return bFollower - aFollower;
-      return a.name.localeCompare(b.name);
+  // Group accounts: each leader followed immediately by its followers, then any remaining accounts alpha
+  const groupedAccounts = useMemo(() => {
+    const byId = new Map(accounts.map(a => [a.id, a] as const));
+    const visited = new Set<string>();
+    const groups: TradingAccount[] = [];
+
+    // Add leaders and their followers
+    accounts.forEach(acc => {
+      const links = (acc.linkedAccountIds || []);
+      if (links.length === 0) return;
+      if (visited.has(acc.id)) return;
+      groups.push(acc);
+      visited.add(acc.id);
+      links.forEach(fid => {
+        const follower = byId.get(fid);
+        if (follower && !visited.has(fid)) {
+          groups.push(follower);
+          visited.add(fid);
+        }
+      });
     });
-    return clone;
-  }, [accounts, leaderIds, followerIds]);
+
+    // Append any remaining accounts not in groups, sorted by name
+    const remaining = accounts.filter(a => !visited.has(a.id)).sort((a, b) => a.name.localeCompare(b.name));
+    return [...groups, ...remaining];
+  }, [accounts]);
 
   const renderLinkBadge = (account: TradingAccount) => {
     const isLeader = leaderIds.has(account.id);
@@ -222,7 +234,7 @@ export const AccountFilter: React.FC<AccountFilterProps> = ({ className }) => {
             exit="hidden"
           >
             <div className="py-2 max-h-64 overflow-y-auto">
-              {sortedAccounts.map((account) => {
+              {groupedAccounts.map((account) => {
                 const isFollower = followerIds.has(account.id);
                 return (
                 <motion.button
