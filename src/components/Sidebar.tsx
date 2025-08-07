@@ -171,9 +171,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
       <button
         className={cn(
           'w-full flex items-center rounded-xl transition-colors duration-200 relative',
-          'hover:bg-accent/50',
-          isActive && 'bg-primary text-primary-foreground',
-          !isActive && 'text-muted-foreground hover:text-accent-foreground',
+          isActive
+            ? 'bg-primary text-primary-foreground hover:bg-primary'
+            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
           isExpanded ? 'justify-start px-4 py-2.5 gap-3' : 'justify-center px-0 py-2.5'
         )}
         onClick={() => handleNavItemClick(item)}
