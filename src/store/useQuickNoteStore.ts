@@ -61,6 +61,14 @@ export const useQuickNoteStore = create<QuickNoteState>((set, get) => ({
     }
   },
 
+  addInlineNote: async (content, accountId) => {
+    return get().addNote({
+      content,
+      tags: [],
+      accountId
+    });
+  },
+
   updateNote: async (id, updates) => {
     try {
       const updateData = {
@@ -146,9 +154,28 @@ export const initializeQuickNoteStore = async () => {
 export const useNotes = () => useQuickNoteStore((state) => state.notes);
 export const useQuickNoteTags = () => useQuickNoteStore((state) => ({
   allTags: state.allTags,
-  removeTag: state.removeTag
+  removeTag: state.removeTag,
+  suggestedTags: state.allTags.slice(0, 10), // Top 10 most used tags
+  addTag: (tag: string) => {
+    // This would be implemented to add a new tag to the system
+    console.log('Add tag:', tag);
+  },
+  tagsByUsage: state.allTags, // For now, just return all tags
+  tagUsageCount: state.allTags.reduce((acc, tag) => ({ ...acc, [tag]: 1 }), {} as Record<string, number>)
 }));
+
 export const useQuickNoteModal = () => {
-  const { isOpen, openModal, closeModal } = useQuickNoteModalStore();
-  return { isOpen, openModal, closeModal };
+  const store = useQuickNoteModalStore();
+  return {
+    isOpen: store.isOpen,
+    openModal: store.openModal,
+    closeModal: store.closeModal,
+    isModalOpen: store.isOpen,
+    editingNoteId: store.editingNoteId,
+    draftNote: store.draftNote,
+    saveDraft: store.saveDraft,
+    loadDraft: store.loadDraft,
+    clearDraft: store.clearDraft,
+    setEditingNote: store.setEditingNote
+  };
 };

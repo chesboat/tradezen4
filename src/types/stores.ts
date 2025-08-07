@@ -45,6 +45,7 @@ export interface QuestState {
 export interface QuickNoteState {
   notes: QuickNote[];
   addNote: (note: Omit<QuickNote, 'id' | 'createdAt' | 'updatedAt'>) => Promise<QuickNote>;
+  addInlineNote: (content: string, accountId: string) => Promise<QuickNote>;
   updateNote: (id: string, updates: Partial<QuickNote>) => Promise<void>;
   deleteNote: (id: string) => Promise<void>;
   getNotesByAccount: (accountId: string) => QuickNote[];
