@@ -222,12 +222,14 @@ export const AccountFilter: React.FC<AccountFilterProps> = ({ className }) => {
             exit="hidden"
           >
             <div className="py-2 max-h-64 overflow-y-auto">
-              {sortedAccounts.map((account) => (
+              {sortedAccounts.map((account) => {
+                const isFollower = followerIds.has(account.id);
+                return (
                 <motion.button
                   key={account.id}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 hover:bg-accent transition-colors group ${
                     selectedAccountId === account.id ? 'bg-accent' : ''
-                  }`}
+                  } ${isFollower ? 'pl-6' : ''}`}
                   onClick={() => handleAccountSelect(account.id)}
                   whileHover={{ x: 2 }}
                   whileTap={{ scale: 0.98 }}
@@ -271,7 +273,7 @@ export const AccountFilter: React.FC<AccountFilterProps> = ({ className }) => {
                     )}
                   </div>
                 </motion.button>
-              ))}
+              )})}
               
               {accounts.length === 0 && (
                 <div className="px-3 py-6 text-center text-sm text-muted-foreground">

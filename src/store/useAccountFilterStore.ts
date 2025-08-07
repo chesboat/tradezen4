@@ -80,8 +80,10 @@ export const initializeDefaultAccounts = async () => {
       const newAccount = await state.addAccount(defaultAccount);
       setSelectedAccount(newAccount.id);
     } else if (!state.selectedAccountId) {
-      const active = state.accounts.find(a => a.isActive) || state.accounts[0];
-      setSelectedAccount(active.id);
+      const leader = state.accounts.find(a => (a as any).linkedAccountIds && (a as any).linkedAccountIds.length > 0);
+      const active = state.accounts.find(a => a.isActive);
+      const pick = leader || active || state.accounts[0];
+      setSelectedAccount(pick.id);
     }
   } catch (error) {
     console.error('Failed to initialize accounts:', error);
