@@ -2,6 +2,7 @@ import React from 'react';
 import { EditorContent, useEditor, BubbleMenu } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
+import SlashCommand from './editor/SlashCommand';
 import Underline from '@tiptap/extension-underline';
 import Link from '@tiptap/extension-link';
 import TaskList from '@tiptap/extension-task-list';
@@ -40,6 +41,13 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
       OrderedList,
       Heading.configure({ levels: [1, 2, 3] }),
       Placeholder.configure({ placeholder: placeholder || 'Write your thoughts…' }),
+      SlashCommand({
+        onInsight: (text) => onConvertSelectionToInsight?.(text),
+        onTradeLink: (href) => {
+          if (!editor) return;
+          editor.chain().focus().setLink({ href }).run();
+        },
+      }),
     ],
     content: initialJSON || '<p></p>',
     onUpdate: ({ editor }) => {
