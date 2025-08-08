@@ -238,7 +238,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
     processedNotesRef.current.clear();
   }, [day?.date, selectedAccountId]);
 
-  // Mock GPT-4o insights (replace with actual API call)
+  // Mock GPT-5 insights (replace with actual API call)
   const generateInsights = async (): Promise<GPTInsight[]> => {
     setIsGeneratingInsights(true);
     

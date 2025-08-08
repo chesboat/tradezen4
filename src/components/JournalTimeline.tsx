@@ -335,7 +335,7 @@ export const JournalTimeline: React.FC<JournalTimelineProps> = ({ className }) =
             <p>Turn your daily focus into actionable quests for tomorrow.</p>
           </div>
           <div>
-            <p className="font-medium mb-1">• Use GPT-4o</p>
+            <p className="font-medium mb-1">• Use GPT-5</p>
             <p>Generate insights from your trades and notes with AI assistance.</p>
           </div>
           <div>

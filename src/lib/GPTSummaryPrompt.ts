@@ -2,7 +2,7 @@ import { Trade, QuickNote, MoodType, GPTSummaryPrompt } from '@/types';
 import { formatDate, formatCurrency, getMoodEmoji } from './localStorageUtils';
 
 /**
- * Generate a comprehensive prompt for GPT-4o to create daily trading summaries
+ * Generate a comprehensive prompt for GPT-5 to create daily trading summaries
  */
 export const generateDailySummaryPrompt = (data: GPTSummaryPrompt): string => {
   const { trades, quickNotes, mood, date } = data;
@@ -223,7 +223,7 @@ NOTES: ${JSON.stringify(recentNotes, null, 2)}
 };
 
 /**
- * Mock GPT-4o response for development
+ * Mock GPT-5 response for development
  */
 export const mockGPTResponse = (prompt: string): Promise<string> => {
   return new Promise((resolve) => {

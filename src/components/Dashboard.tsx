@@ -376,7 +376,7 @@ export const Dashboard: React.FC = () => {
         >
           <div className="flex items-center gap-3 mb-4">
             <Brain className="w-6 h-6 text-blue-500" />
-            <h2 className="text-xl font-semibold text-card-foreground">GPT-4o Insights</h2>
+            <h2 className="text-xl font-semibold text-card-foreground">GPT-5 Insights</h2>
           </div>
           
           <div className="space-y-3">
