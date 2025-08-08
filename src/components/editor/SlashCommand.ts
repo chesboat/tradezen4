@@ -31,12 +31,12 @@ export const SlashCommand = (opts: SlashCommandOptions = {}) =>
           menuEl = document.createElement('div');
           menuEl.className = 'rounded-lg border border-border bg-popover text-popover-foreground text-sm shadow p-1 z-50';
           document.body.appendChild(menuEl);
-          (this as any).onUpdate?.(props);
         },
         onUpdate: (props) => {
           lastProps = props;
           if (!menuEl || !props.clientRect) return;
           const rect = props.clientRect();
+          if (!rect) return;
           menuEl.style.position = 'absolute';
           menuEl.style.left = rect.left + 'px';
           menuEl.style.top = rect.bottom + 6 + 'px';
@@ -49,7 +49,7 @@ export const SlashCommand = (opts: SlashCommandOptions = {}) =>
               const action = (e.currentTarget as HTMLElement).dataset.action as SlashItem['action'];
               const item = (props.items as SlashItem[]).find((it) => it.action === action);
               if (!item) return;
-              props.command({ editor: props.editor, range: props.range, item });
+              (props as any).command({ editor: props.editor, range: props.range, props: item });
             });
           });
         },
