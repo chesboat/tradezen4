@@ -36,6 +36,7 @@ import { useActivityLogStore } from '@/store/useActivityLogStore';
 import { useDailyReflectionStore } from '@/store/useDailyReflectionStore';
 import { useQuestStore } from '@/store/useQuestStore';
 import { generateDailyFocus } from '@/lib/ai/generateDailyFocus';
+import { generateQuestSuggestions } from '@/lib/ai/generateQuestSuggestions';
 import { CalendarDay, TradeResult, MoodType } from '@/types';
 import { formatCurrency, formatDate, getMoodColor, formatTime } from '@/lib/localStorageUtils';
 
@@ -528,20 +529,30 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
         ? accountTrades.reduce((sum, t) => sum + t.riskAmount, 0) / accountTrades.length
         : 100;
       
-      // Generate AI focus suggestions
-      const suggestions = await Promise.all([
-        generateDailyFocus(currentMood as MoodType),
-        generateDailyFocus(currentMood as MoodType),
-        generateDailyFocus(currentMood as MoodType)
-      ]);
-      
-      // Flatten Quest[] and project to titles; de-duplicate by title
-      const titles = suggestions
-        .flat()
-        .map((q) => q.title)
-        .filter(Boolean);
-      const uniqueTitles = Array.from(new Set(titles));
-      setFocusSuggestions(uniqueTitles.slice(0, 3));
+      // Try GPT-5 quest suggestions first (falls back internally if no key)
+      try {
+        const aiQuests = await generateQuestSuggestions({
+          recentTrades: accountTrades,
+          recentNotes: accountNotes,
+          currentMood: currentMood as MoodType,
+          completedQuests,
+          winRate,
+          totalPnL,
+          avgRiskAmount,
+        });
+        const titles = aiQuests.map(q => q.title).filter(Boolean);
+        const unique = Array.from(new Set(titles));
+        if (unique.length > 0) {
+          setFocusSuggestions(unique.slice(0, 5));
+          return;
+        }
+      } catch (_) {
+        // ignore and use fallback
+      }
+
+      // Fallback: mood-based local focus
+      const fallback = (await generateDailyFocus(currentMood as MoodType)).map(q => q.title);
+      setFocusSuggestions(Array.from(new Set(fallback)).slice(0, 3));
       
     } catch (error) {
       console.error('Failed to generate AI focus suggestions:', error);
@@ -1537,16 +1548,30 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
                                       </p>
                                     </div>
                                   </div>
-                                  <motion.button
-                                    onClick={handleAddKeyFocusAsQuest}
-                                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg transition-all hover:shadow-lg font-medium"
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                  >
-                                    <Pin className="w-4 h-4" />
-                                    Pin as Quest
-                                    <span className="px-2 py-0.5 bg-white/20 rounded-full text-xs">+25 XP</span>
-                                  </motion.button>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                    <motion.button
+                                      onClick={handleAddKeyFocusAsQuest}
+                                      className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg transition-all hover:shadow-lg font-medium"
+                                      whileHover={{ scale: 1.02 }}
+                                      whileTap={{ scale: 0.98 }}
+                                    >
+                                      <Pin className="w-4 h-4" />
+                                      Pin as Quest
+                                      <span className="px-2 py-0.5 bg-white/20 rounded-full text-xs">+25 XP</span>
+                                    </motion.button>
+                                    <motion.button
+                                      onClick={async () => {
+                                        await generateFocusSuggestions();
+                                        setCollapsedSections(prev => ({ ...prev, focus: false }));
+                                      }}
+                                      className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-muted hover:bg-muted/80 text-foreground rounded-lg transition-all font-medium"
+                                      whileHover={{ scale: 1.02 }}
+                                      whileTap={{ scale: 0.98 }}
+                                    >
+                                      <RotateCcw className="w-4 h-4" />
+                                      Change Focus
+                                    </motion.button>
+                                  </div>
                                 </motion.div>
                               ) : (
                   <div className="space-y-4">
