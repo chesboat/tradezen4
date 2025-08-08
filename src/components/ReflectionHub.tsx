@@ -13,6 +13,7 @@ import { CustomTemplateEditor } from './CustomTemplateEditor';
 import { CustomTemplate } from '@/types';
 import { useReflectionTemplateStore } from '@/store/useReflectionTemplateStore';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
+import { useDailyReflectionStore } from '@/store/useDailyReflectionStore';
 import { cn } from '@/lib/utils';
 
 interface ReflectionHubProps {
@@ -23,14 +24,42 @@ interface ReflectionHubProps {
 export const ReflectionHub: React.FC<ReflectionHubProps> = ({ date, className }) => {
   const { selectedAccountId } = useAccountFilterStore();
   const { reflectionData } = useReflectionTemplateStore();
+  const { getReflectionByDate, upsertReflectionForSelection } = useDailyReflectionStore();
   
   const [showTemplateEditor, setShowTemplateEditor] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<CustomTemplate | null>(null);
+  const [generalThoughts, setGeneralThoughts] = useState<string>('');
+  const [isSavingThoughts, setIsSavingThoughts] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   
   // Check if user has any reflection data for this date
   const hasReflectionData = reflectionData.some(
     r => r.date === date && r.accountId === selectedAccountId && r.insightBlocks.length > 0
   );
+
+  // Load existing general thoughts
+  React.useEffect(() => {
+    if (!selectedAccountId) return;
+    const existing = getReflectionByDate(date, selectedAccountId);
+    setGeneralThoughts(existing?.reflection || '');
+  }, [date, selectedAccountId, getReflectionByDate]);
+
+  // Debounced save for general thoughts
+  const saveThoughts = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleThoughtsChange = (value: string) => {
+    setGeneralThoughts(value);
+    if (saveThoughts.current) clearTimeout(saveThoughts.current);
+    setIsSavingThoughts(true);
+    saveThoughts.current = setTimeout(async () => {
+      if (!selectedAccountId) return;
+      try {
+        await upsertReflectionForSelection(date, { reflection: value }, selectedAccountId);
+        setLastSavedAt(new Date());
+      } finally {
+        setIsSavingThoughts(false);
+      }
+    }, 500);
+  };
 
   return (
     <div className={cn("space-y-6", className)}>
@@ -111,6 +140,35 @@ export const ReflectionHub: React.FC<ReflectionHubProps> = ({ date, className })
           setShowTemplateEditor(true);
         }}
       />
+
+      {/* General Thoughts (rich text-lite) */}
+      <div className="space-y-3 p-4 bg-gradient-to-br from-card to-muted/20 rounded-xl border border-border">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-secondary/20 rounded-lg">
+              <Layers className="w-4 h-4 text-secondary-foreground" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold">General Thoughts</h3>
+              <p className="text-xs text-muted-foreground">Free-form notes to supplement your insight blocks</p>
+            </div>
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {isSavingThoughts ? 'Saving…' : lastSavedAt ? `Saved ${lastSavedAt.toLocaleTimeString()}` : ''}
+          </div>
+        </div>
+        <div className="relative">
+          <textarea
+            value={generalThoughts}
+            onChange={(e) => handleThoughtsChange(e.target.value)}
+            placeholder="Write anything that's on your mind today…"
+            className="w-full min-h-[140px] p-4 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground leading-7 resize-y focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+          />
+          <div className="absolute bottom-3 right-4 text-[11px] text-muted-foreground">
+            {generalThoughts.trim().split(/\s+/).filter(Boolean).length} words
+          </div>
+        </div>
+      </div>
 
       {/* Custom Template Editor Modal */}
       <CustomTemplateEditor
