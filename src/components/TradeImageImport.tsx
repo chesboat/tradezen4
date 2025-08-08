@@ -34,12 +34,16 @@ export const TradeImageImport: React.FC<TradeImageImportProps> = ({ isOpen, onCl
   const [parseError, setParseError] = React.useState<string | null>(null);
   const [parsedTrades, setParsedTrades] = React.useState<ParsedTrade[]>([]);
   const [isImporting, setIsImporting] = React.useState(false);
+  const [isDragging, setIsDragging] = React.useState(false);
 
   const handlePickFile = () => fileInputRef.current?.click();
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleFiles = async (file: File) => {
     if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setParseError('Please drop an image file');
+      return;
+    }
     const reader = new FileReader();
     reader.onload = async () => {
       const dataUrl = reader.result as string;
@@ -47,6 +51,20 @@ export const TradeImageImport: React.FC<TradeImageImportProps> = ({ isOpen, onCl
       await parseWithGPT(dataUrl);
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await handleFiles(file);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) await handleFiles(file);
   };
 
   const parseWithGPT = async (dataUrl: string) => {
@@ -164,10 +182,16 @@ Rules:\n- Times must be ISO 8601 (e.g., 2025-08-07T12:46:32-05:00) if visible, e
             <div className="p-4 space-y-4">
               {!imagePreview && (
                 <div
+                  onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                  onDragLeave={() => setIsDragging(false)}
+                  onDrop={handleDrop}
                   className={cn(
-                    'flex flex-col items-center justify-center gap-2 p-8 rounded-xl border border-dashed border-border text-muted-foreground bg-muted/20',
+                    'flex flex-col items-center justify-center gap-3 p-10 rounded-xl border border-dashed text-muted-foreground bg-muted/20 transition-colors',
+                    isDragging ? 'border-primary bg-primary/5' : 'border-border'
                   )}
                 >
+                  <div className="text-sm">Drag & drop an image here</div>
+                  <div className="text-xs">or</div>
                   <button
                     className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
                     onClick={handlePickFile}
