@@ -124,7 +124,15 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
     <div className={className}>
       <div className="border border-border rounded-lg p-3 bg-background">
         {editor && (
-          <BubbleMenu editor={editor} tippyOptions={{ duration: 150 }} className="flex items-center gap-1 bg-popover text-popover-foreground border border-border rounded-lg px-2 py-1 shadow">
+          <BubbleMenu
+            editor={editor}
+            tippyOptions={{ duration: 150, appendTo: () => document.body, zIndex: 9999 }}
+            shouldShow={({ editor }) => {
+              const { from, to } = editor.state.selection;
+              return editor.isFocused && to > from;
+            }}
+            className="flex items-center gap-1 bg-popover text-popover-foreground border border-border rounded-lg px-2 py-1 shadow"
+          >
             <button className="text-xs px-2 py-1 hover:bg-muted rounded" onClick={() => editor.chain().focus().toggleBold().run()}>Bold</button>
             <button className="text-xs px-2 py-1 hover:bg-muted rounded" onClick={() => editor.chain().focus().toggleItalic().run()}>Italic</button>
             <button className="text-xs px-2 py-1 hover:bg-muted rounded" onClick={() => editor.chain().focus().toggleUnderline().run()}>Underline</button>
