@@ -273,7 +273,7 @@ export const generateAISummaryWithAPI = async (data: DailyJournalData): Promise<
           content: JSON.stringify(data, null, 2),
         },
       ],
-      max_tokens: 700,
+      max_completion_tokens: 700,
       temperature: 0.6,
     });
 

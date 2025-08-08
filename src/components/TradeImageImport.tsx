@@ -35,6 +35,7 @@ export const TradeImageImport: React.FC<TradeImageImportProps> = ({ isOpen, onCl
   const [parsedTrades, setParsedTrades] = React.useState<ParsedTrade[]>([]);
   const [isImporting, setIsImporting] = React.useState(false);
   const [isDragging, setIsDragging] = React.useState(false);
+  const [parsedBaseDate, setParsedBaseDate] = React.useState<Date | null>(null);
 
   const handlePickFile = () => fileInputRef.current?.click();
 
@@ -81,8 +82,26 @@ export const TradeImageImport: React.FC<TradeImageImportProps> = ({ isOpen, onCl
       const openai = new OpenAI({ apiKey, dangerouslyAllowBrowser: true });
 
       const systemPrompt = `You are a precise data extraction engine. Extract trade rows from the provided screenshot of a trade table.
-Return ONLY valid JSON with the schema: { "trades": [ { "symbol": string, "direction": "long"|"short", "quantity": number?, "entryTime": string?, "exitTime": string?, "entryPrice": number?, "exitPrice": number?, "pnl": number?, "fees": number?, "commissions": number? } ] }
-Rules:\n- Times must be ISO 8601 (e.g., 2025-08-07T12:46:32-05:00) if visible, else omit.\n- Numbers should be plain (no $ or commas).\n- Direction should be long or short.\n- If a cell is blank or ambiguous, omit that field.`;
+Return ONLY valid JSON with the schema:
+{
+  "date": string?,                 // ISO date if a session date is visible (e.g., 2025-08-07)
+  "timezoneOffsetMinutes": number?, // If a timezone is shown, provide minutes offset from UTC (e.g., -300 for ET)
+  "trades": [
+    {
+      "symbol": string,
+      "direction": "long"|"short",
+      "quantity": number?,
+      "entryTime": string?,   // Prefer full ISO (e.g., 2025-08-07T12:46:32-05:00). If only a time is visible, return just the time string (e.g., 12:46:32 pm)
+      "exitTime": string?,
+      "entryPrice": number?,
+      "exitPrice": number?,
+      "pnl": number?,
+      "fees": number?,
+      "commissions": number?
+    }
+  ]
+}
+Rules:\n- Use data exactly as shown in the screenshot.\n- Numbers should be plain (no $ or commas).\n- Direction should be long or short.\n- If a cell is blank or ambiguous, omit that field.`;
 
       const userText = `Extract the trades visible in this screenshot. The columns often include ID, Symbol, Size/Quantity, Entry Time, Exit Time, Entry Price, Exit Price, P&L, Commissions, Fees, Direction. Only return JSON.`;
 
@@ -98,14 +117,57 @@ Rules:\n- Times must be ISO 8601 (e.g., 2025-08-07T12:46:32-05:00) if visible, e
             ] as any,
           },
         ],
-        max_tokens: 1200,
+        max_completion_tokens: 1200,
         temperature: 0.0,
       });
 
       const raw = completion.choices[0]?.message?.content || '';
       const cleaned = raw.replace(/```json\n?|```/g, '').trim();
-      const json = JSON.parse(cleaned) as { trades: ParsedTrade[] };
-      setParsedTrades(Array.isArray(json.trades) ? json.trades : []);
+      const json = JSON.parse(cleaned) as { date?: string; timezoneOffsetMinutes?: number; trades: ParsedTrade[] };
+      // If a session date was detected, keep as base for time-only cells
+      let baseDate: Date | null = null;
+      if (json.date) {
+        const tzOffset = typeof json.timezoneOffsetMinutes === 'number' ? json.timezoneOffsetMinutes : undefined;
+        const d = new Date(json.date);
+        if (tzOffset !== undefined && Number.isFinite(tzOffset)) {
+          // Normalize to provided timezone offset
+          const localOffset = d.getTimezoneOffset();
+          d.setMinutes(d.getMinutes() + (localOffset - tzOffset));
+        }
+        baseDate = d;
+      }
+
+      const toDate = (value: string | undefined, base: Date | null): Date | undefined => {
+        if (!value) return undefined;
+        const direct = new Date(value);
+        if (!isNaN(direct.getTime())) return direct;
+        if (!base) return undefined;
+        // Try parse time like 12:46:32 pm or 12:39:03 pm
+        const m = value.trim().match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(am|pm)?$/i);
+        if (!m) return undefined;
+        const hoursRaw = parseInt(m[1], 10);
+        const minutes = parseInt(m[2], 10);
+        const seconds = m[3] ? parseInt(m[3], 10) : 0;
+        const ampm = m[4]?.toLowerCase();
+        let hours = hoursRaw;
+        if (ampm === 'pm' && hours < 12) hours += 12;
+        if (ampm === 'am' && hours === 12) hours = 0;
+        const d = new Date(base);
+        d.setHours(hours, minutes, seconds, 0);
+        return d;
+      };
+
+      const normalized = (Array.isArray(json.trades) ? json.trades : []).map(t => {
+        const entry = toDate(t.entryTime as any, baseDate);
+        const exit = toDate(t.exitTime as any, baseDate);
+        return {
+          ...t,
+          entryTime: entry ? entry.toISOString() : t.entryTime,
+          exitTime: exit ? exit.toISOString() : t.exitTime,
+        } as ParsedTrade;
+      });
+      setParsedBaseDate(baseDate);
+      setParsedTrades(normalized);
     } catch (err: any) {
       console.error('Image parsing failed:', err);
       setParseError(err?.message || 'Failed to parse screenshot');

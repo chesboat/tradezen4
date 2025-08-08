@@ -181,7 +181,7 @@ Return JSON format:
           content: userPrompt,
         },
       ],
-      max_tokens: 1000,
+      max_completion_tokens: 1000,
       temperature: 0.6,
     });
 

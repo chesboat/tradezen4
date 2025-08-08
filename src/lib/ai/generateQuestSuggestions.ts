@@ -119,7 +119,7 @@ Focus on improvement areas based on the actual data provided.`;
       { role: 'system', content: QUEST_GENERATION_SYSTEM_PROMPT },
       { role: 'user', content: userPrompt }
     ],
-    max_tokens: 1200,
+    max_completion_tokens: 1200,
     temperature: 0.6,
   });
 
