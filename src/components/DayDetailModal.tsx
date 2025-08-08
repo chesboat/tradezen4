@@ -113,6 +113,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
   const [focusSuggestions, setFocusSuggestions] = useState<string[]>([]);
   const [previousDayFocus, setPreviousDayFocus] = useState<string>('');
   const [isGeneratingFocus, setIsGeneratingFocus] = useState(false);
+  const [showFocusAlternatives, setShowFocusAlternatives] = useState(false);
   
   // Legacy reflection states removed - now handled by ReflectionHub
 
@@ -1564,11 +1565,8 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
                                     <motion.button
                                       onClick={async () => {
                                         await generateFocusSuggestions();
-                                            setCollapsedSections(prev => ({ ...prev, focus: false }));
-                                            // After regeneration, show choices even if a focus was set
-                                            // by clearing the set focus temporarily for selection
-                                            // We keep the stored reflection as-is; this only affects UI
-                                            setFocusSuggestions(prev => prev);
+                                        setCollapsedSections(prev => ({ ...prev, focus: false }));
+                                        setShowFocusAlternatives(true);
                                       }}
                                       className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-muted hover:bg-muted/80 text-foreground rounded-lg transition-all font-medium"
                                       whileHover={{ scale: 1.02 }}
@@ -1578,6 +1576,55 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
                                       Change Focus
                                     </motion.button>
                                   </div>
+                                  {showFocusAlternatives && (
+                                    <div className="mt-4 space-y-2">
+                                      <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                          <Zap className="w-4 h-4 text-purple-500" />
+                                          <span className="text-sm font-medium text-foreground">Alternative Focus Suggestions</span>
+                                        </div>
+                                        <motion.button
+                                          onClick={() => setShowFocusAlternatives(false)}
+                                          className="text-xs text-muted-foreground hover:text-foreground"
+                                          whileHover={{ scale: 1.05 }}
+                                        >
+                                          Hide
+                                        </motion.button>
+                                      </div>
+                                      {isGeneratingFocus ? (
+                                        <div className="text-xs text-muted-foreground flex items-center gap-2">
+                                          <RotateCcw className="w-3 h-3 animate-spin" /> Regenerating...
+                                        </div>
+                                      ) : (
+                                        <div className="grid gap-2">
+                                          {focusSuggestions.map((suggestion, index) => (
+                                            <motion.button
+                                              key={`alt-${suggestion}`}
+                                              onClick={() => { setFocusFromSuggestion(suggestion); setShowFocusAlternatives(false); }}
+                                              className="p-3 text-left bg-muted/30 hover:bg-purple-500/10 border border-border/50 hover:border-purple-500/30 rounded-lg transition-all group"
+                                              whileHover={{ scale: 1.02 }}
+                                              whileTap={{ scale: 0.98 }}
+                                              initial={{ opacity: 0, x: -20 }}
+                                              animate={{ opacity: 1, x: 0 }}
+                                              transition={{ delay: index * 0.05 }}
+                                            >
+                                              <div className="flex items-center justify-between">
+                                                <span className="text-sm text-foreground group-hover:text-purple-600 dark:group-hover:text-purple-400">
+                                                  {suggestion}
+                                                </span>
+                                                <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                                  <Check className="w-4 h-4 text-purple-500" />
+                                                </div>
+                                              </div>
+                                            </motion.button>
+                                          ))}
+                                          {focusSuggestions.length === 0 && (
+                                            <div className="text-xs text-muted-foreground">No alternative suggestions found.</div>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
                                 </motion.div>
                               ) : (
                   <div className="space-y-4">
