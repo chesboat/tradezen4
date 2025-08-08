@@ -16,6 +16,7 @@ interface DailyReflectionData {
   id: string;
   date: string; // YYYY-MM-DD format
   reflection: string;
+  reflectionRich?: any; // TipTap JSON
   keyFocus: string;
   isComplete: boolean;
   moodTimeline: MoodEntry[];
@@ -151,6 +152,7 @@ export const useDailyReflectionStore = create<DailyReflectionState>()(
             ref = get().addReflection({
               date,
               reflection: updates.reflection ?? '',
+              reflectionRich: (updates as any).reflectionRich,
               keyFocus: normalizeKeyFocus(updates.keyFocus),
               isComplete: updates.isComplete ?? false,
               moodTimeline: updates.moodTimeline ?? [],
@@ -483,6 +485,7 @@ export const useDailyReflectionStore = create<DailyReflectionState>()(
           if (stored.length > 0) {
             const parsedReflections = stored.map((reflection: any) => ({
               ...reflection,
+              reflectionRich: reflection.reflectionRich ?? reflection.reflection_json ?? undefined,
               keyFocus: typeof reflection.keyFocus === 'string' 
                 ? reflection.keyFocus 
                 : (reflection.keyFocus && typeof reflection.keyFocus.title === 'string' 

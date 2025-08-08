@@ -44,7 +44,7 @@ export const ReflectionHub: React.FC<ReflectionHubProps> = ({ date, className })
     setGeneralThoughts(existing?.reflection || '');
   }, [date, selectedAccountId, getReflectionByDate]);
 
-  // Debounced save for general thoughts
+  // Debounced save for general thoughts (persist both plain text and rich JSON placeholder when added)
   const saveThoughts = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleThoughtsChange = (value: string) => {
     setGeneralThoughts(value);
