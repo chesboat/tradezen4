@@ -115,6 +115,8 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
   const [isGeneratingFocus, setIsGeneratingFocus] = useState(false);
   const [showFocusAlternatives, setShowFocusAlternatives] = useState(false);
   const [focusSuggestionMap, setFocusSuggestionMap] = useState<Record<string, Partial<Quest>>>({});
+  const [isPinningQuest, setIsPinningQuest] = useState(false);
+  const [isQuestPinned, setIsQuestPinned] = useState(false);
   
   // Legacy reflection states removed - now handled by ReflectionHub
 
@@ -331,29 +333,35 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
   const handleAddKeyFocusAsQuest = async () => {
     if (!dailyReflection?.keyFocus) return;
     
-    const quest = await addQuest({
-      title: `Daily Focus: ${new Date().toLocaleDateString()}`,
-      description: dailyReflection.keyFocus,
-      type: 'daily',
-      status: 'pending',
-      progress: 0,
-      maxProgress: 1,
-      xpReward: 25,
-      dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
-      accountId: selectedAccountId || 'all',
-    });
-    
-    // Pin the quest to make it appear in the pinned section
-    pinQuest(quest.id);
-    
-    addActivity({
-      type: 'quest',
-      title: 'Added Daily Focus Quest',
-      description: `Pinned: ${dailyReflection.keyFocus}`,
-      xpEarned: 5,
-      relatedId: dailyReflection.id,
-      accountId: selectedAccountId || 'all',
-    });
+    setIsPinningQuest(true);
+    try {
+      const quest = await addQuest({
+        title: `Daily Focus: ${new Date().toLocaleDateString()}`,
+        description: dailyReflection.keyFocus,
+        type: 'daily',
+        status: 'pending',
+        progress: 0,
+        maxProgress: 1,
+        xpReward: 25,
+        dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
+        accountId: selectedAccountId || 'all',
+      });
+
+      // Pin the quest to make it appear in the pinned section
+      pinQuest(quest.id);
+      setIsQuestPinned(true);
+
+      addActivity({
+        type: 'quest',
+        title: 'Added Daily Focus Quest',
+        description: `Pinned: ${dailyReflection.keyFocus}`,
+        xpEarned: 5,
+        relatedId: dailyReflection.id,
+        accountId: selectedAccountId || 'all',
+      });
+    } finally {
+      setIsPinningQuest(false);
+    }
   };
   
   // Generate AI mood summary
@@ -1562,26 +1570,28 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
                                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                                     <motion.button
                                       onClick={handleAddKeyFocusAsQuest}
-                                      className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg transition-all hover:shadow-lg font-medium"
+                                      disabled={isPinningQuest || isQuestPinned}
+                                      className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg transition-all hover:shadow-lg font-medium disabled:opacity-60"
                                       whileHover={{ scale: 1.02 }}
                                       whileTap={{ scale: 0.98 }}
                                     >
                                       <Pin className="w-4 h-4" />
-                                      Pin as Quest
+                                      {isQuestPinned ? 'Pinned' : (isPinningQuest ? 'Pinning…' : 'Pin as Quest')}
                                       <span className="px-2 py-0.5 bg-white/20 rounded-full text-xs">+25 XP</span>
                                     </motion.button>
                                     <motion.button
                                       onClick={async () => {
+                                        setShowFocusAlternatives(true);
+                                        setIsGeneratingFocus(true);
                                         await generateFocusSuggestions();
                                         setCollapsedSections(prev => ({ ...prev, focus: false }));
-                                        setShowFocusAlternatives(true);
                                       }}
                                       className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-muted hover:bg-muted/80 text-foreground rounded-lg transition-all font-medium"
                                       whileHover={{ scale: 1.02 }}
                                       whileTap={{ scale: 0.98 }}
                                     >
-                                      <RotateCcw className="w-4 h-4" />
-                                      Change Focus
+                                      <RotateCcw className={cn("w-4 h-4", isGeneratingFocus && "animate-spin")} />
+                                      {isGeneratingFocus ? 'Regenerating…' : 'Change Focus'}
                                     </motion.button>
                                   </div>
                                   {showFocusAlternatives && (
