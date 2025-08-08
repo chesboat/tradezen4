@@ -136,6 +136,12 @@ export const useDailyReflectionStore = create<DailyReflectionState>()(
 
       // Create or update the same reflection data across a selection (single or group)
       upsertReflectionForSelection: (date, updates, selectedAccountId) => {
+        const normalizeKeyFocus = (val: any): string => {
+          if (typeof val === 'string') return val;
+          if (!val) return '';
+          if (typeof (val as any).title === 'string') return (val as any).title as string;
+          try { return JSON.stringify(val); } catch { return String(val); }
+        };
         const groupIds = getGroupIdsFromAnySelection(selectedAccountId);
         const { reflections } = get();
         const now = new Date();
@@ -145,7 +151,7 @@ export const useDailyReflectionStore = create<DailyReflectionState>()(
             ref = get().addReflection({
               date,
               reflection: updates.reflection ?? '',
-              keyFocus: updates.keyFocus ?? '',
+              keyFocus: normalizeKeyFocus(updates.keyFocus),
               isComplete: updates.isComplete ?? false,
               moodTimeline: updates.moodTimeline ?? [],
               streakCount: 0,
@@ -157,7 +163,11 @@ export const useDailyReflectionStore = create<DailyReflectionState>()(
               accountId,
             });
           } else {
-            get().updateReflection(ref.id, { ...updates, updatedAt: now });
+            const nextUpdates = { ...updates } as any;
+            if (Object.prototype.hasOwnProperty.call(nextUpdates, 'keyFocus')) {
+              nextUpdates.keyFocus = normalizeKeyFocus(nextUpdates.keyFocus);
+            }
+            get().updateReflection(ref.id, { ...nextUpdates, updatedAt: now });
           }
         };
         groupIds.forEach(ensure);
@@ -473,6 +483,11 @@ export const useDailyReflectionStore = create<DailyReflectionState>()(
           if (stored.length > 0) {
             const parsedReflections = stored.map((reflection: any) => ({
               ...reflection,
+              keyFocus: typeof reflection.keyFocus === 'string' 
+                ? reflection.keyFocus 
+                : (reflection.keyFocus && typeof reflection.keyFocus.title === 'string' 
+                    ? reflection.keyFocus.title 
+                    : (reflection.keyFocus ? JSON.stringify(reflection.keyFocus) : '')),
               reflectionTags: reflection.reflectionTags || [], // Backward compatibility
               createdAt: new Date(reflection.createdAt),
               updatedAt: new Date(reflection.updatedAt),

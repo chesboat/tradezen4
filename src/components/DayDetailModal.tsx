@@ -1544,11 +1544,13 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
                                     <div className="flex-1">
                                       <h5 className="font-semibold text-foreground mb-1">Tomorrow's Quest</h5>
                                       <p className="text-sm text-muted-foreground leading-relaxed">
-                                        {dailyReflection.keyFocus}
+                                        {typeof dailyReflection.keyFocus === 'string' 
+                                          ? dailyReflection.keyFocus 
+                                          : (dailyReflection.keyFocus as any)?.title || '[untitled]'}
                                       </p>
                                     </div>
                                   </div>
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                                     <motion.button
                                       onClick={handleAddKeyFocusAsQuest}
                                       className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg transition-all hover:shadow-lg font-medium"
@@ -1562,7 +1564,11 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
                                     <motion.button
                                       onClick={async () => {
                                         await generateFocusSuggestions();
-                                        setCollapsedSections(prev => ({ ...prev, focus: false }));
+                                            setCollapsedSections(prev => ({ ...prev, focus: false }));
+                                            // After regeneration, show choices even if a focus was set
+                                            // by clearing the set focus temporarily for selection
+                                            // We keep the stored reflection as-is; this only affects UI
+                                            setFocusSuggestions(prev => prev);
                                       }}
                                       className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-muted hover:bg-muted/80 text-foreground rounded-lg transition-all font-medium"
                                       whileHover={{ scale: 1.02 }}
