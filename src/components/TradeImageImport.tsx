@@ -117,13 +117,34 @@ Rules:\n- Use data exactly as shown in the screenshot.\n- Numbers should be plai
             ] as any,
           },
         ],
+        response_format: { type: 'json_object' } as any,
         max_completion_tokens: 1200,
       });
 
-      const raw = completion.choices[0]?.message?.content?.trim() || '';
+      let raw = completion.choices[0]?.message?.content?.trim() || '';
       if (!raw) {
-        throw new Error('Empty AI response');
+        // Fallback attempt with gpt-4o-mini
+        try {
+          const backup = await openai.chat.completions.create({
+            model: 'gpt-4o-mini',
+            messages: [
+              { role: 'system', content: systemPrompt },
+              {
+                role: 'user',
+                content: [
+                  { type: 'text', text: userText } as any,
+                  { type: 'image_url', image_url: { url: dataUrl } } as any,
+                ] as any,
+              },
+            ],
+            response_format: { type: 'json_object' } as any,
+          });
+          raw = backup.choices[0]?.message?.content?.trim() || '';
+        } catch (e) {
+          console.error('Backup model failed:', e);
+        }
       }
+      if (!raw) throw new Error('Empty AI response');
       // Try strict parsing, then fenced cleanup, then best-effort brace slice
       const tryParse = (text: string) => {
         try { return JSON.parse(text); } catch { return undefined; }
