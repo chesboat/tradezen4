@@ -120,14 +120,36 @@ Rules:\n- Use data exactly as shown in the screenshot.\n- Numbers should be plai
         max_completion_tokens: 1200,
       });
 
-      const raw = completion.choices[0]?.message?.content || '';
-      const cleaned = raw.replace(/```json\n?|```/g, '').trim();
-      const json = JSON.parse(cleaned) as { date?: string; timezoneOffsetMinutes?: number; trades: ParsedTrade[] };
+      const raw = completion.choices[0]?.message?.content?.trim() || '';
+      if (!raw) {
+        throw new Error('Empty AI response');
+      }
+      // Try strict parsing, then fenced cleanup, then best-effort brace slice
+      const tryParse = (text: string) => {
+        try { return JSON.parse(text); } catch { return undefined; }
+      };
+      let json: any = tryParse(raw);
+      if (!json) {
+        const unfenced = raw.replace(/```json\n?|```/gi, '').trim();
+        json = tryParse(unfenced);
+      }
+      if (!json) {
+        const start = raw.indexOf('{');
+        const end = raw.lastIndexOf('}');
+        if (start !== -1 && end !== -1 && end > start) {
+          json = tryParse(raw.slice(start, end + 1));
+        }
+      }
+      if (!json) {
+        console.warn('Unparsable AI response:', raw);
+        throw new Error('AI returned non‑JSON output. Please try again.');
+      }
+      const { date, timezoneOffsetMinutes, trades } = json as { date?: string; timezoneOffsetMinutes?: number; trades: ParsedTrade[] };
       // If a session date was detected, keep as base for time-only cells
       let baseDate: Date | null = null;
-      if (json.date) {
-        const tzOffset = typeof json.timezoneOffsetMinutes === 'number' ? json.timezoneOffsetMinutes : undefined;
-        const d = new Date(json.date);
+      if (date) {
+        const tzOffset = typeof timezoneOffsetMinutes === 'number' ? timezoneOffsetMinutes : undefined;
+        const d = new Date(date);
         if (tzOffset !== undefined && Number.isFinite(tzOffset)) {
           // Normalize to provided timezone offset
           const localOffset = d.getTimezoneOffset();
@@ -156,7 +178,7 @@ Rules:\n- Use data exactly as shown in the screenshot.\n- Numbers should be plai
         return d;
       };
 
-      const normalized = (Array.isArray(json.trades) ? json.trades : []).map(t => {
+      const normalized = (Array.isArray(trades) ? trades : []).map(t => {
         const entry = toDate(t.entryTime as any, baseDate);
         const exit = toDate(t.exitTime as any, baseDate);
         return {
