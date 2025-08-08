@@ -45,16 +45,20 @@ Difficulty Guidelines:
 - If recent losses: Focus on process over profit
 - If recent wins: Focus on maintaining discipline
 
-Return JSON array of 3-5 quest suggestions:
-[{
-  "title": "Specific quest name",
-  "description": "Clear, actionable description referencing actual data",
-  "type": "daily|weekly|monthly",
-  "xpReward": number (25-500 based on difficulty),
-  "category": "category",
-  "maxProgress": number (1-10),
-  "reasoning": "Why this quest helps based on their data"
-}]`;
+Return STRICT JSON as an object with a single key "quests" containing an array of 3-5 suggestions. No commentary outside JSON:
+{
+  "quests": [
+    {
+      "title": "Specific quest name",
+      "description": "Clear, actionable description referencing actual data",
+      "type": "daily|weekly|monthly",
+      "xpReward": 25,
+      "category": "risk_management|emotional_control|technical_analysis|consistency|learning",
+      "maxProgress": 1,
+      "reasoning": "Why this quest helps based on their data"
+    }
+  ]
+}`;
 
 export const generateQuestSuggestions = async (
   request: QuestSuggestionRequest
@@ -113,31 +117,49 @@ Generate 3-4 specific quests that address this trader's current needs and perfor
 Focus on improvement areas based on the actual data provided.`;
 
   console.log('🔄 Calling OpenAI API...');
-  const completion = await openai.chat.completions.create({
-    model: 'gpt-5-mini',
+  const invoke = (model: string) => openai.chat.completions.create({
+    model,
     messages: [
       { role: 'system', content: QUEST_GENERATION_SYSTEM_PROMPT },
       { role: 'user', content: userPrompt }
     ],
+    response_format: { type: 'json_object' },
     max_completion_tokens: 1200,
   });
 
+  let completion = await invoke('gpt-5-mini');
   console.log('📨 Received OpenAI response');
-  const responseContent = completion.choices[0]?.message?.content;
-  if (!responseContent) {
+  let responseContent = completion.choices[0]?.message?.content || '';
+  if (!responseContent.trim()) {
+    console.warn('⚠️ Empty content from gpt-5-mini, retrying with gpt-4o-mini');
+    completion = await invoke('gpt-4o-mini');
+    console.log('📨 Received OpenAI response (fallback)');
+    responseContent = completion.choices[0]?.message?.content || '';
+  }
+
+  if (!responseContent.trim()) {
     throw new Error('No response from AI');
   }
 
   console.log('📝 Raw AI response:', responseContent);
   
-  // Clean the response by removing markdown code blocks
-  const cleanedResponse = responseContent
-    .replace(/```json\n?/g, '')
-    .replace(/```\n?/g, '')
-    .trim();
-  
-  console.log('🧹 Cleaned response:', cleanedResponse);
-  const aiSuggestions: AIQuestSuggestion[] = JSON.parse(cleanedResponse);
+  // Parse either {quests: []} or []
+  let aiSuggestions: AIQuestSuggestion[] = [];
+  try {
+    const parsed = JSON.parse(responseContent);
+    if (Array.isArray(parsed)) aiSuggestions = parsed as AIQuestSuggestion[];
+    else if (parsed && Array.isArray(parsed.quests)) aiSuggestions = parsed.quests as AIQuestSuggestion[];
+  } catch (_) {
+    // Strip code fences and retry
+    const cleaned = responseContent.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    const parsed = JSON.parse(cleaned);
+    if (Array.isArray(parsed)) aiSuggestions = parsed as AIQuestSuggestion[];
+    else if (parsed && Array.isArray(parsed.quests)) aiSuggestions = parsed.quests as AIQuestSuggestion[];
+  }
+
+  if (!aiSuggestions || aiSuggestions.length === 0) {
+    throw new Error('Empty AI suggestions');
+  }
   console.log('🧠 Generated AI quest suggestions:', aiSuggestions.map(q => q.title));
 
   // Convert AI suggestions to Quest format
