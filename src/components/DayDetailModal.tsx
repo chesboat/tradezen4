@@ -37,7 +37,7 @@ import { useDailyReflectionStore } from '@/store/useDailyReflectionStore';
 import { useQuestStore } from '@/store/useQuestStore';
 import { generateDailyFocus } from '@/lib/ai/generateDailyFocus';
 import { generateQuestSuggestions } from '@/lib/ai/generateQuestSuggestions';
-import { CalendarDay, TradeResult, MoodType } from '@/types';
+import { CalendarDay, TradeResult, MoodType, Quest } from '@/types';
 import { formatCurrency, formatDate, getMoodColor, formatTime } from '@/lib/localStorageUtils';
 
 import { cn } from '@/lib/utils';
@@ -114,6 +114,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
   const [previousDayFocus, setPreviousDayFocus] = useState<string>('');
   const [isGeneratingFocus, setIsGeneratingFocus] = useState(false);
   const [showFocusAlternatives, setShowFocusAlternatives] = useState(false);
+  const [focusSuggestionMap, setFocusSuggestionMap] = useState<Record<string, Partial<Quest>>>({});
   
   // Legacy reflection states removed - now handled by ReflectionHub
 
@@ -545,6 +546,9 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
         const unique = Array.from(new Set(titles));
         if (unique.length > 0) {
           setFocusSuggestions(unique.slice(0, 5));
+          const map: Record<string, Partial<Quest>> = {};
+          aiQuests.forEach(q => { map[q.title] = q; });
+          setFocusSuggestionMap(map);
           return;
         }
       } catch (_) {
@@ -552,8 +556,12 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
       }
 
       // Fallback: mood-based local focus
-      const fallback = (await generateDailyFocus(currentMood as MoodType)).map(q => q.title);
+      const fallbackQuests = await generateDailyFocus(currentMood as MoodType);
+      const fallback = fallbackQuests.map(q => q.title);
       setFocusSuggestions(Array.from(new Set(fallback)).slice(0, 3));
+      const map: Record<string, Partial<Quest>> = {};
+      fallbackQuests.forEach(q => { map[q.title] = q; });
+      setFocusSuggestionMap(map);
       
     } catch (error) {
       console.error('Failed to generate AI focus suggestions:', error);
@@ -1609,9 +1617,24 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
                                               transition={{ delay: index * 0.05 }}
                                             >
                                               <div className="flex items-center justify-between">
-                                                <span className="text-sm text-foreground group-hover:text-purple-600 dark:group-hover:text-purple-400">
-                                                  {suggestion}
-                                                </span>
+                                                <div>
+                                                  <div className="text-sm text-foreground group-hover:text-purple-600 dark:group-hover:text-purple-400 font-medium">
+                                                    {suggestion}
+                                                  </div>
+                                                  {focusSuggestionMap[suggestion]?.description && (
+                                                    <div className="text-xs text-muted-foreground mt-1">
+                                                      {focusSuggestionMap[suggestion]?.description as string}
+                                                    </div>
+                                                  )}
+                                                  {focusSuggestionMap[suggestion]?.maxProgress !== undefined && (
+                                                    <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-muted-foreground">
+                                                      <span className="px-2 py-0.5 bg-muted/40 rounded-full">Steps: {focusSuggestionMap[suggestion]?.maxProgress}</span>
+                                                      {typeof focusSuggestionMap[suggestion]?.xpReward === 'number' && (
+                                                        <span className="px-2 py-0.5 bg-purple-500/10 text-purple-600 rounded-full">{focusSuggestionMap[suggestion]?.xpReward} XP</span>
+                                                      )}
+                                                    </div>
+                                                  )}
+                                                </div>
                                                 <div className="opacity-0 group-hover:opacity-100 transition-opacity">
                                                   <Check className="w-4 h-4 text-purple-500" />
                                                 </div>
