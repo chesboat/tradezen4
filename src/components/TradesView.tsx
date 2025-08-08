@@ -61,7 +61,7 @@ interface TradesViewProps {
 }
 
 export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
-  const { trades, deleteTrade } = useTradeStore();
+  const { trades, deleteTrade, updateTrade } = useTradeStore();
   const { accounts, selectedAccountId } = useAccountFilterStore();
   
   const [viewMode, setViewMode] = useState<ViewMode>('table');
@@ -86,6 +86,7 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedTrades, setSelectedTrades] = useState<Set<string>>(new Set());
   const [showImageImport, setShowImageImport] = useState(false);
+  const [bulkMood, setBulkMood] = useState<MoodType | ''>('');
 
   // Get unique symbols for filter dropdown
   const uniqueSymbols = useMemo(() => {
@@ -576,11 +577,40 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="bg-primary/10 border border-primary/20 rounded-lg p-4 flex items-center justify-between"
+            className="bg-primary/10 border border-primary/20 rounded-lg p-4 flex items-center justify-between gap-3 flex-wrap"
           >
             <span className="text-sm text-foreground">
               {selectedTrades.size} trades selected
             </span>
+            <div className="flex items-center gap-2">
+              <select
+                value={bulkMood}
+                onChange={(e) => setBulkMood(e.target.value as MoodType | '')}
+                className="px-2 py-2 bg-background border border-border rounded-lg text-sm"
+              >
+                <option value="">Set mood…</option>
+                <option value="excellent">Excellent</option>
+                <option value="good">Good</option>
+                <option value="neutral">Neutral</option>
+                <option value="poor">Poor</option>
+                <option value="terrible">Terrible</option>
+              </select>
+              <button
+                disabled={!bulkMood}
+                onClick={async () => {
+                  if (!bulkMood) return;
+                  const ids = Array.from(selectedTrades);
+                  for (const id of ids) {
+                    await updateTrade(id, { mood: bulkMood });
+                  }
+                  setSelectedTrades(new Set());
+                  setBulkMood('');
+                }}
+                className="px-3 py-2 bg-primary text-primary-foreground rounded-lg disabled:opacity-50"
+              >
+                Apply
+              </button>
+            </div>
             <button
               onClick={handleDeleteSelected}
               className="flex items-center gap-2 px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
