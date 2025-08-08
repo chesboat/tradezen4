@@ -15,6 +15,7 @@ import { useReflectionTemplateStore } from '@/store/useReflectionTemplateStore';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
 import { useDailyReflectionStore } from '@/store/useDailyReflectionStore';
 import { cn } from '@/lib/utils';
+import TipTapEditor from './TipTapEditor';
 
 interface ReflectionHubProps {
   date: string; // YYYY-MM-DD format
@@ -141,7 +142,7 @@ export const ReflectionHub: React.FC<ReflectionHubProps> = ({ date, className })
         }}
       />
 
-      {/* General Thoughts (rich text-lite) */}
+      {/* General Thoughts (TipTap editor) */}
       <div className="space-y-3 p-4 bg-gradient-to-br from-card to-muted/20 rounded-xl border border-border">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -157,17 +158,17 @@ export const ReflectionHub: React.FC<ReflectionHubProps> = ({ date, className })
             {isSavingThoughts ? 'Saving…' : lastSavedAt ? `Saved ${lastSavedAt.toLocaleTimeString()}` : ''}
           </div>
         </div>
-        <div className="relative">
-          <textarea
-            value={generalThoughts}
-            onChange={(e) => handleThoughtsChange(e.target.value)}
-            placeholder="Write anything that's on your mind today…"
-            className="w-full min-h-[140px] p-4 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground leading-7 resize-y focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-          />
-          <div className="absolute bottom-3 right-4 text-[11px] text-muted-foreground">
-            {generalThoughts.trim().split(/\s+/).filter(Boolean).length} words
-          </div>
-        </div>
+        <TipTapEditor
+          initialJSON={getReflectionByDate(date, selectedAccountId!)?.reflectionRich}
+          onUpdateJSON={(json, plain) => {
+            handleThoughtsChange(plain);
+            // Save rich JSON as well
+            if (selectedAccountId) {
+              upsertReflectionForSelection(date, { reflectionRich: json }, selectedAccountId);
+            }
+          }}
+          placeholder="Write anything that's on your mind today… Use / for commands, **bold**, *italic*, and checklists."
+        />
       </div>
 
       {/* Custom Template Editor Modal */}
