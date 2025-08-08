@@ -118,7 +118,6 @@ Rules:\n- Use data exactly as shown in the screenshot.\n- Numbers should be plai
           },
         ],
         max_completion_tokens: 1200,
-        temperature: 0.0,
       });
 
       const raw = completion.choices[0]?.message?.content || '';

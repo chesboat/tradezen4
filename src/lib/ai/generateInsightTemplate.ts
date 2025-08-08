@@ -182,7 +182,6 @@ Return JSON format:
         },
       ],
       max_completion_tokens: 1000,
-      temperature: 0.6,
     });
 
     const responseContent = completion.choices[0]?.message?.content;

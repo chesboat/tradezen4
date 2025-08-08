@@ -120,7 +120,6 @@ Focus on improvement areas based on the actual data provided.`;
       { role: 'user', content: userPrompt }
     ],
     max_completion_tokens: 1200,
-    temperature: 0.6,
   });
 
   console.log('📨 Received OpenAI response');

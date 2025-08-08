@@ -274,7 +274,6 @@ export const generateAISummaryWithAPI = async (data: DailyJournalData): Promise<
         },
       ],
       max_completion_tokens: 700,
-      temperature: 0.6,
     });
 
     return completion.choices[0]?.message?.content || generateFallbackSummary(data);
