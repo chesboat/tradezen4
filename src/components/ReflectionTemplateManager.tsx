@@ -538,6 +538,9 @@ export const ReflectionTemplateManager: React.FC<ReflectionTemplateManagerProps>
         relatedId: currentReflection.id,
         accountId: selectedAccountId,
       });
+
+      // Lightweight visual feedback
+      alert(`Reflection completed! +${totalXP + bonusXP} XP awarded.`);
     } catch (e) {
       console.error('Failed to complete reflection:', e);
     }
