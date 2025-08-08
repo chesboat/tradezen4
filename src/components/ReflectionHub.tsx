@@ -168,6 +168,41 @@ export const ReflectionHub: React.FC<ReflectionHubProps> = ({ date, className })
             }
           }}
           placeholder="Write anything that's on your mind today… Use / for commands, **bold**, *italic*, and checklists."
+          onConvertSelectionToInsight={(text) => {
+            if (!selectedAccountId) return;
+            const existing = getReflectionByDate(date, selectedAccountId);
+            if (!existing) return;
+            // Create an Insight Block with selected text
+            // Defer to the template store
+            // Import store lazily to avoid circular imports
+            import('@/store/useReflectionTemplateStore').then(({ useReflectionTemplateStore }) => {
+              const { addInsightBlock } = useReflectionTemplateStore.getState();
+              addInsightBlock(existing.id, {
+                title: 'Insight',
+                content: text,
+                tags: [],
+                order: existing.insightBlocks?.length || 0,
+                isExpanded: true,
+              } as any);
+            });
+          }}
+          onPinSelectionAsQuest={(text) => {
+            // Pin a quest from selected text
+            import('@/store/useQuestStore').then(({ useQuestStore }) => {
+              const { addQuest, pinQuest } = useQuestStore.getState();
+              addQuest({
+                title: 'Journal Task',
+                description: text,
+                type: 'daily',
+                status: 'pending',
+                progress: 0,
+                maxProgress: 1,
+                xpReward: 25,
+                dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
+                accountId: selectedAccountId || 'all',
+              }).then(q => pinQuest(q.id));
+            });
+          }}
         />
       </div>
 

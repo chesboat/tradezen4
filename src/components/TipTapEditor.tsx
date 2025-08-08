@@ -1,5 +1,5 @@
 import React from 'react';
-import { EditorContent, useEditor } from '@tiptap/react';
+import { EditorContent, useEditor, BubbleMenu } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import Underline from '@tiptap/extension-underline';
@@ -16,6 +16,8 @@ interface TipTapEditorProps {
   onUpdateJSON?: (json: any, plainText: string) => void;
   placeholder?: string;
   className?: string;
+  onConvertSelectionToInsight?: (text: string) => void;
+  onPinSelectionAsQuest?: (text: string) => void;
 }
 
 export const TipTapEditor: React.FC<TipTapEditorProps> = ({
@@ -23,6 +25,8 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
   onUpdateJSON,
   placeholder,
   className,
+  onConvertSelectionToInsight,
+  onPinSelectionAsQuest,
 }) => {
   const editor = useEditor({
     extensions: [
@@ -53,6 +57,40 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
   return (
     <div className={className}>
       <div className="border border-border rounded-lg p-3 bg-background">
+        {editor && (
+          <BubbleMenu editor={editor} tippyOptions={{ duration: 150 }} className="flex items-center gap-1 bg-popover text-popover-foreground border border-border rounded-lg px-2 py-1 shadow">
+            <button className="text-xs px-2 py-1 hover:bg-muted rounded" onClick={() => editor.chain().focus().toggleBold().run()}>Bold</button>
+            <button className="text-xs px-2 py-1 hover:bg-muted rounded" onClick={() => editor.chain().focus().toggleItalic().run()}>Italic</button>
+            <button className="text-xs px-2 py-1 hover:bg-muted rounded" onClick={() => editor.chain().focus().toggleUnderline().run()}>Underline</button>
+            <span className="mx-1 h-4 w-px bg-border" />
+            <button className="text-xs px-2 py-1 hover:bg-muted rounded" onClick={() => editor.chain().focus().toggleBulletList().run()}>• List</button>
+            <button className="text-xs px-2 py-1 hover:bg-muted rounded" onClick={() => editor.chain().focus().toggleOrderedList().run()}>1. List</button>
+            <button className="text-xs px-2 py-1 hover:bg-muted rounded" onClick={() => editor.chain().focus().toggleTaskList().run()}>☑︎ Tasks</button>
+            <span className="mx-1 h-4 w-px bg-border" />
+            <button
+              className="text-xs px-2 py-1 hover:bg-muted rounded"
+              onClick={() => {
+                const sel = editor.state.doc.textBetween(editor.state.selection.from, editor.state.selection.to).trim();
+                if (sel) onConvertSelectionToInsight?.(sel);
+              }}
+            >Insight</button>
+            <button
+              className="text-xs px-2 py-1 hover:bg-muted rounded"
+              onClick={() => {
+                const sel = editor.state.doc.textBetween(editor.state.selection.from, editor.state.selection.to).trim();
+                if (sel) onPinSelectionAsQuest?.(sel);
+              }}
+            >Pin Quest</button>
+            <button
+              className="text-xs px-2 py-1 hover:bg-muted rounded"
+              onClick={() => {
+                const href = window.prompt('Link to (URL or trade id e.g. #trade:abc123):');
+                if (!href) return;
+                editor.chain().focus().setLink({ href }).run();
+              }}
+            >Link</button>
+          </BubbleMenu>
+        )}
         <EditorContent editor={editor} />
       </div>
     </div>
