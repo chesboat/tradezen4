@@ -181,31 +181,99 @@ Rules:\n- Use data exactly as shown in the screenshot.\n- Numbers should be plai
 
       const toDate = (value: string | undefined, base: Date | null): Date | undefined => {
         if (!value) return undefined;
-        const direct = new Date(value);
-        if (!isNaN(direct.getTime())) return direct;
+        const text = value.trim().replace(/\s*@\s*/g, ' ').replace(/\s{2,}/g, ' ');
+        // 1) Native parse first
+        const native = new Date(text);
+        if (!isNaN(native.getTime())) return native;
+
+        // Helpers
+        const monthIndex = (m: string): number => {
+          const map: Record<string, number> = {
+            january: 0, february: 1, march: 2, april: 3, may: 4, june: 5,
+            july: 6, august: 7, september: 8, october: 9, november: 10, december: 11,
+            jan: 0, feb: 1, mar: 2, apr: 3, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11,
+          };
+          const key = m.toLowerCase().replace(/\./g, '');
+          return map[key] ?? -1;
+        };
+        const finalize = (y: number, mo: number, d: number, h = 0, mi = 0, s = 0, ampm?: string) => {
+          let hours = h;
+          if (ampm) {
+            const ap = ampm.toLowerCase();
+            if (ap === 'pm' && hours < 12) hours += 12;
+            if (ap === 'am' && hours === 12) hours = 0;
+          }
+          const dt = new Date(y, mo, d, hours, mi, s, 0);
+          return dt;
+        };
+
+        // 2) Month name formats: "August 7 2025 12:46:32 pm" or with comma
+        let m = text.match(/^(January|February|March|April|May|June|July|August|September|October|November|December|Jan\.?|Feb\.?|Mar\.?|Apr\.?|Jun\.?|Jul\.?|Aug\.?|Sep\.?|Oct\.?|Nov\.?|Dec\.?)\s+(\d{1,2}),?\s+(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(am|pm)?)?$/i);
+        if (m) {
+          const mo = monthIndex(m[1]);
+          const day = parseInt(m[2], 10);
+          const year = parseInt(m[3], 10);
+          const hh = m[4] ? parseInt(m[4], 10) : 0;
+          const mm = m[5] ? parseInt(m[5], 10) : 0;
+          const ss = m[6] ? parseInt(m[6], 10) : 0;
+          const ap = m[7];
+          if (mo >= 0) return finalize(year, mo, day, hh, mm, ss, ap);
+        }
+
+        // 3) mm/dd/yyyy optional time
+        m = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(am|pm)?)?$/i);
+        if (m) {
+          const mo = parseInt(m[1], 10) - 1;
+          const day = parseInt(m[2], 10);
+          const year = parseInt(m[3], 10);
+          const hh = m[4] ? parseInt(m[4], 10) : 0;
+          const mm = m[5] ? parseInt(m[5], 10) : 0;
+          const ss = m[6] ? parseInt(m[6], 10) : 0;
+          const ap = m[7];
+          return finalize(year, mo, day, hh, mm, ss, ap);
+        }
+
+        // 4) yyyy-mm-dd optional time with am/pm
+        m = text.match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?\s*(am|pm)?)?$/i);
+        if (m) {
+          const year = parseInt(m[1], 10);
+          const mo = parseInt(m[2], 10) - 1;
+          const day = parseInt(m[3], 10);
+          const hh = m[4] ? parseInt(m[4], 10) : 0;
+          const mm = m[5] ? parseInt(m[5], 10) : 0;
+          const ss = m[6] ? parseInt(m[6], 10) : 0;
+          const ap = m[7];
+          return finalize(year, mo, day, hh, mm, ss, ap);
+        }
+
+        // 5) Time-only, use base date
         if (!base) return undefined;
-        // Try parse time like 12:46:32 pm or 12:39:03 pm
-        const m = value.trim().match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(am|pm)?$/i);
-        if (!m) return undefined;
-        const hoursRaw = parseInt(m[1], 10);
-        const minutes = parseInt(m[2], 10);
-        const seconds = m[3] ? parseInt(m[3], 10) : 0;
-        const ampm = m[4]?.toLowerCase();
-        let hours = hoursRaw;
-        if (ampm === 'pm' && hours < 12) hours += 12;
-        if (ampm === 'am' && hours === 12) hours = 0;
-        const d = new Date(base);
-        d.setHours(hours, minutes, seconds, 0);
-        return d;
+        m = text.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(am|pm)?$/i);
+        if (m) {
+          const hh = parseInt(m[1], 10);
+          const mm = parseInt(m[2], 10);
+          const ss = m[3] ? parseInt(m[3], 10) : 0;
+          const ap = m[4];
+          const d = new Date(base);
+          let hours = hh;
+          if (ap) {
+            const ap2 = ap.toLowerCase();
+            if (ap2 === 'pm' && hours < 12) hours += 12;
+            if (ap2 === 'am' && hours === 12) hours = 0;
+          }
+          d.setHours(hours, mm, ss, 0);
+          return d;
+        }
+        return undefined;
       };
 
       const normalized = (Array.isArray(trades) ? trades : []).map(t => {
-        const entry = toDate(t.entryTime as any, baseDate);
-        const exit = toDate(t.exitTime as any, baseDate);
+        const entry = toDate((t as any).entryTime as any, baseDate);
+        const exit = toDate((t as any).exitTime as any, baseDate);
         return {
           ...t,
-          entryTime: entry ? entry.toISOString() : t.entryTime,
-          exitTime: exit ? exit.toISOString() : t.exitTime,
+          entryTime: entry ? entry.toISOString() : (t as any).entryTime,
+          exitTime: exit ? exit.toISOString() : (t as any).exitTime,
         } as ParsedTrade;
       });
       setParsedBaseDate(baseDate);
