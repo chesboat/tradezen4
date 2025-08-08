@@ -549,6 +549,8 @@ export const ReflectionTemplateManager: React.FC<ReflectionTemplateManagerProps>
   const sortedBlocks = currentReflection?.insightBlocks
     .sort((a, b) => a.order - b.order) || [];
 
+  const isCompletedToday = currentReflection?.completionScore && currentReflection.totalXP > 0;
+
   return (
     <div className={cn("space-y-6", className)}>
       {/* Header with stats and controls */}
@@ -978,24 +980,33 @@ export const ReflectionTemplateManager: React.FC<ReflectionTemplateManagerProps>
       )}
 
       {/* Completion Button */}
-      {sortedBlocks.length > 0 && completionScore >= 70 && (
+      {sortedBlocks.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="text-center"
         >
-          <motion.button
-            onClick={handleCompleteReflection}
-            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <CheckCircle className="w-5 h-5" />
-            Complete Reflection
-            <span className="bg-white/20 px-2 py-1 rounded-lg text-sm">
-              +{calculateTotalXP(sortedBlocks)} XP
-            </span>
-          </motion.button>
+          {isCompletedToday ? (
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-green-500/10 text-green-600 border border-green-500/30">
+              <CheckCircle className="w-4 h-4" />
+              <span className="font-medium">Reflection Completed</span>
+              <span className="text-xs">+{currentReflection.totalXP} XP</span>
+            </div>
+          ) : (
+            <motion.button
+              onClick={handleCompleteReflection}
+              disabled={completionScore < 70}
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <CheckCircle className="w-5 h-5" />
+              Complete Reflection
+              <span className="bg-white/20 px-2 py-1 rounded-lg text-sm">
+                +{calculateTotalXP(sortedBlocks)} XP
+              </span>
+            </motion.button>
+          )}
         </motion.div>
       )}
 

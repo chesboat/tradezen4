@@ -2,12 +2,13 @@ import { create } from 'zustand';
 import { ActivityLogEntry } from '@/types';
 import { ActivityLogState } from '@/types/stores';
 import { FirestoreService } from '@/lib/firestore';
+import { localStorage, STORAGE_KEYS } from '@/lib/localStorageUtils';
 
 const activityLogService = new FirestoreService<ActivityLogEntry>('activityLog');
 
 export const useActivityLogStore = create<ActivityLogState>((set, get) => ({
   isExpanded: false,
-  activities: [],
+  activities: localStorage.getItem(STORAGE_KEYS.ACTIVITY_LOG, [] as ActivityLogEntry[]),
 
   toggleActivityLog: () => {
     set((state) => ({ isExpanded: !state.isExpanded }));
@@ -28,7 +29,10 @@ export const useActivityLogStore = create<ActivityLogState>((set, get) => ({
       };
 
       const currentActivities = get().activities;
-      set({ activities: [newActivity, ...currentActivities.slice(0, 99)] }); // Keep only 100 most recent
+      const updated = [newActivity, ...currentActivities.slice(0, 99)];
+      set({ activities: updated }); // Keep only 100 most recent
+      // Persist
+      localStorage.setItem(STORAGE_KEYS.ACTIVITY_LOG, updated);
       
       // Trigger user profile stats refresh after adding activity
       // Import dynamically to avoid circular dependencies
@@ -42,5 +46,6 @@ export const useActivityLogStore = create<ActivityLogState>((set, get) => ({
 
   clearActivities: () => {
     set({ activities: [] });
+    localStorage.setItem(STORAGE_KEYS.ACTIVITY_LOG, [] as ActivityLogEntry[]);
   }
 }));
