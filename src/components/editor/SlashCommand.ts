@@ -71,19 +71,36 @@ export const SlashCommand = (opts: SlashCommandOptions = {}) =>
             editor.chain().focus().deleteRange(range).run();
             switch (item.action) {
               case 'todo':
+                console.log('[Slash] todo -> toggleTaskList');
                 editor.chain().focus().toggleTaskList().run();
                 break;
               case 'quote':
+                console.log('[Slash] quote -> toggleBlockquote');
                 editor.chain().focus().toggleBlockquote().run();
                 break;
               case 'insight': {
                 const sel = editor.state.doc.textBetween(editor.state.selection.from, editor.state.selection.to).trim();
+                console.log('[Slash] insight -> selection:', sel);
                 if (sel) opts.onInsight?.(sel);
                 break;
               }
               case 'trade': {
                 const href = window.prompt('Trade ID (e.g. #trade:abc123) or URL:');
-                if (href) opts.onTradeLink?.(href);
+                console.log('[Slash] trade -> href:', href);
+                if (href) {
+                  const { from, to } = editor.state.selection;
+                  if (to > from) {
+                    editor.chain().focus().setLink({ href }).run();
+                  } else {
+                    // Insert a small linked token if nothing is selected
+                    editor.chain().focus().insertContent({
+                      type: 'text',
+                      text: 'trade',
+                      marks: [{ type: 'link', attrs: { href } }],
+                    } as any).run();
+                  }
+                  opts.onTradeLink?.(href);
+                }
                 break;
               }
             }

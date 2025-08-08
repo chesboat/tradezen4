@@ -111,6 +111,10 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
           </BubbleMenu>
         )}
         <EditorContent editor={editor} />
+        {/* Debug hooks */}
+        <div className="sr-only" aria-hidden>
+          {editor && console.log('[TipTap] selection', editor.state.selection.from, editor.state.selection.to)}
+        </div>
       </div>
     </div>
   );
