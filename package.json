@@ -25,6 +25,7 @@
     "@tiptap/extension-underline": "^2.6.4",
     "@tiptap/react": "^2.6.4",
     "@tiptap/starter-kit": "^2.6.4",
+    "@tiptap/suggestion": "^2.6.4",
     "@firebase/auth": "^1.11.0",
     "@firebase/firestore": "^4.9.0",
     "clsx": "^2.1.0",
