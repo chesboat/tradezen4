@@ -227,9 +227,11 @@ Rules:\n- Use data exactly as shown in the screenshot.\n- Numbers should be plai
     setIsImporting(true);
     try {
       for (const row of parsedTrades) {
-        const pnlNumber = Number(row.pnl ?? 0) || 0;
-        const riskAmount = Math.max(Math.abs(Number(row.fees || 0) + Number(row.commissions || 0)), Math.abs(pnlNumber));
-        const rr = riskAmount > 0 ? Math.abs(pnlNumber) / riskAmount : 1;
+        const pnlGross = Number(row.pnl ?? 0) || 0;
+        const feeTotal = (Number(row.fees || 0) || 0) + (Number(row.commissions || 0) || 0);
+        const pnlNet = pnlGross - feeTotal;
+        const riskAmount = Math.max(Math.abs(feeTotal), Math.abs(pnlNet));
+        const rr = riskAmount > 0 ? Math.abs(pnlNet) / riskAmount : 1;
 
         const trade: Omit<Trade, 'id' | 'createdAt' | 'updatedAt'> = {
           symbol: row.symbol?.toUpperCase() || 'UNKNOWN',
@@ -239,8 +241,8 @@ Rules:\n- Use data exactly as shown in the screenshot.\n- Numbers should be plai
           quantity: Number(row.quantity || 1),
           riskAmount: Number.isFinite(riskAmount) ? riskAmount : 0,
           riskRewardRatio: Number.isFinite(rr) && rr > 0 ? rr : 1,
-          result: pnlNumber === 0 ? 'breakeven' : pnlNumber > 0 ? 'win' : 'loss',
-          pnl: pnlNumber,
+          result: pnlNet === 0 ? 'breakeven' : pnlNet > 0 ? 'win' : 'loss',
+          pnl: pnlNet,
           entryTime: row.entryTime ? new Date(row.entryTime) : new Date(),
           exitTime: row.exitTime ? new Date(row.exitTime) : undefined,
           mood: 'neutral',
