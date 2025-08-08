@@ -28,6 +28,7 @@ import {
   Minus
 } from 'lucide-react';
 import { useTradeStore } from '@/store/useTradeStore';
+import TradeImageImport from '@/components/TradeImageImport';
 import { useAccountFilterStore, getAccountIdsForSelection } from '@/store/useAccountFilterStore';
 import { useTradeLoggerModal } from '@/hooks/useTradeLoggerModal';
 import { Trade, TradeResult, MoodType } from '@/types';
@@ -84,6 +85,7 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
   
   const [showFilters, setShowFilters] = useState(false);
   const [selectedTrades, setSelectedTrades] = useState<Set<string>>(new Set());
+  const [showImageImport, setShowImageImport] = useState(false);
 
   // Get unique symbols for filter dropdown
   const uniqueSymbols = useMemo(() => {
@@ -365,6 +367,12 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
           >
             <Plus className="w-4 h-4" />
             Add Trade
+          </button>
+          <button
+            onClick={() => setShowImageImport(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-muted/50 hover:bg-muted/70 rounded-lg transition-colors"
+          >
+            Import from Screenshot
           </button>
         </div>
       </div>
@@ -853,6 +861,15 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
           </button>
         </div>
       )}
+
+      {/* Image Import Modal */}
+      <AnimatePresence>
+        {showImageImport && (
+          // Lazy import via dynamic to avoid bundling OpenAI everywhere would be ideal; simple inline for now
+          // @ts-ignore
+          <TradeImageImport isOpen={showImageImport} onClose={() => setShowImageImport(false)} />
+        )}
+      </AnimatePresence>
     </div>
   );
 }; 
