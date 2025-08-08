@@ -70,7 +70,7 @@ export const generateInsightTemplate = async (
     });
     
     if (apiKey) {
-      console.log('🤖 Attempting AI generation with GPT-4o-mini...');
+    console.log('🤖 Attempting AI generation with GPT-5-mini...');
       return await generateAIInsightTemplate(context, customPrompt);
     }
     
@@ -163,14 +163,14 @@ Return JSON format:
 }`;
 
   try {
-    console.log('📤 Sending to GPT-4o-mini:', {
-      model: 'gpt-4o-mini',
+    console.log('📤 Sending to GPT-5-mini:', {
+      model: 'gpt-5-mini',
       contextSummary: `${tradeCount} trades, $${pnl.toFixed(2)} P&L, ${winRate.toFixed(1)}% win rate`,
       promptLength: userPrompt.length
     });
 
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: 'gpt-5-mini',
       messages: [
         {
           role: 'system',
@@ -182,7 +182,7 @@ Return JSON format:
         },
       ],
       max_tokens: 1000,
-      temperature: 0.7,
+      temperature: 0.6,
     });
 
     const responseContent = completion.choices[0]?.message?.content;

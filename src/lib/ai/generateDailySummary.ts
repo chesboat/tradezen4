@@ -262,7 +262,7 @@ export const generateAISummaryWithAPI = async (data: DailyJournalData): Promise<
 
   try {
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini', // Using mini for cost efficiency
+      model: 'gpt-5-mini',
       messages: [
         {
           role: 'system',
@@ -273,8 +273,8 @@ export const generateAISummaryWithAPI = async (data: DailyJournalData): Promise<
           content: JSON.stringify(data, null, 2),
         },
       ],
-      max_tokens: 500,
-      temperature: 0.7,
+      max_tokens: 700,
+      temperature: 0.6,
     });
 
     return completion.choices[0]?.message?.content || generateFallbackSummary(data);

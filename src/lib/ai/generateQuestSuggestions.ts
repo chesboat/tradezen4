@@ -114,13 +114,13 @@ Focus on improvement areas based on the actual data provided.`;
 
   console.log('🔄 Calling OpenAI API...');
   const completion = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
+    model: 'gpt-5-mini',
     messages: [
       { role: 'system', content: QUEST_GENERATION_SYSTEM_PROMPT },
       { role: 'user', content: userPrompt }
     ],
     max_tokens: 1200,
-    temperature: 0.7,
+    temperature: 0.6,
   });
 
   console.log('📨 Received OpenAI response');
