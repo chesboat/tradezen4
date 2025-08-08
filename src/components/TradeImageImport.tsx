@@ -296,7 +296,9 @@ Rules:\n- Use data exactly as shown in the screenshot.\n- Numbers should be plai
     try {
       for (const row of parsedTrades) {
         const pnlGross = Number(row.pnl ?? 0) || 0;
-        const feeTotal = (Number(row.fees || 0) || 0) + (Number(row.commissions || 0) || 0);
+        // Some platforms export fees/commissions as negative values on wins.
+        // Normalize to positive cost so we always subtract from PnL.
+        const feeTotal = Math.abs(Number(row.fees ?? 0)) + Math.abs(Number(row.commissions ?? 0));
         const pnlNet = pnlGross - feeTotal;
         const riskAmount = Math.max(Math.abs(feeTotal), Math.abs(pnlNet));
         const rr = riskAmount > 0 ? Math.abs(pnlNet) / riskAmount : 1;
