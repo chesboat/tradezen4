@@ -15,6 +15,7 @@ export const useQuickNoteStore = create<QuickNoteState>((set, get) => ({
       const notes = await quickNoteService.getAll();
       const formattedNotes = notes.map(note => ({
         ...note,
+        tags: Array.isArray((note as any).tags) ? (note as any).tags : [],
         createdAt: new Date(note.createdAt),
         updatedAt: new Date(note.updatedAt),
       }));
@@ -43,12 +44,13 @@ export const useQuickNoteStore = create<QuickNoteState>((set, get) => ({
 
       const formattedNote = {
         ...newNote,
+        tags: Array.isArray((newNote as any).tags) ? (newNote as any).tags : [],
         createdAt: new Date(newNote.createdAt),
         updatedAt: new Date(newNote.updatedAt),
       };
 
       const currentNotes = get().notes;
-      const newTags = [...new Set([...get().allTags, ...note.tags])];
+      const newTags = [...new Set([...get().allTags, ...((note as any).tags || [])])];
       
       set({ 
         notes: [formattedNote, ...currentNotes],
@@ -85,7 +87,7 @@ export const useQuickNoteStore = create<QuickNoteState>((set, get) => ({
       );
 
       // Update tags if needed
-      const allTags = [...new Set(updatedNotes.flatMap(note => note.tags))];
+      const allTags = [...new Set(updatedNotes.flatMap(note => (note.tags || [])))] ;
       
       set({ notes: updatedNotes, allTags });
     } catch (error) {
@@ -101,7 +103,7 @@ export const useQuickNoteStore = create<QuickNoteState>((set, get) => ({
       const updatedNotes = currentNotes.filter(note => note.id !== id);
       
       // Update tags
-      const allTags = [...new Set(updatedNotes.flatMap(note => note.tags))];
+      const allTags = [...new Set(updatedNotes.flatMap(note => (note.tags || [])))] ;
       
       set({ notes: updatedNotes, allTags });
     } catch (error) {
@@ -115,7 +117,7 @@ export const useQuickNoteStore = create<QuickNoteState>((set, get) => ({
   },
 
   getNotesByTag: (tag) => {
-    return get().notes.filter(note => note.tags.includes(tag));
+    return get().notes.filter(note => (note.tags || []).includes(tag));
   },
 
   getNotesForDate: (date) => {
@@ -135,11 +137,11 @@ export const useQuickNoteStore = create<QuickNoteState>((set, get) => ({
     const currentNotes = get().notes;
     const updatedNotes = currentNotes.map(note => ({
       ...note,
-      tags: note.tags.filter(tag => tag !== tagToRemove)
+      tags: (note.tags || []).filter(tag => tag !== tagToRemove)
     }));
     
     // Update all tags
-    const allTags = [...new Set(updatedNotes.flatMap(note => note.tags))];
+    const allTags = [...new Set(updatedNotes.flatMap(note => (note.tags || [])))] ;
     
     set({ notes: updatedNotes, allTags });
   }

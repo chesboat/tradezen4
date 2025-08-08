@@ -56,7 +56,7 @@ export const TagManager: React.FC<TagManagerProps> = ({ isOpen, onClose }) => {
 
     // Count usage in account-specific notes
     accountNotes.forEach(note => {
-      note.tags.forEach(tag => {
+      (note.tags || []).forEach(tag => {
         const current = stats.get(tag) || { count: 0, lastUsed: null, notes: [] };
         stats.set(tag, {
           count: current.count + 1,
