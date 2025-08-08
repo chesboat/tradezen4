@@ -66,7 +66,8 @@ export const SlashCommand = (opts: SlashCommandOptions = {}) =>
           char: '/',
           allowSpaces: true,
           items: ({ query }) => items(query),
-          command: ({ editor, range, item }) => {
+          command: ({ editor, range, props }) => {
+            const item = props as SlashItem;
             editor.chain().focus().deleteRange(range).run();
             switch (item.action) {
               case 'todo':
