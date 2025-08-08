@@ -176,12 +176,13 @@ export const ReflectionHub: React.FC<ReflectionHubProps> = ({ date, className })
             // Defer to the template store
             // Import store lazily to avoid circular imports
             import('@/store/useReflectionTemplateStore').then(({ useReflectionTemplateStore }) => {
-              const { addInsightBlock } = useReflectionTemplateStore.getState();
-              addInsightBlock(existing.id, {
+              const { addInsightBlock, createOrUpdateReflection } = useReflectionTemplateStore.getState() as any;
+              const safeReflection = createOrUpdateReflection(date, selectedAccountId!, { insightBlocks: (existing as any).insightBlocks || [] });
+              addInsightBlock(safeReflection.id, {
                 title: 'Insight',
                 content: text,
                 tags: [],
-                order: existing.insightBlocks?.length || 0,
+                order: ((safeReflection as any).insightBlocks?.length || 0),
                 isExpanded: true,
               } as any);
             });
