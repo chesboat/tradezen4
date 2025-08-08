@@ -159,7 +159,7 @@ export const ReflectionHub: React.FC<ReflectionHubProps> = ({ date, className })
           </div>
         </div>
         <TipTapEditor
-          initialJSON={getReflectionByDate(date, selectedAccountId!)?.reflectionRich}
+          initialJSON={selectedAccountId ? getReflectionByDate(date, selectedAccountId)?.reflectionRich : undefined}
           onUpdateJSON={(json, plain) => {
             handleThoughtsChange(plain);
             // Save rich JSON as well

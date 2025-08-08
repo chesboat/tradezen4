@@ -2,7 +2,6 @@ import React from 'react';
 import { EditorContent, useEditor, BubbleMenu } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
-import Suggestion from '@tiptap/suggestion';
 import Underline from '@tiptap/extension-underline';
 import Link from '@tiptap/extension-link';
 import TaskList from '@tiptap/extension-task-list';
@@ -41,71 +40,6 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
       OrderedList,
       Heading.configure({ levels: [1, 2, 3] }),
       Placeholder.configure({ placeholder: placeholder || 'Write your thoughts…' }),
-      // Slash menu minimal implementation
-      Suggestion.configure({
-        char: '/',
-        allowSpaces: true,
-        items: ({ query }) => {
-          const base = [
-            { label: 'Todo List', action: 'todo' },
-            { label: 'Quote', action: 'quote' },
-            { label: 'Insight Block', action: 'insight' },
-            { label: 'Link to Trade', action: 'trade' },
-          ];
-          return base.filter(i => i.label.toLowerCase().includes(query.toLowerCase()));
-        },
-        command: ({ editor, range, item }) => {
-          editor.chain().focus().deleteRange(range);
-          switch (item.action) {
-            case 'todo':
-              editor.chain().focus().toggleTaskList().run();
-              break;
-            case 'quote':
-              editor.chain().focus().toggleBlockquote().run();
-              break;
-            case 'insight': {
-              const sel = editor.state.doc.textBetween(editor.state.selection.from, editor.state.selection.to).trim();
-              if (sel) onConvertSelectionToInsight?.(sel);
-              break;
-            }
-            case 'trade': {
-              const href = window.prompt('Trade ID (e.g. #trade:abc123) or URL:');
-              if (href) editor.chain().focus().setLink({ href }).run();
-              break;
-            }
-          }
-        },
-        render: () => {
-          let el: HTMLDivElement | null = null;
-          return {
-            onStart: (props) => {
-              el = document.createElement('div');
-              el.className = 'rounded-lg border border-border bg-popover text-popover-foreground text-sm shadow p-1';
-              document.body.appendChild(el);
-              this.onUpdate!(props);
-            },
-            onUpdate: ({ items, clientRect }) => {
-              if (!el || !clientRect) return;
-              el.style.position = 'absolute';
-              el.style.left = clientRect().left + 'px';
-              el.style.top = clientRect().bottom + 4 + 'px';
-              el.innerHTML = items.map((i: any) => `<div data-action="${i.action}" class="px-2 py-1 hover:bg-muted cursor-pointer rounded">${i.label}</div>`).join('');
-              Array.from(el.querySelectorAll('[data-action]')).forEach(n => {
-                n.addEventListener('mousedown', (e) => {
-                  e.preventDefault();
-                  const action = (e.currentTarget as HTMLElement).dataset.action!;
-                  const item = items.find((it: any) => it.action === action);
-                  if (item) (props as any).props.command({ editor, range: (props as any).range, item });
-                });
-              });
-            },
-            onExit: () => {
-              if (el?.parentNode) el.parentNode.removeChild(el);
-              el = null;
-            },
-          } as any;
-        },
-      }) as any,
     ],
     content: initialJSON || '<p></p>',
     onUpdate: ({ editor }) => {
