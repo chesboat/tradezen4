@@ -517,26 +517,30 @@ export const ReflectionTemplateManager: React.FC<ReflectionTemplateManagerProps>
     }
   };
 
-  const handleCompleteReflection = () => {
+  const handleCompleteReflection = async () => {
     if (!currentReflection || !selectedAccountId || completionScore < 70) return;
-    
     const totalXP = calculateTotalXP(currentReflection.insightBlocks);
     const bonusXP = completionScore >= 90 ? 25 : completionScore >= 80 ? 15 : 10;
-    
-    addActivity({
-      type: 'reflection',
-      title: 'Reflection Template Complete',
-      description: `Completed reflection with ${completionScore}% quality score`,
-      xpEarned: totalXP + bonusXP,
-      relatedId: currentReflection.id,
-      accountId: selectedAccountId,
-    });
 
-    // Update reflection with completion data
-    createOrUpdateReflection(date, selectedAccountId, {
-      completionScore,
-      totalXP: totalXP + bonusXP,
-    });
+    try {
+      // Persist reflection completion state first
+      createOrUpdateReflection(date, selectedAccountId, {
+        completionScore,
+        totalXP: totalXP + bonusXP,
+      });
+
+      // Log XP to activity feed
+      addActivity({
+        type: 'reflection',
+        title: 'Reflection Complete',
+        description: `Completed reflection with ${completionScore}% quality score`,
+        xpEarned: totalXP + bonusXP,
+        relatedId: currentReflection.id,
+        accountId: selectedAccountId,
+      });
+    } catch (e) {
+      console.error('Failed to complete reflection:', e);
+    }
   };
 
   const sortedBlocks = currentReflection?.insightBlocks

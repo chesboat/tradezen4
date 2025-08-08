@@ -535,9 +535,13 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
         generateDailyFocus(currentMood as MoodType)
       ]);
       
-      // Remove duplicates and set suggestions
-      const uniqueSuggestions = [...new Set(suggestions.flat())];
-      setFocusSuggestions(uniqueSuggestions.slice(0, 3).map(s => s.toString()));
+      // Flatten Quest[] and project to titles; de-duplicate by title
+      const titles = suggestions
+        .flat()
+        .map((q) => q.title)
+        .filter(Boolean);
+      const uniqueTitles = Array.from(new Set(titles));
+      setFocusSuggestions(uniqueTitles.slice(0, 3));
       
     } catch (error) {
       console.error('Failed to generate AI focus suggestions:', error);
