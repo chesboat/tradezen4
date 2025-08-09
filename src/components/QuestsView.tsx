@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
   Trophy, 
   Target, 
@@ -379,6 +379,7 @@ export const QuestsView: React.FC = () => {
   const [isInitializing, setIsInitializing] = useState(true);
   const [hasInitialized, setHasInitialized] = useState(false);
   const [questsStable, setQuestsStable] = useState(false);
+  const [banner, setBanner] = useState<string>('');
   
   // Initialize component and handle quest progress updates
   useEffect(() => {
@@ -593,67 +594,28 @@ export const QuestsView: React.FC = () => {
       </div>
 
       {/* Pinned Quests */}
-      <AnimatePresence initial={false} mode="popLayout">
-        {pinnedQuestsList.length > 0 && !isInitializing && (
-          <motion.div 
-            className="space-y-4"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ 
-              opacity: 1, 
-              y: 0,
-              transition: {
-                type: "spring",
-                stiffness: 300,
-                damping: 30,
-                staggerChildren: 0.1
-              }
-            }}
-            exit={{ opacity: 0, y: -20 }}
-          >
-            <div className="flex items-center gap-2">
-              <Pin className="w-5 h-5 text-primary" />
-              <h2 className="text-xl font-semibold text-foreground">Pinned Quests</h2>
-            </div>
-            <motion.div 
-              layout
-              className="grid gap-4"
-              initial={{ opacity: 0 }}
-              animate={{ 
-                opacity: 1,
-                transition: { staggerChildren: 0.08, delayChildren: 0.1 }
-              }}
-            >
-              {pinnedQuestsList.map((quest, index) => (
-                <motion.div
-                  key={quest.id}
-                  layout
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ 
-                    opacity: 1, 
-                    x: 0,
-                    transition: {
-                      delay: index * 0.05,
-                      type: "spring",
-                      stiffness: 300,
-                      damping: 30
-                    }
-                  }}
-                  exit={{ opacity: 0, scale: 0.98 }}
-                >
-                  <QuestCard
-                    quest={quest}
-                    isPinned={true}
-                    onPin={() => pinQuest(quest.id)}
-                    onUnpin={() => unpinQuest(quest.id)}
-                    onComplete={() => handleCompleteQuest(quest.id)}
-                    onCancel={() => handleCancelQuest(quest.id)}
-                  />
-                </motion.div>
-              ))}
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {pinnedQuestsList.length > 0 && !isInitializing && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Pin className="w-5 h-5 text-primary" />
+            <h2 className="text-xl font-semibold text-foreground">Pinned Quests</h2>
+          </div>
+          <div className="grid gap-4 min-h-[0]">
+            {pinnedQuestsList.map((quest) => (
+              <div key={quest.id}>
+                <QuestCard
+                  quest={quest}
+                  isPinned={true}
+                  onPin={() => pinQuest(quest.id)}
+                  onUnpin={() => unpinQuest(quest.id)}
+                  onComplete={() => handleCompleteQuest(quest.id)}
+                  onCancel={() => handleCancelQuest(quest.id)}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Tab Navigation */}
       <div className="flex flex-wrap gap-2 p-1 bg-muted/30 rounded-xl">
@@ -736,7 +698,14 @@ export const QuestsView: React.FC = () => {
                 const currentMood = todayMood.length > 0 ? todayMood[todayMood.length - 1].mood : 'neutral';
                 
                 // Generate AI-powered quests with current data (force regenerate)
+                const before = useQuestStore.getState().quests.length;
                 await generateDailyQuests(trades, notes, currentMood, true);
+                setTimeout(() => {
+                  const after = useQuestStore.getState().quests.length;
+                  const diff = Math.max(after - before, 0);
+                  setBanner(diff > 0 ? `Generated ${diff} quest${diff > 1 ? 's' : ''}` : 'No new quests generated');
+                  setTimeout(() => setBanner(''), 2500);
+                }, 50);
               } catch (error) {
                 console.error('❌ Error in quest generation:', error);
               } finally {
@@ -754,9 +723,15 @@ export const QuestsView: React.FC = () => {
         </div>
       </div>
 
+      {banner && (
+        <div className="px-3 py-2 bg-primary/10 text-primary rounded-lg text-sm inline-flex items-center gap-2">
+          <RefreshCw className="w-4 h-4" />
+          {banner}
+        </div>
+      )}
+
       {/* Quests Grid */}
       <div className="space-y-4">
-        <AnimatePresence initial={false} mode="popLayout">
           {isInitializing ? (
             <motion.div
               initial={{ opacity: 0 }}
@@ -768,7 +743,7 @@ export const QuestsView: React.FC = () => {
               <h3 className="text-lg font-semibold text-foreground mb-2">Loading quests...</h3>
               <p className="text-muted-foreground">Preparing your quest hub</p>
             </motion.div>
-          ) : filteredQuests.length === 0 ? (
+        ) : filteredQuests.length === 0 ? (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ 
@@ -788,53 +763,22 @@ export const QuestsView: React.FC = () => {
                 }
               </p>
             </motion.div>
-          ) : (
-            <motion.div 
-              layout
-              className="grid gap-4"
-              initial={{ opacity: 0 }}
-              animate={{ 
-                opacity: 1,
-                transition: { 
-                  staggerChildren: 0.06, 
-                  delayChildren: 0.15,
-                  duration: 0.3
-                }
-              }}
-            >
-              {filteredQuests.map((quest, index) => (
-                <motion.div
-                  key={quest.id}
-                  layout
-                  initial={{ opacity: 0, y: 15, scale: 0.98 }}
-                  animate={{ 
-                    opacity: 1, 
-                    y: 0,
-                    scale: 1,
-                    transition: {
-                      delay: Math.min(index * 0.04, 0.4),
-                      type: "spring",
-                      stiffness: 400,
-                      damping: 35,
-                      duration: 0.4
-                    }
-                  }}
-                  exit={{ opacity: 0, scale: 0.98 }}
-                  style={{ willChange: 'transform, opacity' }}
-                >
-                  <QuestCard
-                    quest={quest}
-                    isPinned={pinnedQuests.includes(quest.id)}
-                    onPin={() => pinQuest(quest.id)}
-                    onUnpin={() => unpinQuest(quest.id)}
-                    onComplete={() => handleCompleteQuest(quest.id)}
-                    onCancel={() => handleCancelQuest(quest.id)}
-                  />
-                </motion.div>
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
+        ) : (
+          <div className="grid gap-4 min-h-[200px]">
+            {filteredQuests.map((quest) => (
+              <div key={quest.id}>
+                <QuestCard
+                  quest={quest}
+                  isPinned={pinnedQuests.includes(quest.id)}
+                  onPin={() => pinQuest(quest.id)}
+                  onUnpin={() => unpinQuest(quest.id)}
+                  onComplete={() => handleCompleteQuest(quest.id)}
+                  onCancel={() => handleCancelQuest(quest.id)}
+                />
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Achievement Showcase */}
