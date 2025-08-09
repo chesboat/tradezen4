@@ -261,8 +261,9 @@ export const generateAISummaryWithAPI = async (data: DailyJournalData): Promise<
   });
 
   try {
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-5-mini',
+    // Prefer widely available model first to avoid empty responses
+    const invoke = (model: string) => openai.chat.completions.create({
+      model,
       messages: [
         {
           role: 'system',
@@ -276,7 +277,14 @@ export const generateAISummaryWithAPI = async (data: DailyJournalData): Promise<
       max_completion_tokens: 700,
     });
 
-    return completion.choices[0]?.message?.content || generateFallbackSummary(data);
+    let completion = await invoke('gpt-4o-mini');
+    let content = completion.choices[0]?.message?.content || '';
+    if (!content.trim()) {
+      console.warn('Empty content from gpt-4o-mini, retrying with gpt-4o');
+      completion = await invoke('gpt-4o');
+      content = completion.choices[0]?.message?.content || '';
+    }
+    return content || generateFallbackSummary(data);
   } catch (error) {
     console.error('OpenAI API error:', error);
     throw error; // Re-throw to trigger fallback in parent function

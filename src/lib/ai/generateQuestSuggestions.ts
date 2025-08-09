@@ -127,12 +127,13 @@ Focus on improvement areas based on the actual data provided.`;
     max_completion_tokens: 1200,
   });
 
-  let completion = await invoke('gpt-5-mini');
+  // Prefer stable models to avoid empty content
+  let completion = await invoke('gpt-4o-mini');
   console.log('📨 Received OpenAI response');
   let responseContent = completion.choices[0]?.message?.content || '';
   if (!responseContent.trim()) {
-    console.warn('⚠️ Empty content from gpt-5-mini, retrying with gpt-4o-mini');
-    completion = await invoke('gpt-4o-mini');
+    console.warn('⚠️ Empty content from gpt-4o-mini, retrying with gpt-4o');
+    completion = await invoke('gpt-4o');
     console.log('📨 Received OpenAI response (fallback)');
     responseContent = completion.choices[0]?.message?.content || '';
   }

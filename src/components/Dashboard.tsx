@@ -190,6 +190,7 @@ export const Dashboard: React.FC = () => {
   const [planAppliedCount, setPlanAppliedCount] = useState<number>(0);
   const [selectedQuestIdxs, setSelectedQuestIdxs] = useState<Set<number>>(new Set());
   const [applyError, setApplyError] = useState<string>('');
+  const MAX_SELECTED_QUESTS = 2;
 
   // Helpers
   const normalizeSummary = (text: string): string => {
@@ -539,44 +540,49 @@ export const Dashboard: React.FC = () => {
             </div>
           )}
           {aiQuestSuggestions.length > 0 && (
-            <div className="mt-3 space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex flex-wrap gap-2">
-                  {aiQuestSuggestions.map((q, idx) => {
-                    const selected = selectedQuestIdxs.has(idx);
-                    return (
-                      <button
-                        type="button"
-                        key={`${q.title}-${idx}`}
-                        onClick={() => {
-                          const next = new Set(selectedQuestIdxs);
-                          if (selected) next.delete(idx); else next.add(idx);
-                          setSelectedQuestIdxs(next);
-                          setApplyError('');
-                        }}
-                        className={`max-w-[200px] text-[10px] px-2 py-1 rounded-full border truncate transition-colors ${selected ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted text-muted-foreground border-border hover:bg-muted/80'}`}
-                        title={q.title}
-                      >{q.title}</button>
-                    );
-                  })}
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    className="text-[11px] px-2 py-1 rounded bg-muted text-muted-foreground hover:bg-muted/80"
-                    onClick={() => setSelectedQuestIdxs(new Set(aiQuestSuggestions.map((_, i) => i)))}
-                  >Select all</button>
-                  <button
-                    className="text-[11px] px-2 py-1 rounded bg-muted text-muted-foreground hover:bg-muted/80"
-                    onClick={() => setSelectedQuestIdxs(new Set())}
-                  >Clear</button>
-                  <button
-                    className="text-xs px-2 py-1 rounded bg-primary text-primary-foreground hover:bg-primary/90"
-                    onClick={handleApplyPlan}
-                  >Apply Selected ({selectedQuestIdxs.size})</button>
-                </div>
+            <div className="mt-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] text-muted-foreground">Pick today’s quests (max {MAX_SELECTED_QUESTS})</span>
+              </div>
+              <div className="space-y-2">
+                {aiQuestSuggestions.map((q, idx) => {
+                  const selected = selectedQuestIdxs.has(idx);
+                  const atLimit = !selected && selectedQuestIdxs.size >= MAX_SELECTED_QUESTS;
+                  return (
+                    <button
+                      type="button"
+                      key={`${q.title}-${idx}`}
+                      onClick={() => {
+                        const next = new Set(selectedQuestIdxs);
+                        if (selected) {
+                          next.delete(idx);
+                        } else if (next.size < MAX_SELECTED_QUESTS) {
+                          next.add(idx);
+                        }
+                        setSelectedQuestIdxs(next);
+                        setApplyError('');
+                      }}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-lg border text-sm transition-colors ${selected ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted/40 text-foreground border-border hover:bg-muted/60'} ${atLimit ? 'opacity-60 cursor-not-allowed' : ''}`}
+                      disabled={atLimit}
+                    >
+                      <span className="truncate text-left pr-3">{q.title}</span>
+                      <span className={`w-4 h-4 rounded ${selected ? 'bg-white/90' : 'bg-transparent border border-border'}`} />
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="mt-3 flex items-center justify-end gap-2">
+                <button
+                  className="text-[11px] px-3 h-8 rounded bg-muted text-muted-foreground hover:bg-muted/80 whitespace-nowrap"
+                  onClick={() => setSelectedQuestIdxs(new Set())}
+                >Clear</button>
+                <button
+                  className="text-sm px-3 h-8 rounded bg-primary text-primary-foreground hover:bg-primary/90 whitespace-nowrap"
+                  onClick={handleApplyPlan}
+                >Apply ({selectedQuestIdxs.size})</button>
               </div>
               {applyError && (
-                <div className="text-[11px] text-red-500">{applyError}</div>
+                <div className="mt-2 text-[11px] text-red-500">{applyError}</div>
               )}
             </div>
           )}
