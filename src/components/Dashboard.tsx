@@ -176,6 +176,7 @@ export const Dashboard: React.FC = () => {
   const { quests, pinnedQuests, cleanupPinnedQuests } = useQuestStore();
   const [isLoadingDemo, setIsLoadingDemo] = useState(false);
   const { getKeyFocusForDate, upsertReflectionForSelection } = useDailyReflectionStore();
+  const reflections = useDailyReflectionStore((s) => s.reflections);
   const { notes } = useQuickNoteStore();
 
   // Dashboard local state
@@ -342,38 +343,59 @@ export const Dashboard: React.FC = () => {
   const handleGeneratePlan = async () => {
     try {
       setIsGeneratingPlan(true);
-      // Recent data context
-      const recentTrades = filteredTrades.slice(-10);
-      const winRateRecent = recentTrades.length > 0 ? (recentTrades.filter(t => (t.pnl || 0) > 0).length / recentTrades.length) * 100 : 0;
-      const totalPnLRecent = recentTrades.reduce((s, t) => s + (t.pnl || 0), 0);
-      const avgRisk = recentTrades.length > 0 ? recentTrades.reduce((s, t) => s + (t.riskAmount || 0), 0) / recentTrades.length : 100;
-      const recentNotes: QuickNote[] = (notes || []).slice(-5);
+      // Scope to TODAY and current account selection
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date();
+      endOfDay.setHours(23, 59, 59, 999);
+      const selectionIds = selectedAccountId ? getAccountIdsForSelection(selectedAccountId) : accounts.map(a => a.id);
+
+      const todaysTrades = filteredTrades.filter((t) => {
+        const d = new Date(t.entryTime);
+        return d >= startOfDay && d <= endOfDay;
+      });
+      const todaysNotes: QuickNote[] = (notes || []).filter((n) => {
+        const nd = new Date(n.createdAt as any);
+        const accountOk = selectionIds.includes(n.accountId);
+        return accountOk && nd >= startOfDay && nd <= endOfDay;
+      });
+
+      const winRateToday = todaysTrades.length > 0 ? (todaysTrades.filter(t => (t.pnl || 0) > 0).length / todaysTrades.length) * 100 : 0;
+      const totalPnLToday = todaysTrades.reduce((s, t) => s + (t.pnl || 0), 0);
+      const avgRiskToday = todaysTrades.length > 0 ? todaysTrades.reduce((s, t) => s + (t.riskAmount || 0), 0) / todaysTrades.length : 100;
 
       const [summary, questsFromAI] = await Promise.all([
         generateDailySummary({
-          trades: recentTrades as any,
-          notes: recentNotes as any,
+          trades: todaysTrades as any,
+          notes: todaysNotes as any,
           stats: {
-            totalPnL: totalPnLRecent,
-            winRate: winRateRecent,
+            totalPnL: totalPnLToday,
+            winRate: winRateToday,
             totalXP: 0,
             moodTrend: 'neutral',
-            tradeCount: recentTrades.length,
+            tradeCount: todaysTrades.length,
           },
         }),
         generateQuestSuggestions({
-          recentTrades: recentTrades as any,
-          recentNotes: recentNotes as any,
+          recentTrades: todaysTrades as any,
+          recentNotes: todaysNotes as any,
           currentMood: 'neutral',
           completedQuests: [],
-          winRate: winRateRecent,
-          totalPnL: totalPnLRecent,
-          avgRiskAmount: avgRisk,
+          winRate: winRateToday,
+          totalPnL: totalPnLToday,
+          avgRiskAmount: avgRiskToday,
         }),
       ]);
 
       setAiSummary(summary);
       setAiQuestSuggestions(questsFromAI);
+
+      // Persist AI summary and extracted focus immediately so it sticks across navigation
+      const extract = useDailyReflectionStore.getState().extractKeyFocus;
+      const focus = extract(summary || 'Focus on disciplined trading.');
+      if (selectedAccountId) {
+        await upsertReflectionForSelection(todayStr, { aiSummary: summary, keyFocus: focus }, selectedAccountId);
+      }
     } catch (e) {
       console.error('Failed to generate AI plan', e);
       alert('Failed to generate plan. Please try again.');
