@@ -160,20 +160,12 @@ const QuestCard: React.FC<QuestCardProps> = ({ quest, isPinned, onPin, onUnpin, 
         }
       }}
       className={cn(
-        'bg-muted/30 border border-border rounded-xl p-6 transition-colors duration-200 ease-out will-change-transform',
+        'bg-card border border-border rounded-2xl p-6 transition-transform duration-200 ease-out will-change-transform hover:shadow-glow-sm',
         isCompleted && 'opacity-75 bg-green-500/10 border-green-500/20',
         isOverdue && 'border-red-500/50 bg-red-500/10',
         isPinned && 'ring-2 ring-primary/50 border-primary/50'
       )}
-      whileHover={{ 
-        scale: 1.01,
-        backgroundColor: 'rgba(var(--muted), 0.7)',
-        transition: { 
-          duration: 0.15, 
-          ease: "easeOut",
-          backgroundColor: { duration: 0.2 }
-        }
-      }}
+      whileHover={{ scale: 1.01 }}
       whileTap={{ 
         scale: 0.99,
         transition: { duration: 0.08 }
@@ -601,7 +593,7 @@ export const QuestsView: React.FC = () => {
       </div>
 
       {/* Pinned Quests */}
-      <AnimatePresence initial={false}>
+      <AnimatePresence initial={false} mode="popLayout">
         {pinnedQuestsList.length > 0 && !isInitializing && (
           <motion.div 
             className="space-y-4"
@@ -623,6 +615,7 @@ export const QuestsView: React.FC = () => {
               <h2 className="text-xl font-semibold text-foreground">Pinned Quests</h2>
             </div>
             <motion.div 
+              layout
               className="grid gap-4"
               initial={{ opacity: 0 }}
               animate={{ 
@@ -634,11 +627,10 @@ export const QuestsView: React.FC = () => {
                 <motion.div
                   key={quest.id}
                   layout
-                  initial={{ opacity: 0, x: -20, height: 'auto' }}
+                  initial={{ opacity: 0, x: -20 }}
                   animate={{ 
                     opacity: 1, 
                     x: 0,
-                    height: 'auto',
                     transition: {
                       delay: index * 0.05,
                       type: "spring",
@@ -646,8 +638,7 @@ export const QuestsView: React.FC = () => {
                       damping: 30
                     }
                   }}
-                  exit={{ opacity: 0, height: 0, margin: 0 }}
-                  style={{ overflow: 'hidden' }}
+                  exit={{ opacity: 0, scale: 0.98 }}
                 >
                   <QuestCard
                     quest={quest}
@@ -799,6 +790,7 @@ export const QuestsView: React.FC = () => {
             </motion.div>
           ) : (
             <motion.div 
+              layout
               className="grid gap-4"
               initial={{ opacity: 0 }}
               animate={{ 
@@ -814,12 +806,11 @@ export const QuestsView: React.FC = () => {
                 <motion.div
                   key={quest.id}
                   layout
-                  initial={{ opacity: 0, y: 15, scale: 0.98, height: 'auto' }}
+                  initial={{ opacity: 0, y: 15, scale: 0.98 }}
                   animate={{ 
                     opacity: 1, 
                     y: 0,
                     scale: 1,
-                    height: 'auto',
                     transition: {
                       delay: Math.min(index * 0.04, 0.4),
                       type: "spring",
@@ -828,11 +819,8 @@ export const QuestsView: React.FC = () => {
                       duration: 0.4
                     }
                   }}
-                  exit={{ opacity: 0, height: 0, margin: 0 }}
-                  style={{
-                    willChange: 'transform, opacity',
-                    overflow: 'hidden'
-                  }}
+                  exit={{ opacity: 0, scale: 0.98 }}
+                  style={{ willChange: 'transform, opacity' }}
                 >
                   <QuestCard
                     quest={quest}
