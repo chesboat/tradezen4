@@ -189,6 +189,17 @@ export const Dashboard: React.FC = () => {
   const [planAppliedVisible, setPlanAppliedVisible] = useState<boolean>(false);
   const [planAppliedCount, setPlanAppliedCount] = useState<number>(0);
 
+  // Helpers
+  const normalizeSummary = (text: string): string => {
+    if (!text) return '';
+    let t = text.replace(/\s+/g, ' ').trim();
+    // Remove odd leading fragments like "s " caused by truncation
+    t = t.replace(/^['`’]s\s+/i, '');
+    // Remove leading non-letter punctuation
+    t = t.replace(/^[^A-Za-z“”"'(]+/g, '');
+    return t;
+  };
+
   // Clean up pinned quests on dashboard load
   useEffect(() => {
     // Run cleanup immediately and add a small delay to catch any async quest updates
@@ -367,7 +378,7 @@ export const Dashboard: React.FC = () => {
       const totalPnLToday = todaysTrades.reduce((s, t) => s + (t.pnl || 0), 0);
       const avgRiskToday = todaysTrades.length > 0 ? todaysTrades.reduce((s, t) => s + (t.riskAmount || 0), 0) / todaysTrades.length : 100;
 
-      const [summary, questsFromAI] = await Promise.all([
+      const [summaryRaw, questsFromAI] = await Promise.all([
         generateDailySummary({
           trades: todaysTrades as any,
           notes: todaysNotes as any,
@@ -390,6 +401,7 @@ export const Dashboard: React.FC = () => {
         }),
       ]);
 
+      const summary = normalizeSummary(summaryRaw);
       setAiSummary(summary);
       setAiQuestSuggestions(questsFromAI);
 
