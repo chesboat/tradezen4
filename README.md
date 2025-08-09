@@ -264,6 +264,44 @@ interface AccountFilterState {
 - **Cloud Sync**: Cross-device synchronization
 - **Team Features**: Prop firm and team management
 
+## 🧭 Dashboard 2.0 Roadmap
+
+The main dashboard now focuses on coaching-first simplicity with powerful guardrails and AI. This section tracks what’s implemented and what’s next.
+
+### What’s in (MVP)
+- **Daily Focus strip**: Pulls today’s key objective from reflections; integrates AI summary and quick “Apply Plan” to pin quests.
+- **Session Guardrails**: Trades today, minutes since last trade, risk used vs daily loss limit, and a one-tap 20m lockout.
+- **Focus Mode**: Hide/blur P&L to avoid performance-chasing until session end.
+- **Pattern Radar**: Highlights top 3 helpful and harmful tags from trades/notes with quick visibility.
+- **Reflection Progress**: Today’s completion status and XP earned with a shortcut back to journaling.
+- **XP/Level mini-widget**: Shows level label and progress to next level.
+
+### Wire-up details
+- AI helpers: `generateDailySummary`, `generateQuestSuggestions`
+- Reflections: `useDailyReflectionStore.getKeyFocusForDate`, `upsertReflectionForSelection`
+- Quests: `useQuestStore.addQuest`, `useQuestStore.pinQuest`, `cleanupPinnedQuests`
+- Notes/Tags: `useQuickNoteStore.notes`
+- Accounts: `useAccountFilterStore`, `getAccountIdsForSelection`
+- Profile/XP: `getFormattedLevel`, `getXPProgressPercentage`
+
+### Next iterations
+- **Execution Score**: 0–100 rubric based on risk adherence, trade cap respect, and journaling completeness.
+- **Time-of-Day Heatmap**: Micro heatmap row for win rate/P&L by hour/session.
+- **Prop Firm Compliance tile**: Uses `TradingAccount` props (daily loss limit, max drawdown, target, min days) with traffic-light states and early warnings.
+- **Next Best Action**: Context-aware suggested action (e.g., add note, breathwork, end session) based on live state.
+- **Micro-celebrations**: Confetti/XPs on reflection completion and quest progress.
+
+### File touchpoints
+- `src/components/Dashboard.tsx`: new widgets and AI plan actions
+- `src/store/useDailyReflectionStore.ts`: key focus and AI summary persistence
+- `src/store/useQuestStore.ts`: quest add/pin and cleanup
+- `src/store/useQuickNoteStore.ts`: tag sources for Pattern Radar
+- `src/store/useUserProfileStore.ts`: XP/Level helpers
+
+### Notes
+- Focus Mode only hides P&L values in UI; analytics remain available in `AnalyticsView`.
+- Guardrails lockout is a local UX timer. It does not block actions; it nudges behavior.
+
 ## 🤝 Contributing
 
 1. Fork the repository

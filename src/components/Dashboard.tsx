@@ -22,6 +22,12 @@ import { addDemoTradesToAccount } from '@/utils/demoDataGenerator';
 import { formatCurrency } from '@/lib/localStorageUtils';
 import { CircularProgress } from './ui/CircularProgress';
 import { Sparkline, TrendIndicator } from './ui/Sparkline';
+import { useDailyReflectionStore } from '@/store/useDailyReflectionStore';
+import { useQuickNoteStore } from '@/store/useQuickNoteStore';
+import { generateDailySummary } from '@/lib/ai/generateDailySummary';
+import { generateQuestSuggestions } from '@/lib/ai/generateQuestSuggestions';
+import { getFormattedLevel, getXPProgressPercentage } from '@/store/useUserProfileStore';
+import type { Quest, QuickNote } from '@/types';
 
 interface KPICardProps {
   title: string;
@@ -86,11 +92,98 @@ const KPICard: React.FC<KPICardProps> = ({
   );
 };
 
+// Lightweight Pattern Radar widget
+const PatternRadar: React.FC<{ trades: any[]; notes: QuickNote[] }> = ({ trades, notes }) => {
+  const negativeTags = new Set(['fomo', 'revenge', 'overtrading', 'tilt', 'impatience', 'late-entry', 'chasing']);
+  const positiveTags = new Set(['discipline', 'patience', 'followed-plan', 'risk-management', 'waited', 'partial-exit']);
+
+  const tagCounts = new Map<string, number>();
+  const bump = (tag: string) => {
+    const key = tag.toLowerCase();
+    tagCounts.set(key, (tagCounts.get(key) || 0) + 1);
+  };
+
+  trades.forEach(t => (t.tags || []).forEach(bump));
+  (notes || []).forEach(n => (n.tags || []).forEach(bump));
+
+  const entries = Array.from(tagCounts.entries()).sort((a, b) => b[1] - a[1]);
+  const helpful = entries.filter(([t]) => positiveTags.has(t)).slice(0, 3);
+  const harmful = entries.filter(([t]) => negativeTags.has(t)).slice(0, 3);
+
+  const Pill: React.FC<{ label: string; count: number; tone: 'good' | 'bad' }> = ({ label, count, tone }) => (
+    <span className={`text-xs px-2 py-1 rounded-full border ${tone === 'good' ? 'bg-green-500/10 text-green-400 border-green-500/30' : 'bg-red-500/10 text-red-400 border-red-500/30'}`}>
+      {label} • {count}
+    </span>
+  );
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <div className="text-xs text-muted-foreground mb-1">Helpful patterns</div>
+        <div className="flex flex-wrap gap-2">
+          {helpful.length > 0 ? helpful.map(([t, c]) => <Pill key={t} label={`#${t}`} count={c} tone="good" />) : <span className="text-xs text-muted-foreground">No data yet</span>}
+        </div>
+      </div>
+      <div>
+        <div className="text-xs text-muted-foreground mb-1">Harmful patterns</div>
+        <div className="flex flex-wrap gap-2">
+          {harmful.length > 0 ? harmful.map(([t, c]) => <Pill key={t} label={`#${t}`} count={c} tone="bad" />) : <span className="text-xs text-muted-foreground">No data yet</span>}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Reflection Progress widget
+const ReflectionProgress: React.FC<{ todayStr: string }> = ({ todayStr }) => {
+  const { getReflectionByDate } = useDailyReflectionStore();
+  const reflection = getReflectionByDate(todayStr);
+  const isComplete = reflection?.isComplete;
+  const xp = reflection?.xpEarned || 0;
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="text-sm">Today's Reflection</div>
+        <div className={`text-xs font-medium ${isComplete ? 'text-green-500' : 'text-orange-500'}`}>{isComplete ? 'Complete' : 'Incomplete'}</div>
+      </div>
+      <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+        <div className={`h-full ${isComplete ? 'bg-green-500' : 'bg-orange-500'}`} style={{ width: isComplete ? '100%' : '35%' }} />
+      </div>
+      <div className="text-xs text-muted-foreground">XP Earned: {xp}</div>
+    </div>
+  );
+};
+
+// XP and Level widget
+const XPLevelWidget: React.FC = () => {
+  const label = getFormattedLevel();
+  const pct = getXPProgressPercentage();
+  return (
+    <div className="space-y-3">
+      <div className="text-sm">{label}</div>
+      <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+        <div className="h-full bg-purple-500" style={{ width: `${pct.toFixed(0)}%` }} />
+      </div>
+      <div className="text-xs text-muted-foreground">{pct.toFixed(0)}% to next level</div>
+    </div>
+  );
+};
+
 export const Dashboard: React.FC = () => {
   const { trades } = useTradeStore();
   const { accounts, selectedAccountId } = useAccountFilterStore();
   const { quests, pinnedQuests, cleanupPinnedQuests } = useQuestStore();
   const [isLoadingDemo, setIsLoadingDemo] = useState(false);
+  const { getKeyFocusForDate, upsertReflectionForSelection } = useDailyReflectionStore();
+  const { notes } = useQuickNoteStore();
+
+  // Dashboard local state
+  const [isFocusMode, setIsFocusMode] = useState<boolean>(false);
+  const [lockoutUntil, setLockoutUntil] = useState<number | null>(null);
+  const [isGeneratingPlan, setIsGeneratingPlan] = useState<boolean>(false);
+  const [aiSummary, setAiSummary] = useState<string>('');
+  const [aiQuestSuggestions, setAiQuestSuggestions] = useState<Quest[]>([]);
 
   // Clean up pinned quests on dashboard load
   useEffect(() => {
@@ -133,6 +226,31 @@ export const Dashboard: React.FC = () => {
   const losingTrades = filteredTrades.filter(t => (t.pnl || 0) < 0).length;
   const breakEvenTrades = filteredTrades.filter(t => (t.pnl || 0) === 0).length;
   const winRate = filteredTrades.length > 0 ? (winningTrades / filteredTrades.length) * 100 : 0;
+
+  // Guardrails: risk used vs daily limit (if available), trades left, time since last trade
+  const todayLossAbs = Math.abs(
+    todayTrades.filter(t => (t.pnl || 0) < 0).reduce((sum, t) => sum + (t.pnl || 0), 0)
+  );
+  const selectionAccounts = React.useMemo(() => {
+    if (!selectedAccountId) return accounts;
+    const ids = getAccountIdsForSelection(selectedAccountId);
+    return accounts.filter(a => ids.includes(a.id));
+  }, [accounts, selectedAccountId]);
+  const dailyLossLimit = selectionAccounts.every(a => typeof a.dailyLossLimit === 'number')
+    ? (selectionAccounts.reduce((s, a) => s + (a.dailyLossLimit || 0), 0))
+    : null;
+  const riskUsedPct = dailyLossLimit && dailyLossLimit > 0 ? Math.min(100, Math.round((todayLossAbs / dailyLossLimit) * 100)) : null;
+  const lastTradeTime = todayTrades.length > 0
+    ? new Date(Math.max(...todayTrades.map(t => new Date(t.entryTime).getTime())))
+    : null;
+  const minutesSinceLastTrade = lastTradeTime ? Math.max(0, Math.floor((Date.now() - lastTradeTime.getTime()) / 60000)) : null;
+
+  // Focus for today (from reflection store)
+  const yyyy = new Date().getFullYear();
+  const mm = String(new Date().getMonth() + 1).padStart(2, '0');
+  const dd = String(new Date().getDate()).padStart(2, '0');
+  const todayStr = `${yyyy}-${mm}-${dd}`;
+  const keyFocus = getKeyFocusForDate(todayStr) || '';
 
   // Generate trend data for sparklines
   const generateDailyPnLTrend = (): number[] => {
@@ -213,6 +331,88 @@ export const Dashboard: React.FC = () => {
     }
   };
 
+  // Lockout helpers
+  const startLockout = (minutes: number) => {
+    const until = Date.now() + minutes * 60 * 1000;
+    setLockoutUntil(until);
+  };
+  const isLockedOut = lockoutUntil !== null && Date.now() < lockoutUntil;
+
+  // AI Plan generation
+  const handleGeneratePlan = async () => {
+    try {
+      setIsGeneratingPlan(true);
+      // Recent data context
+      const recentTrades = filteredTrades.slice(-10);
+      const winRateRecent = recentTrades.length > 0 ? (recentTrades.filter(t => (t.pnl || 0) > 0).length / recentTrades.length) * 100 : 0;
+      const totalPnLRecent = recentTrades.reduce((s, t) => s + (t.pnl || 0), 0);
+      const avgRisk = recentTrades.length > 0 ? recentTrades.reduce((s, t) => s + (t.riskAmount || 0), 0) / recentTrades.length : 100;
+      const recentNotes: QuickNote[] = (notes || []).slice(-5);
+
+      const [summary, questsFromAI] = await Promise.all([
+        generateDailySummary({
+          trades: recentTrades as any,
+          notes: recentNotes as any,
+          stats: {
+            totalPnL: totalPnLRecent,
+            winRate: winRateRecent,
+            totalXP: 0,
+            moodTrend: 'neutral',
+            tradeCount: recentTrades.length,
+          },
+        }),
+        generateQuestSuggestions({
+          recentTrades: recentTrades as any,
+          recentNotes: recentNotes as any,
+          currentMood: 'neutral',
+          completedQuests: [],
+          winRate: winRateRecent,
+          totalPnL: totalPnLRecent,
+          avgRiskAmount: avgRisk,
+        }),
+      ]);
+
+      setAiSummary(summary);
+      setAiQuestSuggestions(questsFromAI);
+    } catch (e) {
+      console.error('Failed to generate AI plan', e);
+      alert('Failed to generate plan. Please try again.');
+    } finally {
+      setIsGeneratingPlan(false);
+    }
+  };
+
+  const handleApplyPlan = async () => {
+    try {
+      // Save AI summary and extract focus for today
+      const extract = useDailyReflectionStore.getState().extractKeyFocus;
+      const focus = extract(aiSummary || 'Focus on disciplined trading.');
+      if (selectedAccountId) {
+        await upsertReflectionForSelection(todayStr, { aiSummary: aiSummary, keyFocus: focus }, selectedAccountId);
+      }
+      // Add quests and pin them
+      const { addQuest, pinQuest } = useQuestStore.getState();
+      for (const q of aiQuestSuggestions) {
+        const created = await addQuest({
+          title: q.title,
+          description: q.description,
+          type: q.type,
+          status: 'pending',
+          progress: 0,
+          maxProgress: q.maxProgress,
+          xpReward: q.xpReward,
+          dueDate: q.dueDate as any,
+          accountId: selectedAccountId || 'all',
+        });
+        pinQuest(created.id);
+      }
+      alert('Plan applied: focus set and quests pinned.');
+    } catch (e) {
+      console.error('Failed to apply plan', e);
+      alert('Failed to apply plan.');
+    }
+  };
+
   return (
     <div className="p-6 min-h-screen bg-grid">
       {/* Header */}
@@ -234,11 +434,101 @@ export const Dashboard: React.FC = () => {
         </motion.div>
       </div>
 
+      {/* Daily Focus + Guardrails + Focus Mode */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        {/* Daily Focus */}
+        <motion.div className="bg-card rounded-2xl p-5 border border-border" whileHover={{ scale: 1.01 }}>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Target className="w-5 h-5 text-primary" />
+              <h3 className="text-sm font-semibold">Daily Focus</h3>
+            </div>
+            <button
+              className="text-xs px-2 py-1 rounded bg-secondary text-secondary-foreground hover:bg-secondary/90"
+              onClick={handleGeneratePlan}
+              disabled={isGeneratingPlan}
+            >
+              {isGeneratingPlan ? 'Generating…' : 'Generate Plan'}
+            </button>
+          </div>
+          <div className="text-sm text-muted-foreground min-h-[40px]">
+            {keyFocus ? (
+              <span className="text-foreground">{keyFocus}</span>
+            ) : (
+              <span>No focus set for today yet.</span>
+            )}
+          </div>
+          {aiSummary && (
+            <div className="mt-3 text-xs text-muted-foreground line-clamp-3">{aiSummary}</div>
+          )}
+          {aiQuestSuggestions.length > 0 && (
+            <div className="mt-3 flex items-center justify-between">
+              <div className="flex -space-x-2">
+                {aiQuestSuggestions.slice(0, 3).map((q) => (
+                  <div key={q.title} className="text-[10px] px-2 py-1 rounded-full bg-muted text-muted-foreground border border-border">{q.title}</div>
+                ))}
+              </div>
+              <button
+                className="text-xs px-2 py-1 rounded bg-primary text-primary-foreground hover:bg-primary/90"
+                onClick={handleApplyPlan}
+              >Apply</button>
+            </div>
+          )}
+        </motion.div>
+
+        {/* Session Guardrails */}
+        <motion.div className="bg-card rounded-2xl p-5 border border-border" whileHover={{ scale: 1.01 }}>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Zap className="w-5 h-5 text-yellow-500" />
+              <h3 className="text-sm font-semibold">Session Guardrails</h3>
+            </div>
+            <div className="text-xs text-muted-foreground">
+              {isLockedOut ? 'Locked out' : 'Active'}
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-3 text-xs">
+            <div className="p-3 bg-muted rounded-lg text-center">
+              <div className="text-muted-foreground">Trades Today</div>
+              <div className="text-lg font-bold text-foreground">{todayTrades.length}</div>
+            </div>
+            <div className="p-3 bg-muted rounded-lg text-center">
+              <div className="text-muted-foreground">Since Last Trade</div>
+              <div className="text-lg font-bold text-foreground">{minutesSinceLastTrade !== null ? `${minutesSinceLastTrade}m` : '—'}</div>
+            </div>
+            <div className="p-3 bg-muted rounded-lg text-center">
+              <div className="text-muted-foreground">Risk Used</div>
+              <div className="text-lg font-bold text-foreground">{riskUsedPct !== null ? `${riskUsedPct}%` : '—'}</div>
+            </div>
+          </div>
+          <div className="mt-3 flex items-center justify-end gap-2">
+            {!isLockedOut ? (
+              <button className="text-xs px-2 py-1 rounded bg-muted text-muted-foreground hover:bg-muted/80" onClick={() => startLockout(20)}>Lockout 20m</button>
+            ) : (
+              <button className="text-xs px-2 py-1 rounded bg-muted text-muted-foreground hover:bg-muted/80" onClick={() => setLockoutUntil(null)}>Cancel Lockout</button>
+            )}
+            <button className="text-xs px-2 py-1 rounded bg-muted text-muted-foreground hover:bg-muted/80" onClick={() => alert('Session ended. Great work!')}>End Session</button>
+          </div>
+        </motion.div>
+
+        {/* Focus Mode Toggle */}
+        <motion.div className="bg-card rounded-2xl p-5 border border-border flex items-center justify-between" whileHover={{ scale: 1.01 }}>
+          <div>
+            <h3 className="text-sm font-semibold mb-1">Focus Mode</h3>
+            <p className="text-xs text-muted-foreground">Hide P&L to reduce performance-chasing</p>
+          </div>
+          <button
+            className={`px-3 py-1 rounded text-xs ${isFocusMode ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
+            onClick={() => setIsFocusMode(v => !v)}
+          >{isFocusMode ? 'On' : 'Off'}</button>
+        </motion.div>
+      </div>
+
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <KPICard
           title="P&L Today"
-          value={todayTrades.length > 0 ? formatCurrency(todayPnL) : '$0.00'}
+          value={isFocusMode ? '••••' : (todayTrades.length > 0 ? formatCurrency(todayPnL) : '$0.00')}
           change={todayTrades.length > 0 ? (todayPnL >= 0 ? '+' : '') + Math.abs(todayPnL).toFixed(0) : undefined}
           changeType={todayPnL > 0 ? 'positive' : todayPnL < 0 ? 'negative' : 'neutral'}
           icon={DollarSign}
@@ -281,7 +571,7 @@ export const Dashboard: React.FC = () => {
         
         <KPICard
           title="Total P&L"
-          value={filteredTrades.length > 0 ? formatCurrency(totalPnL) : '$0.00'}
+          value={isFocusMode ? '••••' : (filteredTrades.length > 0 ? formatCurrency(totalPnL) : '$0.00')}
           change={filteredTrades.length > 0 ? (totalPnL >= 0 ? 'Profitable' : 'Drawdown') : undefined}
           changeType={totalPnL > 0 ? 'positive' : totalPnL < 0 ? 'negative' : 'neutral'}
           icon={TrendingUp}
@@ -414,6 +704,36 @@ export const Dashboard: React.FC = () => {
               </>
             )}
           </div>
+        </motion.div>
+      </div>
+
+      {/* Pattern Radar + Reflection Progress + XP/Level */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        {/* Pattern Radar */}
+        <motion.div className="bg-card rounded-2xl p-6 border border-border" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+          <div className="flex items-center gap-3 mb-3">
+            <Brain className="w-6 h-6 text-blue-500" />
+            <h2 className="text-xl font-semibold text-card-foreground">Pattern Radar</h2>
+          </div>
+          <PatternRadar trades={filteredTrades} notes={notes} />
+        </motion.div>
+
+        {/* Reflection Progress */}
+        <motion.div className="bg-card rounded-2xl p-6 border border-border" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+          <div className="flex items-center gap-3 mb-3">
+            <BookOpen className="w-6 h-6 text-emerald-500" />
+            <h2 className="text-xl font-semibold text-card-foreground">Reflection Progress</h2>
+          </div>
+          <ReflectionProgress todayStr={todayStr} />
+        </motion.div>
+
+        {/* XP / Level */}
+        <motion.div className="bg-card rounded-2xl p-6 border border-border" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+          <div className="flex items-center gap-3 mb-3">
+            <Trophy className="w-6 h-6 text-purple-500" />
+            <h2 className="text-xl font-semibold text-card-foreground">Progress</h2>
+          </div>
+          <XPLevelWidget />
         </motion.div>
       </div>
 
