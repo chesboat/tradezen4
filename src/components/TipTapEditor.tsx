@@ -65,6 +65,18 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
   return (
     <div className={className}>
       <div className="border border-border rounded-lg p-3 bg-background">
+        {/* Simple persistent toolbar for reliability/debug */}
+        {editor && (
+          <div className="flex items-center gap-2 mb-2 text-xs">
+            <button className="px-2 py-1 bg-muted hover:bg-muted/70 rounded" onMouseDown={(e)=>{e.preventDefault(); const ok=editor.chain().focus().toggleBold().run(); console.log('[Toolbar] bold', ok);}}>B</button>
+            <button className="px-2 py-1 bg-muted hover:bg-muted/70 rounded italic" onMouseDown={(e)=>{e.preventDefault(); const ok=editor.chain().focus().toggleItalic().run(); console.log('[Toolbar] italic', ok);}}>I</button>
+            <button className="px-2 py-1 bg-muted hover:bg-muted/70 rounded underline" onMouseDown={(e)=>{e.preventDefault(); const ok=editor.chain().focus().toggleUnderline().run(); console.log('[Toolbar] underline', ok);}}>U</button>
+            <button className="px-2 py-1 bg-muted hover:bg-muted/70 rounded" onMouseDown={(e)=>{e.preventDefault(); const ok=editor.chain().focus().toggleBulletList().run(); console.log('[Toolbar] bullet', ok);}}>•</button>
+            <button className="px-2 py-1 bg-muted hover:bg-muted/70 rounded" onMouseDown={(e)=>{e.preventDefault(); const ok=editor.chain().focus().toggleOrderedList().run(); console.log('[Toolbar] ordered', ok);}}>1.</button>
+            <button className="px-2 py-1 bg-muted hover:bg-muted/70 rounded" onMouseDown={(e)=>{e.preventDefault(); const ok=editor.chain().focus().toggleTaskList().run(); console.log('[Toolbar] tasks', ok);}}>☑︎</button>
+            <button className="ml-2 px-2 py-1 bg-muted hover:bg-muted/70 rounded" onMouseDown={(e)=>{e.preventDefault(); const href=prompt('Link to (URL or #trade:ID)'); if(!href) return; const {from,to}=editor.state.selection; let ok=false; if(to>from){ ok=editor.chain().focus().setLink({href}).run(); } else { ok=editor.chain().focus().setMark('link',{href}).insertContent('trade').unsetMark('link').run(); } console.log('[Toolbar] link', ok, href);}}>Link</button>
+          </div>
+        )}
         {editor && (
           <BubbleMenu
             editor={editor}
