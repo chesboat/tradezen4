@@ -1,5 +1,5 @@
 import React from 'react';
-import { EditorContent, useEditor, BubbleMenu } from '@tiptap/react';
+import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import SlashCommand from './editor/SlashCommand';
@@ -62,6 +62,37 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
     },
   });
 
+  // Custom floating toolbar (replacement for BubbleMenu)
+  const [floatVisible, setFloatVisible] = React.useState(false);
+  const [floatPos, setFloatPos] = React.useState<{ left: number; top: number }>({ left: 0, top: 0 });
+  React.useEffect(() => {
+    if (!editor) return;
+    const update = () => {
+      const { from, to } = editor.state.selection;
+      const hasSelection = to > from;
+      const isFocused = editor.isFocused;
+      if (hasSelection && isFocused) {
+        const start = editor.view.coordsAtPos(from);
+        const end = editor.view.coordsAtPos(to);
+        const left = (start.left + end.right) / 2;
+        const top = Math.min(start.top, end.top) - 36; // place above selection
+        setFloatPos({ left, top: Math.max(top, 8) });
+        setFloatVisible(true);
+      } else {
+        setFloatVisible(false);
+      }
+    };
+    update();
+    editor.on('selectionUpdate', update);
+    editor.on('transaction', update);
+    editor.on('blur', () => setFloatVisible(false));
+    editor.on('focus', update);
+    return () => {
+      editor.off('selectionUpdate', update);
+      editor.off('transaction', update);
+    };
+  }, [editor]);
+
   return (
     <div className={className}>
       <div className="border border-border rounded-lg p-3 bg-background">
@@ -77,15 +108,11 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
             <button className="ml-2 px-2 py-1 bg-muted hover:bg-muted/70 rounded" onMouseDown={(e)=>{e.preventDefault(); const href=prompt('Link to (URL or #trade:ID)'); if(!href) return; const {from,to}=editor.state.selection; let ok=false; if(to>from){ ok=editor.chain().focus().setLink({href}).run(); } else { ok=editor.chain().focus().setMark('link',{href}).insertContent('trade').unsetMark('link').run(); } console.log('[Toolbar] link', ok, href);}}>Link</button>
           </div>
         )}
-        {editor && (
-          <BubbleMenu
-            editor={editor}
-            tippyOptions={{ duration: 150, appendTo: () => document.body, zIndex: 9999 }}
-            shouldShow={({ editor }) => {
-              const { from, to } = editor.state.selection;
-              return editor.isFocused && to > from;
-            }}
+        {editor && floatVisible && (
+          <div
+            style={{ position: 'fixed', left: floatPos.left, top: floatPos.top, transform: 'translate(-50%, -100%)', zIndex: 10000 }}
             className="flex items-center gap-1 bg-popover text-popover-foreground border border-border rounded-lg px-2 py-1 shadow"
+            onMouseDown={(e) => e.preventDefault()}
           >
             <button className="text-xs px-2 py-1 hover:bg-muted rounded" onMouseDown={(e)=>{e.preventDefault(); editor.chain().focus().toggleBold().run();}}>Bold</button>
             <button className="text-xs px-2 py-1 hover:bg-muted rounded" onMouseDown={(e)=>{e.preventDefault(); editor.chain().focus().toggleItalic().run();}}>Italic</button>
@@ -95,32 +122,10 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
             <button className="text-xs px-2 py-1 hover:bg-muted rounded" onMouseDown={(e)=>{e.preventDefault(); editor.chain().focus().toggleOrderedList().run();}}>1. List</button>
             <button className="text-xs px-2 py-1 hover:bg-muted rounded" onMouseDown={(e)=>{e.preventDefault(); editor.chain().focus().toggleTaskList().run();}}>☑︎ Tasks</button>
             <span className="mx-1 h-4 w-px bg-border" />
-            <button
-              className="text-xs px-2 py-1 hover:bg-muted rounded"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                const sel = editor.state.doc.textBetween(editor.state.selection.from, editor.state.selection.to).trim();
-                if (sel) onConvertSelectionToInsight?.(sel);
-              }}
-            >Insight</button>
-            <button
-              className="text-xs px-2 py-1 hover:bg-muted rounded"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                const sel = editor.state.doc.textBetween(editor.state.selection.from, editor.state.selection.to).trim();
-                if (sel) onPinSelectionAsQuest?.(sel);
-              }}
-            >Pin Quest</button>
-            <button
-              className="text-xs px-2 py-1 hover:bg-muted rounded"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                const href = window.prompt('Link to (URL or trade id e.g. #trade:abc123):');
-                if (!href) return;
-                editor.chain().focus().setLink({ href }).run();
-              }}
-            >Link</button>
-          </BubbleMenu>
+            <button className="text-xs px-2 py-1 hover:bg-muted rounded" onMouseDown={(e)=>{e.preventDefault(); const sel=editor.state.doc.textBetween(editor.state.selection.from, editor.state.selection.to).trim(); if(sel) onConvertSelectionToInsight?.(sel);}}>Insight</button>
+            <button className="text-xs px-2 py-1 hover:bg-muted rounded" onMouseDown={(e)=>{e.preventDefault(); const sel=editor.state.doc.textBetween(editor.state.selection.from, editor.state.selection.to).trim(); if(sel) onPinSelectionAsQuest?.(sel);}}>Pin Quest</button>
+            <button className="text-xs px-2 py-1 hover:bg-muted rounded" onMouseDown={(e)=>{e.preventDefault(); const href=prompt('Link to (URL or #trade:ID)'); if(!href) return; editor.chain().focus().setLink({href}).run();}}>Link</button>
+          </div>
         )}
         <EditorContent editor={editor} />
       </div>
