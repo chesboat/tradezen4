@@ -601,7 +601,7 @@ export const QuestsView: React.FC = () => {
       </div>
 
       {/* Pinned Quests */}
-      <AnimatePresence>
+      <AnimatePresence initial={false}>
         {pinnedQuestsList.length > 0 && !isInitializing && (
           <motion.div 
             className="space-y-4"
@@ -633,10 +633,12 @@ export const QuestsView: React.FC = () => {
               {pinnedQuestsList.map((quest, index) => (
                 <motion.div
                   key={quest.id}
-                  initial={{ opacity: 0, x: -20 }}
+                  layout
+                  initial={{ opacity: 0, x: -20, height: 'auto' }}
                   animate={{ 
                     opacity: 1, 
                     x: 0,
+                    height: 'auto',
                     transition: {
                       delay: index * 0.05,
                       type: "spring",
@@ -644,6 +646,8 @@ export const QuestsView: React.FC = () => {
                       damping: 30
                     }
                   }}
+                  exit={{ opacity: 0, height: 0, margin: 0 }}
+                  style={{ overflow: 'hidden' }}
                 >
                   <QuestCard
                     quest={quest}
@@ -761,7 +765,7 @@ export const QuestsView: React.FC = () => {
 
       {/* Quests Grid */}
       <div className="space-y-4">
-        <AnimatePresence mode="popLayout">
+        <AnimatePresence initial={false} mode="popLayout">
           {isInitializing ? (
             <motion.div
               initial={{ opacity: 0 }}
@@ -809,21 +813,25 @@ export const QuestsView: React.FC = () => {
               {filteredQuests.map((quest, index) => (
                 <motion.div
                   key={quest.id}
-                  initial={{ opacity: 0, y: 15, scale: 0.98 }}
+                  layout
+                  initial={{ opacity: 0, y: 15, scale: 0.98, height: 'auto' }}
                   animate={{ 
                     opacity: 1, 
                     y: 0,
                     scale: 1,
+                    height: 'auto',
                     transition: {
-                      delay: Math.min(index * 0.04, 0.4), // Cap delay to prevent long waits
+                      delay: Math.min(index * 0.04, 0.4),
                       type: "spring",
                       stiffness: 400,
                       damping: 35,
                       duration: 0.4
                     }
                   }}
+                  exit={{ opacity: 0, height: 0, margin: 0 }}
                   style={{
-                    willChange: 'transform, opacity'
+                    willChange: 'transform, opacity',
+                    overflow: 'hidden'
                   }}
                 >
                   <QuestCard
