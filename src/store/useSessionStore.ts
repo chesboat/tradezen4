@@ -11,10 +11,14 @@ interface SessionState {
   activeDate: string | null;
   isActive: boolean;
   checklist: SessionChecklistItem[];
+  rfDrafts: Record<string, { good: string; bad: string; focus: string }>;
   startSession: (date: string) => void;
   endSession: () => { completed: number; total: number };
   toggleItem: (id: string) => void;
   resetChecklist: (date: string) => void;
+  getRfDraft: (date: string) => { good: string; bad: string; focus: string } | undefined;
+  setRfDraft: (date: string, draft: { good: string; bad: string; focus: string }) => void;
+  clearRfDraft: (date: string) => void;
   load: () => void;
   save: () => void;
 }
@@ -31,6 +35,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   activeDate: null,
   isActive: false,
   checklist: defaultChecklist(),
+  rfDrafts: {},
 
   startSession: (date) => {
     set({ activeDate: date, isActive: true });
@@ -56,6 +61,19 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     get().save();
   },
 
+  getRfDraft: (date) => get().rfDrafts[date],
+  setRfDraft: (date, draft) => {
+    const next = { ...get().rfDrafts, [date]: draft };
+    set({ rfDrafts: next });
+    get().save();
+  },
+  clearRfDraft: (date) => {
+    const next = { ...get().rfDrafts };
+    delete next[date];
+    set({ rfDrafts: next });
+    get().save();
+  },
+
   load: () => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY, null as any);
@@ -64,6 +82,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
           activeDate: saved.activeDate || null,
           isActive: !!saved.isActive,
           checklist: Array.isArray(saved.checklist) && saved.checklist.length > 0 ? saved.checklist : defaultChecklist(),
+          rfDrafts: saved.rfDrafts || {},
         });
       }
     } catch (e) {
@@ -73,8 +92,8 @@ export const useSessionStore = create<SessionState>((set, get) => ({
 
   save: () => {
     try {
-      const { activeDate, isActive, checklist } = get();
-      localStorage.setItem(STORAGE_KEY, { activeDate, isActive, checklist });
+      const { activeDate, isActive, checklist, rfDrafts } = get();
+      localStorage.setItem(STORAGE_KEY, { activeDate, isActive, checklist, rfDrafts });
     } catch (e) {
       // ignore
     }

@@ -30,6 +30,7 @@ import { getFormattedLevel, getXPProgressPercentage } from '@/store/useUserProfi
 import type { Quest, QuickNote } from '@/types';
 import { useSessionStore } from '@/store/useSessionStore';
 import { useNavigationStore } from '@/store/useNavigationStore';
+import { useReflectionTemplateStore } from '@/store/useReflectionTemplateStore';
 
 interface KPICardProps {
   title: string;
@@ -180,10 +181,30 @@ export const Dashboard: React.FC = () => {
   const { getKeyFocusForDate, upsertReflectionForSelection } = useDailyReflectionStore();
   const reflections = useDailyReflectionStore((s) => s.reflections);
   const { notes } = useQuickNoteStore();
-  const { isActive: sessionActive, activeDate, checklist, startSession, endSession, toggleItem, resetChecklist } = useSessionStore();
+  const { isActive: sessionActive, activeDate, checklist, startSession, endSession, toggleItem, resetChecklist, getRfDraft, setRfDraft, clearRfDraft } = useSessionStore();
   const { setCurrentView } = useNavigationStore();
   const [endModalOpen, setEndModalOpen] = useState(false);
   const [endSummary, setEndSummary] = useState<{completed: number; total: number} | null>(null);
+  const { getReflectionByDate } = useReflectionTemplateStore();
+  const [rfGood, setRfGood] = useState('');
+  const [rfBad, setRfBad] = useState('');
+  const [rfFocus, setRfFocus] = useState('');
+  const [rfSaving, setRfSaving] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [celebrationXP, setCelebrationXP] = useState(0);
+  const [confetti, setConfetti] = useState<Array<{ left: number; delay: number; color: string }>>([]);
+
+  // Load quick reflection drafts when modal opens
+  useEffect(() => {
+    if (endModalOpen) {
+      const d = getRfDraft(todayStr);
+      if (d) {
+        setRfGood(d.good || '');
+        setRfBad(d.bad || '');
+        setRfFocus(d.focus || '');
+      }
+    }
+  }, [endModalOpen]);
 
   // Dashboard local state
   const [isFocusMode, setIsFocusMode] = useState<boolean>(false);
@@ -959,6 +980,44 @@ export const Dashboard: React.FC = () => {
               <div className="p-5 space-y-3 text-sm">
                 <div>Checklist completed: {endSummary?.completed}/{endSummary?.total}</div>
                 <div className="text-muted-foreground">Wrap the day with a quick reflection to lock in learning.</div>
+                {(() => {
+                  const reflection = selectedAccountId ? getReflectionByDate(todayStr, selectedAccountId) : undefined;
+                  const score = reflection?.completionScore || 0;
+                  return (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">Reflection completion</span>
+                        <span className="font-medium">{score}%</span>
+                      </div>
+                      <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                        <div className="h-full bg-primary" style={{ width: `${score}%` }} />
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Quick Reflection (3 prompts) */}
+                <div className="mt-3 space-y-2">
+                  <div className="text-xs font-medium text-foreground">Quick Reflection</div>
+                  <textarea
+                    value={rfGood}
+                    onChange={(e) => { setRfGood(e.target.value); setRfDraft(todayStr, { good: e.target.value, bad: rfBad, focus: rfFocus }); }}
+                    placeholder="What went well today?"
+                    className="w-full min-h-[64px] px-3 py-2 bg-muted/30 border border-border/50 rounded-lg text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none"
+                  />
+                  <textarea
+                    value={rfBad}
+                    onChange={(e) => { setRfBad(e.target.value); setRfDraft(todayStr, { good: rfGood, bad: e.target.value, focus: rfFocus }); }}
+                    placeholder="What could have been better?"
+                    className="w-full min-h-[64px] px-3 py-2 bg-muted/30 border border-border/50 rounded-lg text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none"
+                  />
+                  <textarea
+                    value={rfFocus}
+                    onChange={(e) => { setRfFocus(e.target.value); setRfDraft(todayStr, { good: rfGood, bad: rfBad, focus: e.target.value }); }}
+                    placeholder="Focus for tomorrow"
+                    className="w-full min-h-[64px] px-3 py-2 bg-muted/30 border border-border/50 rounded-lg text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none"
+                  />
+                </div>
               </div>
               <div className="p-4 border-t border-border/50 flex justify-end gap-2">
                 <button
@@ -966,12 +1025,105 @@ export const Dashboard: React.FC = () => {
                   onClick={() => setEndModalOpen(false)}
                 >Close</button>
                 <button
+                  className="px-3 py-1.5 rounded bg-blue-500 text-white hover:bg-blue-600 text-sm disabled:opacity-50"
+                  disabled={rfSaving || (!rfGood.trim() && !rfBad.trim() && !rfFocus.trim())}
+                  onClick={async () => {
+                    if (!selectedAccountId) return;
+                    setRfSaving(true);
+                    try {
+                      // Save to Reflection Template 2.0 blocks for today
+                      const rStore = useReflectionTemplateStore.getState();
+                      let refl = rStore.getReflectionByDate(todayStr, selectedAccountId);
+                      if (!refl) {
+                        refl = rStore.createOrUpdateReflection(todayStr, selectedAccountId);
+                      }
+                      const ensureBlock = (title: string, content: string, order: number) => {
+                        const existing = refl!.insightBlocks.find(b => b.title === title);
+                        if (existing) {
+                          rStore.updateInsightBlock(refl!.id, existing.id, { content, order });
+                        } else {
+                          rStore.addInsightBlock(refl!.id, { title, content, tags: [], order, isExpanded: true });
+                        }
+                      };
+                      ensureBlock('What went well', rfGood.trim(), 1);
+                      ensureBlock("What didn't go well", rfBad.trim(), 2);
+                      ensureBlock('Focus for tomorrow', rfFocus.trim(), 3);
+
+                      // Compute simple completion score and XP
+                      const wc = (t: string) => (t.trim() ? t.trim().split(/\s+/).length : 0);
+                      const words = [wc(rfGood), wc(rfBad), wc(rfFocus)];
+                      const completedBlocks = words.filter(w => w >= 20).length;
+                      const score = Math.round((completedBlocks / 3) * 100);
+                      const xp = words.reduce((sum, w) => sum + (w >= 50 ? 25 : w >= 20 ? 15 : w >= 10 ? 5 : 0), 0);
+                      rStore.createOrUpdateReflection(todayStr, selectedAccountId, { completionScore: score, totalXP: xp });
+
+                      // Save to Daily Reflection store and mark complete
+                      const dStore = useDailyReflectionStore.getState();
+                      const combined = `What went well:\n${rfGood}\n\nWhat didn’t go well:\n${rfBad}\n\nFocus for tomorrow:\n${rfFocus}`;
+                      dStore.upsertReflectionForSelection(todayStr, { reflection: combined, keyFocus: rfFocus, isComplete: true }, selectedAccountId);
+                      const existing = dStore.getReflectionByDate(todayStr, selectedAccountId);
+                      if (existing) dStore.markReflectionComplete(existing.id);
+
+                      setRfGood(''); setRfBad(''); setRfFocus('');
+                      clearRfDraft(todayStr);
+                      setEndModalOpen(false);
+
+                      // Celebration overlay
+                      setCelebrationXP(xp);
+                      const colors = ['#22c55e', '#3b82f6', '#eab308', '#ef4444', '#a855f7'];
+                      const pieces = Array.from({ length: 30 }).map(() => ({
+                        left: Math.random() * 100,
+                        delay: Math.random() * 0.6,
+                        color: colors[Math.floor(Math.random() * colors.length)],
+                      }));
+                      setConfetti(pieces);
+                      setShowCelebration(true);
+                      setTimeout(() => setShowCelebration(false), 1800);
+                    } finally {
+                      setRfSaving(false);
+                    }
+                  }}
+                >{rfSaving ? 'Saving…' : 'Save & Complete'}</button>
+                <button
                   className="px-3 py-1.5 rounded bg-primary text-primary-foreground hover:bg-primary/90 text-sm"
                   onClick={() => { setEndModalOpen(false); setCurrentView('journal'); }}
                 >Go to Reflection</button>
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Celebration Overlay */}
+      {showCelebration && (
+        <div className="fixed inset-0 z-[60] pointer-events-none">
+          <div className="absolute inset-0 flex items-center justify-center">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="px-4 py-2 rounded-xl bg-green-500 text-white font-semibold shadow-2xl"
+            >
+              +{celebrationXP} XP
+            </motion.div>
+          </div>
+          {confetti.map((c, i) => (
+            <motion.div
+              key={i}
+              initial={{ y: -20, opacity: 0, rotate: 0 }}
+              animate={{ y: 300, opacity: 1, rotate: 180 }}
+              transition={{ duration: 1.2, delay: c.delay, ease: 'easeOut' }}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: `${c.left}%`,
+                width: 8,
+                height: 12,
+                backgroundColor: c.color,
+                borderRadius: 2,
+              }}
+            />
+          ))}
         </div>
       )}
     </div>
