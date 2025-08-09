@@ -1228,7 +1228,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
 
                     {/* Enhanced Quick Notes */}
                     <motion.div 
-                      className="bg-gradient-to-br from-card to-green-50/5 dark:to-green-900/5 border border-border rounded-xl overflow-visible hover:shadow-lg transition-all duration-300"
+                      className="bg-gradient-to-br from-card to-green-50/5 dark:to-green-900/5 border border-border rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300"
                       whileHover={{ scale: 1.001 }}
                     >
                       {/* Gradient accent bar */}
@@ -1263,13 +1263,13 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
 
                         {/* Inline Quick Add */}
                         <div className="mb-4 p-3 bg-muted/20 rounded-lg border border-border/30">
-                          <div className="flex items-center gap-2 mb-2 pr-1">
+                          <div className="flex items-center gap-2 mb-2 flex-wrap">
                             <input
                               type="text"
                               value={quickNoteText}
                               onChange={(e) => setQuickNoteText(e.target.value)}
                               placeholder="Write a quick note..."
-                              className="flex-1 bg-transparent border-none outline-none text-sm placeholder:text-muted-foreground"
+                              className="flex-1 min-w-0 bg-transparent border-none outline-none text-sm placeholder:text-muted-foreground"
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter' && !e.shiftKey) {
                                   e.preventDefault();
@@ -1315,10 +1315,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
                               {isAddingQuickNote ? (
                                 <Loader2 className="w-3 h-3 animate-spin" />
                               ) : (
-                                <>
-                                  <Send className="w-3 h-3" />
-                                  <span className="hidden sm:inline">Add</span>
-                                </>
+                                <Send className="w-3 h-3" />
                               )}
                             </motion.button>
                           </div>
