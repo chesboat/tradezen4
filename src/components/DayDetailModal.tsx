@@ -1228,7 +1228,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
 
                     {/* Enhanced Quick Notes */}
                     <motion.div 
-                      className="bg-gradient-to-br from-card to-green-50/5 dark:to-green-900/5 border border-border rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300"
+                      className="bg-gradient-to-br from-card to-green-50/5 dark:to-green-900/5 border border-border rounded-xl overflow-visible hover:shadow-lg transition-all duration-300"
                       whileHover={{ scale: 1.001 }}
                     >
                       {/* Gradient accent bar */}
@@ -1263,7 +1263,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
 
                         {/* Inline Quick Add */}
                         <div className="mb-4 p-3 bg-muted/20 rounded-lg border border-border/30">
-                          <div className="flex items-center gap-2 mb-2">
+                          <div className="flex items-center gap-2 mb-2 pr-1">
                             <input
                               type="text"
                               value={quickNoteText}
@@ -1307,14 +1307,18 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
                             <motion.button
                               onClick={addQuickNote}
                               disabled={!quickNoteText.trim() || isAddingQuickNote}
-                              className="flex items-center gap-1 px-3 py-1.5 bg-green-500/10 hover:bg-green-500/20 text-green-500 rounded-lg transition-all text-sm disabled:opacity-50"
+                              className="flex items-center gap-1 px-3 py-1.5 bg-green-500/10 hover:bg-green-500/20 text-green-500 rounded-lg transition-all text-sm disabled:opacity-50 shrink-0"
+                              title="Add note"
                               whileHover={{ scale: 1.05 }}
                               whileTap={{ scale: 0.95 }}
                             >
                               {isAddingQuickNote ? (
                                 <Loader2 className="w-3 h-3 animate-spin" />
                               ) : (
-                                <Send className="w-3 h-3" />
+                                <>
+                                  <Send className="w-3 h-3" />
+                                  <span className="hidden sm:inline">Add</span>
+                                </>
                               )}
                             </motion.button>
                           </div>
