@@ -29,6 +29,7 @@ import { generateQuestSuggestions } from '@/lib/ai/generateQuestSuggestions';
 import { getFormattedLevel, getXPProgressPercentage } from '@/store/useUserProfileStore';
 import type { Quest, QuickNote } from '@/types';
 import { useSessionStore } from '@/store/useSessionStore';
+import { useNavigationStore } from '@/store/useNavigationStore';
 
 interface KPICardProps {
   title: string;
@@ -180,6 +181,9 @@ export const Dashboard: React.FC = () => {
   const reflections = useDailyReflectionStore((s) => s.reflections);
   const { notes } = useQuickNoteStore();
   const { isActive: sessionActive, activeDate, checklist, startSession, endSession, toggleItem, resetChecklist } = useSessionStore();
+  const { setCurrentView } = useNavigationStore();
+  const [endModalOpen, setEndModalOpen] = useState(false);
+  const [endSummary, setEndSummary] = useState<{completed: number; total: number} | null>(null);
 
   // Dashboard local state
   const [isFocusMode, setIsFocusMode] = useState<boolean>(false);
@@ -629,7 +633,8 @@ export const Dashboard: React.FC = () => {
                 ) : (
                   <button className="text-xs px-2 py-1 rounded bg-green-500 text-white hover:bg-green-600" onClick={() => {
                     const summary = endSession();
-                    alert(`Session ended. Checklist ${summary.completed}/${summary.total} completed.`);
+                    setEndSummary(summary);
+                    setEndModalOpen(true);
                   }}>
                     End Session
                   </button>
@@ -935,6 +940,35 @@ export const Dashboard: React.FC = () => {
                   className="px-3 py-1.5 rounded bg-muted text-muted-foreground hover:bg-muted/80 text-sm"
                   onClick={() => setPlanAppliedVisible(false)}
                 >Close</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* End Session Modal */}
+      {endModalOpen && (
+        <div className="fixed inset-0 z-50">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setEndModalOpen(false)} />
+          <div className="absolute inset-0 flex items-end md:items-center justify-center p-4">
+            <div className="w-full md:max-w-md bg-card border border-border/50 rounded-2xl shadow-2xl overflow-hidden">
+              <div className="p-4 border-b border-border/50 flex items-center gap-2">
+                <Brain className="w-5 h-5 text-primary" />
+                <h3 className="text-base font-semibold text-card-foreground">Session Summary</h3>
+              </div>
+              <div className="p-5 space-y-3 text-sm">
+                <div>Checklist completed: {endSummary?.completed}/{endSummary?.total}</div>
+                <div className="text-muted-foreground">Wrap the day with a quick reflection to lock in learning.</div>
+              </div>
+              <div className="p-4 border-t border-border/50 flex justify-end gap-2">
+                <button
+                  className="px-3 py-1.5 rounded bg-muted text-muted-foreground hover:bg-muted/80 text-sm"
+                  onClick={() => setEndModalOpen(false)}
+                >Close</button>
+                <button
+                  className="px-3 py-1.5 rounded bg-primary text-primary-foreground hover:bg-primary/90 text-sm"
+                  onClick={() => { setEndModalOpen(false); setCurrentView('journal'); }}
+                >Go to Reflection</button>
               </div>
             </div>
           </div>
