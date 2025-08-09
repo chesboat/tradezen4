@@ -63,6 +63,7 @@ interface GPTInsight {
 export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onClose }) => {
   const trades = useTradeStore(state => state.trades);
   const { getNotesForDate } = useQuickNoteStore();
+  const quickNotesAll = useQuickNoteStore(state => state.notes);
   const { selectedAccountId } = useAccountFilterStore();
   const { addActivity } = useActivityLogStore();
   const { addQuest, pinQuest } = useQuestStore();
@@ -143,7 +144,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
       .filter(note => !selectedAccountId || note.accountId === selectedAccountId);
     
     return notes;
-  }, [day?.date, getNotesForDate, selectedAccountId]);
+  }, [day?.date, getNotesForDate, selectedAccountId, quickNotesAll]);
 
   // Get daily reflection data
   const dateString = day?.date ? day.date.toISOString().split('T')[0] : '';
