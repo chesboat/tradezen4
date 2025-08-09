@@ -28,6 +28,7 @@ import { generateDailySummary } from '@/lib/ai/generateDailySummary';
 import { generateQuestSuggestions } from '@/lib/ai/generateQuestSuggestions';
 import { getFormattedLevel, getXPProgressPercentage } from '@/store/useUserProfileStore';
 import type { Quest, QuickNote } from '@/types';
+import { useSessionStore } from '@/store/useSessionStore';
 
 interface KPICardProps {
   title: string;
@@ -178,6 +179,7 @@ export const Dashboard: React.FC = () => {
   const { getKeyFocusForDate, upsertReflectionForSelection } = useDailyReflectionStore();
   const reflections = useDailyReflectionStore((s) => s.reflections);
   const { notes } = useQuickNoteStore();
+  const { isActive: sessionActive, activeDate, checklist, startSession, endSession, toggleItem, resetChecklist } = useSessionStore();
 
   // Dashboard local state
   const [isFocusMode, setIsFocusMode] = useState<boolean>(false);
@@ -613,13 +615,42 @@ export const Dashboard: React.FC = () => {
               <div className="text-lg font-bold text-foreground">{riskUsedPct !== null ? `${riskUsedPct}%` : '—'}</div>
             </div>
           </div>
+          {/* Start / End Session and Checklist */}
+          <div className="mt-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="text-xs text-muted-foreground">
+                {sessionActive && activeDate === todayStr ? 'Session active' : 'No active session'}
+              </div>
+              <div className="flex items-center gap-2">
+                {!sessionActive || activeDate !== todayStr ? (
+                  <button className="text-xs px-2 py-1 rounded bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => { resetChecklist(todayStr); startSession(todayStr); }}>
+                    Start Session
+                  </button>
+                ) : (
+                  <button className="text-xs px-2 py-1 rounded bg-green-500 text-white hover:bg-green-600" onClick={() => {
+                    const summary = endSession();
+                    alert(`Session ended. Checklist ${summary.completed}/${summary.total} completed.`);
+                  }}>
+                    End Session
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="space-y-2">
+              {checklist.map(item => (
+                <label key={item.id} className="flex items-center gap-2 text-xs">
+                  <input type="checkbox" checked={item.checked} onChange={() => toggleItem(item.id)} className="accent-primary" />
+                  <span className="text-foreground">{item.text}</span>
+                </label>
+              ))}
+            </div>
+          </div>
           <div className="mt-3 flex items-center justify-end gap-2">
             {!isLockedOut ? (
               <button className="text-xs px-2 py-1 rounded bg-muted text-muted-foreground hover:bg-muted/80" onClick={() => startLockout(20)}>Lockout 20m</button>
             ) : (
               <button className="text-xs px-2 py-1 rounded bg-muted text-muted-foreground hover:bg-muted/80" onClick={() => setLockoutUntil(null)}>Cancel Lockout</button>
             )}
-            <button className="text-xs px-2 py-1 rounded bg-muted text-muted-foreground hover:bg-muted/80" onClick={() => alert('Session ended. Great work!')}>End Session</button>
           </div>
         </motion.div>
 
