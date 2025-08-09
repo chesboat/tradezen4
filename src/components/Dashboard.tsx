@@ -185,6 +185,9 @@ export const Dashboard: React.FC = () => {
   const [isGeneratingPlan, setIsGeneratingPlan] = useState<boolean>(false);
   const [aiSummary, setAiSummary] = useState<string>('');
   const [aiQuestSuggestions, setAiQuestSuggestions] = useState<Quest[]>([]);
+  const [aiSummaryExpanded, setAiSummaryExpanded] = useState<boolean>(false);
+  const [planAppliedVisible, setPlanAppliedVisible] = useState<boolean>(false);
+  const [planAppliedCount, setPlanAppliedCount] = useState<number>(0);
 
   // Clean up pinned quests on dashboard load
   useEffect(() => {
@@ -414,6 +417,7 @@ export const Dashboard: React.FC = () => {
       }
       // Add quests and pin them
       const { addQuest, pinQuest } = useQuestStore.getState();
+      let pinned = 0;
       for (const q of aiQuestSuggestions) {
         const created = await addQuest({
           title: q.title,
@@ -427,8 +431,10 @@ export const Dashboard: React.FC = () => {
           accountId: selectedAccountId || 'all',
         });
         pinQuest(created.id);
+        pinned++;
       }
-      alert('Plan applied: focus set and quests pinned.');
+      setPlanAppliedCount(pinned);
+      setPlanAppliedVisible(true);
     } catch (e) {
       console.error('Failed to apply plan', e);
       alert('Failed to apply plan.');
@@ -481,13 +487,23 @@ export const Dashboard: React.FC = () => {
             )}
           </div>
           {aiSummary && (
-            <div className="mt-3 text-xs text-muted-foreground line-clamp-3">{aiSummary}</div>
+            <div className="mt-3 text-xs text-muted-foreground">
+              <p className={aiSummaryExpanded ? '' : 'line-clamp-3'}>{aiSummary}</p>
+              <button
+                className="mt-2 text-[11px] px-2 py-1 rounded bg-muted hover:bg-muted/80 text-muted-foreground"
+                onClick={() => setAiSummaryExpanded(v => !v)}
+              >{aiSummaryExpanded ? 'Show less' : 'Show more'}</button>
+            </div>
           )}
           {aiQuestSuggestions.length > 0 && (
             <div className="mt-3 flex items-center justify-between">
-              <div className="flex -space-x-2">
-                {aiQuestSuggestions.slice(0, 3).map((q) => (
-                  <div key={q.title} className="text-[10px] px-2 py-1 rounded-full bg-muted text-muted-foreground border border-border">{q.title}</div>
+              <div className="flex flex-wrap gap-2">
+                {aiQuestSuggestions.slice(0, 4).map((q) => (
+                  <div
+                    key={q.title}
+                    className="max-w-[180px] text-[10px] px-2 py-1 rounded-full bg-muted text-muted-foreground border border-border truncate"
+                    title={q.title}
+                  >{q.title}</div>
                 ))}
               </div>
               <button
@@ -794,6 +810,31 @@ export const Dashboard: React.FC = () => {
           <BookOpen className="w-6 h-6" />
         </motion.button>
       </div>
+
+      {/* Plan Applied Modal */}
+      {planAppliedVisible && (
+        <div className="fixed inset-0 z-50">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setPlanAppliedVisible(false)} />
+          <div className="absolute inset-0 flex items-end md:items-center justify-center p-4">
+            <div className="w-full md:max-w-md bg-card border border-border/50 rounded-2xl shadow-2xl overflow-hidden">
+              <div className="p-4 border-b border-border/50 flex items-center gap-2">
+                <Brain className="w-5 h-5 text-primary" />
+                <h3 className="text-base font-semibold text-card-foreground">Plan Applied</h3>
+              </div>
+              <div className="p-5 space-y-3">
+                <p className="text-sm text-foreground">Daily focus saved and quests pinned.</p>
+                <p className="text-xs text-muted-foreground">Pinned {planAppliedCount} quest(s). You can view them under Pinned Quests on the dashboard.</p>
+              </div>
+              <div className="p-4 border-t border-border/50 flex justify-end gap-2">
+                <button
+                  className="px-3 py-1.5 rounded bg-muted text-muted-foreground hover:bg-muted/80 text-sm"
+                  onClick={() => setPlanAppliedVisible(false)}
+                >Close</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }; 
