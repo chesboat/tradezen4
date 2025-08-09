@@ -413,7 +413,12 @@ export const Dashboard: React.FC = () => {
       const extract = useDailyReflectionStore.getState().extractKeyFocus;
       const focus = extract(aiSummary || 'Focus on disciplined trading.');
       if (selectedAccountId) {
-        await upsertReflectionForSelection(todayStr, { aiSummary: aiSummary, keyFocus: focus }, selectedAccountId);
+        await upsertReflectionForSelection(todayStr, {
+          aiSummary: aiSummary,
+          keyFocus: focus,
+          planApplied: true,
+          planPinnedCount: aiQuestSuggestions.length,
+        } as any, selectedAccountId);
       }
       // Add quests and pin them
       const { addQuest, pinQuest } = useQuestStore.getState();
@@ -481,7 +486,21 @@ export const Dashboard: React.FC = () => {
           </div>
           <div className="text-sm text-muted-foreground min-h-[40px]">
             {keyFocus ? (
-              <span className="text-foreground">{keyFocus}</span>
+              <div className="space-y-2">
+                <span className="text-foreground block">{keyFocus}</span>
+                {/* Persistent confirmation if plan was applied */}
+                {(() => {
+                  const ref = reflections.find(r => r.date === todayStr && (!selectedAccountId || r.accountId === selectedAccountId));
+                  if (ref?.planApplied) {
+                    return (
+                      <div className="inline-flex items-center gap-2 px-2 py-1 rounded-lg bg-green-500/10 text-green-600 border border-green-500/30 text-[11px]">
+                        <Trophy className="w-3 h-3" /> Quests pinned for today ({ref.planPinnedCount || 0})
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+              </div>
             ) : (
               <span>No focus set for today yet.</span>
             )}

@@ -27,6 +27,9 @@ interface DailyReflectionData {
   lessons?: string;
   reflectionTags: string[];
   completedAt?: Date;
+  // Dashboard 2.0 state
+  planApplied?: boolean;
+  planPinnedCount?: number;
   accountId: string;
   createdAt: Date;
   updatedAt: Date;
