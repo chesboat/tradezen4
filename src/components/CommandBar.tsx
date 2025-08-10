@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, FileText, Target, NotebookPen, Search, X } from 'lucide-react';
+import { Plus, FileText, Target, NotebookPen, Search, X, Image as ImageIcon } from 'lucide-react';
+import TradeImageImport from '@/components/TradeImageImport';
 import { useNavigationStore } from '@/store/useNavigationStore';
 import { useTradeLoggerModal } from '@/hooks/useTradeLoggerModal';
 import { useQuickNoteModalStore } from '@/store/useQuickNoteModalStore';
@@ -18,6 +19,7 @@ export const CommandBar: React.FC = () => {
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState('');
   const inputRef = React.useRef<HTMLInputElement>(null);
+  const [importOpen, setImportOpen] = React.useState(false);
 
   const { setCurrentView } = useNavigationStore();
   const tradeLogger = useTradeLoggerModal();
@@ -57,6 +59,13 @@ export const CommandBar: React.FC = () => {
       keywords: ['trade', 'logger', 'add trade']
     },
     {
+      id: 'trade:import-screenshot',
+      title: 'Import from Screenshot',
+      hint: 'Parse a trade table image',
+      action: () => { setOpen(false); setImportOpen(true); },
+      keywords: ['import', 'screenshot', 'image', 'ocr']
+    },
+    {
       id: 'note:new',
       title: 'Quick Note',
       hint: 'Open quick note',
@@ -84,7 +93,7 @@ export const CommandBar: React.FC = () => {
       },
       keywords: ['session', 'start', 'end']
     },
-  ], [isActive, todayStr]);
+  ], [isActive, todayStr, tradeLogger, quickNoteModal, setCurrentView]);
 
   const filtered = commands.filter(c =>
     !query.trim() || c.title.toLowerCase().includes(query.toLowerCase()) || (c.keywords || []).some(k => k.includes(query.toLowerCase()))
@@ -95,7 +104,7 @@ export const CommandBar: React.FC = () => {
       {/* Floating + */}
       <button
         aria-label="Quick Add"
-        className="fixed bottom-6 left-1/2 -translate-x-1/2 md:left-auto md:right-6 md:translate-x-0 z-40 p-3 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90"
+        className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 p-3 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90"
         onClick={() => setOpen(true)}
       >
         <Plus className="w-5 h-5" />
@@ -162,6 +171,9 @@ export const CommandBar: React.FC = () => {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Import modal */}
+      <TradeImageImport isOpen={importOpen} onClose={() => setImportOpen(false)} />
     </>
   );
 };
