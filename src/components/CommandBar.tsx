@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, FileText, Target, NotebookPen, Search, X } from 'lucide-react';
 import { useNavigationStore } from '@/store/useNavigationStore';
 import { useTradeLoggerModal } from '@/hooks/useTradeLoggerModal';
-import { useQuickNoteModal } from '@/store/useQuickNoteModalStore';
+import { useQuickNoteModalStore } from '@/store/useQuickNoteModalStore';
 import { useSessionStore } from '@/store/useSessionStore';
 
 type Command = {
@@ -21,7 +21,7 @@ export const CommandBar: React.FC = () => {
 
   const { setCurrentView } = useNavigationStore();
   const tradeLogger = useTradeLoggerModal();
-  const quickNoteModal = useQuickNoteModal();
+  const quickNoteModal = useQuickNoteModalStore();
   const { isActive, startSession, endSession } = useSessionStore();
 
   const todayStr = React.useMemo(() => {
