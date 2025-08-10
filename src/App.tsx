@@ -10,6 +10,7 @@ import { AnalyticsView } from './components/AnalyticsView';
 import { JournalView } from './components/JournalView';
 import { TradeLoggerModal } from './components/TradeLoggerModal';
 import { QuickNoteModal } from './components/QuickNoteModal';
+import { CommandBar } from './components/CommandBar';
 import { AuthPage } from './components/auth/AuthPage';
 import { useSidebarStore } from './store/useSidebarStore';
 import { useActivityLogStore } from './store/useActivityLogStore';
@@ -111,6 +112,9 @@ function AppContent() {
       
       {/* Quick Note Modal */}
       <QuickNoteModal />
+
+      {/* Global Command Bar */}
+      <CommandBar />
     </div>
   );
 }
