@@ -136,44 +136,13 @@ const QuestCard: React.FC<QuestCardProps> = ({ quest, isPinned, onPin, onUnpin, 
   };
 
   return (
-    <motion.div
-      layout
-      layoutId={quest.id}
-      initial={{ opacity: 0, y: 20, scale: 0.95 }}
-      animate={{ 
-        opacity: 1, 
-        y: 0, 
-        scale: 1,
-        transition: {
-          type: "spring",
-          stiffness: 400,
-          damping: 35,
-          duration: 0.5
-        }
-      }}
-      exit={{ 
-        opacity: 0, 
-        y: -10, 
-        scale: 0.95,
-        transition: {
-          duration: 0.15
-        }
-      }}
+    <div
       className={cn(
-        'bg-card border border-border rounded-2xl p-6 transition-transform duration-200 ease-out will-change-transform hover:shadow-glow-sm',
+        'bg-card border border-border rounded-2xl p-6 hover:shadow-glow-sm',
         isCompleted && 'opacity-75 bg-green-500/10 border-green-500/20',
         isOverdue && 'border-red-500/50 bg-red-500/10',
         isPinned && 'ring-2 ring-primary/50 border-primary/50'
       )}
-      whileHover={{ scale: 1.01 }}
-      whileTap={{ 
-        scale: 0.99,
-        transition: { duration: 0.08 }
-      }}
-      style={{
-        backfaceVisibility: 'hidden',
-        perspective: 1000,
-      }}
     >
       <div className="space-y-4">
         {/* Header */}
@@ -348,7 +317,7 @@ const QuestCard: React.FC<QuestCardProps> = ({ quest, isPinned, onPin, onUnpin, 
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 
@@ -595,12 +564,12 @@ export const QuestsView: React.FC = () => {
 
       {/* Pinned Quests */}
       {pinnedQuestsList.length > 0 && !isInitializing && (
-        <div className="space-y-4 will-change-auto">
+        <div className="space-y-4">
           <div className="flex items-center gap-2">
             <Pin className="w-5 h-5 text-primary" />
             <h2 className="text-xl font-semibold text-foreground">Pinned Quests</h2>
           </div>
-          <div className="grid gap-4 min-h-[0]">
+          <div className="grid gap-4">
             {pinnedQuestsList.map((quest) => (
               <div key={`p-${quest.id}`} className="[transition:none]">
                 <QuestCard
@@ -731,7 +700,7 @@ export const QuestsView: React.FC = () => {
       )}
 
       {/* Quests Grid */}
-      <div className="space-y-4 will-change-auto">
+      <div className="space-y-4">
           {isInitializing ? (
             <motion.div
               initial={{ opacity: 0 }}
@@ -764,7 +733,7 @@ export const QuestsView: React.FC = () => {
               </p>
             </motion.div>
         ) : (
-          <div className="grid gap-4 min-h-[200px]">
+          <div className="grid gap-4">
             {filteredQuests.map((quest) => (
               <div key={`l-${quest.id}`} className="[transition:none]">
                 <QuestCard
