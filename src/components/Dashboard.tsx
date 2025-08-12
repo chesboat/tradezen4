@@ -626,7 +626,7 @@ export const Dashboard: React.FC = () => {
           </div>
           {aiSummary && (
             <div className="mt-3 text-xs text-muted-foreground">
-              <p className={aiSummaryExpanded ? '' : 'line-clamp-3'}>{aiSummary}</p>
+              <p className={aiSummaryExpanded ? '' : 'line-clamp-3 break-words'}>{aiSummary}</p>
               <button
                 className="mt-2 text-[11px] px-2 py-1 rounded bg-muted hover:bg-muted/80 text-muted-foreground"
                 onClick={() => setAiSummaryExpanded(v => !v)}

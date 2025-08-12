@@ -158,18 +158,22 @@ export const useQuestStore = create<QuestState>((set, get) => ({
     const updatedQuests = currentQuests.map(quest => {
       if (quest.id === id && quest.status !== 'completed') {
         const newProgress = Math.min(quest.progress + progressIncrement, quest.maxProgress);
-        const isCompleted = newProgress >= quest.maxProgress;
+        const willReachMax = newProgress >= quest.maxProgress;
         
         // Auto-unpin completed quests
-        if (isCompleted && currentPinnedQuests.includes(id)) {
+        if (willReachMax && currentPinnedQuests.includes(id)) {
           updatedPinnedQuests = currentPinnedQuests.filter(pinnedId => pinnedId !== id);
         }
         
+        // Only auto-mark completed for achievement-type quests. For daily/weekly/monthly,
+        // leave status as pending to allow manual completion UX.
+        const shouldAutoComplete = willReachMax && quest.type === 'achievement';
+
         return {
           ...quest,
           progress: newProgress,
-          status: isCompleted ? 'completed' as const : quest.status,
-          completedAt: isCompleted ? new Date() : quest.completedAt,
+          status: shouldAutoComplete ? 'completed' as const : quest.status,
+          completedAt: shouldAutoComplete ? new Date() : quest.completedAt,
           updatedAt: new Date(),
         };
       }

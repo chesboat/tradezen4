@@ -377,8 +377,11 @@ export const QuestsView: React.FC = () => {
     const accountTrades = trades.filter(t => t.accountId === selectedAccountId);
     if (accountTrades.length === 0) return;
     
+    // Only auto-update progress for achievement-type quests.
+    // Daily/weekly/monthly quests should not instantly complete from historical data.
     const activeQuests = quests.filter(q => 
       (q.accountId === selectedAccountId || q.accountId === 'all') && 
+      q.type === 'achievement' &&
       q.status !== 'completed' && 
       q.status !== 'cancelled' && 
       q.status !== 'failed'
@@ -388,16 +391,18 @@ export const QuestsView: React.FC = () => {
     const questUpdates: Array<{ id: string; increment: number }> = [];
     
     activeQuests.forEach(quest => {
-      // First Steps quest - should be completed if any trades exist
+      const createdAt = new Date(quest.createdAt as any);
+      const tradesSinceCreated = accountTrades.filter(trade => new Date(trade.entryTime) >= createdAt);
+      // First Steps quest - should be completed if any trades exist since creation
       if (quest.title === 'First Steps' || quest.description.toLowerCase().includes('first trade')) {
-        if (accountTrades.length > 0 && quest.progress === 0) {
+        if (tradesSinceCreated.length > 0 && quest.progress === 0) {
           questUpdates.push({ id: quest.id, increment: 1 });
         }
       }
       
       // Risk Manager quest - count trades with good risk management
       if (quest.title === 'Risk Manager' || quest.description.toLowerCase().includes('risk')) {
-        const goodRiskTrades = accountTrades.filter(trade => trade.riskAmount <= 200);
+        const goodRiskTrades = tradesSinceCreated.filter(trade => (trade as any).riskAmount <= 200);
         if (goodRiskTrades.length > quest.progress) {
           questUpdates.push({ id: quest.id, increment: goodRiskTrades.length - quest.progress });
         }
@@ -408,8 +413,8 @@ export const QuestsView: React.FC = () => {
           !quest.description.toLowerCase().includes('first') &&
           !quest.description.toLowerCase().includes('risk') &&
           !quest.description.toLowerCase().includes('consecutive')) {
-        if (accountTrades.length > quest.progress) {
-          questUpdates.push({ id: quest.id, increment: accountTrades.length - quest.progress });
+        if (tradesSinceCreated.length > quest.progress) {
+          questUpdates.push({ id: quest.id, increment: tradesSinceCreated.length - quest.progress });
         }
       }
     });
