@@ -251,6 +251,22 @@ export const Dashboard: React.FC = () => {
     return true;
   });
 
+  // Pinned quests created today for the selected account (shown in Daily Focus)
+  const pinnedTodayList = React.useMemo(() => {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
+    return quests.filter(q => {
+      if (!pinnedQuests.includes(q.id)) return false;
+      if (q.status === 'completed' || q.status === 'cancelled' || q.status === 'failed') return false;
+      const createdAt = new Date(q.createdAt as any);
+      const isToday = createdAt >= startOfToday && createdAt <= endOfToday;
+      const accountOk = !selectedAccountId || q.accountId === selectedAccountId || q.accountId === 'all';
+      return isToday && accountOk;
+    });
+  }, [quests, pinnedQuests, selectedAccountId]);
+
   // Calculate real KPIs (respect group selection)
   const filteredTrades = React.useMemo(() => {
     if (!selectedAccountId) return trades;
@@ -493,6 +509,8 @@ export const Dashboard: React.FC = () => {
       setPlanAppliedCount(pinned);
       setPlanAppliedVisible(true);
       setApplyError('');
+      // Re-run cleanup to ensure visibility
+      cleanupPinnedQuests();
     } catch (e) {
       console.error('Failed to apply plan', e);
       alert('Failed to apply plan.');
@@ -529,6 +547,7 @@ export const Dashboard: React.FC = () => {
       pinQuest(created.id);
       setPlanAppliedCount(1);
       setPlanAppliedVisible(true);
+      cleanupPinnedQuests();
     } catch (e) {
       console.error('Failed to apply quest', e);
       alert('Failed to apply quest.');
@@ -580,10 +599,21 @@ export const Dashboard: React.FC = () => {
                 {/* Persistent confirmation if plan was applied */}
                 {(() => {
                   const ref = reflections.find(r => r.date === todayStr && (!selectedAccountId || r.accountId === selectedAccountId));
-                  if (ref?.planApplied) {
+                  if (ref?.planApplied || pinnedTodayList.length > 0) {
                     return (
-                      <div className="inline-flex items-center gap-2 px-2 py-1 rounded-lg bg-green-500/10 text-green-600 border border-green-500/30 text-[11px]">
-                        <Trophy className="w-3 h-3" /> Quests pinned for today ({ref.planPinnedCount || 0})
+                      <div className="space-y-2">
+                        <div className="inline-flex items-center gap-2 px-2 py-1 rounded-lg bg-green-500/10 text-green-600 border border-green-500/30 text-[11px]">
+                          <Trophy className="w-3 h-3" /> Quests pinned for today ({pinnedTodayList.length})
+                        </div>
+                        {pinnedTodayList.length > 0 && (
+                          <div className="flex flex-wrap gap-2">
+                            {pinnedTodayList.map(q => (
+                              <span key={q.id} className="text-[11px] px-2 py-1 rounded-full bg-muted/40 border border-border text-foreground">
+                                {q.title}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     );
                   }
@@ -614,20 +644,43 @@ export const Dashboard: React.FC = () => {
                   >{showMoreIdeas ? 'Show fewer' : 'More ideas'}</button>
                 )}
               </div>
-              <div className="space-y-2">
-                {(showMoreIdeas ? aiQuestSuggestions : aiQuestSuggestions.slice(0, 2)).map((q, idx) => {
-                  const realIdx = showMoreIdeas ? idx : idx; // use idx within slice to pass to handler via lookup
-                  const absoluteIdx = showMoreIdeas ? idx : idx; // aiQuestSuggestions slice keeps order
+              <div className="flex flex-wrap gap-2">
+                {(showMoreIdeas ? aiQuestSuggestions : aiQuestSuggestions.slice(0, 4)).map((q, idx) => {
+                  const absoluteIdx = showMoreIdeas ? idx : idx;
+                  const isSelected = selectedQuestIdxs.has(absoluteIdx);
                   return (
-                    <div key={`${q.title}-${absoluteIdx}`} className="w-full flex items-center justify-between px-3 py-2 rounded-lg border bg-muted/40 text-foreground border-border">
-                      <span className="truncate pr-3 text-sm">{q.title}</span>
-                      <button
-                        className="text-[11px] px-2 py-1 rounded bg-primary text-primary-foreground hover:bg-primary/90 whitespace-nowrap"
-                        onClick={() => handleApplySingleQuest(absoluteIdx)}
-                      >Apply</button>
-                    </div>
+                    <button
+                      type="button"
+                      key={`${q.title}-${absoluteIdx}`}
+                      className={`text-xs px-3 py-1 rounded-full border ${isSelected ? 'bg-primary/15 border-primary/40 text-primary' : 'bg-muted/40 border-border text-foreground hover:bg-muted/60'}`}
+                      onClick={() => {
+                        setSelectedQuestIdxs(prev => {
+                          const next = new Set(prev);
+                          if (next.has(absoluteIdx)) {
+                            next.delete(absoluteIdx);
+                          } else {
+                            if (next.size >= MAX_SELECTED_QUESTS) return next; // cap selections
+                            next.add(absoluteIdx);
+                          }
+                          return next;
+                        });
+                        setApplyError('');
+                      }}
+                      title={q.description}
+                    >{q.title}</button>
                   );
                 })}
+              </div>
+              <div className="mt-3 flex items-center justify-between">
+                <div className="text-[11px] text-muted-foreground">Selected {selectedQuestIdxs.size}/{MAX_SELECTED_QUESTS}</div>
+                <div className="flex items-center gap-2">
+                  {applyError && <span className="text-[11px] text-red-500">{applyError}</span>}
+                  <button
+                    className="text-[11px] px-3 py-1.5 rounded bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                    onClick={handleApplyPlan}
+                    disabled={selectedQuestIdxs.size === 0}
+                  >Apply Selected</button>
+                </div>
               </div>
             </div>
           )}
