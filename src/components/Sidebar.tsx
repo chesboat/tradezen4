@@ -22,6 +22,7 @@ import { useSidebarStore } from '@/store/useSidebarStore';
 import { useNavigationStore } from '@/store/useNavigationStore';
 import { useQuickNoteModal } from '@/store/useQuickNoteStore';
 import { useUserProfileStore, getUserDisplayName, getFormattedLevel } from '@/store/useUserProfileStore';
+import { useQuestStore } from '@/store/useQuestStore';
 import { cn } from '@/lib/utils';
 import { AccountFilter } from './AccountFilter';
 import { SearchBar } from './SearchBar';
@@ -79,7 +80,6 @@ const navItems: NavItem[] = [
     label: 'Quests',
     icon: Trophy,
     href: '/quests',
-    badge: 3,
   },
   {
     id: 'wellness',

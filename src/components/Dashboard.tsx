@@ -218,6 +218,7 @@ export const Dashboard: React.FC = () => {
   const [selectedQuestIdxs, setSelectedQuestIdxs] = useState<Set<number>>(new Set());
   const [applyError, setApplyError] = useState<string>('');
   const MAX_SELECTED_QUESTS = 2;
+  const [showMoreIdeas, setShowMoreIdeas] = useState<boolean>(false);
 
   // Helpers
   const normalizeSummary = (text: string): string => {
@@ -498,6 +499,42 @@ export const Dashboard: React.FC = () => {
     }
   };
 
+  // Apply a single quest immediately
+  const handleApplySingleQuest = async (idx: number) => {
+    try {
+      if (!aiQuestSuggestions[idx]) return;
+      const q = aiQuestSuggestions[idx];
+      const extract = useDailyReflectionStore.getState().extractKeyFocus;
+      const focus = extract(aiSummary || 'Focus on disciplined trading.');
+      if (selectedAccountId) {
+        await upsertReflectionForSelection(todayStr, {
+          aiSummary: aiSummary,
+          keyFocus: focus,
+          planApplied: true,
+          planPinnedCount: 1,
+        } as any, selectedAccountId);
+      }
+      const { addQuest, pinQuest } = useQuestStore.getState();
+      const created = await addQuest({
+        title: q.title,
+        description: q.description,
+        type: q.type,
+        status: 'pending',
+        progress: 0,
+        maxProgress: q.maxProgress,
+        xpReward: q.xpReward,
+        dueDate: q.dueDate as any,
+        accountId: selectedAccountId || 'all',
+      });
+      pinQuest(created.id);
+      setPlanAppliedCount(1);
+      setPlanAppliedVisible(true);
+    } catch (e) {
+      console.error('Failed to apply quest', e);
+      alert('Failed to apply quest.');
+    }
+  };
+
   return (
     <div className="p-6 min-h-screen bg-grid">
       {/* Header */}
@@ -569,48 +606,29 @@ export const Dashboard: React.FC = () => {
           {aiQuestSuggestions.length > 0 && (
             <div className="mt-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] text-muted-foreground">Pick today’s quests (max {MAX_SELECTED_QUESTS})</span>
+                <span className="text-[11px] text-muted-foreground">Today’s ideas</span>
+                {aiQuestSuggestions.length > 2 && (
+                  <button
+                    className="text-[11px] px-2 py-1 rounded bg-muted text-muted-foreground hover:bg-muted/80"
+                    onClick={() => setShowMoreIdeas(v => !v)}
+                  >{showMoreIdeas ? 'Show fewer' : 'More ideas'}</button>
+                )}
               </div>
               <div className="space-y-2">
-                {aiQuestSuggestions.map((q, idx) => {
-                  const selected = selectedQuestIdxs.has(idx);
-                  const atLimit = !selected && selectedQuestIdxs.size >= MAX_SELECTED_QUESTS;
+                {(showMoreIdeas ? aiQuestSuggestions : aiQuestSuggestions.slice(0, 2)).map((q, idx) => {
+                  const realIdx = showMoreIdeas ? idx : idx; // use idx within slice to pass to handler via lookup
+                  const absoluteIdx = showMoreIdeas ? idx : idx; // aiQuestSuggestions slice keeps order
                   return (
-                    <button
-                      type="button"
-                      key={`${q.title}-${idx}`}
-                      onClick={() => {
-                        const next = new Set(selectedQuestIdxs);
-                        if (selected) {
-                          next.delete(idx);
-                        } else if (next.size < MAX_SELECTED_QUESTS) {
-                          next.add(idx);
-                        }
-                        setSelectedQuestIdxs(next);
-                        setApplyError('');
-                      }}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-lg border text-sm transition-colors ${selected ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted/40 text-foreground border-border hover:bg-muted/60'} ${atLimit ? 'opacity-60 cursor-not-allowed' : ''}`}
-                      disabled={atLimit}
-                    >
-                      <span className="truncate text-left pr-3">{q.title}</span>
-                      <span className={`w-4 h-4 rounded ${selected ? 'bg-white/90' : 'bg-transparent border border-border'}`} />
-                    </button>
+                    <div key={`${q.title}-${absoluteIdx}`} className="w-full flex items-center justify-between px-3 py-2 rounded-lg border bg-muted/40 text-foreground border-border">
+                      <span className="truncate pr-3 text-sm">{q.title}</span>
+                      <button
+                        className="text-[11px] px-2 py-1 rounded bg-primary text-primary-foreground hover:bg-primary/90 whitespace-nowrap"
+                        onClick={() => handleApplySingleQuest(absoluteIdx)}
+                      >Apply</button>
+                    </div>
                   );
                 })}
               </div>
-              <div className="mt-3 flex items-center justify-end gap-2">
-                <button
-                  className="text-[11px] px-3 h-8 rounded bg-muted text-muted-foreground hover:bg-muted/80 whitespace-nowrap"
-                  onClick={() => setSelectedQuestIdxs(new Set())}
-                >Clear</button>
-                <button
-                  className="text-sm px-3 h-8 rounded bg-primary text-primary-foreground hover:bg-primary/90 whitespace-nowrap"
-                  onClick={handleApplyPlan}
-                >Apply ({selectedQuestIdxs.size})</button>
-              </div>
-              {applyError && (
-                <div className="mt-2 text-[11px] text-red-500">{applyError}</div>
-              )}
             </div>
           )}
         </motion.div>

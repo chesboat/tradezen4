@@ -170,7 +170,7 @@ Focus on improvement areas based on the actual data provided.`;
     type: suggestion.type,
     status: 'pending' as const,
     progress: 0,
-    maxProgress: suggestion.maxProgress,
+    maxProgress: Math.max(1, Number.isFinite(suggestion.maxProgress as any) ? (suggestion.maxProgress as number) : 1),
     xpReward: suggestion.xpReward,
     dueDate: suggestion.type === 'daily' 
       ? new Date(Date.now() + 24 * 60 * 60 * 1000)

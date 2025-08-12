@@ -27,8 +27,11 @@ export const useQuestStore = create<QuestState>((set, get) => ({
 
   // Add new quest
   addQuest: async (quest: Omit<Quest, 'id' | 'createdAt' | 'updatedAt'>) => {
+    // Ensure sane defaults
+    const safeMaxProgress = Math.max(1, Number.isFinite((quest as any).maxProgress) ? (quest as any).maxProgress : 1);
     const newQuest: Quest = {
       ...quest,
+      maxProgress: safeMaxProgress,
       id: generateId(),
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -262,8 +265,27 @@ export const useQuestStore = create<QuestState>((set, get) => ({
     const currentQuests = get().quests;
     const currentPinned = get().pinnedQuests;
     
+    // First, normalize any quests with invalid maxProgress/progress
+    const normalizedQuests = currentQuests.map(quest => {
+      const safeMax = Math.max(1, Number.isFinite((quest as any).maxProgress) ? (quest as any).maxProgress : 1);
+      const safeProgress = Math.min(quest.progress, safeMax);
+      if (safeMax !== quest.maxProgress || safeProgress !== quest.progress) {
+        return {
+          ...quest,
+          maxProgress: safeMax,
+          progress: safeProgress,
+          updatedAt: new Date(),
+        };
+      }
+      return quest;
+    });
+    if (normalizedQuests.some((q, i) => q !== currentQuests[i])) {
+      set({ quests: normalizedQuests });
+      localStorage.setItem(STORAGE_KEYS.QUESTS, normalizedQuests);
+    }
+    
     // First, auto-complete any quests that have full progress but aren't marked complete
-    const updatedQuests = currentQuests.map(quest => {
+    const updatedQuests = (normalizedQuests.length ? normalizedQuests : currentQuests).map(quest => {
       if (quest.progress >= quest.maxProgress && quest.status !== 'completed' && quest.status !== 'cancelled' && quest.status !== 'failed') {
         console.log(`🎯 Auto-completing fully progressed quest: ${quest.title}`);
         return {
