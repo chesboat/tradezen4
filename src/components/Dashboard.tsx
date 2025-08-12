@@ -228,6 +228,12 @@ export const Dashboard: React.FC = () => {
     t = t.replace(/^['`’]s\s+/i, '');
     // Remove leading non-letter punctuation
     t = t.replace(/^[^A-Za-z“”"'(]+/g, '');
+    // If starts lowercase, capitalize first letter to avoid mid-sentence feel
+    if (/^[a-z]/.test(t)) {
+      t = t.charAt(0).toUpperCase() + t.slice(1);
+    }
+    // Ensure ending punctuation
+    if (!/[.!?]$/.test(t)) t = t + '.';
     return t;
   };
 
