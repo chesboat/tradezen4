@@ -314,6 +314,11 @@ export const Dashboard: React.FC = () => {
   const riskUsedDisplay = dailyLossLimit && dailyLossLimit > 0
     ? `${riskUsedPct}% (${formatCurrency(-todayLossAbs)} / ${formatCurrency(-dailyLossLimit)})`
     : (riskUsedPct !== null ? `${riskUsedPct}%` : '—');
+  const riskPrimaryText = riskUsedPct !== null ? `${riskUsedPct}%` : '—';
+  const riskSecondaryText = dailyLossLimit && dailyLossLimit > 0
+    ? `(${formatCurrency(-todayLossAbs)} of ${formatCurrency(-dailyLossLimit)})`
+    : '';
+  const riskColorClass = riskUsedPct !== null && riskUsedPct >= 100 ? 'text-red-600' : 'text-foreground';
   const lastTradeTime = todayTrades.length > 0
     ? new Date(Math.max(...todayTrades.map(t => new Date(t.entryTime).getTime())))
     : null;
@@ -736,9 +741,17 @@ export const Dashboard: React.FC = () => {
               <div className="text-muted-foreground">Since Last Trade</div>
               <div className="text-lg font-bold text-foreground">{minutesSinceLastTrade !== null ? `${minutesSinceLastTrade}m` : '—'}</div>
             </div>
-            <div className="p-3 bg-muted rounded-lg text-center">
-              <div className="text-muted-foreground">Risk Used</div>
-              <div className="text-lg font-bold text-foreground">{riskUsedDisplay}</div>
+            <div className="p-3 bg-muted rounded-lg">
+              <div className="text-center text-muted-foreground">Risk Used</div>
+              <div className={"text-2xl font-extrabold text-center " + riskColorClass}>{riskPrimaryText}</div>
+              {riskSecondaryText && (
+                <div className="text-[11px] text-muted-foreground text-center whitespace-nowrap">{riskSecondaryText}</div>
+              )}
+              {riskUsedPct !== null && (
+                <div className="mt-2 w-full h-1.5 bg-background/60 rounded-full overflow-hidden">
+                  <div className={`h-full ${riskUsedPct >= 100 ? 'bg-red-500' : 'bg-primary'}`} style={{ width: `${Math.min(100, riskUsedPct)}%` }} />
+                </div>
+              )}
             </div>
           </div>
           {/* Rule chips */}

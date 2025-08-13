@@ -1,7 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
-import { getAnalytics } from 'firebase/analytics';
+import { getAnalytics, isSupported as analyticsIsSupported } from 'firebase/analytics';
 
 // Your Firebase configuration object
 const firebaseConfig = {
@@ -20,6 +20,22 @@ const app = initializeApp(firebaseConfig);
 // Get Auth and Firestore instances
 export const auth = getAuth(app);
 export const db = getFirestore(app);
-export const analytics = getAnalytics(app);
+// Initialize Analytics only when supported (avoids blank page issues locally)
+export let analytics: ReturnType<typeof getAnalytics> | null = null;
+if (typeof window !== 'undefined') {
+  analyticsIsSupported()
+    .then((supported) => {
+      if (supported) {
+        try {
+          analytics = getAnalytics(app);
+        } catch (e) {
+          console.warn('Firebase Analytics not initialized:', e);
+        }
+      }
+    })
+    .catch(() => {
+      // Ignore
+    });
+}
 
 export default app;
