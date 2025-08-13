@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import { MoodType } from '@/types';
 type Timeout = ReturnType<typeof setTimeout>;
 import { useQuickNoteStore, useQuickNoteModal, useQuickNoteTags } from '@/store/useQuickNoteStore';
-import { useAccountFilterStore } from '@/store/useAccountFilterStore';
+import { useAccountFilterStore, getAccountIdsForSelection } from '@/store/useAccountFilterStore';
 import { useActivityLogStore } from '@/store/useActivityLogStore';
 import { TagInput } from '@/components/TagPill';
 import { getMoodEmoji } from '@/lib/localStorageUtils';
@@ -151,30 +151,34 @@ export const QuickNoteModal: React.FC<QuickNoteModalProps> = ({
     setIsLoading(true);
 
     try {
-      const noteData = {
+      const targetAccountIds = getAccountIdsForSelection(selectedAccountId);
+      const baseNote = {
         content: formData.content.trim(),
         tags: formData.tags,
         mood: formData.mood,
         attachedToTradeId: attachToTradeId,
-        accountId: selectedAccountId,
-      };
+      } as const;
 
       if (editingNoteId) {
-        updateNote(editingNoteId, noteData);
+        // Editing updates only the current note
+        updateNote(editingNoteId, { ...baseNote, accountId: selectedAccountId });
       } else {
-        const newNote = await addNote(noteData);
-        
-        // Add to activity log
-        addActivity({
-          type: 'note',
-          title: 'Quick Note Added',
-          description: formData.content.length > 50 
-            ? `${formData.content.substring(0, 50)}...`
-            : formData.content,
-          xpEarned: 5,
-          relatedId: newNote.id,
-          accountId: selectedAccountId,
-        });
+        // Create a note for each account in the selection (group or single)
+        const created = [] as { id: string; accountId: string }[];
+        for (const accountId of targetAccountIds) {
+          const newNote = await addNote({ ...baseNote, accountId });
+          created.push({ id: newNote.id, accountId });
+          addActivity({
+            type: 'note',
+            title: 'Quick Note Added',
+            description: formData.content.length > 50 
+              ? `${formData.content.substring(0, 50)}...`
+              : formData.content,
+            xpEarned: 5,
+            relatedId: newNote.id,
+            accountId,
+          });
+        }
 
         // Clear draft after successful save
         clearDraft();

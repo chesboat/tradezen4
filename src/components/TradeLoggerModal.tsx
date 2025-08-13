@@ -16,7 +16,7 @@ import {
   Calculator
 } from 'lucide-react';
 import { useTradeActions } from '@/store/useTradeStore';
-import { useAccountFilterStore } from '@/store/useAccountFilterStore';
+import { useAccountFilterStore, getAccountIdsForSelection } from '@/store/useAccountFilterStore';
 import { useActivityLogStore } from '@/store/useActivityLogStore';
 import { useQuestStore } from '@/store/useQuestStore';
 import { useTradeStore } from '@/store/useTradeStore';
@@ -280,8 +280,11 @@ export const TradeLoggerModal: React.FC<TradeLoggerModalProps> = ({
           accountId: selectedAccountId,
         });
       } else {
-              console.log('Attempting to add trade with data:', tradeData);
-      const newTrade = await addTrade(tradeData);
+        console.log('Attempting to add trade with data:', tradeData);
+        // If group selected, add with leader accountId; store logic will replicate to followers
+        const targetIds = getAccountIdsForSelection(selectedAccountId);
+        const leaderId = targetIds[0] || selectedAccountId;
+        const newTrade = await addTrade({ ...tradeData, accountId: leaderId });
       console.log('Trade added successfully:', newTrade);
       addActivity({
           type: 'trade',
@@ -289,7 +292,7 @@ export const TradeLoggerModal: React.FC<TradeLoggerModalProps> = ({
           description: `${formData.result === 'win' ? 'Won' : formData.result === 'loss' ? 'Lost' : 'Broke even on'} ${formatCurrency(Math.abs(tradeData.pnl!))}`,
           xpEarned: totalXP,
           relatedId: newTrade.id,
-          accountId: selectedAccountId,
+            accountId: leaderId,
         });
 
         // Check and update quest progress for all relevant quests
