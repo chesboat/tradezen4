@@ -48,6 +48,7 @@ interface AccountForm {
   sessionRiskPerTrade?: string;
   sessionMaxLossesPerDay?: string;
   sessionEnforcement?: 'off' | 'nudge' | 'lockout' | 'hard';
+  sessionCustomRules?: any[];
 }
 
 const ACCOUNT_TYPES = [
@@ -114,6 +115,7 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
     sessionRiskPerTrade: '',
     sessionMaxLossesPerDay: '',
     sessionEnforcement: 'nudge',
+    sessionCustomRules: [],
   });
   
   const [errors, setErrors] = useState<Partial<AccountForm>>({});
@@ -149,6 +151,7 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
         sessionRiskPerTrade: (editingAccount.sessionRules?.riskPerTrade ?? '').toString() || '',
         sessionMaxLossesPerDay: (editingAccount.sessionRules?.maxLossesPerDay ?? '').toString() || '',
         sessionEnforcement: (editingAccount.sessionRules?.enforcement || 'nudge') as any,
+        sessionCustomRules: (editingAccount.sessionRules?.customRules as any) || [],
       });
     } else {
       setForm({
@@ -176,6 +179,7 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
         sessionRiskPerTrade: '',
         sessionMaxLossesPerDay: '',
         sessionEnforcement: 'nudge',
+        sessionCustomRules: [],
       });
     }
     setErrors({});
@@ -282,6 +286,7 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
       if (form.sessionRiskPerTrade) sr.riskPerTrade = parseFloat(form.sessionRiskPerTrade);
       if (form.sessionMaxLossesPerDay) sr.maxLossesPerDay = parseInt(form.sessionMaxLossesPerDay);
       if (form.sessionEnforcement) sr.enforcement = form.sessionEnforcement;
+      if (form.sessionCustomRules && form.sessionCustomRules.length > 0) sr.customRules = form.sessionCustomRules;
       if (Object.keys(sr).length > 0) accountData.sessionRules = sr;
 
       if (editingAccount) {
@@ -625,7 +630,7 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
                         className="px-3 py-2 rounded-lg border border-border hover:bg-accent text-left"
                         onClick={() => {
                           // Add rapid loss lockout template (lossStreak >= 2 → lockout + nudge)
-                          const current = ((editingAccount?.sessionRules as any)?.customRules || []) as any[];
+                          const current = (form.sessionCustomRules || []);
                           const id = 'tmpl-rapid-loss';
                           if (!current.find(r => r.id === id)) {
                             const rule = {
@@ -641,8 +646,7 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
                               ],
                               cooldownMs: 5 * 60 * 1000,
                             } as any;
-                            const sr = { ...(editingAccount?.sessionRules || {}), customRules: [...current, rule] } as any;
-                            updateAccount(editingAccount!.id, { sessionRules: sr } as any);
+                            updateForm('sessionCustomRules', [...current, rule]);
                           }
                         }}
                       >
@@ -655,7 +659,7 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
                         className="px-3 py-2 rounded-lg border border-border hover:bg-accent text-left"
                         onClick={() => {
                           // Add overtrading warning template (negative tags ≥ 3)
-                          const current = ((editingAccount?.sessionRules as any)?.customRules || []) as any[];
+                          const current = (form.sessionCustomRules || []);
                           const id = 'tmpl-overtrading';
                           if (!current.find(r => r.id === id)) {
                             const rule = {
@@ -670,8 +674,7 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
                               ],
                               cooldownMs: 10 * 60 * 1000,
                             } as any;
-                            const sr = { ...(editingAccount?.sessionRules || {}), customRules: [...current, rule] } as any;
-                            updateAccount(editingAccount!.id, { sessionRules: sr } as any);
+                            updateForm('sessionCustomRules', [...current, rule]);
                           }
                         }}
                       >
