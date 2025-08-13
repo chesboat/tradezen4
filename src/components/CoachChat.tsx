@@ -95,7 +95,7 @@ export const CoachChat: React.FC<CoachChatProps> = ({ date }) => {
                 </div>
               )}
               {messages.map(m => (
-                <div key={m.id} className={`text-sm p-2 rounded ${m.role === 'user' ? 'bg-primary/10 text-foreground' : 'bg-muted text-foreground'}`}>
+                <div key={m.id} className={`text-sm p-2 rounded whitespace-pre-wrap ${m.role === 'user' ? 'bg-primary/10 text-foreground' : 'bg-muted text-foreground'}`}>
                   {m.content}
                 </div>
               ))}
