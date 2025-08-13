@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { localStorage, STORAGE_KEYS } from '@/lib/localStorageUtils';
+import { localStorage } from '@/lib/localStorageUtils';
 
 export type CoachMessageRole = 'system' | 'user' | 'assistant';
 
@@ -24,7 +24,7 @@ interface CoachState {
   loadFromStorage: () => void;
 }
 
-const STORAGE_KEY = `${STORAGE_KEYS.APP_PREFIX || 'tradzen'}-coach-messages`;
+const STORAGE_KEY = 'tradzen_coach_messages';
 
 const generateId = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
 
