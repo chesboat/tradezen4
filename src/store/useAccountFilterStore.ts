@@ -32,6 +32,29 @@ export const useAccountFilterStore = create<AccountFilterState>((set, get) => ({
 
   updateAccount: async (id, updates) => {
     try {
+      // Enforce exclusivity: if updating links, clear others and normalize
+      if ('linkedAccountIds' in updates) {
+        const currentAccounts = get().accounts;
+        const validIds = new Set(currentAccounts.map(a => a.id));
+        const desiredFollowers = Array.from(new Set((updates.linkedAccountIds || []) as string[]))
+          .filter(fid => fid !== id && validIds.has(fid));
+
+        const otherLeaders = currentAccounts.filter(a => a.id !== id && (a.linkedAccountIds || []).length > 0);
+
+        await Promise.all([
+          ...otherLeaders.map(a => accountService.update(a.id, { linkedAccountIds: [] } as any)),
+          accountService.update(id, { ...updates, linkedAccountIds: desiredFollowers as any })
+        ]);
+
+        const updatedAccounts = currentAccounts.map(acc => {
+          if (acc.id === id) return { ...acc, ...updates, linkedAccountIds: desiredFollowers } as any;
+          if (otherLeaders.some(l => l.id === acc.id)) return { ...acc, linkedAccountIds: [] } as any;
+          return acc;
+        });
+        set({ accounts: updatedAccounts });
+        return;
+      }
+
       await accountService.update(id, updates);
       const currentAccounts = get().accounts;
       const updatedAccounts = currentAccounts.map(acc => 

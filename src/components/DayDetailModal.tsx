@@ -336,6 +336,11 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
     
     setIsPinningQuest(true);
     try {
+      // Resolve a concrete account ID for the quest (if a group is selected, use the leader ID)
+      let targetAccountId = selectedAccountId || 'all';
+      if (targetAccountId && targetAccountId.startsWith('group:')) {
+        targetAccountId = targetAccountId.split(':')[1] || targetAccountId;
+      }
       const quest = await addQuest({
         title: `Daily Focus: ${new Date().toLocaleDateString()}`,
         description: dailyReflection.keyFocus,
@@ -345,11 +350,13 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
         maxProgress: 1,
         xpReward: 25,
         dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
-        accountId: selectedAccountId || 'all',
+        accountId: targetAccountId,
       });
 
       // Pin the quest to make it appear in the pinned section
       pinQuest(quest.id);
+      // Ensure store consistency and visibility
+      try { (useQuestStore.getState().cleanupPinnedQuests as any)?.(); } catch {}
       setIsQuestPinned(true);
 
       addActivity({
@@ -358,7 +365,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
         description: `Pinned: ${dailyReflection.keyFocus}`,
         xpEarned: 5,
         relatedId: dailyReflection.id,
-        accountId: selectedAccountId || 'all',
+        accountId: targetAccountId,
       });
     } finally {
       setIsPinningQuest(false);

@@ -22,6 +22,7 @@ export interface FirestoreDocument {
 // Remove undefined values recursively so Firestore doesn't reject writes
 function removeUndefined<T>(value: T): T {
   if (Array.isArray(value)) {
+    // Preserve arrays (including empty arrays) but clean their items
     return value.map((item) => removeUndefined(item)) as unknown as T;
   }
   if (value && typeof value === 'object' && !(value instanceof Date)) {
@@ -29,11 +30,12 @@ function removeUndefined<T>(value: T): T {
     for (const [key, v] of Object.entries(value as Record<string, unknown>)) {
       if (v === undefined) continue;
       const cleaned = removeUndefined(v as unknown as T);
-      // Only assign non-empty objects or non-object values
+      // Only skip assigning truly empty plain objects. Keep arrays even if empty.
       if (
         cleaned &&
         typeof cleaned === 'object' &&
         !(cleaned instanceof Date) &&
+        !Array.isArray(cleaned) &&
         Object.keys(cleaned as Record<string, unknown>).length === 0
       ) {
         continue;

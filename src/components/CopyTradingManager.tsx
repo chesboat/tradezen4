@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, Users, X } from 'lucide-react';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
@@ -19,6 +19,7 @@ export const CopyTradingManager: React.FC<CopyTradingManagerProps> = ({ isOpen, 
 	const [pendingFollowers, setPendingFollowers] = useState<Set<string>>(
 		() => new Set(defaultLeader?.linkedAccountIds || [])
 	);
+	const [isProcessing, setIsProcessing] = useState(false);
 
 	const leader = accounts.find(a => a.id === leaderId) as TradingAccount | undefined;
 
@@ -32,15 +33,48 @@ export const CopyTradingManager: React.FC<CopyTradingManagerProps> = ({ isOpen, 
 
 	const applyConsolidation = async () => {
 		if (!leader) return;
-		// 1) Clear all other leaders
-		const otherLeaders = accounts.filter(a => a.id !== leader.id && (a.linkedAccountIds || []).length > 0);
-		for (const l of otherLeaders) {
-			await updateAccount(l.id, { linkedAccountIds: [] as any });
+		setIsProcessing(true);
+		try {
+			// 1) Clear all other leaders
+			const otherLeaders = accounts.filter(a => a.id !== leader.id && (a.linkedAccountIds || []).length > 0);
+			await Promise.all(
+				otherLeaders.map(l => updateAccount(l.id, { linkedAccountIds: [] as any }))
+			);
+
+			// 2) Apply followers to chosen leader (deduped, valid IDs only)
+			const validIds = new Set(accounts.map(a => a.id));
+			const uniqueFollowers = Array.from(new Set(Array.from(pendingFollowers)))
+				.filter(id => id !== leader.id && validIds.has(id));
+			await updateAccount(leader.id, { linkedAccountIds: uniqueFollowers as any });
+			onClose();
+		} finally {
+			setIsProcessing(false);
 		}
-		// 2) Apply followers to chosen leader
-		await updateAccount(leader.id, { linkedAccountIds: Array.from(pendingFollowers) as any });
-		onClose();
 	};
+
+	const clearAllLinkedAccounts = async () => {
+		setIsProcessing(true);
+		try {
+			const withLinks = accounts.filter(a => (a.linkedAccountIds || []).length > 0);
+			if (withLinks.length > 0) {
+				await Promise.all(
+					withLinks.map(a => updateAccount(a.id, { linkedAccountIds: [] as any }))
+				);
+			}
+			setPendingFollowers(new Set());
+		} finally {
+			setIsProcessing(false);
+		}
+	};
+
+	// Reinitialize selection when opening or when accounts list changes
+	useEffect(() => {
+		if (!isOpen) return;
+		const freshLeaders = accounts.filter(a => (a.linkedAccountIds || []).length > 0);
+		const freshDefault = freshLeaders[0] || accounts[0];
+		setLeaderId(freshDefault?.id || '');
+		setPendingFollowers(new Set(freshDefault?.linkedAccountIds || []));
+	}, [isOpen, accounts]);
 
 	if (!isOpen) return null;
 
@@ -111,9 +145,18 @@ export const CopyTradingManager: React.FC<CopyTradingManagerProps> = ({ isOpen, 
 								<div className="text-xs text-muted-foreground">Note: Consolidation will clear links from other leaders so you have one group.</div>
 							</div>
 						</div>
-						<div className="p-4 border-t border-border flex justify-end gap-2">
-							<button className="px-3 py-1.5 rounded bg-muted text-muted-foreground hover:bg-muted/80" onClick={onClose}>Cancel</button>
-							<button className="px-3 py-1.5 rounded bg-primary text-primary-foreground hover:bg-primary/90" onClick={applyConsolidation}>Save</button>
+						<div className="p-4 border-t border-border flex justify-between gap-2">
+							<button
+								className="px-3 py-1.5 rounded bg-destructive/10 text-destructive hover:bg-destructive/15"
+								onClick={clearAllLinkedAccounts}
+								disabled={isProcessing}
+							>
+								Clear all links
+							</button>
+							<div className="flex gap-2">
+								<button className="px-3 py-1.5 rounded bg-muted text-muted-foreground hover:bg-muted/80" onClick={onClose} disabled={isProcessing}>Cancel</button>
+								<button className="px-3 py-1.5 rounded bg-primary text-primary-foreground hover:bg-primary/90" onClick={applyConsolidation} disabled={isProcessing}>Save</button>
+							</div>
 						</div>
 					</div>
 				</div>
