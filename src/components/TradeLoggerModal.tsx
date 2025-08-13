@@ -68,6 +68,7 @@ export const TradeLoggerModal: React.FC<TradeLoggerModalProps> = ({
   const { selectedAccountId } = useAccountFilterStore();
   const { addActivity } = useActivityLogStore();
   const { quests, updateQuestProgress, updateConsistencyProgress } = useQuestStore();
+  const { isLockedOut: isLockedOutFn, lockoutUntil, cancelLockout } = useSessionStore();
   
   // Load saved defaults - use most recent symbol
   const savedDefaults = localStorage.getItem(STORAGE_KEYS.TRADE_LOGGER_DEFAULTS, {
@@ -101,6 +102,7 @@ export const TradeLoggerModal: React.FC<TradeLoggerModalProps> = ({
   const [showCustomPnl, setShowCustomPnl] = useState(false);
   const [customPnlInput, setCustomPnlInput] = useState('');
   const [recentSymbols, setRecentSymbols] = useState<string[]>(getRecentSymbols());
+  const [lockoutRemaining, setLockoutRemaining] = useState<string | null>(null);
   
   const symbolInputRef = useRef<HTMLInputElement>(null);
   const riskInputRef = useRef<HTMLInputElement>(null);
@@ -113,6 +115,22 @@ export const TradeLoggerModal: React.FC<TradeLoggerModalProps> = ({
       setRecentSymbols(getRecentSymbols());
     }
   }, [isOpen]);
+
+  // Lockout countdown (UI only, does not block logging)
+  useEffect(() => {
+    const update = () => {
+      const until = lockoutUntil as any as number | null;
+      if (!until) { setLockoutRemaining(null); return; }
+      const ms = until - Date.now();
+      if (ms <= 0) { setLockoutRemaining(null); return; }
+      const m = Math.floor(ms / 60000);
+      const s = Math.floor((ms % 60000) / 1000);
+      setLockoutRemaining(`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`);
+    };
+    update();
+    const id = setInterval(update, 1000);
+    return () => clearInterval(id);
+  }, [lockoutUntil, isOpen]);
 
   // Auto-save defaults when form changes
   useEffect(() => {
@@ -251,6 +269,8 @@ export const TradeLoggerModal: React.FC<TradeLoggerModalProps> = ({
         formData.result === 'win' ? formData.riskAmount * formData.riskRewardRatio : 
         formData.result === 'loss' ? -formData.riskAmount : 0;
 
+      const baseTags: string[] = [];
+      if (useSessionStore.getState().isLockedOut()) baseTags.push('lockout-breach');
       const tradeData = {
         symbol: formData.symbol,
         direction: formData.direction,
@@ -263,7 +283,7 @@ export const TradeLoggerModal: React.FC<TradeLoggerModalProps> = ({
         entryTime: entryDateTime,
         exitTime: exitDateTime,
         mood: formData.mood,
-        tags: [],
+        tags: baseTags,
         notes: formData.notes,
         accountId: selectedAccountId,
       };
@@ -329,6 +349,9 @@ export const TradeLoggerModal: React.FC<TradeLoggerModalProps> = ({
       
       if (editingTrade) {
         updateTrade(editingTrade.id, tradeData);
+        if (baseTags.includes('lockout-breach')) {
+          addActivity({ type: 'trade', title: 'Trade during lockout', description: 'Logged a trade while lockout was active.', xpEarned: 0, relatedId: editingTrade.id!, accountId: selectedAccountId });
+        }
         // Encouragement: followed plan but loss
         if (tradeData.result === 'loss' && formData.notes?.toLowerCase().includes('followed plan')) {
           useNudgeStore.getState().show('You followed your plan. Losses are business expenses. Consistency wins long-term.', 'positive');
@@ -347,6 +370,9 @@ export const TradeLoggerModal: React.FC<TradeLoggerModalProps> = ({
         const targetIds = getAccountIdsForSelection(selectedAccountId);
         const leaderId = targetIds[0] || selectedAccountId;
         const newTrade = await addTrade({ ...tradeData, accountId: leaderId });
+        if (baseTags.includes('lockout-breach')) {
+          addActivity({ type: 'trade', title: 'Trade during lockout', description: 'Logged a trade while lockout was active.', xpEarned: 0, relatedId: newTrade.id, accountId: leaderId });
+        }
         // Nudge: back-to-back rapid losses
         try {
           const recent = useTradeStore.getState().trades
@@ -544,6 +570,16 @@ export const TradeLoggerModal: React.FC<TradeLoggerModalProps> = ({
                 <X className="w-5 h-5" />
               </button>
             </div>
+
+            {/* Lockout banner (non-blocking) */}
+            {isLockedOutFn() && (
+              <div className="mx-4 mt-3 mb-0 p-2 rounded-lg border border-yellow-500/30 bg-yellow-500/10 text-yellow-300 text-xs flex items-center justify-between">
+                <div>
+                  Lockout active{lockoutRemaining ? ` • ${lockoutRemaining} remaining` : ''}. You can log for accuracy; consider pausing execution.
+                </div>
+                <button className="px-2 py-0.5 rounded bg-yellow-500/20 hover:bg-yellow-500/30" onClick={cancelLockout}>End</button>
+              </div>
+            )}
 
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-4 space-y-6">
