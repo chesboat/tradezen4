@@ -82,6 +82,15 @@ export const WellnessView: React.FC = () => {
     totalCycles: 10,
     timeRemaining: 4000, // 4 seconds
   });
+  useEffect(() => {
+    if (tiltDetection && tiltDetection.level === 'high') {
+      // Soft nudge when high tilt detected
+      try {
+        const { useNudgeStore } = require('@/store/useNudgeStore');
+        useNudgeStore.getState().show('High tilt detected. Short break + breathing can prevent costly mistakes.', 'warning');
+      } catch {}
+    }
+  }, [tiltDetection]);
 
   const wellnessActivities: WellnessActivity[] = [
     {

@@ -318,6 +318,20 @@ export const TradeLoggerModal: React.FC<TradeLoggerModalProps> = ({
         const targetIds = getAccountIdsForSelection(selectedAccountId);
         const leaderId = targetIds[0] || selectedAccountId;
         const newTrade = await addTrade({ ...tradeData, accountId: leaderId });
+        // Nudge: back-to-back rapid losses
+        try {
+          const recent = useTradeStore.getState().trades
+            .filter(t => t.accountId === leaderId)
+            .sort((a,b) => new Date(b.entryTime).getTime() - new Date(a.entryTime).getTime())
+            .slice(0, 3);
+          const isLoss = (t: any) => (t.pnl || 0) < 0;
+          if (recent.length >= 2 && isLoss(recent[0]) && isLoss(recent[1])) {
+            const dt = Math.abs(new Date(recent[0].entryTime).getTime() - new Date(recent[1].entryTime).getTime());
+            if (dt <= 15 * 60 * 1000) {
+              useNudgeStore.getState().show('Two quick losses. Step away for 5–10 minutes and reset. Protect your edge.', 'warning');
+            }
+          }
+        } catch {}
         if (tradeData.result === 'loss' && formData.notes?.toLowerCase().includes('followed plan')) {
           useNudgeStore.getState().show('Good discipline. Keep executing your edge; results follow the process.', 'positive');
         }
