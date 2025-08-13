@@ -280,16 +280,12 @@ export const TradeLoggerModal: React.FC<TradeLoggerModalProps> = ({
           const pnlSoFar = todaysTrades.reduce((s, t) => s + (t.pnl || 0), 0);
           const projected = pnlSoFar + (tradeData.pnl || 0);
           if (projected <= -limit) {
-            alert(`Warning: This trade would exceed your daily loss limit (${limit}). Consider reducing size or pausing.`);
+            useNudgeStore.getState().show(`This trade would exceed daily loss limit (${limit}). Consider reducing size or pausing.`, 'warning');
+            // We do NOT block logging. We only auto-lockout if enabled, but after logging completes
             const auto = useSessionStore.getState().rules.autoLockoutEnabled;
             if (auto) {
-              useSessionStore.getState().startLockout(20);
-            }
-            // Optionally block save while locked out
-            if (useSessionStore.getState().isLockedOut()) {
-          useNudgeStore.getState().show('Lockout started. Step back, breathe, and review your rules. Today is about process, not outcome.', 'neutral');
-              setIsLoading(false);
-              return;
+              // Defer lockout until after save to allow accurate journaling
+              setTimeout(() => useSessionStore.getState().startLockout(20), 0);
             }
           }
         }
