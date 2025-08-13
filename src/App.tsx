@@ -8,6 +8,7 @@ import { WellnessView } from './components/WellnessView';
 import { TradesView } from './components/TradesView';
 import { AnalyticsView } from './components/AnalyticsView';
 import { JournalView } from './components/JournalView';
+import { NotesView } from './components/NotesView';
 import { TradeLoggerModal } from './components/TradeLoggerModal';
 import { QuickNoteModal } from './components/QuickNoteModal';
 import { CommandBar } from './components/CommandBar';
@@ -73,6 +74,8 @@ function AppContent() {
         }} />;
       case 'journal':
         return <JournalView />;
+      case 'notes':
+        return <NotesView />;
       case 'analytics':
         return <AnalyticsView />;
       case 'quests':

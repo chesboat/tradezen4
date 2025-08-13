@@ -1,0 +1,172 @@
+import React, { useMemo, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FileText, Search, Trash2, Edit2, Calendar as CalendarIcon, Hash, Smile } from 'lucide-react';
+import { SmartTagFilterBar } from './SmartTagFilterBar';
+import { useQuickNoteStore, useQuickNoteModal } from '@/store/useQuickNoteStore';
+import { useAccountFilterStore } from '@/store/useAccountFilterStore';
+import { useDailyReflectionStore } from '@/store/useDailyReflectionStore';
+import { cn } from '@/lib/utils';
+
+export const NotesView: React.FC = () => {
+  const { notes, deleteNote } = useQuickNoteStore();
+  const { selectedAccountId } = useAccountFilterStore();
+  const { selectedTagFilter } = useDailyReflectionStore();
+  const { setEditingNote, openModal } = useQuickNoteModal();
+
+  const [query, setQuery] = useState('');
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
+
+  const filtered = useMemo(() => {
+    return notes
+      .filter(n => !selectedAccountId || n.accountId === selectedAccountId)
+      .filter(n => !selectedTagFilter || (n.tags || []).includes(selectedTagFilter))
+      .filter(n => {
+        if (!query.trim()) return true;
+        const q = query.toLowerCase();
+        const inContent = n.content.toLowerCase().includes(q);
+        const inTags = (n.tags || []).some(t => t.toLowerCase().includes(q));
+        return inContent || inTags;
+      })
+      .filter(n => {
+        if (!startDate && !endDate) return true;
+        const d = new Date(n.createdAt);
+        if (startDate) {
+          const sd = new Date(startDate);
+          sd.setHours(0,0,0,0);
+          if (d < sd) return false;
+        }
+        if (endDate) {
+          const ed = new Date(endDate);
+          ed.setHours(23,59,59,999);
+          if (d > ed) return false;
+        }
+        return true;
+      });
+  }, [notes, selectedAccountId, selectedTagFilter, query, startDate, endDate]);
+
+  const handleEdit = (id: string) => {
+    setEditingNote(id);
+    openModal();
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteNote(id);
+    } catch (e) {
+      console.error('Failed to delete note', e);
+    }
+  };
+
+  return (
+    <div className="h-full flex flex-col">
+      <SmartTagFilterBar />
+
+      {/* Controls */}
+      <div className="px-6 py-4 border-b bg-card/80 backdrop-blur-sm sticky top-0 z-10">
+        <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+          <div className="relative w-full sm:max-w-md">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search notes or tags..."
+              className="w-full pl-9 pr-3 py-2 bg-muted rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </div>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-muted-foreground">From</label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="px-2 py-1 bg-muted rounded-md text-sm"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-muted-foreground">To</label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="px-2 py-1 bg-muted rounded-md text-sm"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* List */}
+      <div className="flex-1 overflow-auto px-6 py-4">
+        <div className="flex items-center gap-2 mb-3 text-sm text-muted-foreground">
+          <FileText className="w-4 h-4" />
+          <span>{filtered.length} note{filtered.length !== 1 ? 's' : ''}</span>
+        </div>
+
+        <AnimatePresence>
+          {filtered.length === 0 ? (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-muted-foreground">
+              No notes match your filters.
+            </motion.div>
+          ) : (
+            <div className="grid grid-cols-1 gap-3">
+              {filtered.map((note) => (
+                <motion.div
+                  key={note.id}
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="p-4 bg-card border border-border/60 rounded-xl"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
+                        <CalendarIcon className="w-3.5 h-3.5" />
+                        <span>{new Date(note.createdAt).toLocaleString()}</span>
+                        {note.mood && (
+                          <span className="inline-flex items-center gap-1">
+                            <Smile className="w-3.5 h-3.5" />
+                            <span className="capitalize">{note.mood}</span>
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap">{note.content}</p>
+                      {note.tags && note.tags.length > 0 && (
+                        <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                          {note.tags.map((t) => (
+                            <span key={t} className={cn('inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-muted text-muted-foreground')}>
+                              <Hash className="w-3 h-3" />
+                              {t}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <button
+                        className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground"
+                        onClick={() => handleEdit(note.id)}
+                        title="Edit"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground"
+                        onClick={() => handleDelete(note.id)}
+                        title="Delete"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+};
+
+

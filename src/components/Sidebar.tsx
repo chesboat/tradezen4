@@ -71,6 +71,12 @@ const navItems: NavItem[] = [
     href: '/journal',
   },
   {
+    id: 'notes',
+    label: 'Notes',
+    icon: FileText,
+    href: '/notes',
+  },
+  {
     id: 'analytics',
     label: 'Analytics',
     icon: BarChart3,

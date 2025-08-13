@@ -46,6 +46,7 @@ import { MoodTimeline } from './MoodTimeline';
 import { Sparkline } from './ui/Sparkline';
 import { Tooltip } from './ui/Tooltip';
 import { ReflectionHub } from './ReflectionHub';
+import { SmartTagFilterBar } from './SmartTagFilterBar';
 
 interface DayDetailModalProps {
   day: CalendarDay | null;
@@ -146,6 +147,13 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
     
     return notes;
   }, [day?.date, getNotesForDate, selectedAccountId, quickNotesAll]);
+
+  // Inline notes tag filtering (shared with global bar)
+  const { selectedTagFilter } = useDailyReflectionStore();
+  const filteredDayNotes = useMemo(() => {
+    if (!selectedTagFilter) return dayNotes;
+    return dayNotes.filter(n => (n.tags || []).includes(selectedTagFilter));
+  }, [dayNotes, selectedTagFilter]);
 
   // Get daily reflection data
   const dateString = day?.date ? day.date.toISOString().split('T')[0] : '';
@@ -1286,7 +1294,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
                             <div>
                               <h4 className="text-sm font-semibold text-foreground">Quick Notes</h4>
                               <p className="text-xs text-muted-foreground">
-                                {dayNotes.length} {dayNotes.length === 1 ? 'note' : 'notes'} today
+                                {(selectedTagFilter ? filteredDayNotes.length : dayNotes.length)} {(selectedTagFilter ? filteredDayNotes.length : dayNotes.length) === 1 ? 'note' : 'notes'} today
                               </p>
                             </div>
                           </div>
@@ -1301,6 +1309,11 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
                               <ChevronUp className="w-4 h-4" />
                             }
                           </motion.button>
+                        </div>
+
+                        {/* Inline Tag Filter */}
+                        <div className="mb-3 -mx-4">
+                          <SmartTagFilterBar />
                         </div>
 
                         {/* Inline Quick Add */}
@@ -1377,16 +1390,16 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
                             className="border-t border-border/30"
                           >
                             <div className="p-4">
-                              {dayNotes.length === 0 ? (
+                              {(selectedTagFilter ? filteredDayNotes.length === 0 : dayNotes.length === 0) ? (
                                 <div className="text-center py-6 text-muted-foreground">
                         <FileText className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                        <p className="text-sm">No notes for this day</p>
+                        <p className="text-sm">{selectedTagFilter ? 'No notes match this tag' : 'No notes for this day'}</p>
                                   <p className="text-xs mt-1">Use the input above to add your first note</p>
                       </div>
                     ) : (
                                 <div className="space-y-3 max-h-64 overflow-y-auto">
                                   {/* Pinned Notes First */}
-                                  {dayNotes
+                                  {(selectedTagFilter ? filteredDayNotes : dayNotes)
                                     .filter(note => pinnedNotes.has(note.id))
                                     .map((note) => (
                           <motion.div
@@ -1445,7 +1458,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
                                     ))}
                                   
                                   {/* Regular Notes */}
-                                  {dayNotes
+                                  {(selectedTagFilter ? filteredDayNotes : dayNotes)
                                     .filter(note => !pinnedNotes.has(note.id))
                                     .map((note) => (
                                       <motion.div
@@ -1500,12 +1513,12 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
                           </motion.div>
                         ))}
                                   
-                                  {dayNotes.length > 5 && (
+                                  {(selectedTagFilter ? filteredDayNotes.length : dayNotes.length) > 5 && (
                           <button
                             onClick={() => setActiveTab('notes')}
                                       className="w-full text-sm text-green-500 hover:text-green-600 transition-colors py-2 text-center font-medium"
                           >
-                            View all {dayNotes.length} notes →
+                            View all {(selectedTagFilter ? filteredDayNotes.length : dayNotes.length)} notes →
                           </button>
                         )}
                       </div>
