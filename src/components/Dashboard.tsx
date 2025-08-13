@@ -738,6 +738,18 @@ export const Dashboard: React.FC = () => {
               <div className="text-lg font-bold text-foreground">{riskUsedDisplay}</div>
             </div>
           </div>
+          {/* Rule chips */}
+          {(() => {
+            const acc = selectionAccounts[0] as any;
+            const r = acc?.sessionRules?.riskPerTrade;
+            const bullets = acc?.sessionRules?.maxLossesPerDay;
+            return (
+              <div className="mt-3 flex flex-wrap gap-2 text-[11px]">
+                {r ? <span className="px-2 py-1 rounded-full bg-muted border border-border">R: {formatCurrency(r)}</span> : null}
+                {bullets ? <span className="px-2 py-1 rounded-full bg-muted border border-border">Bullets: {bullets}/day</span> : null}
+              </div>
+            );
+          })()}
           {/* Rule inputs */}
           <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
             <div>

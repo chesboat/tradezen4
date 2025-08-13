@@ -321,6 +321,10 @@ export const TradeLoggerModal: React.FC<TradeLoggerModalProps> = ({
           if (d.type === 'lockout') { useSessionStore.getState().startLockout(20); useNudgeStore.getState().show(d.message || 'Lockout started', 'neutral'); }
           if (d.type === 'hardStop') { alert(d.message || 'Rule enforced.'); setIsLoading(false); return; }
         }
+        // Praise if user reached bullets and stopped (no new trades after reaching) handled on session tick; here we just log the boundary
+        if (account?.sessionRules?.maxLossesPerDay && todayTrades.filter(t => (t.pnl || 0) < 0).length === account.sessionRules.maxLossesPerDay) {
+          useNudgeStore.getState().show('Bullets reached — ending early shows discipline. Nice work.', 'positive');
+        }
       } catch {}
 
       // Update recent symbols when trade is saved

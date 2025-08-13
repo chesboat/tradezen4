@@ -615,6 +615,73 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
                   </div>
                 </div>
 
+                {/* Advanced Rules (Templates) */}
+                <div className="mt-4">
+                  <details className="rounded-lg border border-border p-3">
+                    <summary className="text-sm font-medium cursor-pointer">Advanced (Templates)</summary>
+                    <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                      <button
+                        type="button"
+                        className="px-3 py-2 rounded-lg border border-border hover:bg-accent text-left"
+                        onClick={() => {
+                          // Add rapid loss lockout template (lossStreak >= 2 → lockout + nudge)
+                          const current = ((editingAccount?.sessionRules as any)?.customRules || []) as any[];
+                          const id = 'tmpl-rapid-loss';
+                          if (!current.find(r => r.id === id)) {
+                            const rule = {
+                              id,
+                              name: 'Rapid losses lockout',
+                              enabled: true,
+                              priority: 10,
+                              trigger: 'tradeSaved',
+                              conditions: [{ metric: 'lossStreak', op: '>=', value: 2 }],
+                              actions: [
+                                { type: 'lockout', message: 'Two quick losses. Taking a reset lockout.' },
+                                { type: 'nudge', message: 'Step away for 5–10 minutes; protect your edge.' }
+                              ],
+                              cooldownMs: 5 * 60 * 1000,
+                            } as any;
+                            const sr = { ...(editingAccount?.sessionRules || {}), customRules: [...current, rule] } as any;
+                            updateAccount(editingAccount!.id, { sessionRules: sr } as any);
+                          }
+                        }}
+                      >
+                        Add: Rapid losses → lockout 20m
+                        <div className="text-xs text-muted-foreground">If loss streak ≥ 2, auto-lockout and nudge</div>
+                      </button>
+
+                      <button
+                        type="button"
+                        className="px-3 py-2 rounded-lg border border-border hover:bg-accent text-left"
+                        onClick={() => {
+                          // Add overtrading warning template (negative tags ≥ 3)
+                          const current = ((editingAccount?.sessionRules as any)?.customRules || []) as any[];
+                          const id = 'tmpl-overtrading';
+                          if (!current.find(r => r.id === id)) {
+                            const rule = {
+                              id,
+                              name: 'Overtrading warning',
+                              enabled: true,
+                              priority: 20,
+                              trigger: 'tradeSaved',
+                              conditions: [{ metric: 'tagCount:negative', op: '>=', value: 3 }],
+                              actions: [
+                                { type: 'warn', message: 'Frequent negative tags today. Consider pausing.' }
+                              ],
+                              cooldownMs: 10 * 60 * 1000,
+                            } as any;
+                            const sr = { ...(editingAccount?.sessionRules || {}), customRules: [...current, rule] } as any;
+                            updateAccount(editingAccount!.id, { sessionRules: sr } as any);
+                          }
+                        }}
+                      >
+                        Add: Overtrading warning
+                        <div className="text-xs text-muted-foreground">Warn when negative tags (e.g., #tilt, #overtrading) ≥ 3</div>
+                      </button>
+                    </div>
+                  </details>
+                </div>
+
                 {/* Session Rules (optional overrides) */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Session Rules (Overrides)</label>
