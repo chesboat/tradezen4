@@ -1397,14 +1397,14 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
                                   <p className="text-xs mt-1">Use the input above to add your first note</p>
                       </div>
                     ) : (
-                                <div className="space-y-3 max-h-64 overflow-y-auto">
+                                <div className="space-y-3 max-h-64 overflow-y-auto overflow-x-hidden">
                                   {/* Pinned Notes First */}
                                   {(selectedTagFilter ? filteredDayNotes : dayNotes)
                                     .filter(note => pinnedNotes.has(note.id))
                                     .map((note) => (
                           <motion.div
                             key={note.id}
-                                        className="p-3 bg-gradient-to-r from-yellow-500/5 to-orange-500/5 rounded-lg border border-yellow-500/20 hover:bg-yellow-500/10 transition-colors"
+                                        className="p-3 bg-gradient-to-r from-yellow-500/5 to-orange-500/5 rounded-lg border border-yellow-500/20 hover:bg-yellow-500/10 transition-colors overflow-hidden"
                             whileHover={{ scale: 1.01 }}
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
@@ -1463,7 +1463,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
                                     .map((note) => (
                                       <motion.div
                                         key={note.id}
-                                        className="p-3 bg-muted/30 rounded-lg border border-border/50 hover:bg-muted/50 transition-colors group"
+                                        className="p-3 bg-muted/30 rounded-lg border border-border/50 hover:bg-muted/50 transition-colors group overflow-hidden"
                                         whileHover={{ scale: 1.01 }}
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
