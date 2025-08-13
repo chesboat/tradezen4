@@ -573,11 +573,11 @@ export const TradeLoggerModal: React.FC<TradeLoggerModalProps> = ({
 
             {/* Lockout banner (non-blocking) */}
             {isLockedOutFn() && (
-              <div className="mx-4 mt-3 mb-0 p-2 rounded-lg border border-yellow-500/30 bg-yellow-500/10 text-yellow-300 text-xs flex items-center justify-between">
+              <div className="mx-4 mt-3 mb-0 p-2 rounded-lg text-xs flex items-center justify-between border bg-yellow-50 text-yellow-800 border-yellow-200 dark:bg-yellow-500/10 dark:text-yellow-300 dark:border-yellow-500/30">
                 <div>
                   Lockout active{lockoutRemaining ? ` • ${lockoutRemaining} remaining` : ''}. You can log for accuracy; consider pausing execution.
                 </div>
-                <button className="px-2 py-0.5 rounded bg-yellow-500/20 hover:bg-yellow-500/30" onClick={cancelLockout}>End</button>
+                <button className="px-2 py-0.5 rounded bg-yellow-200 hover:bg-yellow-300 text-yellow-900 dark:bg-yellow-500/20 dark:hover:bg-yellow-500/30 dark:text-yellow-200" onClick={cancelLockout}>End</button>
               </div>
             )}
 

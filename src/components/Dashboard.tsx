@@ -32,6 +32,7 @@ import { useSessionStore } from '@/store/useSessionStore';
 import { useNavigationStore } from '@/store/useNavigationStore';
 import { useReflectionTemplateStore } from '@/store/useReflectionTemplateStore';
 import { CoachChat } from './CoachChat';
+import { useSessionStore } from '@/store/useSessionStore';
 
 interface KPICardProps {
   title: string;
@@ -720,10 +721,13 @@ export const Dashboard: React.FC = () => {
               <Zap className="w-5 h-5 text-yellow-500" />
               <h3 className="text-sm font-semibold">Session Guardrails</h3>
             </div>
-            <div className="text-xs text-muted-foreground">
-              {isLockedOut ? 'Locked out' : 'Active'}
-            </div>
+            <div className="text-xs text-muted-foreground">{isLockedOut ? 'Locked out' : 'Active'}</div>
           </div>
+          {isLockedOut && (
+            <div className="mb-3 p-2 rounded-lg text-[11px] border bg-yellow-50 text-yellow-800 border-yellow-200 dark:bg-yellow-500/10 dark:text-yellow-300 dark:border-yellow-500/30">
+              Lockout active. You can still log trades; consider pausing execution to protect your edge.
+            </div>
+          )}
           <div className="grid grid-cols-3 gap-3 text-xs">
             <div className="p-3 bg-muted rounded-lg text-center">
               <div className="text-muted-foreground">Trades Today</div>
