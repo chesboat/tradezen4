@@ -41,7 +41,7 @@ import { CalendarDay, TradeResult, MoodType, Quest } from '@/types';
 import { formatCurrency, formatDate, getMoodColor, formatTime } from '@/lib/localStorageUtils';
 
 import { cn } from '@/lib/utils';
-import { TagPill, TagList } from './TagPill';
+import { TagPill, TagList, TagInput } from './TagPill';
 import { MoodTimeline } from './MoodTimeline';
 import { Sparkline } from './ui/Sparkline';
 import { Tooltip } from './ui/Tooltip';
@@ -118,6 +118,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
   const [focusSuggestionMap, setFocusSuggestionMap] = useState<Record<string, Partial<Quest>>>({});
   const [isPinningQuest, setIsPinningQuest] = useState(false);
   const [isQuestPinned, setIsQuestPinned] = useState(false);
+  const [reflectionTags, setReflectionTags] = useState<string[]>([]);
   
   // Legacy reflection states removed - now handled by ReflectionHub
 
@@ -154,6 +155,11 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
       reflection.date === dateString && reflection.accountId === selectedAccountId
     );
   }, [day, dateString, selectedAccountId, reflections]);
+
+  useEffect(() => {
+    if (dailyReflection) setReflectionTags(dailyReflection.reflectionTags || []);
+    else setReflectionTags([]);
+  }, [dailyReflection?.id]);
 
   // Get mood timeline
   const moodTimeline = useMemo(() => {
@@ -1040,6 +1046,34 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
                         date={dateString}
                     className="mb-8"
                       />
+
+                  {/* Reflection Tags */}
+                  <div className="mb-8">
+                    <div className="text-xs text-muted-foreground mb-1">Reflection Tags</div>
+                    <TagInput
+                      tags={reflectionTags}
+                      suggestedTags={Array.from(new Set([
+                        ...dayTrades.flatMap(t => t.tags || []),
+                        ...dayNotes.flatMap(n => n.tags || []),
+                      ].map(t => t.toLowerCase())))}
+                      onAddTag={(tag) => {
+                        const next = Array.from(new Set([...(reflectionTags || []), tag.toLowerCase()]));
+                        setReflectionTags(next);
+                        if (dailyReflection) {
+                          updateReflection(dailyReflection.id, { reflectionTags: next as any });
+                        } else if (selectedAccountId && dateString) {
+                          addReflection({ date: dateString, reflection: '', keyFocus: '', isComplete: false, moodTimeline: [], streakCount: 0, xpEarned: 0, reflectionTags: next, accountId: selectedAccountId });
+                        }
+                      }}
+                      onRemoveTag={(tag) => {
+                        const next = (reflectionTags || []).filter(t => t !== tag);
+                        setReflectionTags(next);
+                        if (dailyReflection) updateReflection(dailyReflection.id, { reflectionTags: next as any });
+                      }}
+                      placeholder="Add tags (or use # in notes)"
+                      maxTags={10}
+                    />
+                  </div>
 
                   {/* Secondary Sections - Adaptive Layout */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">

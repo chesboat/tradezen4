@@ -34,6 +34,7 @@ import { useTradeLoggerModal } from '@/hooks/useTradeLoggerModal';
 import { Trade, TradeResult, MoodType } from '@/types';
 import { formatCurrency, formatRelativeTime, getMoodColor, getMoodEmoji } from '@/lib/localStorageUtils';
 import { cn } from '@/lib/utils';
+import { TagList } from './TagPill';
 
 interface TradeFilters {
   search: string;
@@ -87,12 +88,20 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
   const [selectedTrades, setSelectedTrades] = useState<Set<string>>(new Set());
   const [showImageImport, setShowImageImport] = useState(false);
   const [bulkMood, setBulkMood] = useState<MoodType | ''>('');
+  const [activeTag, setActiveTag] = useState<string | null>(null);
 
   // Get unique symbols for filter dropdown
   const uniqueSymbols = useMemo(() => {
     const symbols = trades.map(trade => trade.symbol);
     return Array.from(new Set(symbols)).sort();
   }, [trades]);
+
+  const uniqueTags = useMemo(() => {
+    const ids = selectedAccountId ? getAccountIdsForSelection(selectedAccountId) : null;
+    const scoped = ids ? trades.filter(t => ids.includes(t.accountId)) : trades;
+    const tags = scoped.flatMap(t => (t.tags || []).map(tag => tag.toLowerCase()));
+    return Array.from(new Set(tags)).sort();
+  }, [trades, selectedAccountId]);
 
   // Filter and sort trades
   const filteredTrades = useMemo(() => {
@@ -127,6 +136,10 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
 
     if (filters.mood !== 'all') {
       filtered = filtered.filter(trade => trade.mood === filters.mood);
+    }
+
+    if (activeTag) {
+      filtered = filtered.filter(trade => (trade.tags || []).map(t => t.toLowerCase()).includes(activeTag));
     }
 
     if (filters.dateFrom) {
@@ -441,6 +454,24 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
             Export
           </button>
         </div>
+
+        {/* Tag Filter Bar */}
+        {uniqueTags.length > 0 && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Filter by tag:</span>
+            <TagList
+              tags={uniqueTags}
+              variant="interactive"
+              size="sm"
+              onClick={(tag) => setActiveTag(prev => (prev === tag ? null : tag))}
+              selectedTags={activeTag ? [activeTag] : []}
+              className="mt-1"
+            />
+            {activeTag && (
+              <button className="text-xs px-2 py-1 rounded bg-muted hover:bg-muted/70" onClick={() => setActiveTag(null)}>Clear</button>
+            )}
+          </div>
+        )}
 
         {/* Extended Filters */}
         <AnimatePresence>
