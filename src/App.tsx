@@ -23,6 +23,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { initializeTradeStore } from './store/useTradeStore';
 import { useUserProfileStore } from './store/useUserProfileStore';
 import { initializeQuickNoteStore } from './store/useQuickNoteStore';
+import { CoachChat } from './components/CoachChat';
 
 function AppContent() {
   const { isExpanded: sidebarExpanded } = useSidebarStore();
@@ -117,6 +118,9 @@ function AppContent() {
 
       {/* Global Command Bar */}
       <CommandBar />
+
+      {/* Global AI Coach */}
+      <CoachChat date={new Date().toISOString().split('T')[0]} />
     </div>
   );
 }

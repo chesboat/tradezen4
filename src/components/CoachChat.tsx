@@ -69,7 +69,7 @@ export const CoachChat: React.FC<CoachChatProps> = ({ date }) => {
   return (
     <>
       <button
-        className="fixed bottom-6 left-6 bg-primary text-primary-foreground p-4 rounded-full shadow-lg hover:bg-primary/90"
+        className="fixed bottom-6 left-6 z-50 bg-primary text-primary-foreground p-4 rounded-full shadow-lg hover:bg-primary/90"
         onClick={isOpen ? close : open}
         title="Ask Coach"
       >
@@ -79,7 +79,7 @@ export const CoachChat: React.FC<CoachChatProps> = ({ date }) => {
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            className="fixed bottom-24 left-6 w-[360px] max-w-[92vw] bg-card border border-border/60 rounded-2xl shadow-2xl overflow-hidden"
+            className="fixed bottom-24 left-6 z-50 w-[360px] max-w-[92vw] bg-card border border-border/60 rounded-2xl shadow-2xl overflow-hidden"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
