@@ -93,6 +93,18 @@ export interface DailyReflection extends FirestoreDocument {
   accountId: string;
 }
 
+export interface DailyJournalData {
+  trades: Trade[];
+  notes: QuickNote[];
+  stats: {
+    totalPnL: number;
+    winRate: number;
+    totalXP: number;
+    moodTrend: string;
+    tradeCount: number;
+  };
+}
+
 export interface TradingAccount extends FirestoreDocument {
   name: string;
   type: 'demo' | 'live' | 'paper' | 'prop';
@@ -112,6 +124,12 @@ export interface TradingAccount extends FirestoreDocument {
   // If set on a primary account, any trade logged to this account
   // will be replicated to each of these linked account IDs
   linkedAccountIds?: string[];
+  // Optional per-account session rules overrides
+  sessionRules?: {
+    maxTrades?: number | null;
+    cutoffTimeMinutes?: number | null;
+    autoLockoutEnabled?: boolean;
+  };
 }
 
 export interface CalendarDay {

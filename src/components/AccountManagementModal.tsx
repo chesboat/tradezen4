@@ -41,6 +41,10 @@ interface AccountForm {
   currentDrawdown: string;
   daysTrading: string;
   minTradingDays: string;
+  // Session rules (optional, per-account overrides)
+  sessionMaxTrades?: string;
+  sessionCutoffTime?: string; // HH:MM
+  sessionAutoLockout?: boolean;
 }
 
 const ACCOUNT_TYPES = [
@@ -101,6 +105,9 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
     currentDrawdown: '0',
     daysTrading: '0',
     minTradingDays: '5',
+    sessionMaxTrades: '',
+    sessionCutoffTime: '',
+    sessionAutoLockout: true,
   });
   
   const [errors, setErrors] = useState<Partial<AccountForm>>({});
@@ -128,6 +135,11 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
         currentDrawdown: editingAccount.currentDrawdown?.toString() || '0',
         daysTrading: editingAccount.daysTrading?.toString() || '0',
         minTradingDays: editingAccount.minTradingDays?.toString() || '5',
+        sessionMaxTrades: (editingAccount.sessionRules?.maxTrades ?? '').toString() || '',
+        sessionCutoffTime: (typeof editingAccount.sessionRules?.cutoffTimeMinutes === 'number'
+          ? `${String(Math.floor((editingAccount.sessionRules.cutoffTimeMinutes||0)/60)).padStart(2,'0')}:${String((editingAccount.sessionRules.cutoffTimeMinutes||0)%60).padStart(2,'0')}`
+          : ''),
+        sessionAutoLockout: editingAccount.sessionRules?.autoLockoutEnabled ?? true,
       });
     } else {
       setForm({
@@ -149,6 +161,9 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
         currentDrawdown: '0',
         daysTrading: '0',
         minTradingDays: '5',
+        sessionMaxTrades: '',
+        sessionCutoffTime: '',
+        sessionAutoLockout: true,
       });
     }
     setErrors({});
@@ -243,6 +258,16 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
           minTradingDays: parseInt(form.minTradingDays),
         }),
       };
+
+      // Session rules overrides
+      const sr: any = {};
+      if (form.sessionMaxTrades && !isNaN(parseInt(form.sessionMaxTrades))) sr.maxTrades = parseInt(form.sessionMaxTrades);
+      if (form.sessionCutoffTime) {
+        const [hh, mm] = form.sessionCutoffTime.split(':').map(Number);
+        if (Number.isFinite(hh) && Number.isFinite(mm)) sr.cutoffTimeMinutes = hh * 60 + mm;
+      }
+      sr.autoLockoutEnabled = !!form.sessionAutoLockout;
+      if (Object.keys(sr).length > 0) accountData.sessionRules = sr;
 
       if (editingAccount) {
         await updateAccount(editingAccount.id, accountData);
@@ -532,6 +557,37 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
                         {errors.maxDrawdown}
                       </p>
                     )}
+                  </div>
+                </div>
+
+                {/* Session Rules (optional overrides) */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Session Rules (Overrides)</label>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <div className="text-xs text-muted-foreground mb-1">Max Trades</div>
+                      <input
+                        type="number"
+                        min="0"
+                        value={form.sessionMaxTrades}
+                        onChange={(e) => updateForm('sessionMaxTrades', e.target.value)}
+                        placeholder="e.g., 5"
+                        className="w-full px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-1 focus:ring-primary/50 focus:border-primary bg-background text-foreground"
+                      />
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground mb-1">Cutoff (HH:MM)</div>
+                      <input
+                        type="time"
+                        value={form.sessionCutoffTime}
+                        onChange={(e) => updateForm('sessionCutoffTime', e.target.value)}
+                        className="w-full px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-1 focus:ring-primary/50 focus:border-primary bg-background text-foreground"
+                      />
+                    </div>
+                    <label className="flex items-center gap-2 mt-6">
+                      <input type="checkbox" className="accent-primary" checked={!!form.sessionAutoLockout} onChange={(e) => updateForm('sessionAutoLockout', e.target.checked)} />
+                      <span className="text-sm">Auto-lockout</span>
+                    </label>
                   </div>
                 </div>
 

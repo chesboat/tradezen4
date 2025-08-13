@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useTradeActions } from '@/store/useTradeStore';
 import { useAccountFilterStore, getAccountIdsForSelection } from '@/store/useAccountFilterStore';
+import { useSessionStore } from '@/store/useSessionStore';
 import { useActivityLogStore } from '@/store/useActivityLogStore';
 import { useQuestStore } from '@/store/useQuestStore';
 import { useTradeStore } from '@/store/useTradeStore';
@@ -264,6 +265,32 @@ export const TradeLoggerModal: React.FC<TradeLoggerModalProps> = ({
         notes: formData.notes,
         accountId: selectedAccountId,
       };
+
+      // Soft guardrail: if selected account has daily loss limit, and this loss would exceed it, warn
+      try {
+        const { accounts } = useAccountFilterStore.getState();
+        const acc = accounts.find(a => a.id === selectedAccountId);
+        const limit = (acc as any)?.dailyLossLimit as number | undefined;
+        if (typeof limit === 'number' && limit > 0) {
+          const today = new Date(); today.setHours(0,0,0,0);
+          const sameDay = (d: Date) => { const x = new Date(d); x.setHours(0,0,0,0); return x.getTime() === today.getTime(); };
+          const todaysTrades = useTradeStore.getState().trades.filter(t => t.accountId === selectedAccountId && sameDay(new Date(t.entryTime)));
+          const pnlSoFar = todaysTrades.reduce((s, t) => s + (t.pnl || 0), 0);
+          const projected = pnlSoFar + (tradeData.pnl || 0);
+          if (projected <= -limit) {
+            alert(`Warning: This trade would exceed your daily loss limit (${limit}). Consider reducing size or pausing.`);
+            const auto = useSessionStore.getState().rules.autoLockoutEnabled;
+            if (auto) {
+              useSessionStore.getState().startLockout(20);
+            }
+            // Optionally block save while locked out
+            if (useSessionStore.getState().isLockedOut()) {
+              setIsLoading(false);
+              return;
+            }
+          }
+        }
+      } catch {}
 
       // Update recent symbols when trade is saved
       const newRecentSymbols = addRecentSymbol(formData.symbol);

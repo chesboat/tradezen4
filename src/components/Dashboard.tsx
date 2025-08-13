@@ -31,6 +31,7 @@ import type { Quest, QuickNote } from '@/types';
 import { useSessionStore } from '@/store/useSessionStore';
 import { useNavigationStore } from '@/store/useNavigationStore';
 import { useReflectionTemplateStore } from '@/store/useReflectionTemplateStore';
+import { CoachChat } from './CoachChat';
 
 interface KPICardProps {
   title: string;
@@ -179,9 +180,10 @@ export const Dashboard: React.FC = () => {
   const { quests, pinnedQuests, cleanupPinnedQuests } = useQuestStore();
   const [isLoadingDemo, setIsLoadingDemo] = useState(false);
   const { getKeyFocusForDate, upsertReflectionForSelection } = useDailyReflectionStore();
+  const dailyGetReflectionByDate = useDailyReflectionStore((s) => s.getReflectionByDate);
   const reflections = useDailyReflectionStore((s) => s.reflections);
   const { notes } = useQuickNoteStore();
-  const { isActive: sessionActive, activeDate, checklist, startSession, endSession, toggleItem, resetChecklist, getRfDraft, setRfDraft, clearRfDraft } = useSessionStore();
+  const { isActive: sessionActive, activeDate, checklist, startSession, endSession, toggleItem, resetChecklist, getRfDraft, setRfDraft, clearRfDraft, rules, setRules, startLockout: startLockoutFromStore, cancelLockout: cancelLockoutFromStore, isLockedOut: isLockedOutFromStore } = useSessionStore();
   const { setCurrentView } = useNavigationStore();
   const [endModalOpen, setEndModalOpen] = useState(false);
   const [endSummary, setEndSummary] = useState<{completed: number; total: number} | null>(null);
@@ -219,6 +221,7 @@ export const Dashboard: React.FC = () => {
   const [applyError, setApplyError] = useState<string>('');
   const MAX_SELECTED_QUESTS = 2;
   const [showMoreIdeas, setShowMoreIdeas] = useState<boolean>(false);
+  const [autoLockTriggered, setAutoLockTriggered] = useState<boolean>(false);
 
   // Helpers
   const normalizeSummary = (text: string): string => {
@@ -308,6 +311,9 @@ export const Dashboard: React.FC = () => {
     ? (selectionAccounts.reduce((s, a) => s + (a.dailyLossLimit || 0), 0))
     : null;
   const riskUsedPct = dailyLossLimit && dailyLossLimit > 0 ? Math.min(100, Math.round((todayLossAbs / dailyLossLimit) * 100)) : null;
+  const riskUsedDisplay = dailyLossLimit && dailyLossLimit > 0
+    ? `${riskUsedPct}% (${formatCurrency(-todayLossAbs)} / ${formatCurrency(-dailyLossLimit)})`
+    : (riskUsedPct !== null ? `${riskUsedPct}%` : '—');
   const lastTradeTime = todayTrades.length > 0
     ? new Date(Math.max(...todayTrades.map(t => new Date(t.entryTime).getTime())))
     : null;
@@ -403,8 +409,23 @@ export const Dashboard: React.FC = () => {
   const startLockout = (minutes: number) => {
     const until = Date.now() + minutes * 60 * 1000;
     setLockoutUntil(until);
+    startLockoutFromStore(minutes);
   };
-  const isLockedOut = lockoutUntil !== null && Date.now() < lockoutUntil;
+  const isLockedOut = isLockedOutFromStore() || (lockoutUntil !== null && Date.now() < lockoutUntil);
+
+  // Auto-lockout based on rules (daily loss cap handled via riskUsedPct)
+  useEffect(() => {
+    if (!rules?.autoLockoutEnabled || autoLockTriggered) return;
+    const now = new Date();
+    const minutesNow = now.getHours() * 60 + now.getMinutes();
+    const hitLossCap = (riskUsedPct !== null && riskUsedPct >= 100);
+    const hitTradeCap = (rules.maxTrades !== null && rules.maxTrades !== undefined && todayTrades.length > (rules.maxTrades || 0));
+    const hitCutoff = (rules.cutoffTimeMinutes !== null && rules.cutoffTimeMinutes !== undefined && minutesNow >= (rules.cutoffTimeMinutes || 0) && sessionActive);
+    if (hitLossCap || hitTradeCap || hitCutoff) {
+      startLockout(20);
+      setAutoLockTriggered(true);
+    }
+  }, [rules, riskUsedPct, todayTrades.length, sessionActive]);
 
   // AI Plan generation
   const handleGeneratePlan = async () => {
@@ -714,8 +735,30 @@ export const Dashboard: React.FC = () => {
             </div>
             <div className="p-3 bg-muted rounded-lg text-center">
               <div className="text-muted-foreground">Risk Used</div>
-              <div className="text-lg font-bold text-foreground">{riskUsedPct !== null ? `${riskUsedPct}%` : '—'}</div>
+              <div className="text-lg font-bold text-foreground">{riskUsedDisplay}</div>
             </div>
+          </div>
+          {/* Rule inputs */}
+          <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
+            <div>
+              <div className="text-muted-foreground mb-1">Max Trades</div>
+              <input type="number" className="w-full px-2 py-1 rounded bg-muted/40 border border-border/60"
+                value={rules?.maxTrades ?? ''}
+                onChange={(e) => setRules({ maxTrades: e.target.value ? parseInt(e.target.value) : null })} />
+            </div>
+            <div>
+              <div className="text-muted-foreground mb-1">Cutoff (HH:MM)</div>
+              <input type="time" className="w-full px-2 py-1 rounded bg-muted/40 border border-border/60"
+                value={(rules?.cutoffTimeMinutes !== null && rules?.cutoffTimeMinutes !== undefined ? `${String(Math.floor((rules.cutoffTimeMinutes||0)/60)).padStart(2,'0')}:${String((rules.cutoffTimeMinutes||0)%60).padStart(2,'0')}` : '')}
+                onChange={(e) => {
+                  const [hh, mm] = e.target.value.split(':').map(Number);
+                  if (Number.isFinite(hh) && Number.isFinite(mm)) setRules({ cutoffTimeMinutes: hh * 60 + mm }); else setRules({ cutoffTimeMinutes: null });
+                }} />
+            </div>
+            <label className="flex items-center gap-2 mt-5">
+              <input type="checkbox" className="accent-primary" checked={!!rules?.autoLockoutEnabled} onChange={(e) => setRules({ autoLockoutEnabled: e.target.checked })} />
+              <span>Auto-lockout</span>
+            </label>
           </div>
           {/* Start / End Session and Checklist */}
           <div className="mt-4 space-y-3">
@@ -752,7 +795,7 @@ export const Dashboard: React.FC = () => {
             {!isLockedOut ? (
               <button className="text-xs px-2 py-1 rounded bg-muted text-muted-foreground hover:bg-muted/80" onClick={() => startLockout(20)}>Lockout 20m</button>
             ) : (
-              <button className="text-xs px-2 py-1 rounded bg-muted text-muted-foreground hover:bg-muted/80" onClick={() => setLockoutUntil(null)}>Cancel Lockout</button>
+              <button className="text-xs px-2 py-1 rounded bg-muted text-muted-foreground hover:bg-muted/80" onClick={() => { setLockoutUntil(null); cancelLockoutFromStore(); }}>Cancel Lockout</button>
             )}
           </div>
         </motion.div>
@@ -831,6 +874,41 @@ export const Dashboard: React.FC = () => {
           icon={Trophy}
           trendData={tradeCountTrend}
         />
+        {/* Execution Score */}
+        <motion.div
+          className="bg-card rounded-2xl p-6 border border-border hover:border-primary/50 transition-all duration-200 hover:shadow-glow-sm"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 rounded-xl bg-muted">
+              <Target className="w-6 h-6 text-primary" />
+            </div>
+            <div className="text-sm text-muted-foreground">Execution Score</div>
+          </div>
+          {(() => {
+            const scoreParts: number[] = [];
+            const capRespected = riskUsedPct === null ? 1 : riskUsedPct < 100 ? 1 : 0;
+            scoreParts.push(capRespected);
+            const tradeCap = (rules?.maxTrades === null || rules?.maxTrades === undefined || todayTrades.length <= (rules?.maxTrades || 0)) ? 1 : 0;
+            scoreParts.push(tradeCap);
+            const reflection = selectedAccountId ? dailyGetReflectionByDate(todayStr, selectedAccountId) : dailyGetReflectionByDate(todayStr);
+            const reflectionDone = reflection?.isComplete ? 1 : 0.35;
+            scoreParts.push(reflectionDone);
+            const score = Math.round((scoreParts.reduce((s, v) => s + v, 0) / scoreParts.length) * 100);
+            return (
+              <>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-foreground">{score}</div>
+                  <div className="text-xs text-muted-foreground">0–100 rubric</div>
+                </div>
+                <div className="mt-3 w-full h-2 bg-muted rounded-full overflow-hidden">
+                  <div className="h-full bg-primary" style={{ width: `${score}%` }} />
+                </div>
+              </>
+            );
+          })()}
+        </motion.div>
       </div>
 
       {/* Quick Actions */}
@@ -1018,6 +1096,9 @@ export const Dashboard: React.FC = () => {
           <BookOpen className="w-6 h-6" />
         </motion.button>
       </div>
+
+      {/* Coach Chat */}
+      <CoachChat date={todayStr} />
 
       {/* Plan Applied Modal */}
       {planAppliedVisible && (

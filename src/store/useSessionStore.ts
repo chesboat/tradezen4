@@ -12,6 +12,13 @@ interface SessionState {
   isActive: boolean;
   checklist: SessionChecklistItem[];
   rfDrafts: Record<string, { good: string; bad: string; focus: string }>;
+  // Rules and lockout
+  rules: {
+    maxTrades: number | null;
+    cutoffTimeMinutes: number | null; // minutes since midnight, e.g., 11:30 = 690
+    autoLockoutEnabled: boolean;
+  };
+  lockoutUntil: number | null; // epoch ms
   startSession: (date: string) => void;
   endSession: () => { completed: number; total: number };
   toggleItem: (id: string) => void;
@@ -19,6 +26,11 @@ interface SessionState {
   getRfDraft: (date: string) => { good: string; bad: string; focus: string } | undefined;
   setRfDraft: (date: string, draft: { good: string; bad: string; focus: string }) => void;
   clearRfDraft: (date: string) => void;
+  // Rules & lockout actions
+  setRules: (updates: Partial<SessionState['rules']>) => void;
+  startLockout: (minutes: number) => void;
+  cancelLockout: () => void;
+  isLockedOut: () => boolean;
   load: () => void;
   save: () => void;
 }
@@ -36,6 +48,12 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   isActive: false,
   checklist: defaultChecklist(),
   rfDrafts: {},
+  rules: {
+    maxTrades: 5,
+    cutoffTimeMinutes: 690, // 11:30
+    autoLockoutEnabled: true,
+  },
+  lockoutUntil: null,
 
   startSession: (date) => {
     set({ activeDate: date, isActive: true });
@@ -74,6 +92,24 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     get().save();
   },
 
+  setRules: (updates) => {
+    set((state) => ({ rules: { ...state.rules, ...updates } }));
+    get().save();
+  },
+  startLockout: (minutes) => {
+    const until = Date.now() + minutes * 60 * 1000;
+    set({ lockoutUntil: until });
+    get().save();
+  },
+  cancelLockout: () => {
+    set({ lockoutUntil: null });
+    get().save();
+  },
+  isLockedOut: () => {
+    const until = get().lockoutUntil;
+    return until !== null && Date.now() < until;
+  },
+
   load: () => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY, null as any);
@@ -83,6 +119,8 @@ export const useSessionStore = create<SessionState>((set, get) => ({
           isActive: !!saved.isActive,
           checklist: Array.isArray(saved.checklist) && saved.checklist.length > 0 ? saved.checklist : defaultChecklist(),
           rfDrafts: saved.rfDrafts || {},
+          rules: saved.rules || { maxTrades: 5, cutoffTimeMinutes: 690, autoLockoutEnabled: true },
+          lockoutUntil: typeof saved.lockoutUntil === 'number' ? saved.lockoutUntil : null,
         });
       }
     } catch (e) {
@@ -92,8 +130,8 @@ export const useSessionStore = create<SessionState>((set, get) => ({
 
   save: () => {
     try {
-      const { activeDate, isActive, checklist, rfDrafts } = get();
-      localStorage.setItem(STORAGE_KEY, { activeDate, isActive, checklist, rfDrafts });
+      const { activeDate, isActive, checklist, rfDrafts, rules, lockoutUntil } = get();
+      localStorage.setItem(STORAGE_KEY, { activeDate, isActive, checklist, rfDrafts, rules, lockoutUntil });
     } catch (e) {
       // ignore
     }
