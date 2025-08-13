@@ -22,6 +22,7 @@ import { useTradeLoggerModal } from './hooks/useTradeLoggerModal';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { initializeTradeStore } from './store/useTradeStore';
 import { useUserProfileStore } from './store/useUserProfileStore';
+import { initializeQuickNoteStore } from './store/useQuickNoteStore';
 
 function AppContent() {
   const { isExpanded: sidebarExpanded } = useSidebarStore();
@@ -42,6 +43,7 @@ function AppContent() {
           await initializeDefaultQuests();
           await initializeTradeStore();
           await initializeProfile(currentUser.uid, currentUser.email || undefined);
+          await initializeQuickNoteStore();
           console.log('App initialization completed successfully');
         } catch (error) {
           console.error('Error during app initialization:', error);
