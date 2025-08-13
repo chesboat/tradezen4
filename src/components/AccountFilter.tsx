@@ -72,8 +72,8 @@ export const AccountFilter: React.FC<AccountFilterProps> = ({ className }) => {
     const isLeader = leaderIds.has(account.id);
     const isFollower = followerIds.has(account.id);
     if (!isLeader && !isFollower) return null;
-    const label = isLeader && isFollower ? 'L/F' : isLeader ? 'L' : 'F';
     const title = isLeader && isFollower ? 'Leader & Follower' : isLeader ? 'Leader' : 'Follower';
+    const label = isLeader && isFollower ? 'Leader • Follower' : isLeader ? 'Leader' : 'Follower';
     return (
       <span
         title={title}
@@ -253,7 +253,7 @@ export const AccountFilter: React.FC<AccountFilterProps> = ({ className }) => {
                       {account.name}
                       {renderLinkBadge(account)}
                     </div>
-                    <div className="text-xs text-muted-foreground">
+                     <div className="text-xs text-muted-foreground">
                       {getAccountTypeLabel(account.type)} • {account.currency}
                       {account.type === 'prop' ? 
                         (account.propFirm && ` • ${account.propFirm}`) :
@@ -269,6 +269,16 @@ export const AccountFilter: React.FC<AccountFilterProps> = ({ className }) => {
                           {account.accountPhase}
                         </span>
                       )}
+                        {(account.linkedAccountIds && account.linkedAccountIds.length > 0) && (
+                          <>
+                            {' '}• Followers: {
+                              accounts
+                                .filter(a => (account.linkedAccountIds || []).includes(a.id))
+                                .map(a => a.name)
+                                .join(', ')
+                            }
+                          </>
+                        )}
                     </div>
                   </div>
                   
@@ -310,6 +320,13 @@ export const AccountFilter: React.FC<AccountFilterProps> = ({ className }) => {
                       </div>
                       <div className="text-xs text-muted-foreground">Includes {1 + (leader.linkedAccountIds?.length || 0)} accounts</div>
                     </div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleEditAccount(leader, e as any); }}
+                      className="p-1 opacity-0 group-hover:opacity-100 hover:bg-primary/10 rounded transition-all"
+                      title="Manage copy trading"
+                    >
+                      <Edit3 className="w-3 h-3 text-muted-foreground hover:text-primary" />
+                    </button>
                     {isSelected && (
                       <Check className="w-4 h-4 text-primary" />
                     )}

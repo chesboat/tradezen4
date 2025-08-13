@@ -80,6 +80,7 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
 }) => {
   const { addAccount, updateAccount, removeAccount, setSelectedAccount } = useAccountFilterActions();
   const accounts = useAccounts();
+  const parentLeader = accounts.find(a => (a.linkedAccountIds || []).includes(editingAccount?.id || ''));
   
   const [form, setForm] = useState<AccountForm>({
     name: '',
@@ -653,6 +654,15 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
               </button>
             </div>
 
+            {/* Copy trading helper for followers */}
+            {editingAccount && parentLeader && (
+              <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg">
+                <div className="text-xs text-muted-foreground">
+                  This account follows trades from <span className="font-medium text-foreground">{parentLeader.name}</span>.
+                </div>
+              </div>
+            )}
+
             {/* Linked Accounts */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Linked Accounts (copytrading)</label>
@@ -684,6 +694,17 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
                   <div className="text-xs text-muted-foreground">Add another account to enable linking.</div>
                 )}
               </div>
+              {form.linkedAccountIds && form.linkedAccountIds.length > 0 && (
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={() => updateForm('linkedAccountIds', [])}
+                    className="text-xs px-2 py-1 rounded bg-muted text-muted-foreground hover:bg-muted/80"
+                  >
+                    Clear links
+                  </button>
+                </div>
+              )}
             </div>
 
             </form>
