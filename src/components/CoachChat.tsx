@@ -148,7 +148,7 @@ export const CoachChat: React.FC<CoachChatProps> = ({ date }) => {
               <button
                 className="px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm disabled:opacity-50"
                 disabled={isSending || !input.trim()}
-                onClick={send}
+                onClick={() => send()}
               >
                 <Send className="w-4 h-4" />
               </button>
