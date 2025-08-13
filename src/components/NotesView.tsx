@@ -1,10 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileText, Search, Trash2, Edit2, Calendar as CalendarIcon, Hash, Smile } from 'lucide-react';
+import { FileText, Search, Trash2, Edit2, Calendar as CalendarIcon, Hash, Smile, CheckSquare, Square, Save, Bookmark, X } from 'lucide-react';
 import { SmartTagFilterBar } from './SmartTagFilterBar';
 import { useQuickNoteStore, useQuickNoteModal } from '@/store/useQuickNoteStore';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
 import { useDailyReflectionStore } from '@/store/useDailyReflectionStore';
+import { useNotesFilterStore } from '@/store/useNotesFilterStore';
 import { cn } from '@/lib/utils';
 
 export const NotesView: React.FC = () => {
@@ -12,10 +13,13 @@ export const NotesView: React.FC = () => {
   const { selectedAccountId } = useAccountFilterStore();
   const { selectedTagFilter } = useDailyReflectionStore();
   const { setEditingNote, openModal } = useQuickNoteModal();
+  const notesFilters = useNotesFilterStore();
 
   const [query, setQuery] = useState('');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
+  const [selected, setSelected] = useState<Record<string, boolean>>({});
+  const [retagValue, setRetagValue] = useState('');
 
   const filtered = useMemo(() => {
     return notes
@@ -58,6 +62,43 @@ export const NotesView: React.FC = () => {
     }
   };
 
+  const toggleSelect = (id: string) => {
+    setSelected(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const selectedIds = useMemo(() => Object.keys(selected).filter(id => selected[id]), [selected]);
+
+  const bulkDelete = async () => {
+    for (const id of selectedIds) {
+      try { await deleteNote(id); } catch (e) { console.error(e); }
+    }
+    setSelected({});
+  };
+
+  const { updateNote } = useQuickNoteStore.getState();
+  const bulkRetagAdd = async () => {
+    const tag = retagValue.trim().toLowerCase();
+    if (!tag) return;
+    for (const id of selectedIds) {
+      const n = notes.find(x => x.id === id);
+      if (!n) continue;
+      const nextTags = Array.from(new Set([...(n.tags || []), tag]));
+      await updateNote(id, { tags: nextTags });
+    }
+    setRetagValue('');
+    setSelected({});
+  };
+
+  const saveCurrentAsFilter = () => {
+    notesFilters.addFilter({
+      name: query ? query : (selectedTagFilter || 'Filter'),
+      query,
+      tag: selectedTagFilter || null,
+      startDate: startDate || undefined,
+      endDate: endDate || undefined,
+    });
+  };
+
   return (
     <div className="h-full flex flex-col">
       <SmartTagFilterBar />
@@ -93,8 +134,37 @@ export const NotesView: React.FC = () => {
                 className="px-2 py-1 bg-muted rounded-md text-sm"
               />
             </div>
+            <button
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-muted hover:bg-muted/80 text-xs"
+              onClick={saveCurrentAsFilter}
+              title="Save current filters"
+            >
+              <Bookmark className="w-3.5 h-3.5" /> Save filter
+            </button>
           </div>
         </div>
+        {/* Saved Filters Row */}
+        {notesFilters.saved.length > 0 && (
+          <div className="px-6 pt-2 pb-3 flex gap-2 flex-wrap">
+            {notesFilters.saved.map(f => (
+              <button
+                key={f.id}
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted text-xs hover:bg-muted/80"
+                onClick={() => {
+                  setQuery(f.query);
+                  setStartDate(f.startDate || '');
+                  setEndDate(f.endDate || '');
+                  // tag is handled by SmartTagFilterBar via store
+                  // If needed, could set selectedTagFilter via store action
+                }}
+              >
+                <Hash className="w-3 h-3" /> {f.name}
+                <X className="w-3 h-3 opacity-70 hover:opacity-100"
+                   onClick={(e) => { e.stopPropagation(); notesFilters.removeFilter(f.id); }} />
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* List */}
@@ -102,6 +172,9 @@ export const NotesView: React.FC = () => {
         <div className="flex items-center gap-2 mb-3 text-sm text-muted-foreground">
           <FileText className="w-4 h-4" />
           <span>{filtered.length} note{filtered.length !== 1 ? 's' : ''}</span>
+          {selectedIds.length > 0 && (
+            <span className="ml-2">• {selectedIds.length} selected</span>
+          )}
         </div>
 
         <AnimatePresence>
@@ -111,6 +184,23 @@ export const NotesView: React.FC = () => {
             </motion.div>
           ) : (
             <div className="grid grid-cols-1 gap-3">
+              {/* Bulk toolbar when selection exists */}
+              {selectedIds.length > 0 && (
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/40 border">
+                  <input
+                    value={retagValue}
+                    onChange={(e) => setRetagValue(e.target.value)}
+                    placeholder="Add tag to selected..."
+                    className="px-2 py-1 bg-card rounded-md text-sm border"
+                  />
+                  <button className="px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-xs" onClick={bulkRetagAdd}>
+                    <Save className="w-3.5 h-3.5 inline mr-1" /> Apply Tag
+                  </button>
+                  <button className="px-3 py-1.5 rounded-md bg-destructive/10 text-destructive text-xs" onClick={bulkDelete}>
+                    <Trash2 className="w-3.5 h-3.5 inline mr-1" /> Delete
+                  </button>
+                </div>
+              )}
               {filtered.map((note) => (
                 <motion.div
                   key={note.id}
@@ -120,6 +210,13 @@ export const NotesView: React.FC = () => {
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1">
+                      <button
+                        className="mr-2 p-1 rounded hover:bg-muted/60 align-middle"
+                        onClick={() => toggleSelect(note.id)}
+                        title={selected[note.id] ? 'Unselect' : 'Select'}
+                      >
+                        {selected[note.id] ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+                      </button>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
                         <CalendarIcon className="w-3.5 h-3.5" />
                         <span>{new Date(note.createdAt).toLocaleString()}</span>
