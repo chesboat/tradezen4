@@ -32,7 +32,6 @@ import { useSessionStore } from '@/store/useSessionStore';
 import { useNavigationStore } from '@/store/useNavigationStore';
 import { useReflectionTemplateStore } from '@/store/useReflectionTemplateStore';
 import { CoachChat } from './CoachChat';
-import { useSessionStore } from '@/store/useSessionStore';
 
 interface KPICardProps {
   title: string;
