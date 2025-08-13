@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { useCoachStore } from '@/store/useCoachStore';
 import { QuickNote, Trade } from '@/types';
 
 export interface CoachContext {
@@ -29,7 +30,8 @@ export class CoachService {
       if (!client) {
         return this.localAnswer(question, context);
       }
-      const model = 'gpt-4o-mini';
+      const state = useCoachStore.getState?.();
+      const model = state?.model || 'gpt-4o';
       console.debug('[CoachService] Using model:', model);
       const res = await client.chat.completions.create({
         model,
@@ -37,7 +39,7 @@ export class CoachService {
           {
             role: 'system',
             content:
-              'You are a trading coach. Respond with concise, skimmable guidance grounded in the user\'s trades, notes, mood, and account rules.\n\nFormatting rules:\n- Use 3–6 short bullet points (start lines with “- ”)\n- Bold brief labels where helpful (e.g., **risk**, **action**)\n- Prefer concrete numbers and thresholds\n- Keep under ~120 words unless asked for detail\n- No long paragraphs, no fluff',
+              `You are a trading coach. Respond with ${useCoachStore.getState().detailLevel === 'detailed' ? 'structured, concrete guidance with short paragraphs and bullets' : 'concise, skimmable bullets' } grounded in the user's trades, notes, mood, and rules.\n\nFormatting:\n- Use bullets with bold labels (e.g., **risk**, **action**)\n- Prefer concrete numbers and thresholds\n- ${useCoachStore.getState().detailLevel === 'detailed' ? 'Keep it under ~220 words' : 'Keep it under ~120 words'}\n- Avoid fluff`,
           },
           { role: 'user', content: userJson },
         ],

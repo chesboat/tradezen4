@@ -15,6 +15,8 @@ export interface CoachMessage {
 interface CoachState {
   isOpen: boolean;
   messages: CoachMessage[];
+  model: string; // OpenAI model id
+  detailLevel: 'brief' | 'detailed';
   open: () => void;
   close: () => void;
   addMessage: (msg: Omit<CoachMessage, 'id' | 'createdAt'>) => CoachMessage;
@@ -22,15 +24,20 @@ interface CoachState {
   getMessagesFor: (date: string, accountId: string) => CoachMessage[];
   saveToStorage: () => void;
   loadFromStorage: () => void;
+  setModel: (model: string) => void;
+  setDetailLevel: (level: 'brief' | 'detailed') => void;
 }
 
 const STORAGE_KEY = 'tradzen_coach_messages';
+const SETTINGS_KEY = 'tradzen_coach_settings';
 
 const generateId = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
 
 export const useCoachStore = create<CoachState>((set, get) => ({
   isOpen: false,
   messages: [],
+  model: 'gpt-4o',
+  detailLevel: 'brief',
 
   open: () => set({ isOpen: true }),
   close: () => set({ isOpen: false }),
@@ -63,6 +70,8 @@ export const useCoachStore = create<CoachState>((set, get) => ({
     const { messages } = get();
     const serializable = messages.map((m) => ({ ...m, createdAt: m.createdAt.toISOString() }));
     localStorage.setItem(STORAGE_KEY, serializable);
+    const { model, detailLevel } = get();
+    localStorage.setItem(SETTINGS_KEY, { model, detailLevel } as any);
   },
 
   loadFromStorage: () => {
@@ -73,12 +82,16 @@ export const useCoachStore = create<CoachState>((set, get) => ({
         ...m,
         createdAt: new Date(m.createdAt),
       }));
-      set({ messages });
+      const settings = localStorage.getItem(SETTINGS_KEY, null as any);
+      set({ messages, ...(settings ? { model: settings.model || 'gpt-4o', detailLevel: settings.detailLevel || 'brief' } : {}) });
     } catch (e) {
       // ignore
       set({ messages: [] });
     }
   },
+
+  setModel: (model) => { set({ model }); get().saveToStorage(); },
+  setDetailLevel: (level) => { set({ detailLevel: level }); get().saveToStorage(); },
 }));
 
 

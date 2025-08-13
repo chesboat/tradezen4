@@ -14,7 +14,7 @@ interface CoachChatProps {
 }
 
 export const CoachChat: React.FC<CoachChatProps> = ({ date }) => {
-  const { isOpen, open, close, addMessage, getMessagesFor, loadFromStorage } = useCoachStore();
+  const { isOpen, open, close, addMessage, getMessagesFor, loadFromStorage, model, setModel, detailLevel, setDetailLevel } = useCoachStore();
   const { selectedAccountId, accounts } = useAccountFilterStore();
   const { trades } = useTradeStore();
   const { notes } = useQuickNoteStore();
@@ -107,8 +107,28 @@ export const CoachChat: React.FC<CoachChatProps> = ({ date }) => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
           >
-            <div className="p-3 border-b border-border/60 flex items-center justify-between">
+            <div className="p-3 border-b border-border/60 flex items-center justify-between gap-2">
               <div className="text-sm font-semibold">AI Coach</div>
+              <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                <select
+                  className="bg-transparent border border-border/60 rounded px-1 py-0.5"
+                  value={model}
+                  onChange={(e) => setModel(e.target.value)}
+                  title="Model"
+                >
+                  <option value="gpt-4o">gpt-4o</option>
+                  <option value="gpt-4o-mini">gpt-4o-mini</option>
+                </select>
+                <select
+                  className="bg-transparent border border-border/60 rounded px-1 py-0.5"
+                  value={detailLevel}
+                  onChange={(e) => setDetailLevel(e.target.value as any)}
+                  title="Detail"
+                >
+                  <option value="brief">brief</option>
+                  <option value="detailed">detailed</option>
+                </select>
+              </div>
               <button className="text-muted-foreground" onClick={close}><X className="w-4 h-4" /></button>
             </div>
             <div ref={scrollerRef} className="p-3 h-[300px] overflow-y-auto space-y-2">
