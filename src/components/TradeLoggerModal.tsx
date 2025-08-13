@@ -19,6 +19,7 @@ import { useTradeActions } from '@/store/useTradeStore';
 import { useAccountFilterStore, getAccountIdsForSelection } from '@/store/useAccountFilterStore';
 import { useSessionStore } from '@/store/useSessionStore';
 import { useNudgeStore } from '@/store/useNudgeStore';
+import { evaluateRules } from '@/lib/rules/engine';
 import { useActivityLogStore } from '@/store/useActivityLogStore';
 import { useQuestStore } from '@/store/useQuestStore';
 import { useTradeStore } from '@/store/useTradeStore';
@@ -291,6 +292,34 @@ export const TradeLoggerModal: React.FC<TradeLoggerModalProps> = ({
               return;
             }
           }
+        }
+      } catch {}
+
+      // Evaluate rules (bullets + custom)
+      try {
+        const account = useAccountFilterStore.getState().accounts.find(a => a.id === selectedAccountId)! as any;
+        const today = new Date(); today.setHours(0,0,0,0);
+        const sameDay = (d: Date) => { const x = new Date(d); x.setHours(0,0,0,0); return x.getTime() === today.getTime(); };
+        const todayTrades = useTradeStore.getState().trades.filter(t => t.accountId === selectedAccountId && sameDay(new Date(t.entryTime)));
+        const { accounts } = useAccountFilterStore.getState();
+        // Risk used pct
+        const accs = [account];
+        const limit = accs.every(a => typeof a.dailyLossLimit === 'number') ? accs.reduce((s: number, a: any) => s + (a.dailyLossLimit || 0), 0) : null;
+        const lossesAbs = Math.abs(todayTrades.filter(t => (t.pnl || 0) < 0).reduce((s, t) => s + (t.pnl || 0), 0));
+        const riskUsedPct = limit && limit > 0 ? Math.min(100, Math.round((lossesAbs / limit) * 100)) : null;
+        const ctx = {
+          account: account,
+          todayTrades: todayTrades,
+          now: new Date(),
+          justSavedResult: tradeData.result as any,
+          minutesSinceLastTrade: null,
+          riskUsedPct,
+        };
+        const decisions = evaluateRules('tradeSaved', ctx as any);
+        for (const d of decisions) {
+          if (d.type === 'praise' || d.type === 'warn' || d.type === 'nudge') useNudgeStore.getState().show(d.message, d.type === 'praise' ? 'positive' : d.type === 'warn' ? 'warning' : 'neutral');
+          if (d.type === 'lockout') { useSessionStore.getState().startLockout(20); useNudgeStore.getState().show(d.message || 'Lockout started', 'neutral'); }
+          if (d.type === 'hardStop') { alert(d.message || 'Rule enforced.'); setIsLoading(false); return; }
         }
       } catch {}
 

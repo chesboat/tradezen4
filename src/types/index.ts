@@ -129,7 +129,37 @@ export interface TradingAccount extends FirestoreDocument {
     maxTrades?: number | null;
     cutoffTimeMinutes?: number | null;
     autoLockoutEnabled?: boolean;
+    // Core simple rules
+    riskPerTrade?: number | null;
+    maxLossesPerDay?: number | null;
+    dailyLossCap?: number | null;
+    enforcement?: 'off' | 'nudge' | 'lockout' | 'hard';
+    // Advanced/custom rules
+    customRules?: Rule[];
   };
+}
+
+// Rules engine types (advanced)
+export type Trigger = 'tradeSaved' | 'sessionTick' | 'sessionStart' | 'sessionEnd' | 'noteAdded';
+export type Metric =
+  | 'lossesToday' | 'winsToday' | 'tradesToday' | 'pnlToday'
+  | 'lossStreak' | 'winStreak' | 'riskUsedPct'
+  | 'minutesSinceLastTrade' | 'timeOfDay'
+  | 'tagCount:positive' | 'tagCount:negative';
+export type Comparator = '>' | '>=' | '==' | '<=' | '<';
+export type ActionType = 'nudge' | 'praise' | 'warn' | 'lockout' | 'hardStop' | 'startWellness' | 'pinQuest' | 'coachNote';
+export interface Condition { metric: Metric; op: Comparator; value: number | string; windowMins?: number; }
+export interface Action { type: ActionType; message?: string; params?: Record<string, any>; }
+export interface Rule {
+  id: string;
+  name: string;
+  enabled: boolean;
+  priority: number;
+  trigger: Trigger;
+  conditions: Condition[];
+  actions: Action[];
+  cooldownMs?: number;
+  scope?: 'account' | 'group';
 }
 
 export interface CalendarDay {

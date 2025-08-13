@@ -45,6 +45,9 @@ interface AccountForm {
   sessionMaxTrades?: string;
   sessionCutoffTime?: string; // HH:MM
   sessionAutoLockout?: boolean;
+  sessionRiskPerTrade?: string;
+  sessionMaxLossesPerDay?: string;
+  sessionEnforcement?: 'off' | 'nudge' | 'lockout' | 'hard';
 }
 
 const ACCOUNT_TYPES = [
@@ -108,6 +111,9 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
     sessionMaxTrades: '',
     sessionCutoffTime: '',
     sessionAutoLockout: true,
+    sessionRiskPerTrade: '',
+    sessionMaxLossesPerDay: '',
+    sessionEnforcement: 'nudge',
   });
   
   const [errors, setErrors] = useState<Partial<AccountForm>>({});
@@ -140,6 +146,9 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
           ? `${String(Math.floor((editingAccount.sessionRules.cutoffTimeMinutes||0)/60)).padStart(2,'0')}:${String((editingAccount.sessionRules.cutoffTimeMinutes||0)%60).padStart(2,'0')}`
           : ''),
         sessionAutoLockout: editingAccount.sessionRules?.autoLockoutEnabled ?? true,
+        sessionRiskPerTrade: (editingAccount.sessionRules?.riskPerTrade ?? '').toString() || '',
+        sessionMaxLossesPerDay: (editingAccount.sessionRules?.maxLossesPerDay ?? '').toString() || '',
+        sessionEnforcement: (editingAccount.sessionRules?.enforcement || 'nudge') as any,
       });
     } else {
       setForm({
@@ -164,6 +173,9 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
         sessionMaxTrades: '',
         sessionCutoffTime: '',
         sessionAutoLockout: true,
+        sessionRiskPerTrade: '',
+        sessionMaxLossesPerDay: '',
+        sessionEnforcement: 'nudge',
       });
     }
     setErrors({});
@@ -267,6 +279,9 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
         if (Number.isFinite(hh) && Number.isFinite(mm)) sr.cutoffTimeMinutes = hh * 60 + mm;
       }
       sr.autoLockoutEnabled = !!form.sessionAutoLockout;
+      if (form.sessionRiskPerTrade) sr.riskPerTrade = parseFloat(form.sessionRiskPerTrade);
+      if (form.sessionMaxLossesPerDay) sr.maxLossesPerDay = parseInt(form.sessionMaxLossesPerDay);
+      if (form.sessionEnforcement) sr.enforcement = form.sessionEnforcement;
       if (Object.keys(sr).length > 0) accountData.sessionRules = sr;
 
       if (editingAccount) {
@@ -557,6 +572,46 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
                         {errors.maxDrawdown}
                       </p>
                     )}
+                  </div>
+                </div>
+
+                {/* Simple Rules (R and Bullets) */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Risk per Trade ($)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={form.sessionRiskPerTrade}
+                      onChange={(e) => updateForm('sessionRiskPerTrade', e.target.value)}
+                      placeholder="150"
+                      className="w-full px-3 py-2 border rounded-lg bg-background text-foreground border-border focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Bullets (losses/day)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={form.sessionMaxLossesPerDay}
+                      onChange={(e) => updateForm('sessionMaxLossesPerDay', e.target.value)}
+                      placeholder="2"
+                      className="w-full px-3 py-2 border rounded-lg bg-background text-foreground border-border focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Enforcement</label>
+                    <select
+                      value={form.sessionEnforcement}
+                      onChange={(e) => updateForm('sessionEnforcement', e.target.value as any)}
+                      className="w-full px-3 py-2 border rounded-lg bg-background text-foreground border-border focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    >
+                      <option value="off">Off</option>
+                      <option value="nudge">Nudge</option>
+                      <option value="lockout">Lockout</option>
+                      <option value="hard">Hard stop</option>
+                    </select>
                   </div>
                 </div>
 
