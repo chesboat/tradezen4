@@ -6,7 +6,9 @@ import { TooltipProps } from '@/types';
 export const Tooltip: React.FC<TooltipProps> = ({ 
   content, 
   children, 
-  position = 'top' 
+  position = 'top',
+  wrapperClassName,
+  fullWidth
 }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
@@ -121,7 +123,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
         ref={triggerRef}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        className="inline-block"
+        className={wrapperClassName || (fullWidth ? 'block w-full' : 'inline-block')}
       >
         {children}
       </div>

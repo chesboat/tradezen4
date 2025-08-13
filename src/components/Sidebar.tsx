@@ -201,7 +201,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
 
     if (!isExpanded) {
       return (
-        <Tooltip content={item.label} position="right">
+        <Tooltip content={item.label} position="right" fullWidth>
           {navItem}
         </Tooltip>
       );
@@ -292,9 +292,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
       </AnimatePresence>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-2">
+      <nav className={cn("flex-1 p-4", isExpanded ? 'space-y-2' : 'space-y-3')}
+      >
         {navItems.map((item) => (
-          <NavItem key={item.id} item={item} isExpanded={isExpanded} />
+          <div key={item.id} className={cn(!isExpanded && 'flex justify-center')}> 
+            <NavItem item={item} isExpanded={isExpanded} />
+          </div>
         ))}
       </nav>
 
@@ -400,13 +403,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
       {/* Collapsed State Indicators */}
       {!isExpanded && (
         <div className="p-4 space-y-4">
-          <Tooltip content="Theme" position="right">
+          <Tooltip content="Theme" position="right" fullWidth>
             <div className="flex justify-center">
               <ThemeToggle size="sm" />
             </div>
           </Tooltip>
           
-          <Tooltip content="Add Trade" position="right">
+          <Tooltip content="Add Trade" position="right" fullWidth>
             <motion.button
               className="w-full flex items-center justify-center p-3 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground transition-colors"
               onClick={onAddTrade}
@@ -417,7 +420,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
             </motion.button>
           </Tooltip>
           
-          <Tooltip content="Quick Note" position="right">
+          <Tooltip content="Quick Note" position="right" fullWidth>
             <motion.button
               className="w-full flex items-center justify-center p-3 rounded-xl hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors"
               onClick={handleQuickNote}
@@ -428,7 +431,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
             </motion.button>
           </Tooltip>
           
-          <Tooltip content="Manage Tags" position="right">
+          <Tooltip content="Manage Tags" position="right" fullWidth>
             <motion.button
               className="w-full flex items-center justify-center p-3 rounded-xl hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors"
               onClick={() => setIsTagManagerOpen(true)}
@@ -439,7 +442,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
             </motion.button>
           </Tooltip>
           
-          <Tooltip content="John Trader" position="right">
+          <Tooltip content="John Trader" position="right" fullWidth>
             <motion.button
               className="w-full flex items-center justify-center p-3 rounded-xl hover:bg-accent transition-colors"
               whileHover={{ scale: 1.05 }}

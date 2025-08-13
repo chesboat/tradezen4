@@ -193,6 +193,8 @@ export interface TooltipProps {
   content: string;
   children: React.ReactNode;
   position?: 'top' | 'bottom' | 'left' | 'right';
+  wrapperClassName?: string;
+  fullWidth?: boolean;
 }
 
 export interface GPTSummaryPrompt {
