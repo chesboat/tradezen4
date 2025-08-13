@@ -239,102 +239,90 @@ export const AccountFilter: React.FC<AccountFilterProps> = ({ className }) => {
             <div className="py-2 max-h-64 overflow-y-auto">
               {groupedAccounts.map((account) => {
                 const isFollower = followerIds.has(account.id);
+                const hasFollowers = (account.linkedAccountIds || []).length > 0;
+                const followers = accounts.filter(a => (account.linkedAccountIds || []).includes(a.id));
                 return (
-                <motion.button
-                  key={account.id}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 hover:bg-accent transition-colors group ${
-                    selectedAccountId === account.id ? 'bg-accent' : ''
-                  } ${isFollower ? 'pl-6' : ''}`}
-                  onClick={() => handleAccountSelect(account.id)}
-                  whileHover={{ x: 2 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <span className="text-sm">{getAccountIcon(account)}</span>
-                  <div className="flex-1 text-left">
-                    <div className="text-sm font-medium text-popover-foreground flex items-center">
-                      {account.name}
-                      {renderLinkBadge(account)}
-                    </div>
-                     <div className="text-xs text-muted-foreground">
-                      {getAccountTypeLabel(account.type)} • {account.currency}
-                      {account.type === 'prop' ? 
-                        (account.propFirm && ` • ${account.propFirm}`) :
-                        (account.broker && ` • ${account.broker}`)
-                      }
-                      {account.type === 'prop' && account.accountPhase && (
-                        <span className={`ml-1 px-1.5 py-0.5 text-xs rounded-full ${
-                          account.accountPhase === 'funded' ? 'bg-green-500/20 text-green-400' :
-                          account.accountPhase === 'evaluation' ? 'bg-blue-500/20 text-blue-400' :
-                          account.accountPhase === 'passed' ? 'bg-yellow-500/20 text-yellow-400' :
-                          'bg-red-500/20 text-red-400'
-                        }`}>
-                          {account.accountPhase}
-                        </span>
-                      )}
-                        {(account.linkedAccountIds && account.linkedAccountIds.length > 0) && (
-                          <>
-                            {' '}• Followers: {
-                              accounts
-                                .filter(a => (account.linkedAccountIds || []).includes(a.id))
-                                .map(a => a.name)
-                                .join(', ')
-                            }
-                          </>
-                        )}
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={(e) => handleEditAccount(account, e)}
-                      className="p-1 opacity-0 group-hover:opacity-100 hover:bg-primary/10 rounded transition-all"
-                      title="Edit account"
+                  <div key={account.id} className="[transition:none]">
+                    <motion.button
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 hover:bg-accent transition-colors group ${
+                        selectedAccountId === account.id ? 'bg-accent' : ''
+                      } ${isFollower ? 'pl-6' : ''}`}
+                      onClick={() => handleAccountSelect(account.id)}
+                      whileHover={{ x: 2 }}
+                      whileTap={{ scale: 0.98 }}
                     >
-                      <Edit3 className="w-3 h-3 text-muted-foreground hover:text-primary" />
-                    </button>
-                    
-                    {selectedAccountId === account.id && (
-                      <Check className="w-4 h-4 text-primary" />
-                    )}
-                  </div>
-                </motion.button>
-              )})}
-
-              {/* Group totals under each leader */}
-              {accounts.filter(a => (a.linkedAccountIds || []).length > 0).map((leader) => {
-                const groupId = `group:${leader.id}`;
-                const isSelected = selectedAccountId === groupId;
-                return (
-                  <motion.button
-                    key={groupId}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 hover:bg-accent transition-colors group ${
-                      isSelected ? 'bg-accent' : ''
-                    } pl-6`}
-                    onClick={() => handleAccountSelect(groupId)}
-                    whileHover={{ x: 2 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <Users className="w-4 h-4 text-muted-foreground" />
-                    <div className="flex-1 text-left">
-                      <div className="text-sm font-medium text-popover-foreground flex items-center">
-                        {leader.name} Total
-                        <span className="ml-2 inline-flex items-center px-1.5 py-0.5 text-[10px] rounded-full bg-primary/10 text-primary border border-primary/20">Group</span>
+                      <span className="text-sm">{getAccountIcon(account)}</span>
+                      <div className="flex-1 text-left">
+                        <div className="text-sm font-medium text-popover-foreground flex items-center">
+                          {account.name}
+                          {renderLinkBadge(account)}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {getAccountTypeLabel(account.type)} • {account.currency}
+                          {account.type === 'prop' ? 
+                            (account.propFirm && ` • ${account.propFirm}`) :
+                            (account.broker && ` • ${account.broker}`)
+                          }
+                          {account.type === 'prop' && account.accountPhase && (
+                            <span className={`ml-1 px-1.5 py-0.5 text-xs rounded-full ${
+                              account.accountPhase === 'funded' ? 'bg-green-500/20 text-green-400' :
+                              account.accountPhase === 'evaluation' ? 'bg-blue-500/20 text-blue-400' :
+                              account.accountPhase === 'passed' ? 'bg-yellow-500/20 text-yellow-400' :
+                              'bg-red-500/20 text-red-400'
+                            }`}>
+                              {account.accountPhase}
+                            </span>
+                          )}
+                          {hasFollowers && (
+                            <>
+                              {' '}• Followers: {followers.map(a => a.name).join(', ')}
+                            </>
+                          )}
+                        </div>
                       </div>
-                      <div className="text-xs text-muted-foreground">Includes {1 + (leader.linkedAccountIds?.length || 0)} accounts</div>
-                    </div>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleEditAccount(leader, e as any); }}
-                      className="p-1 opacity-0 group-hover:opacity-100 hover:bg-primary/10 rounded transition-all"
-                      title="Manage copy trading"
-                    >
-                      <Edit3 className="w-3 h-3 text-muted-foreground hover:text-primary" />
-                    </button>
-                    {isSelected && (
-                      <Check className="w-4 h-4 text-primary" />
+                      
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={(e) => handleEditAccount(account, e)}
+                          className="p-1 opacity-0 group-hover:opacity-100 hover:bg-primary/10 rounded transition-all"
+                          title="Edit account"
+                        >
+                          <Edit3 className="w-3 h-3 text-muted-foreground hover:text-primary" />
+                        </button>
+                        
+                        {selectedAccountId === account.id && (
+                          <Check className="w-4 h-4 text-primary" />
+                        )}
+                      </div>
+                    </motion.button>
+
+                    {hasFollowers && (
+                      <motion.button
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 hover:bg-accent transition-colors group pl-6 ${
+                          selectedAccountId === `group:${account.id}` ? 'bg-accent' : ''
+                        }`}
+                        onClick={() => handleAccountSelect(`group:${account.id}`)}
+                        whileHover={{ x: 2 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <Users className="w-4 h-4 text-muted-foreground" />
+                        <div className="flex-1 text-left">
+                          <div className="text-sm font-medium text-popover-foreground flex items-center">
+                            {account.name} — Group Total
+                            <span className="ml-2 inline-flex items-center px-1.5 py-0.5 text-[10px] rounded-full bg-primary/10 text-primary border border-primary/20">Group</span>
+                          </div>
+                          <div className="text-xs text-muted-foreground">Includes {1 + (account.linkedAccountIds?.length || 0)} accounts</div>
+                        </div>
+                        {selectedAccountId === `group:${account.id}` && (
+                          <Check className="w-4 h-4 text-primary" />
+                        )}
+                      </motion.button>
                     )}
-                  </motion.button>
+                  </div>
                 );
               })}
+
+              {/* Group totals now shown inline under each leader above */}
               
               {accounts.length === 0 && (
                 <div className="px-3 py-6 text-center text-sm text-muted-foreground">
