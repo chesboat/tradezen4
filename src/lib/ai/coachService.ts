@@ -29,8 +29,10 @@ export class CoachService {
       if (!client) {
         return this.localAnswer(question, context);
       }
+      const model = 'gpt-4o-mini';
+      console.debug('[CoachService] Using model:', model);
       const res = await client.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model,
         messages: [
           {
             role: 'system',

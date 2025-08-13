@@ -128,7 +128,9 @@ Focus on improvement areas based on the actual data provided.`;
   });
 
   // Prefer stable models to avoid empty content
-  let completion = await invoke('gpt-4o-mini');
+  const model = 'gpt-4o-mini';
+  console.debug('[generateQuestSuggestions] Using model:', model);
+  let completion = await invoke(model);
   console.log('📨 Received OpenAI response');
   let responseContent = completion.choices[0]?.message?.content || '';
   if (!responseContent.trim()) {

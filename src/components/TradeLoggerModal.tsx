@@ -18,6 +18,7 @@ import {
 import { useTradeActions } from '@/store/useTradeStore';
 import { useAccountFilterStore, getAccountIdsForSelection } from '@/store/useAccountFilterStore';
 import { useSessionStore } from '@/store/useSessionStore';
+import { useNudgeStore } from '@/store/useNudgeStore';
 import { useActivityLogStore } from '@/store/useActivityLogStore';
 import { useQuestStore } from '@/store/useQuestStore';
 import { useTradeStore } from '@/store/useTradeStore';
@@ -285,6 +286,7 @@ export const TradeLoggerModal: React.FC<TradeLoggerModalProps> = ({
             }
             // Optionally block save while locked out
             if (useSessionStore.getState().isLockedOut()) {
+          useNudgeStore.getState().show('Lockout started. Step back, breathe, and review your rules. Today is about process, not outcome.', 'neutral');
               setIsLoading(false);
               return;
             }
@@ -298,6 +300,10 @@ export const TradeLoggerModal: React.FC<TradeLoggerModalProps> = ({
       
       if (editingTrade) {
         updateTrade(editingTrade.id, tradeData);
+        // Encouragement: followed plan but loss
+        if (tradeData.result === 'loss' && formData.notes?.toLowerCase().includes('followed plan')) {
+          useNudgeStore.getState().show('You followed your plan. Losses are business expenses. Consistency wins long-term.', 'positive');
+        }
         addActivity({
           type: 'trade',
           title: `Updated ${formData.symbol} ${formData.direction.toUpperCase()} - ${formData.result.toUpperCase()}`,
@@ -312,6 +318,9 @@ export const TradeLoggerModal: React.FC<TradeLoggerModalProps> = ({
         const targetIds = getAccountIdsForSelection(selectedAccountId);
         const leaderId = targetIds[0] || selectedAccountId;
         const newTrade = await addTrade({ ...tradeData, accountId: leaderId });
+        if (tradeData.result === 'loss' && formData.notes?.toLowerCase().includes('followed plan')) {
+          useNudgeStore.getState().show('Good discipline. Keep executing your edge; results follow the process.', 'positive');
+        }
       console.log('Trade added successfully:', newTrade);
       addActivity({
           type: 'trade',

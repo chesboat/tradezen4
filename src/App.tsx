@@ -24,6 +24,7 @@ import { initializeTradeStore } from './store/useTradeStore';
 import { useUserProfileStore } from './store/useUserProfileStore';
 import { initializeQuickNoteStore } from './store/useQuickNoteStore';
 import { CoachChat } from './components/CoachChat';
+import { NudgeToast } from './components/NudgeToast';
 
 function AppContent() {
   const { isExpanded: sidebarExpanded } = useSidebarStore();
@@ -121,6 +122,9 @@ function AppContent() {
 
       {/* Global AI Coach */}
       <CoachChat date={new Date().toISOString().split('T')[0]} />
+
+      {/* Global Nudge Toast */}
+      <NudgeToast />
     </div>
   );
 }

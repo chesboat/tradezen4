@@ -277,7 +277,9 @@ export const generateAISummaryWithAPI = async (data: DailyJournalData): Promise<
       max_completion_tokens: 700,
     });
 
-    let completion = await invoke('gpt-4o-mini');
+    const model = 'gpt-4o-mini';
+    console.debug('[generateDailySummary] Using model:', model);
+    let completion = await invoke(model);
     let content = completion.choices[0]?.message?.content || '';
     if (!content.trim()) {
       console.warn('Empty content from gpt-4o-mini, retrying with gpt-4o');
