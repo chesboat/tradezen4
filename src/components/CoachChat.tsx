@@ -7,6 +7,7 @@ import { useQuickNoteStore } from '@/store/useQuickNoteStore';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
 import { CoachService } from '@/lib/ai/coachService';
 import { useSidebarStore } from '@/store/useSidebarStore';
+import { useSessionStore } from '@/store/useSessionStore';
 
 interface CoachChatProps {
   date: string; // YYYY-MM-DD
@@ -17,6 +18,7 @@ export const CoachChat: React.FC<CoachChatProps> = ({ date }) => {
   const { selectedAccountId, accounts } = useAccountFilterStore();
   const { trades } = useTradeStore();
   const { notes } = useQuickNoteStore();
+  const { rules } = useSessionStore();
   const [input, setInput] = useState('');
   const [isSending, setIsSending] = useState(false);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
@@ -43,9 +45,10 @@ export const CoachChat: React.FC<CoachChatProps> = ({ date }) => {
     }
   }, [messages.length, isOpen]);
 
-  const send = async () => {
-    if (!input.trim() || !selectedAccountId) return;
-    const question = input.trim();
+  const send = async (override?: string) => {
+    const toSend = (override ?? input).trim();
+    if (!toSend || !selectedAccountId) return;
+    const question = toSend;
     setInput('');
     addMessage({ role: 'user', content: question, date, accountId: selectedAccountId });
     setIsSending(true);
@@ -68,6 +71,21 @@ export const CoachChat: React.FC<CoachChatProps> = ({ date }) => {
       setIsSending(false);
     }
   };
+
+  // Context-aware question suggestions (pills)
+  const suggestions = useMemo(() => {
+    const hasTrades = scopedTrades.length > 0;
+    const acc = accounts.find(a => a.id === selectedAccountId);
+    const hasCap = typeof (acc as any)?.dailyLossLimit === 'number' && (acc as any)?.dailyLossLimit! > 0;
+    const pills: string[] = [];
+    if (!hasCap) pills.push('Help me set my daily loss cap');
+    if (hasTrades) pills.push('Summarize today in 4 bullets');
+    pills.push('Give me 2 micro-goals for tomorrow');
+    if (hasTrades) pills.push('What patterns do you see in my last 10 trades?');
+    if (rules?.maxTrades) pills.push('Am I pacing well vs my max trades?');
+    pills.push('Pre-market checklist for tomorrow');
+    return pills.slice(0, 6);
+  }, [scopedTrades.length, accounts, selectedAccountId, rules]);
 
   return (
     <>
@@ -105,6 +123,20 @@ export const CoachChat: React.FC<CoachChatProps> = ({ date }) => {
                 </div>
               ))}
             </div>
+            {/* Suggestions */}
+            {suggestions.length > 0 && (
+              <div className="px-3 pb-2 flex flex-wrap gap-2">
+                {suggestions.map((s, idx) => (
+                  <button
+                    key={idx}
+                    className="text-[11px] px-2 py-1 rounded-full bg-muted/60 border border-border hover:bg-muted text-foreground"
+                    onClick={() => send(s)}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            )}
             <div className="p-3 border-t border-border/60 flex items-center gap-2">
               <input
                 className="flex-1 px-3 py-2 rounded-lg bg-muted/40 border border-border/60 focus:outline-none focus:border-primary/50 text-sm"
