@@ -6,6 +6,7 @@ import { useTradeStore } from '@/store/useTradeStore';
 import { useQuickNoteStore } from '@/store/useQuickNoteStore';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
 import { CoachService } from '@/lib/ai/coachService';
+import { useSidebarStore } from '@/store/useSidebarStore';
 
 interface CoachChatProps {
   date: string; // YYYY-MM-DD
@@ -19,6 +20,8 @@ export const CoachChat: React.FC<CoachChatProps> = ({ date }) => {
   const [input, setInput] = useState('');
   const [isSending, setIsSending] = useState(false);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
+  const { isExpanded: sidebarExpanded } = useSidebarStore();
+  const leftOffset = sidebarExpanded ? 300 : 84; // match sidebar widths (expanded vs collapsed)
 
   useEffect(() => { loadFromStorage(); }, [loadFromStorage]);
 
@@ -69,7 +72,8 @@ export const CoachChat: React.FC<CoachChatProps> = ({ date }) => {
   return (
     <>
       <button
-        className="fixed bottom-6 left-6 z-50 bg-primary text-primary-foreground p-4 rounded-full shadow-lg hover:bg-primary/90"
+        className="fixed bottom-6 z-50 bg-primary text-primary-foreground p-4 rounded-full shadow-lg hover:bg-primary/90"
+        style={{ left: leftOffset }}
         onClick={isOpen ? close : open}
         title="Ask Coach"
       >
@@ -79,7 +83,8 @@ export const CoachChat: React.FC<CoachChatProps> = ({ date }) => {
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            className="fixed bottom-24 left-6 z-50 w-[360px] max-w-[92vw] bg-card border border-border/60 rounded-2xl shadow-2xl overflow-hidden"
+            className="fixed bottom-24 z-50 w-[360px] max-w-[92vw] bg-card border border-border/60 rounded-2xl shadow-2xl overflow-hidden"
+            style={{ left: leftOffset }}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
