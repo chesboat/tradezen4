@@ -5,6 +5,7 @@ import { useAccountFilterStore, initializeDefaultAccounts } from '@/store/useAcc
 import { Users } from 'lucide-react';
 import { AccountManagementModal } from './AccountManagementModal';
 import { TradingAccount } from '@/types';
+import { CopyTradingManager } from './CopyTradingManager';
 
 interface AccountFilterProps {
   className?: string;
@@ -14,6 +15,7 @@ export const AccountFilter: React.FC<AccountFilterProps> = ({ className }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState<TradingAccount | null>(null);
+  const [isCopyManagerOpen, setIsCopyManagerOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   
   const { 
@@ -350,6 +352,15 @@ export const AccountFilter: React.FC<AccountFilterProps> = ({ className }) => {
                   <Plus className="w-4 h-4" />
                   <span className="text-sm font-medium">Add Account</span>
                 </motion.button>
+                <motion.button
+                  className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-accent text-primary hover:text-primary/80 transition-colors"
+                  onClick={() => { setIsCopyManagerOpen(true); setIsOpen(false); }}
+                  whileHover={{ x: 2 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Users className="w-4 h-4" />
+                  <span className="text-sm font-medium">Manage Copy Trading</span>
+                </motion.button>
               </div>
             </div>
           </motion.div>
@@ -362,6 +373,7 @@ export const AccountFilter: React.FC<AccountFilterProps> = ({ className }) => {
         onClose={handleCloseModal}
         editingAccount={editingAccount}
       />
+      <CopyTradingManager isOpen={isCopyManagerOpen} onClose={() => setIsCopyManagerOpen(false)} />
     </div>
   );
 }; 
