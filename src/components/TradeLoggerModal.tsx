@@ -13,7 +13,8 @@ import {
   Sparkles,
   Edit3,
   Calendar,
-  Calculator
+  Calculator,
+  Tag as TagIcon
 } from 'lucide-react';
 import { useTradeActions } from '@/store/useTradeStore';
 import { useAccountFilterStore, getAccountIdsForSelection } from '@/store/useAccountFilterStore';
@@ -23,6 +24,8 @@ import { evaluateRules } from '@/lib/rules/engine';
 import { useActivityLogStore } from '@/store/useActivityLogStore';
 import { useQuestStore } from '@/store/useQuestStore';
 import { useTradeStore } from '@/store/useTradeStore';
+import { useQuickNoteStore } from '@/store/useQuickNoteStore';
+import { TagInput } from '@/components/TagPill';
 import { Trade, TradeDirection, MoodType, TradeResult } from '@/types';
 import { formatCurrency, localStorage, STORAGE_KEYS, getRecentSymbols, addRecentSymbol, getMostRecentSymbol } from '@/lib/localStorageUtils';
 import { cn } from '@/lib/utils';
@@ -43,6 +46,7 @@ interface QuickTradeData {
   notes: string;
   customPnl?: number;
   entryDate: string; // YYYY-MM-DD format
+  tags: string[];
 }
 
 const riskPresets = [25, 50, 100, 200, 500];
@@ -88,6 +92,7 @@ export const TradeLoggerModal: React.FC<TradeLoggerModalProps> = ({
     mood: savedDefaults.mood,
     notes: '',
     entryDate: new Date().toISOString().split('T')[0], // Today's date as default
+    tags: [],
   });
 
   const [showNotes, setShowNotes] = useState(false);
@@ -103,6 +108,7 @@ export const TradeLoggerModal: React.FC<TradeLoggerModalProps> = ({
   const [customPnlInput, setCustomPnlInput] = useState('');
   const [recentSymbols, setRecentSymbols] = useState<string[]>(getRecentSymbols());
   const [lockoutRemaining, setLockoutRemaining] = useState<string | null>(null);
+  const { allTags } = useQuickNoteStore();
   
   const symbolInputRef = useRef<HTMLInputElement>(null);
   const riskInputRef = useRef<HTMLInputElement>(null);
@@ -159,6 +165,7 @@ export const TradeLoggerModal: React.FC<TradeLoggerModalProps> = ({
           notes: editingTrade.notes || '',
           customPnl: editingTrade.pnl,
           entryDate: new Date(editingTrade.entryTime).toISOString().split('T')[0],
+          tags: editingTrade.tags || [],
         });
         setShowNotes(!!editingTrade.notes);
       } else {
@@ -169,6 +176,7 @@ export const TradeLoggerModal: React.FC<TradeLoggerModalProps> = ({
           notes: '',
           customPnl: undefined,
           entryDate: new Date().toISOString().split('T')[0],
+          tags: [],
         }));
         setShowNotes(false);
       }
@@ -271,6 +279,10 @@ export const TradeLoggerModal: React.FC<TradeLoggerModalProps> = ({
 
       const baseTags: string[] = [];
       if (useSessionStore.getState().isLockedOut()) baseTags.push('lockout-breach');
+      // Merge user tags and hashtags from notes
+      const noteTags = Array.from((formData.notes.match(/#([a-zA-Z0-9_-]+)/g) || []).map(t => t.slice(1).toLowerCase()));
+      const inputTags = (formData.tags || []).map(t => t.toLowerCase());
+      const mergedTags = Array.from(new Set([...baseTags, ...inputTags, ...noteTags]));
       const tradeData = {
         symbol: formData.symbol,
         direction: formData.direction,
@@ -283,7 +295,7 @@ export const TradeLoggerModal: React.FC<TradeLoggerModalProps> = ({
         entryTime: entryDateTime,
         exitTime: exitDateTime,
         mood: formData.mood,
-        tags: baseTags,
+        tags: mergedTags,
         notes: formData.notes,
         accountId: selectedAccountId,
       };
@@ -1046,6 +1058,25 @@ export const TradeLoggerModal: React.FC<TradeLoggerModalProps> = ({
                     />
                   )}
                 </AnimatePresence>
+              </div>
+
+              {/* Tags */}
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                  <TagIcon className="w-4 h-4" />
+                  Tags
+                </label>
+                <TagInput
+                  tags={formData.tags}
+                  suggestedTags={allTags}
+                  onAddTag={(tag) => {
+                    const t = tag.toLowerCase();
+                    if (!formData.tags.includes(t)) setFormData(prev => ({ ...prev, tags: [...prev.tags, t] }));
+                  }}
+                  onRemoveTag={(tag) => setFormData(prev => ({ ...prev, tags: prev.tags.filter(t => t !== tag) }))}
+                  placeholder="Add tags (or use # in notes)"
+                  maxTags={8}
+                />
               </div>
             </div>
 
