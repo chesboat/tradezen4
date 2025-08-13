@@ -1061,44 +1061,7 @@ export const Dashboard: React.FC = () => {
         </motion.div>
       </div>
 
-      {/* Floating Action Buttons */}
-      <div className="fixed bottom-6 right-6 flex flex-col gap-4">
-        {demoAccount && (
-          <motion.button
-            onClick={handleAddDemoData}
-            disabled={isLoadingDemo}
-            className="bg-blue-500 hover:bg-blue-600 text-white p-4 rounded-full shadow-lg hover:shadow-glow transition-all duration-200 disabled:opacity-50"
-            whileHover={{ scale: isLoadingDemo ? 1 : 1.1 }}
-            whileTap={{ scale: isLoadingDemo ? 1 : 0.9 }}
-            title="Add Demo Trades"
-          >
-            {isLoadingDemo ? (
-              <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <Database className="w-6 h-6" />
-            )}
-          </motion.button>
-        )}
-        
-        <motion.button
-          className="bg-primary hover:bg-primary/90 text-primary-foreground p-4 rounded-full shadow-lg hover:shadow-glow transition-all duration-200"
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-        >
-          <PlusCircle className="w-6 h-6" />
-        </motion.button>
-        
-        <motion.button
-          className="bg-muted hover:bg-muted/80 text-muted-foreground p-4 rounded-full shadow-lg transition-all duration-200"
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-        >
-          <BookOpen className="w-6 h-6" />
-        </motion.button>
-      </div>
-
-      {/* Coach Chat */}
-      <CoachChat date={todayStr} />
+      {/* Removed floating action buttons to declutter UI; Coach chat is global */}
 
       {/* Plan Applied Modal */}
       {planAppliedVisible && (
