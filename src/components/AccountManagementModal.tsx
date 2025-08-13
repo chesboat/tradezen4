@@ -627,7 +627,12 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
                     <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                       <button
                         type="button"
-                        className="px-3 py-2 rounded-lg border border-border hover:bg-accent text-left"
+                        className={cn(
+                          "px-3 py-2 rounded-lg border text-left",
+                          (form.sessionCustomRules || []).some(r => r.id === 'tmpl-rapid-loss')
+                            ? "border-primary bg-primary/10"
+                            : "border-border hover:bg-accent"
+                        )}
                         onClick={() => {
                           // Add rapid loss lockout template (lossStreak >= 2 → lockout + nudge)
                           const current = (form.sessionCustomRules || []);
@@ -647,16 +652,24 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
                               cooldownMs: 5 * 60 * 1000,
                             } as any;
                             updateForm('sessionCustomRules', [...current, rule]);
+                          } else {
+                            // toggle off
+                            updateForm('sessionCustomRules', current.filter(r => r.id !== id));
                           }
                         }}
                       >
-                        Add: Rapid losses → lockout 20m
-                        <div className="text-xs text-muted-foreground">If loss streak ≥ 2, auto-lockout and nudge</div>
+                        Rapid losses → lockout 20m { (form.sessionCustomRules || []).some(r => r.id === 'tmpl-rapid-loss') && <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-primary/15 text-primary">Selected</span> }
+                        <div className="text-xs text-muted-foreground">If loss streak ≥ 2, auto-lockout and nudge (toggle)</div>
                       </button>
 
                       <button
                         type="button"
-                        className="px-3 py-2 rounded-lg border border-border hover:bg-accent text-left"
+                        className={cn(
+                          "px-3 py-2 rounded-lg border text-left",
+                          (form.sessionCustomRules || []).some(r => r.id === 'tmpl-overtrading')
+                            ? "border-primary bg-primary/10"
+                            : "border-border hover:bg-accent"
+                        )}
                         onClick={() => {
                           // Add overtrading warning template (negative tags ≥ 3)
                           const current = (form.sessionCustomRules || []);
@@ -675,13 +688,25 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
                               cooldownMs: 10 * 60 * 1000,
                             } as any;
                             updateForm('sessionCustomRules', [...current, rule]);
+                          } else {
+                            updateForm('sessionCustomRules', current.filter(r => r.id !== id));
                           }
                         }}
                       >
-                        Add: Overtrading warning
-                        <div className="text-xs text-muted-foreground">Warn when negative tags (e.g., #tilt, #overtrading) ≥ 3</div>
+                        Overtrading warning { (form.sessionCustomRules || []).some(r => r.id === 'tmpl-overtrading') && <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-primary/15 text-primary">Selected</span> }
+                        <div className="text-xs text-muted-foreground">Warn when negative tags (e.g., #tilt, #overtrading) ≥ 3 (toggle)</div>
                       </button>
                     </div>
+                    {(form.sessionCustomRules || []).length > 0 && (
+                      <div className="mt-3 text-xs text-muted-foreground">
+                        Selected templates: {(form.sessionCustomRules || []).map(r => r.name).join(', ')}
+                        <button
+                          type="button"
+                          className="ml-2 px-2 py-0.5 rounded bg-muted hover:bg-muted/80 text-foreground border border-border"
+                          onClick={() => updateForm('sessionCustomRules', [])}
+                        >Clear</button>
+                      </div>
+                    )}
                   </details>
                 </div>
 
