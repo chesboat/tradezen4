@@ -4,11 +4,13 @@ import { Heart, MessageCircle, Target, ThumbsUp, TrendingUp, Zap, CheckCircle } 
 import { useTradeStore } from '@/store/useTradeStore';
 import { useDailyReflectionStore } from '@/store/useDailyReflectionStore';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
+import { useNavigationStore } from '@/store/useNavigationStore';
 import { useSessionStore } from '@/store/useSessionStore';
 import { generateDailySummary } from '@/lib/ai/generateDailySummary';
 import { formatCurrency } from '@/lib/localStorageUtils';
 import { cn } from '@/lib/utils';
 import { useCoachHabitStore } from '@/store/useCoachHabitStore';
+import { useCoachStore } from '@/store/useCoachStore';
 
 export const CoachView: React.FC = () => {
   const { trades } = useTradeStore();
@@ -21,6 +23,9 @@ export const CoachView: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [debrief, setDebrief] = useState<string>('');
   const { habits, toggle, resetForToday } = useCoachHabitStore();
+  const openChat = useCoachStore(s => s.open);
+  const addChatMessage = useCoachStore(s => s.addMessage);
+  const setCurrentView = useNavigationStore(s => s.setCurrentView);
 
   const filteredTrades = useMemo(() => {
     return trades.filter(t => !selectedAccountId || t.accountId === selectedAccountId);
@@ -129,22 +134,15 @@ export const CoachView: React.FC = () => {
         </div>
         <div className="flex flex-wrap gap-2">
           <button className="px-3 py-1.5 rounded-full bg-muted text-sm hover:bg-muted/80" onClick={() => {
-            try {
-              const { useCoachStore } = require('@/store/useCoachStore');
-              const s = useCoachStore.getState();
-              s.open();
-              const accId = (require('@/store/useAccountFilterStore') as any).useAccountFilterStore.getState().selectedAccountId || 'default';
-              s.addMessage({ role: 'user', content: "Give me a 3-bullet plan to improve tomorrow based on today's trades.", date: new Date().toISOString().split('T')[0], accountId: accId });
-            } catch {}
+            const accId = selectedAccountId || 'default';
+            openChat();
+            addChatMessage({ role: 'user', content: "Give me a 3-bullet plan to improve tomorrow based on today's trades.", date: todayStr, accountId: accId });
           }}>Ask for 3-step plan</button>
           <button className="px-3 py-1.5 rounded-full bg-muted text-sm hover:bg-muted/80" onClick={() => {
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }}>Review daily debrief</button>
           <button className="px-3 py-1.5 rounded-full bg-muted text-sm hover:bg-muted/80" onClick={() => {
-            try {
-              const { useNavigationStore } = require('@/store/useNavigationStore');
-              useNavigationStore.getState().setCurrentView('journal');
-            } catch {}
+            setCurrentView('journal');
           }}>Journal reflection</button>
         </div>
       </motion.div>
