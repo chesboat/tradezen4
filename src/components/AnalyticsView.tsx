@@ -120,16 +120,21 @@ export const AnalyticsView: React.FC = () => {
     
     const profitFactor = avgLoss > 0 ? Math.abs(avgWin * wins.length) / Math.abs(avgLoss * losses.length) : 0;
     
-    // Calculate drawdown
-    let runningPnL = 0;
-    let peak = 0;
-    let maxDrawdown = 0;
+    // Calculate max drawdown as percentage from prior positive peak only
+    // This avoids absurd values when equity peak is near zero
+    let equity = 0; // cumulative PnL
+    let peak = 0;   // highest equity seen
+    let maxDrawdown = 0; // in percent, 0..100
     
     filteredTrades.forEach(trade => {
-      runningPnL += (trade.pnl || 0);
-      if (runningPnL > peak) peak = runningPnL;
-      const drawdown = ((peak - runningPnL) / Math.max(peak, 1)) * 100;
-      if (drawdown > maxDrawdown) maxDrawdown = drawdown;
+      equity += (trade.pnl || 0);
+      if (equity > peak) {
+        peak = equity;
+      }
+      if (peak > 0) {
+        const dd = ((peak - equity) / peak) * 100;
+        if (dd > maxDrawdown) maxDrawdown = Math.min(100, dd);
+      }
     });
 
     // Calculate consecutive wins/losses
