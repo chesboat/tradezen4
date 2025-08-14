@@ -1,6 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { Tooltip } from './Tooltip';
+import { formatCurrency } from '@/lib/localStorageUtils';
 
 interface SparklineProps {
   data: number[];
@@ -123,9 +125,11 @@ export const Sparkline: React.FC<SparklineProps> = ({
 interface TrendIndicatorProps {
   data: number[];
   className?: string;
+  format?: 'percent' | 'currency' | 'number' | 'none';
+  currencySymbol?: string;
 }
 
-export const TrendIndicator: React.FC<TrendIndicatorProps> = ({ data, className }) => {
+export const TrendIndicator: React.FC<TrendIndicatorProps> = ({ data, className, format = 'percent', currencySymbol = '$' }) => {
   if (!data || data.length < 2) return null;
   
   // Robust baseline to avoid absurd percentages when the first value is near zero
@@ -152,9 +156,30 @@ export const TrendIndicator: React.FC<TrendIndicatorProps> = ({ data, className 
   const arrow = isPositive ? '↗' : '↘';
   const color = isPositive ? 'text-green-500' : 'text-red-500';
   
+  const delta = last - data[0];
+  if (format === 'none') return null;
+
+  if (format === 'currency') {
+    return (
+      <span className={cn("text-xs font-medium", color, className)}>
+        {arrow} {formatCurrency(Math.abs(delta))}
+      </span>
+    );
+  }
+  if (format === 'number') {
+    return (
+      <span className={cn("text-xs font-medium", color, className)}>
+        {arrow} {Math.abs(delta).toFixed(0)}
+      </span>
+    );
+  }
+  // percent (default)
+  const tooltip = `Change vs baseline (max |series|). Δ=${change.toFixed(2)}, baseline=${baseline.toFixed(2)}, pct=${Math.abs(changePercent).toFixed(1)}%`;
   return (
-    <span className={cn("text-xs font-medium", color, className)}>
-      {arrow} {Math.abs(changePercent).toFixed(1)}%
-    </span>
+    <Tooltip content={tooltip}>
+      <span className={cn("text-xs font-medium", color, className)}>
+        {arrow} {Math.abs(changePercent).toFixed(1)}%
+      </span>
+    </Tooltip>
   );
 };

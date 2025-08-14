@@ -88,7 +88,7 @@ const KPICard: React.FC<KPICardProps> = ({
               color="auto"
               strokeWidth={2}
             />
-            <TrendIndicator data={trendData} />
+            <TrendIndicator data={trendData} format={title.includes('P&L') ? 'currency' : title.includes('Total Trades') ? 'number' : 'none'} />
           </div>
         )}
       </div>
@@ -758,7 +758,7 @@ export const Dashboard: React.FC = () => {
               <div className="text-center text-muted-foreground">Risk Used</div>
               <div className={"text-2xl font-extrabold text-center leading-none " + riskColorClass}>{riskPrimaryText}</div>
               {riskSecondaryText && (
-                <div className="text-[11px] text-muted-foreground text-center px-2 leading-snug break-words">{riskSecondaryText}</div>
+                <div className="text-[11px] text-muted-foreground text-center px-2 leading-snug break-words" title={`Loss today ${formatCurrency(-todayLossAbs)} of cap ${formatCurrency(-(dailyLossLimit||0))}`}>{riskSecondaryText}</div>
               )}
               {riskUsedPct !== null && (
                 <div className="mt-2 w-[90%] mx-auto h-1.5 bg-background/60 rounded-full overflow-hidden">
