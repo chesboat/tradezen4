@@ -79,16 +79,7 @@ export const CoachView: React.FC = () => {
           <h1 className="text-3xl font-bold">Coach</h1>
           <p className="text-muted-foreground">Personalized guidance to improve your trading process</p>
         </div>
-        <button
-          className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
-          onClick={() => {
-            try { require('@/store/useCoachStore'); } catch {}
-            const { useCoachStore } = require('@/store/useCoachStore');
-            useCoachStore.getState().open();
-          }}
-        >
-          <div className="flex items-center gap-2"><MessageCircle className="w-4 h-4"/> Open Chat</div>
-        </button>
+        {/* Chat bubble exists globally; keep page header minimal */}
       </div>
 
       {/* Debrief + Focus */}
@@ -147,8 +138,10 @@ export const CoachView: React.FC = () => {
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }}>Review daily debrief</button>
           <button className="px-3 py-1.5 rounded-full bg-muted text-sm hover:bg-muted/80" onClick={() => {
-            const el = document.querySelector('[data-view="journal"]') as HTMLElement | null;
-            if (el) el.scrollIntoView({ behavior: 'smooth' });
+            try {
+              const { useNavigationStore } = require('@/store/useNavigationStore');
+              useNavigationStore.getState().setCurrentView('journal');
+            } catch {}
           }}>Journal reflection</button>
         </div>
       </motion.div>
