@@ -323,10 +323,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
               <button
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors duration-200"
                 onClick={() => {
-                  // Open global coach
-                  try { require('@/store/useCoachStore'); } catch {}
-                  const { useCoachStore } = require('@/store/useCoachStore');
-                  useCoachStore.getState().open();
+                  // Navigate to Coach view
+                  try { const { useNavigationStore } = require('@/store/useNavigationStore'); useNavigationStore.getState().setCurrentView('coach'); } catch {}
                 }}
               >
                 <MessageCircle className="w-5 h-5" />
