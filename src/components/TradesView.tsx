@@ -32,6 +32,7 @@ import TradeImageImport from '@/components/TradeImageImport';
 import { useAccountFilterStore, getAccountIdsForSelection } from '@/store/useAccountFilterStore';
 import { useTradeLoggerModal } from '@/hooks/useTradeLoggerModal';
 import { Trade, TradeResult, MoodType } from '@/types';
+import { summarizeWinLossScratch } from '@/lib/utils';
 import { formatCurrency, formatRelativeTime, getMoodColor, getMoodEmoji } from '@/lib/localStorageUtils';
 import { cn } from '@/lib/utils';
 import { TagList } from './TagPill';
@@ -192,17 +193,14 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
     return filtered;
   }, [trades, filters, sortConfig]);
 
-  // Calculate statistics
+  // Calculate statistics (exclude scratches from win rate)
   const statistics = useMemo(() => {
     const totalTrades = filteredTrades.length;
-    const winningTrades = filteredTrades.filter(t => t.result === 'win').length;
-    const losingTrades = filteredTrades.filter(t => t.result === 'loss').length;
-    const breakEvenTrades = filteredTrades.filter(t => t.result === 'breakeven').length;
-    
+    const { wins: winningTrades, losses: losingTrades, scratches: breakEvenTrades, winRateExclScratches: winRate } = summarizeWinLossScratch(filteredTrades);
+
     const totalPnl = filteredTrades.reduce((sum, trade) => sum + (trade.pnl || 0), 0);
     const totalRisk = filteredTrades.reduce((sum, trade) => sum + trade.riskAmount, 0);
     const avgPnl = totalTrades > 0 ? totalPnl / totalTrades : 0;
-    const winRate = totalTrades > 0 ? (winningTrades / totalTrades) * 100 : 0;
     
     const winningPnl = filteredTrades
       .filter(t => t.result === 'win')

@@ -142,3 +142,61 @@ export function formatLargeNumber(num: number): string {
   }
   return num.toString();
 } 
+
+// --- Trading metrics helpers (win/loss classification) ---
+import type { Trade, TradeResult } from '@/types';
+
+export interface ClassificationOptions {
+  breakevenBandR?: number; // tolerance in R to call a scratch
+  breakevenBandUSD?: number; // fallback absolute $ band when riskAmount not available
+  ignoreFeesForClassification?: boolean; // if true, use gross PnL before fees if provided separately (not available now)
+}
+
+export const defaultClassificationOptions: Required<ClassificationOptions> = {
+  breakevenBandR: 0.05,
+  breakevenBandUSD: 10,
+  ignoreFeesForClassification: true,
+};
+
+function getComputedPnL(trade: Trade): number {
+  if (typeof trade.pnl === 'number') return trade.pnl || 0;
+  if (!trade.exitPrice) return 0;
+  const priceDiff = trade.direction === 'long'
+    ? (trade.exitPrice - trade.entryPrice)
+    : (trade.entryPrice - trade.exitPrice);
+  return priceDiff * trade.quantity;
+}
+
+export function classifyTradeResult(trade: Trade, options: ClassificationOptions = {}): TradeResult {
+  const opts = { ...defaultClassificationOptions, ...options };
+  const pnl = getComputedPnL(trade);
+  const risk = Number(trade.riskAmount) || 0;
+
+  // Prefer R-based classification
+  if (risk > 0 && Number.isFinite(risk)) {
+    const r = pnl / risk;
+    if (r > opts.breakevenBandR) return 'win';
+    if (r < -opts.breakevenBandR) return 'loss';
+    return 'breakeven';
+  }
+
+  // Fallback: absolute dollar band
+  const band = Math.max(0, opts.breakevenBandUSD);
+  if (pnl > band) return 'win';
+  if (pnl < -band) return 'loss';
+  return 'breakeven';
+}
+
+export function summarizeWinLossScratch(
+  trades: Trade[],
+  options: ClassificationOptions = {}
+): { wins: number; losses: number; scratches: number; winRateExclScratches: number } {
+  let wins = 0, losses = 0, scratches = 0;
+  for (const t of trades) {
+    const r = classifyTradeResult(t, options);
+    if (r === 'win') wins++; else if (r === 'loss') losses++; else scratches++;
+  }
+  const denom = wins + losses;
+  const winRateExclScratches = denom > 0 ? (wins / denom) * 100 : 0;
+  return { wins, losses, scratches, winRateExclScratches };
+}

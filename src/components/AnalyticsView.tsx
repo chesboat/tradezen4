@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { useTradeStore } from '@/store/useTradeStore';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
+import { summarizeWinLossScratch } from '@/lib/utils';
 import { Trade, TradeResult, MoodType } from '@/types';
 import { formatCurrency, formatRelativeTime } from '@/lib/localStorageUtils';
 import { cn } from '@/lib/utils';
@@ -109,11 +110,12 @@ export const AnalyticsView: React.FC = () => {
       };
     }
 
-    const wins = filteredTrades.filter(t => (t.pnl || 0) > 0);
-    const losses = filteredTrades.filter(t => (t.pnl || 0) < 0);
+    const { wins: winsCount, losses: lossesCount, scratches, winRateExclScratches } = summarizeWinLossScratch(filteredTrades);
+    const wins = filteredTrades.filter(t => t.result === 'win');
+    const losses = filteredTrades.filter(t => t.result === 'loss');
     
     const totalPnL = filteredTrades.reduce((sum, t) => sum + (t.pnl || 0), 0);
-    const winRate = (wins.length / filteredTrades.length) * 100;
+    const winRate = winRateExclScratches;
     
     const avgWin = wins.length > 0 ? wins.reduce((sum, t) => sum + (t.pnl || 0), 0) / wins.length : 0;
     const avgLoss = losses.length > 0 ? Math.abs(losses.reduce((sum, t) => sum + (t.pnl || 0), 0)) / losses.length : 0;

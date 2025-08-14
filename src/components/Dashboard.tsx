@@ -32,6 +32,7 @@ import { useSessionStore } from '@/store/useSessionStore';
 import { useNavigationStore } from '@/store/useNavigationStore';
 import { useReflectionTemplateStore } from '@/store/useReflectionTemplateStore';
 import { CoachChat } from './CoachChat';
+import { summarizeWinLossScratch } from '@/lib/utils';
 
 interface KPICardProps {
   title: string;
@@ -293,10 +294,11 @@ export const Dashboard: React.FC = () => {
 
   const totalPnL = filteredTrades.reduce((sum, trade) => sum + (trade.pnl || 0), 0);
   const todayPnL = todayTrades.reduce((sum, trade) => sum + (trade.pnl || 0), 0);
-  const winningTrades = filteredTrades.filter(t => (t.pnl || 0) > 0).length;
-  const losingTrades = filteredTrades.filter(t => (t.pnl || 0) < 0).length;
-  const breakEvenTrades = filteredTrades.filter(t => (t.pnl || 0) === 0).length;
-  const winRate = filteredTrades.length > 0 ? (winningTrades / filteredTrades.length) * 100 : 0;
+  const wr = summarizeWinLossScratch(filteredTrades);
+  const winningTrades = wr.wins;
+  const losingTrades = wr.losses;
+  const breakEvenTrades = wr.scratches;
+  const winRate = wr.winRateExclScratches;
 
   // Guardrails: risk used vs daily limit (if available), trades left, time since last trade
   const todayLossAbs = Math.abs(

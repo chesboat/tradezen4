@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { Trade, TradeResult } from '@/types';
+import { classifyTradeResult } from '@/lib/utils';
 import { FirestoreService } from '@/lib/firestore';
 
 const tradeService = new FirestoreService<Trade>('trades');
@@ -192,12 +193,9 @@ export const useTradeStore = create<TradeState>((set, get) => ({
     return priceDiff * trade.quantity;
   },
 
-  // Auto-calculate trade result based on P&L
+  // Auto-calculate trade result using R-based tolerance (scratches excluded)
   autoCalculateResult: (trade: Trade): TradeResult => {
-    const pnl = get().calculatePnL(trade);
-    if (pnl > 0) return 'win';
-    if (pnl < 0) return 'loss';
-    return 'breakeven';
+    return classifyTradeResult(trade);
   },
 
   // Get recent trades (last 10)
