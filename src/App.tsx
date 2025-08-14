@@ -27,6 +27,8 @@ import { useUserProfileStore } from './store/useUserProfileStore';
 import { initializeQuickNoteStore } from './store/useQuickNoteStore';
 import { CoachChat } from './components/CoachChat';
 import { NudgeToast } from './components/NudgeToast';
+import { TodoDrawer } from './components/TodoDrawer';
+import { useTodoStore } from './store/useTodoStore';
 
 function AppContent() {
   const { isExpanded: sidebarExpanded } = useSidebarStore();
@@ -36,6 +38,7 @@ function AppContent() {
   const tradeLoggerModal = useTradeLoggerModal();
   const { currentUser } = useAuth();
   const { initializeProfile } = useUserProfileStore();
+  const { isExpanded: todoExpanded, railWidth } = useTodoStore();
 
   // Initialize data when user is authenticated
   React.useEffect(() => {
@@ -103,15 +106,21 @@ function AppContent() {
       <main 
         className={`transition-all duration-300 ${
           sidebarExpanded ? 'ml-[280px]' : 'ml-20'
-        } ${
-          activityLogExpanded ? 'mr-[320px]' : 'mr-[60px]'
         }`}
+        style={{
+          marginRight:
+            (activityLogExpanded ? 320 : 60) +
+            (todoExpanded ? Math.max(220, Math.min(420, railWidth)) : 60) +
+            10,
+        }}
       >
         {renderCurrentView()}
       </main>
       
       {/* Activity Log */}
       <ActivityLog />
+      {/* Improvement Tasks Drawer */}
+      <TodoDrawer />
       
       {/* Trade Logger Modal */}
       <TradeLoggerModal

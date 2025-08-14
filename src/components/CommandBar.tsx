@@ -6,6 +6,7 @@ import { useNavigationStore } from '@/store/useNavigationStore';
 import { useTradeLoggerModal } from '@/hooks/useTradeLoggerModal';
 import { useQuickNoteModalStore } from '@/store/useQuickNoteModalStore';
 import { useSessionStore } from '@/store/useSessionStore';
+import { useTodoStore } from '@/store/useTodoStore';
 
 type Command = {
   id: string;
@@ -24,6 +25,7 @@ export const CommandBar: React.FC = () => {
   const { setCurrentView } = useNavigationStore();
   const tradeLogger = useTradeLoggerModal();
   const quickNoteModal = useQuickNoteModalStore();
+  const { toggleDrawer: toggleTodo } = useTodoStore();
   const { isActive, startSession, endSession } = useSessionStore();
 
   const todayStr = React.useMemo(() => {
@@ -39,11 +41,15 @@ export const CommandBar: React.FC = () => {
         e.preventDefault();
         setOpen((v) => !v);
       }
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 't') {
+        e.preventDefault();
+        toggleTodo();
+      }
       if (e.key === 'Escape') setOpen(false);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, []);
+  }, [toggleTodo]);
 
   React.useEffect(() => {
     if (open) setTimeout(() => inputRef.current?.focus(), 50);
@@ -51,6 +57,13 @@ export const CommandBar: React.FC = () => {
   }, [open]);
 
   const commands: Command[] = React.useMemo(() => [
+    {
+      id: 'todo:toggle',
+      title: 'Toggle Tasks',
+      hint: 'Show/hide improvement tasks',
+      action: () => { setOpen(false); toggleTodo(); },
+      keywords: ['task', 'todo', 'improvement']
+    },
     {
       id: 'trade:new',
       title: 'Add Trade',
@@ -93,7 +106,7 @@ export const CommandBar: React.FC = () => {
       },
       keywords: ['session', 'start', 'end']
     },
-  ], [isActive, todayStr, tradeLogger, quickNoteModal, setCurrentView]);
+  ], [isActive, todayStr, tradeLogger, quickNoteModal, setCurrentView, toggleTodo]);
 
   const filtered = commands.filter(c =>
     !query.trim() || c.title.toLowerCase().includes(query.toLowerCase()) || (c.keywords || []).some(k => k.includes(query.toLowerCase()))

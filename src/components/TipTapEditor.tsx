@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTodoStore } from '@/store/useTodoStore';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -29,6 +30,7 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
   onConvertSelectionToInsight,
   onPinSelectionAsQuest,
 }) => {
+  const { addTask } = useTodoStore();
   const editor = useEditor({
     extensions: [
       StarterKit.configure({ codeBlock: false }),
@@ -124,6 +126,7 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
             <span className="mx-1 h-4 w-px bg-border" />
             <button className="text-xs px-2 py-1 hover:bg-muted rounded" onMouseDown={(e)=>{e.preventDefault(); const sel=editor.state.doc.textBetween(editor.state.selection.from, editor.state.selection.to).trim(); if(sel) onConvertSelectionToInsight?.(sel);}}>Insight</button>
             <button className="text-xs px-2 py-1 hover:bg-muted rounded" onMouseDown={(e)=>{e.preventDefault(); const sel=editor.state.doc.textBetween(editor.state.selection.from, editor.state.selection.to).trim(); if(sel) onPinSelectionAsQuest?.(sel);}}>Pin Quest</button>
+            <button className="text-xs px-2 py-1 hover:bg-muted rounded" onMouseDown={(e)=>{e.preventDefault(); const sel=editor.state.doc.textBetween(editor.state.selection.from, editor.state.selection.to).trim(); if(sel) addTask(sel.slice(0, 280)).catch(()=>{});}}>Add Task</button>
             <button className="text-xs px-2 py-1 hover:bg-muted rounded" onMouseDown={(e)=>{e.preventDefault(); const href=prompt('Link to (URL or #trade:ID)'); if(!href) return; editor.chain().focus().setLink({href}).run();}}>Link</button>
           </div>
         )}

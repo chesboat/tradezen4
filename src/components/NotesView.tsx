@@ -8,6 +8,7 @@ import { useAccountFilterStore } from '@/store/useAccountFilterStore';
 import { useDailyReflectionStore } from '@/store/useDailyReflectionStore';
 import { useNotesFilterStore } from '@/store/useNotesFilterStore';
 import { cn } from '@/lib/utils';
+import { useTodoStore } from '@/store/useTodoStore';
 
 export const NotesView: React.FC = () => {
   const { notes, deleteNote } = useQuickNoteStore();
@@ -77,6 +78,7 @@ export const NotesView: React.FC = () => {
   };
 
   const { updateNote } = useQuickNoteStore.getState();
+  const { addTask } = useTodoStore();
   const bulkRetagAdd = async () => {
     const tag = retagValue.trim().toLowerCase();
     if (!tag) return;
@@ -241,6 +243,17 @@ export const NotesView: React.FC = () => {
                       )}
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
+                      <button
+                        className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground"
+                        onClick={() => {
+                          const sel = window.getSelection?.()?.toString?.().trim();
+                          const text = sel || note.content.trim();
+                          if (text) addTask(text.slice(0, 280), { sourceReflectionId: note.id, accountId: note.accountId }).catch(()=>{});
+                        }}
+                        title="Add as Task"
+                      >
+                        <Save className="w-4 h-4" />
+                      </button>
                       <button
                         className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground"
                         onClick={() => handleEdit(note.id)}

@@ -281,3 +281,17 @@ export interface JournalEntry extends FirestoreDocument {
   lessons?: string;
   accountId: string;
 }
+
+export interface ImprovementTask extends FirestoreDocument {
+  text: string;
+  status: 'open' | 'done' | 'snoozed';
+  priority?: 'low' | 'med' | 'high';
+  tags?: string[];
+  category?: string;
+  dueAt?: Date | string;
+  sourceReflectionId?: string;
+  completedAt?: Date | string;
+  pinned?: boolean;
+  order?: number;
+  accountId: string;
+}

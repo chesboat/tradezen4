@@ -312,11 +312,11 @@ export const Dashboard: React.FC = () => {
     : null;
   const riskUsedPct = dailyLossLimit && dailyLossLimit > 0 ? Math.min(100, Math.round((todayLossAbs / dailyLossLimit) * 100)) : null;
   const riskUsedDisplay = dailyLossLimit && dailyLossLimit > 0
-    ? `${riskUsedPct}% (${formatCurrency(-todayLossAbs)} / ${formatCurrency(-dailyLossLimit)})`
+    ? `${riskUsedPct}% (${formatCurrency(todayLossAbs)} / ${formatCurrency(dailyLossLimit)})`
     : (riskUsedPct !== null ? `${riskUsedPct}%` : '—');
   const riskPrimaryText = riskUsedPct !== null ? `${riskUsedPct}%` : '—';
   const riskSecondaryText = dailyLossLimit && dailyLossLimit > 0
-    ? `(${formatCurrency(-todayLossAbs)} of ${formatCurrency(-dailyLossLimit)})`
+    ? `(${formatCurrency(todayLossAbs)} of ${formatCurrency(dailyLossLimit)})`
     : '';
   const riskColorClass = riskUsedPct !== null && riskUsedPct >= 100 ? 'text-red-600' : 'text-foreground';
   const lastTradeTime = todayTrades.length > 0
@@ -754,14 +754,14 @@ export const Dashboard: React.FC = () => {
               <div className="text-muted-foreground">Since Last Trade</div>
               <div className="text-lg font-bold text-foreground">{minutesSinceLastTrade !== null ? `${minutesSinceLastTrade}m` : '—'}</div>
             </div>
-            <div className="p-3 bg-muted rounded-lg">
+            <div className="p-4 bg-muted rounded-lg">
               <div className="text-center text-muted-foreground">Risk Used</div>
-              <div className={"text-2xl font-extrabold text-center leading-none " + riskColorClass}>{riskPrimaryText}</div>
+              <div className={"text-3xl font-extrabold text-center leading-tight mt-1 " + riskColorClass}>{riskPrimaryText}</div>
               {riskSecondaryText && (
-                <div className="text-[11px] text-muted-foreground text-center px-2 leading-snug break-words" title={`Loss today ${formatCurrency(-todayLossAbs)} of cap ${formatCurrency(-(dailyLossLimit||0))}`}>{riskSecondaryText}</div>
+                <div className="text-xs text-muted-foreground text-center px-3 leading-snug break-words" title={`Loss today ${formatCurrency(todayLossAbs)} of cap ${formatCurrency(dailyLossLimit||0)}`}>{riskSecondaryText}</div>
               )}
               {riskUsedPct !== null && (
-                <div className="mt-2 w-[90%] mx-auto h-1.5 bg-background/60 rounded-full overflow-hidden">
+                <div className="mt-3 w-[92%] mx-auto h-2 bg-background/60 rounded-full overflow-hidden">
                   <div className={`h-full ${riskUsedPct >= 100 ? 'bg-red-500' : 'bg-primary'}`} style={{ width: `${Math.min(100, riskUsedPct)}%` }} />
                 </div>
               )}

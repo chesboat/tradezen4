@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, FileText, Tag, Smile, Link, Save, Sparkles, Image as ImageIcon } from 'lucide-react';
+import { X, FileText, Tag, Smile, Link, Save, Sparkles, Image as ImageIcon, CheckSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MoodType } from '@/types';
 type Timeout = ReturnType<typeof setTimeout>;
@@ -9,6 +9,7 @@ import { useAccountFilterStore, getAccountIdsForSelection } from '@/store/useAcc
 import { useActivityLogStore } from '@/store/useActivityLogStore';
 import { TagInput } from '@/components/TagPill';
 import { getMoodEmoji } from '@/lib/localStorageUtils';
+import { useTodoStore } from '@/store/useTodoStore';
 
 interface QuickNoteModalProps {
   attachToTradeId?: string;
@@ -59,6 +60,7 @@ export const QuickNoteModal: React.FC<QuickNoteModalProps> = ({
   const [showSuccess, setShowSuccess] = useState(false);
   const [showNotesToggle, setShowNotesToggle] = useState(false);
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const { addTask } = useTodoStore();
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const autoSaveTimeoutRef = useRef<number>();
@@ -355,6 +357,18 @@ export const QuickNoteModal: React.FC<QuickNoteModalProps> = ({
                            text-foreground placeholder:text-muted-foreground resize-none
                            focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
+                <div className="flex items-center justify-end">
+                  <button
+                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted hover:bg-muted/80 text-xs"
+                    onClick={() => {
+                      const text = formData.content.trim();
+                      if (text) addTask(text.slice(0, 280)).catch(()=>{});
+                    }}
+                    title="Add as Task"
+                  >
+                    <CheckSquare className="w-3.5 h-3.5" /> Add as Task
+                  </button>
+                </div>
               </div>
 
               {/* Tags */}

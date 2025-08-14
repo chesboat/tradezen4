@@ -12,6 +12,30 @@ export const useQuickNoteStore = create<QuickNoteState>((set, get) => ({
   notes: [],
   allTags: [],
 
+  // Resolve any legacy Firebase Storage URLs in note content that use
+  // the JSON API query form `/o?name=...` into signed download URLs.
+  // Handles multiple occurrences per note.
+  _resolveLegacyStorageLinks: async (content: string): Promise<string> => {
+    if (typeof content !== 'string' || content.indexOf('/o?name=') === -1) return content;
+    const legacyRegexGlobal = /https?:\/\/firebasestorage\.googleapis\.com\/v0\/b\/[^/]+\/o\?name=([^\s)]+)/ig;
+    const storage = getStorage(app as any);
+    let newContent = content;
+    const matches = [...content.matchAll(legacyRegexGlobal)];
+    for (const match of matches) {
+      const full = match[0];
+      const encodedPath = match[1];
+      try {
+        const storagePath = decodeURIComponent(encodedPath);
+        const storageRef = ref(storage, storagePath);
+        const dl = await getDownloadURL(storageRef);
+        newContent = newContent.split(full).join(dl);
+      } catch (_e) {
+        // Ignore failures and leave the original URL
+      }
+    }
+    return newContent;
+  },
+
   initializeNotes: async () => {
     try {
       const notes = await quickNoteService.getAll();
@@ -29,6 +53,41 @@ export const useQuickNoteStore = create<QuickNoteState>((set, get) => ({
         notes: formattedNotes.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
         allTags: tags
       });
+
+      // Background migration: replace legacy Firebase Storage URLs in note content
+      // that use the JSON API form `/o?name=...` with signed download URLs.
+      // This prevents CORS preflight 404s and standardizes links.
+      const legacyRegex = /https?:\/\/firebasestorage\.googleapis\.com\/v0\/b\/[^/]+\/o\?name=([^\s)]+)/i;
+      const legacyRegexGlobal = /https?:\/\/firebasestorage\.googleapis\.com\/v0\/b\/[^/]+\/o\?name=([^\s)]+)/ig;
+      const storage = getStorage(app as any);
+      (async () => {
+        for (const n of formattedNotes) {
+          if (typeof (n as any).content !== 'string') continue;
+          const contentStr: string = (n as any).content;
+          if (!legacyRegex.test(contentStr)) continue;
+          let newContent = contentStr;
+          const matches = [...contentStr.matchAll(legacyRegexGlobal)];
+          for (const match of matches) {
+            const full = match[0];
+            const encodedPath = match[1];
+            try {
+              const storagePath = decodeURIComponent(encodedPath);
+              const storageRef = ref(storage, storagePath);
+              const dl = await getDownloadURL(storageRef);
+              newContent = newContent.split(full).join(dl);
+            } catch (_e) {
+              // ignore this occurrence
+            }
+          }
+          if (newContent !== contentStr) {
+            await quickNoteService.update((n as any).id, { content: newContent, updatedAt: new Date().toISOString() } as any);
+            // Update local state copy so UI reflects immediately
+            set((prev) => ({
+              notes: prev.notes.map((note) => note.id === (n as any).id ? { ...note, content: newContent, updatedAt: new Date() } : note)
+            }));
+          }
+        }
+      })();
     } catch (error) {
       console.error('Failed to initialize notes:', error);
       set({ notes: [], allTags: [] });
@@ -38,8 +97,11 @@ export const useQuickNoteStore = create<QuickNoteState>((set, get) => ({
   addNote: async (note) => {
     try {
       const now = new Date().toISOString();
+      // Sanitize content: resolve any legacy Storage links before saving
+      const resolvedContent = await (get() as any)._resolveLegacyStorageLinks((note as any).content);
       const newNote = await quickNoteService.create({
         ...note,
+        content: resolvedContent,
         createdAt: now,
         updatedAt: now,
       });
@@ -67,6 +129,32 @@ export const useQuickNoteStore = create<QuickNoteState>((set, get) => ({
 
   // Upload an image Blob/File and return a URL
   uploadImage: async (file: Blob | File): Promise<string> => {
+    const provider = (import.meta as any).env.VITE_UPLOAD_PROVIDER as string | undefined;
+    if (provider === 'cloudinary') {
+      // Cloudinary unsigned upload
+      const cloudName = (import.meta as any).env.VITE_CLOUDINARY_CLOUD_NAME as string | undefined;
+      const uploadPreset = (import.meta as any).env.VITE_CLOUDINARY_UPLOAD_PRESET as string | undefined;
+      if (!cloudName || !uploadPreset) {
+        throw new Error('Cloudinary is not configured. Set VITE_CLOUDINARY_CLOUD_NAME and VITE_CLOUDINARY_UPLOAD_PRESET');
+      }
+      const form = new FormData();
+      form.append('file', file);
+      form.append('upload_preset', uploadPreset);
+      form.append('folder', 'quickNotes');
+      const resp = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+        method: 'POST',
+        body: form
+      });
+      if (!resp.ok) {
+        const txt = await resp.text();
+        throw new Error(`Cloudinary upload failed: ${resp.status} ${txt}`);
+      }
+      const json = await resp.json();
+      if (!json.secure_url) throw new Error('Cloudinary response missing secure_url');
+      return json.secure_url as string;
+    }
+
+    // Default: Firebase Storage
     const projectId = (import.meta as any).env.VITE_FIREBASE_PROJECT_ID as string | undefined;
     const storageBucket = (import.meta as any).env.VITE_FIREBASE_STORAGE_BUCKET as string | undefined;
     const bucketUrl = storageBucket && storageBucket.includes('firebasestorage.app') && projectId
@@ -90,8 +178,12 @@ export const useQuickNoteStore = create<QuickNoteState>((set, get) => ({
 
   updateNote: async (id, updates) => {
     try {
+      const updateDataContent = typeof (updates as any).content === 'string'
+        ? await (get() as any)._resolveLegacyStorageLinks((updates as any).content)
+        : undefined;
       const updateData = {
         ...updates,
+        ...(updateDataContent !== undefined ? { content: updateDataContent } : {}),
         updatedAt: new Date().toISOString(),
       };
       await quickNoteService.update(id, updateData);
@@ -99,7 +191,7 @@ export const useQuickNoteStore = create<QuickNoteState>((set, get) => ({
       const currentNotes = get().notes;
       const updatedNotes = currentNotes.map(note => 
         note.id === id 
-          ? { ...note, ...updates, updatedAt: new Date() }
+          ? { ...note, ...updateData, updatedAt: new Date() }
           : note
       );
 
