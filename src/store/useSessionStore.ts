@@ -19,6 +19,7 @@ interface SessionState {
     autoLockoutEnabled: boolean;
   };
   lockoutUntil: number | null; // epoch ms
+  lockoutSnoozeUntil: number | null; // epoch ms to suppress auto-lockout
   startSession: (date: string) => void;
   endSession: () => { completed: number; total: number };
   toggleItem: (id: string) => void;
@@ -31,6 +32,9 @@ interface SessionState {
   startLockout: (minutes: number) => void;
   cancelLockout: () => void;
   isLockedOut: () => boolean;
+  setLockoutSnooze: (minutes: number) => void;
+  clearLockoutSnooze: () => void;
+  isAutoLockoutSnoozed: () => boolean;
   load: () => void;
   save: () => void;
 }
@@ -54,6 +58,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     autoLockoutEnabled: true,
   },
   lockoutUntil: null,
+  lockoutSnoozeUntil: null,
 
   startSession: (date) => {
     set({ activeDate: date, isActive: true });
@@ -109,6 +114,19 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     const until = get().lockoutUntil;
     return until !== null && Date.now() < until;
   },
+  setLockoutSnooze: (minutes) => {
+    const until = Date.now() + minutes * 60 * 1000;
+    set({ lockoutSnoozeUntil: until });
+    get().save();
+  },
+  clearLockoutSnooze: () => {
+    set({ lockoutSnoozeUntil: null });
+    get().save();
+  },
+  isAutoLockoutSnoozed: () => {
+    const until = get().lockoutSnoozeUntil;
+    return until !== null && Date.now() < until;
+  },
 
   load: () => {
     try {
@@ -121,6 +139,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
           rfDrafts: saved.rfDrafts || {},
           rules: saved.rules || { maxTrades: 5, cutoffTimeMinutes: 690, autoLockoutEnabled: true },
           lockoutUntil: typeof saved.lockoutUntil === 'number' ? saved.lockoutUntil : null,
+          lockoutSnoozeUntil: typeof saved.lockoutSnoozeUntil === 'number' ? saved.lockoutSnoozeUntil : null,
         });
       }
     } catch (e) {
@@ -130,8 +149,8 @@ export const useSessionStore = create<SessionState>((set, get) => ({
 
   save: () => {
     try {
-      const { activeDate, isActive, checklist, rfDrafts, rules, lockoutUntil } = get();
-      localStorage.setItem(STORAGE_KEY, { activeDate, isActive, checklist, rfDrafts, rules, lockoutUntil });
+      const { activeDate, isActive, checklist, rfDrafts, rules, lockoutUntil, lockoutSnoozeUntil } = get();
+      localStorage.setItem(STORAGE_KEY, { activeDate, isActive, checklist, rfDrafts, rules, lockoutUntil, lockoutSnoozeUntil });
     } catch (e) {
       // ignore
     }

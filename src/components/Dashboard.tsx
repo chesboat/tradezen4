@@ -183,7 +183,7 @@ export const Dashboard: React.FC = () => {
   const dailyGetReflectionByDate = useDailyReflectionStore((s) => s.getReflectionByDate);
   const reflections = useDailyReflectionStore((s) => s.reflections);
   const { notes } = useQuickNoteStore();
-  const { isActive: sessionActive, activeDate, checklist, startSession, endSession, toggleItem, resetChecklist, getRfDraft, setRfDraft, clearRfDraft, rules, setRules, startLockout: startLockoutFromStore, cancelLockout: cancelLockoutFromStore, isLockedOut: isLockedOutFromStore } = useSessionStore();
+  const { isActive: sessionActive, activeDate, checklist, startSession, endSession, toggleItem, resetChecklist, getRfDraft, setRfDraft, clearRfDraft, rules, setRules, startLockout: startLockoutFromStore, cancelLockout: cancelLockoutFromStore, isLockedOut: isLockedOutFromStore, setLockoutSnooze, isAutoLockoutSnoozed, clearLockoutSnooze } = useSessionStore();
   const { setCurrentView } = useNavigationStore();
   const [endModalOpen, setEndModalOpen] = useState(false);
   const [endSummary, setEndSummary] = useState<{completed: number; total: number} | null>(null);
@@ -392,6 +392,19 @@ export const Dashboard: React.FC = () => {
   const weeklyPnLTrend = generateWeeklyPnLTrend();
   const tradeCountTrend = generateTradeCountTrend();
 
+  // Execution Score (0–100)
+  const executionScore = (() => {
+    const scoreParts: number[] = [];
+    const capRespected = riskUsedPct === null ? 1 : riskUsedPct < 100 ? 1 : 0;
+    scoreParts.push(capRespected);
+    const tradeCap = (rules?.maxTrades === null || rules?.maxTrades === undefined || todayTrades.length <= (rules?.maxTrades || 0)) ? 1 : 0;
+    scoreParts.push(tradeCap);
+    const reflection = selectedAccountId ? dailyGetReflectionByDate(todayStr, selectedAccountId) : dailyGetReflectionByDate(todayStr);
+    const reflectionDone = reflection?.isComplete ? 1 : 0.35;
+    scoreParts.push(reflectionDone);
+    return Math.round((scoreParts.reduce((s, v) => s + v, 0) / scoreParts.length) * 100);
+  })();
+
   const handleAddDemoData = async () => {
     if (!demoAccount) {
       alert('Demo Account not found. Please create a Demo Account first.');
@@ -426,7 +439,7 @@ export const Dashboard: React.FC = () => {
     const hitLossCap = (riskUsedPct !== null && riskUsedPct >= 100);
     const hitTradeCap = (rules.maxTrades !== null && rules.maxTrades !== undefined && todayTrades.length > (rules.maxTrades || 0));
     const hitCutoff = (rules.cutoffTimeMinutes !== null && rules.cutoffTimeMinutes !== undefined && minutesNow >= (rules.cutoffTimeMinutes || 0) && sessionActive);
-    if (hitLossCap || hitTradeCap || hitCutoff) {
+    if (!isAutoLockoutSnoozed() && (hitLossCap || hitTradeCap || hitCutoff)) {
       startLockout(20);
       setAutoLockTriggered(true);
     }
@@ -607,7 +620,7 @@ export const Dashboard: React.FC = () => {
         </motion.div>
       </div>
 
-      {/* Daily Focus + Guardrails + Focus Mode */}
+      {/* Top row: Daily Focus, Guardrails, Mini-KPIs */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         {/* Daily Focus */}
         <motion.div className="bg-card rounded-2xl p-5 border border-border" whileHover={{ scale: 1.01 }}>
@@ -743,12 +756,12 @@ export const Dashboard: React.FC = () => {
             </div>
             <div className="p-3 bg-muted rounded-lg">
               <div className="text-center text-muted-foreground">Risk Used</div>
-              <div className={"text-2xl font-extrabold text-center " + riskColorClass}>{riskPrimaryText}</div>
+              <div className={"text-2xl font-extrabold text-center leading-none " + riskColorClass}>{riskPrimaryText}</div>
               {riskSecondaryText && (
-                <div className="text-[11px] text-muted-foreground text-center whitespace-nowrap">{riskSecondaryText}</div>
+                <div className="text-[11px] text-muted-foreground text-center px-2 leading-snug break-words">{riskSecondaryText}</div>
               )}
               {riskUsedPct !== null && (
-                <div className="mt-2 w-full h-1.5 bg-background/60 rounded-full overflow-hidden">
+                <div className="mt-2 w-[90%] mx-auto h-1.5 bg-background/60 rounded-full overflow-hidden">
                   <div className={`h-full ${riskUsedPct >= 100 ? 'bg-red-500' : 'bg-primary'}`} style={{ width: `${Math.min(100, riskUsedPct)}%` }} />
                 </div>
               )}
@@ -823,21 +836,43 @@ export const Dashboard: React.FC = () => {
             {!isLockedOut ? (
               <button className="text-xs px-2 py-1 rounded bg-muted text-muted-foreground hover:bg-muted/80" onClick={() => startLockout(20)}>Lockout 20m</button>
             ) : (
-              <button className="text-xs px-2 py-1 rounded bg-muted text-muted-foreground hover:bg-muted/80" onClick={() => { setLockoutUntil(null); cancelLockoutFromStore(); }}>Cancel Lockout</button>
+              <div className="flex items-center gap-2">
+                <button className="text-xs px-2 py-1 rounded bg-muted text-muted-foreground hover:bg-muted/80" onClick={() => { setLockoutUntil(null); cancelLockoutFromStore(); setAutoLockTriggered(false); setLockoutSnooze(60); }}>Cancel Lockout</button>
+                <span className="text-[10px] text-muted-foreground">(snoozed 60m)</span>
+              </div>
             )}
           </div>
         </motion.div>
 
-        {/* Focus Mode Toggle */}
-        <motion.div className="bg-card rounded-2xl p-5 border border-border flex items-center justify-between" whileHover={{ scale: 1.01 }}>
-          <div>
-            <h3 className="text-sm font-semibold mb-1">Focus Mode</h3>
-            <p className="text-xs text-muted-foreground">Hide P&L to reduce performance-chasing</p>
+        {/* Compact Focus + Exec tile */}
+        <motion.div className="bg-card rounded-2xl p-5 border border-border" whileHover={{ scale: 1.01 }}>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Heart className="w-5 h-5 text-pink-500" />
+              <h3 className="text-sm font-semibold">Focus & Execution</h3>
+            </div>
+            <button
+              className={`px-3 py-1 rounded text-xs ${isFocusMode ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
+              onClick={() => setIsFocusMode(v => !v)}
+            >Focus {isFocusMode ? 'On' : 'Off'}</button>
           </div>
-          <button
-            className={`px-3 py-1 rounded text-xs ${isFocusMode ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
-            onClick={() => setIsFocusMode(v => !v)}
-          >{isFocusMode ? 'On' : 'Off'}</button>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">Execution Score</span>
+              <span className="text-sm font-semibold">{executionScore}</span>
+            </div>
+            <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+              <div className="h-full bg-primary" style={{ width: `${executionScore}%` }} />
+            </div>
+            <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+              <span>Risk adherence</span>
+              <span>{riskUsedPct === null ? '—' : (riskUsedPct < 100 ? 'ok' : 'cap hit')}</span>
+            </div>
+            <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+              <span>Trade cap</span>
+              <span>{(rules?.maxTrades ?? null) === null ? '—' : `${todayTrades.length}/${rules?.maxTrades}`}</span>
+            </div>
+          </div>
         </motion.div>
       </div>
 
@@ -902,41 +937,7 @@ export const Dashboard: React.FC = () => {
           icon={Trophy}
           trendData={tradeCountTrend}
         />
-        {/* Execution Score */}
-        <motion.div
-          className="bg-card rounded-2xl p-6 border border-border hover:border-primary/50 transition-all duration-200 hover:shadow-glow-sm"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 rounded-xl bg-muted">
-              <Target className="w-6 h-6 text-primary" />
-            </div>
-            <div className="text-sm text-muted-foreground">Execution Score</div>
-          </div>
-          {(() => {
-            const scoreParts: number[] = [];
-            const capRespected = riskUsedPct === null ? 1 : riskUsedPct < 100 ? 1 : 0;
-            scoreParts.push(capRespected);
-            const tradeCap = (rules?.maxTrades === null || rules?.maxTrades === undefined || todayTrades.length <= (rules?.maxTrades || 0)) ? 1 : 0;
-            scoreParts.push(tradeCap);
-            const reflection = selectedAccountId ? dailyGetReflectionByDate(todayStr, selectedAccountId) : dailyGetReflectionByDate(todayStr);
-            const reflectionDone = reflection?.isComplete ? 1 : 0.35;
-            scoreParts.push(reflectionDone);
-            const score = Math.round((scoreParts.reduce((s, v) => s + v, 0) / scoreParts.length) * 100);
-            return (
-              <>
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-foreground">{score}</div>
-                  <div className="text-xs text-muted-foreground">0–100 rubric</div>
-                </div>
-                <div className="mt-3 w-full h-2 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full bg-primary" style={{ width: `${score}%` }} />
-                </div>
-              </>
-            );
-          })()}
-        </motion.div>
+        {/* Replaced Execution Score card with compact tile above */}
       </div>
 
       {/* Quick Actions */}
