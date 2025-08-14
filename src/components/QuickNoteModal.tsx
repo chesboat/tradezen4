@@ -55,6 +55,7 @@ export const QuickNoteModal: React.FC<QuickNoteModalProps> = ({
 
   const [isLoading, setIsLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showNotesToggle, setShowNotesToggle] = useState(false);
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
@@ -385,6 +386,7 @@ export const QuickNoteModal: React.FC<QuickNoteModalProps> = ({
                     e.preventDefault();
                     const file = e.dataTransfer.files?.[0];
                     if (file) {
+                      setIsUploadingImage(true);
                       const url = URL.createObjectURL(file);
                       setImagePreview(url);
                       try {
@@ -392,6 +394,8 @@ export const QuickNoteModal: React.FC<QuickNoteModalProps> = ({
                         setFormData(prev => ({ ...prev, content: prev.content + `\n\n![image](${uploaded})` }));
                       } catch (err) {
                         console.error('Image upload failed', err);
+                      } finally {
+                        setIsUploadingImage(false);
                       }
                     }
                   }}
@@ -402,6 +406,7 @@ export const QuickNoteModal: React.FC<QuickNoteModalProps> = ({
                     onChange={async (e) => {
                       const file = e.target.files?.[0];
                       if (!file) return;
+                      setIsUploadingImage(true);
                       const url = URL.createObjectURL(file);
                       setImagePreview(url);
                       try {
@@ -409,6 +414,8 @@ export const QuickNoteModal: React.FC<QuickNoteModalProps> = ({
                         setFormData(prev => ({ ...prev, content: prev.content + `\n\n![image](${uploaded})` }));
                       } catch (err) {
                         console.error('Image upload failed', err);
+                      } finally {
+                        setIsUploadingImage(false);
                       }
                     }}
                     className="hidden"
@@ -419,6 +426,7 @@ export const QuickNoteModal: React.FC<QuickNoteModalProps> = ({
                     className="px-3 py-2 rounded-lg bg-muted hover:bg-muted/60 text-sm"
                     onClick={async () => {
                       try {
+                        setIsUploadingImage(true);
                         const clipboardItems = await (navigator as any).clipboard.read();
                         for (const item of clipboardItems) {
                           const type = item.types.find((t: string) => t.startsWith('image/'));
@@ -432,6 +440,8 @@ export const QuickNoteModal: React.FC<QuickNoteModalProps> = ({
                         }
                       } catch (err) {
                         console.error('Paste image failed', err);
+                      } finally {
+                        setIsUploadingImage(false);
                       }
                     }}
                   >Paste from clipboard</button>

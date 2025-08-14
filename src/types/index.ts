@@ -37,6 +37,7 @@ export interface QuickNote extends FirestoreDocument {
   mood?: MoodType;
   attachedToTradeId?: string;
   accountId: string;
+  images?: string[];
 }
 
 export interface Quest extends FirestoreDocument {
