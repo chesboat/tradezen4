@@ -325,17 +325,17 @@ export const useDailyReflectionStore = create<DailyReflectionState>()(
       },
 
       extractKeyFocus: (aiSummary) => {
-        // Simple regex to extract key focus from AI summary
-        const focusRegex = /(?:focus|key|priority|important|tomorrow).*?([A-Z][^.!?]*[.!?])/i;
-        const match = aiSummary.match(focusRegex);
-        
-        if (match) {
-          return match[1].trim();
-        }
-        
-        // Fallback: take first sentence if no focus found
-        const sentences = aiSummary.split(/[.!?]+/);
-        return sentences[0]?.trim() + '.' || 'Focus on disciplined trading';
+        if (!aiSummary || typeof aiSummary !== 'string') return 'Focus on disciplined trading';
+        // Clean leading artifacts
+        let text = aiSummary.replace(/^['`’\-\s]*s\s+/i, '').trim();
+        // Prefer a line starting with Focus/Goal/Priority
+        const lines = text.split(/\n+/).map(l => l.trim()).filter(Boolean);
+        const focusLine = lines.find(l => /^(focus|goal|priority|tomorrow)/i.test(l));
+        if (focusLine) return focusLine.replace(/^(focus|goal|priority|tomorrow)[:\-\s]*/i, '').trim();
+        // Otherwise use first complete sentence
+        const sentenceMatch = text.match(/^[A-Z][^.!?]*[.!?]/);
+        if (sentenceMatch) return sentenceMatch[0].trim();
+        return 'Focus on disciplined trading';
       },
 
       getKeyFocusForDate: (date) => {

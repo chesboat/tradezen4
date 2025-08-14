@@ -640,7 +640,7 @@ export const Dashboard: React.FC = () => {
           <div className="text-sm text-muted-foreground min-h-[40px]">
             {keyFocus ? (
               <div className="space-y-2">
-                <span className="text-foreground block">{keyFocus}</span>
+                <span className="text-foreground block break-words">{keyFocus}</span>
                 {/* Persistent confirmation if plan was applied */}
                 {(() => {
                   const ref = reflections.find(r => r.date === todayStr && (!selectedAccountId || r.accountId === selectedAccountId));
