@@ -54,6 +54,7 @@ export interface QuickNoteState {
   allTags: string[];
   removeTag: (tag: string) => void;
   initializeNotes: () => Promise<void>;
+  uploadImage: (file: Blob | File) => Promise<string>;
 }
 
 export interface QuickNoteModalState {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, FileText, Tag, Smile, Link, Save, Sparkles } from 'lucide-react';
+import { X, FileText, Tag, Smile, Link, Save, Sparkles, Image as ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MoodType } from '@/types';
 type Timeout = ReturnType<typeof setTimeout>;
@@ -54,6 +54,7 @@ export const QuickNoteModal: React.FC<QuickNoteModalProps> = ({
   });
 
   const [isLoading, setIsLoading] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showNotesToggle, setShowNotesToggle] = useState(false);
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
@@ -209,6 +210,7 @@ export const QuickNoteModal: React.FC<QuickNoteModalProps> = ({
     setFormData({ content: '', tags: [], mood: undefined });
     setAutoSaveStatus('idle');
     setShowNotesToggle(false);
+    setImagePreview(null);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -368,6 +370,75 @@ export const QuickNoteModal: React.FC<QuickNoteModalProps> = ({
                   placeholder="Add tags..."
                   maxTags={8}
                 />
+              </div>
+
+              {/* Image attachment */}
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                  <ImageIcon className="w-4 h-4" />
+                  Image (optional)
+                </label>
+                <div
+                  className="flex items-center gap-3 p-3 rounded-xl border border-border/50 bg-muted/20"
+                  onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                  onDrop={async (e) => {
+                    e.preventDefault();
+                    const file = e.dataTransfer.files?.[0];
+                    if (file) {
+                      const url = URL.createObjectURL(file);
+                      setImagePreview(url);
+                      try {
+                        const uploaded = await useQuickNoteStore.getState().uploadImage(file);
+                        setFormData(prev => ({ ...prev, content: prev.content + `\n\n![image](${uploaded})` }));
+                      } catch (err) {
+                        console.error('Image upload failed', err);
+                      }
+                    }
+                  }}
+                >
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const url = URL.createObjectURL(file);
+                      setImagePreview(url);
+                      try {
+                        const uploaded = await useQuickNoteStore.getState().uploadImage(file);
+                        setFormData(prev => ({ ...prev, content: prev.content + `\n\n![image](${uploaded})` }));
+                      } catch (err) {
+                        console.error('Image upload failed', err);
+                      }
+                    }}
+                    className="hidden"
+                    id="qn-file"
+                  />
+                  <label htmlFor="qn-file" className="px-3 py-2 rounded-lg bg-muted hover:bg-muted/60 cursor-pointer text-sm">Select image</label>
+                  <button
+                    className="px-3 py-2 rounded-lg bg-muted hover:bg-muted/60 text-sm"
+                    onClick={async () => {
+                      try {
+                        const clipboardItems = await (navigator as any).clipboard.read();
+                        for (const item of clipboardItems) {
+                          const type = item.types.find((t: string) => t.startsWith('image/'));
+                          if (type) {
+                            const blob = await item.getType(type);
+                            const uploaded = await useQuickNoteStore.getState().uploadImage(blob);
+                            setImagePreview(URL.createObjectURL(blob));
+                            setFormData(prev => ({ ...prev, content: prev.content + `\n\n![image](${uploaded})` }));
+                            break;
+                          }
+                        }
+                      } catch (err) {
+                        console.error('Paste image failed', err);
+                      }
+                    }}
+                  >Paste from clipboard</button>
+                  {imagePreview && (
+                    <img src={imagePreview} alt="preview" className="h-16 rounded border border-border/50" />
+                  )}
+                </div>
               </div>
 
               {/* Mood Selector */}

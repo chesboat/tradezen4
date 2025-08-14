@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { QuickNote } from '@/types';
 import { QuickNoteState } from '@/types/stores';
 import { FirestoreService } from '@/lib/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useQuickNoteModalStore } from './useQuickNoteModalStore';
 
 const quickNoteService = new FirestoreService<QuickNote>('quickNotes');
@@ -61,6 +62,16 @@ export const useQuickNoteStore = create<QuickNoteState>((set, get) => ({
       console.error('Failed to add note:', error);
       throw error;
     }
+  },
+
+  // Upload an image Blob/File and return a URL
+  uploadImage: async (file: Blob | File): Promise<string> => {
+    const storage = getStorage();
+    const id = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    const path = `quickNotes/${id}`;
+    const storageRef = ref(storage, path);
+    await uploadBytes(storageRef, file);
+    return await getDownloadURL(storageRef);
   },
 
   addInlineNote: async (content, accountId) => {
