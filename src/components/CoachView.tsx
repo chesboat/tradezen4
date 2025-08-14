@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Heart, MessageCircle, Target, ThumbsUp, TrendingUp, Zap } from 'lucide-react';
+import { Heart, MessageCircle, Target, ThumbsUp, TrendingUp, Zap, CheckCircle } from 'lucide-react';
 import { useTradeStore } from '@/store/useTradeStore';
 import { useDailyReflectionStore } from '@/store/useDailyReflectionStore';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
@@ -8,6 +8,7 @@ import { useSessionStore } from '@/store/useSessionStore';
 import { generateDailySummary } from '@/lib/ai/generateDailySummary';
 import { formatCurrency } from '@/lib/localStorageUtils';
 import { cn } from '@/lib/utils';
+import { useCoachHabitStore } from '@/store/useCoachHabitStore';
 
 export const CoachView: React.FC = () => {
   const { trades } = useTradeStore();
@@ -19,6 +20,7 @@ export const CoachView: React.FC = () => {
   const keyFocus = getKeyFocusForDate(todayStr) || '';
   const [isGenerating, setIsGenerating] = useState(false);
   const [debrief, setDebrief] = useState<string>('');
+  const { habits, toggle, resetForToday } = useCoachHabitStore();
 
   const filteredTrades = useMemo(() => {
     return trades.filter(t => !selectedAccountId || t.accountId === selectedAccountId);
@@ -159,6 +161,25 @@ export const CoachView: React.FC = () => {
           <div className="p-3 rounded-lg bg-muted/40 border">P&L: <span className={cn('font-semibold', stats.totalPnL>=0?'text-green-500':'text-red-500')}>{formatCurrency(stats.totalPnL)}</span></div>
           <div className="p-3 rounded-lg bg-muted/40 border">Win rate: <span className="font-semibold">{stats.winRate.toFixed(0)}%</span></div>
         </div>
+      </motion.div>
+
+      {/* Habit Checklist + Streak */}
+      <motion.div className="bg-card rounded-2xl p-5 border border-border" whileHover={{ scale: 1.01 }}>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2"><CheckCircle className="w-5 h-5 text-emerald-500"/><h3 className="text-sm font-semibold">Daily Habits</h3></div>
+          <button className="px-3 py-1 rounded bg-muted text-muted-foreground hover:bg-muted/80 text-xs" onClick={resetForToday}>Reset</button>
+        </div>
+        <div className="grid sm:grid-cols-3 gap-3">
+          {habits.map(h => (
+            <button key={h.id} onClick={() => toggle(h.id)} className={cn('p-3 rounded-lg border text-left text-sm transition', h.checked ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-muted/40 border-border')}> 
+              <div className="flex items-center gap-2">
+                <span className={cn('inline-block w-2.5 h-2.5 rounded-full', h.checked ? 'bg-emerald-500' : 'bg-muted-foreground')} />
+                <span className={cn(h.checked ? 'text-emerald-400' : 'text-foreground')}>{h.text}</span>
+              </div>
+            </button>
+          ))}
+        </div>
+        <div className="text-xs text-muted-foreground mt-3">Completing habits daily builds consistency and boosts your long‑term edge.</div>
       </motion.div>
     </div>
   );
