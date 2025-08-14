@@ -179,11 +179,11 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 draggable
-                onDragStart={(e) => {
+                onDragStart={(e: React.DragEvent<HTMLDivElement>) => {
                   e.dataTransfer.setData('text/plain', task.id);
                   e.dataTransfer.effectAllowed = 'move';
                 }}
-                onDrop={(e) => {
+                onDrop={(e: React.DragEvent<HTMLDivElement>) => {
                   e.preventDefault();
                   const draggedId = e.dataTransfer.getData('text/plain');
                   if (!draggedId || draggedId === task.id) return;
@@ -277,11 +277,11 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 draggable
-                onDragStart={(e) => {
+                onDragStart={(e: React.DragEvent<HTMLDivElement>) => {
                   e.dataTransfer.setData('text/plain', task.id);
                   e.dataTransfer.effectAllowed = 'move';
                 }}
-                onDrop={(e) => {
+                onDrop={(e: React.DragEvent<HTMLDivElement>) => {
                   e.preventDefault();
                   const draggedId = e.dataTransfer.getData('text/plain');
                   if (!draggedId || draggedId === task.id) return;
