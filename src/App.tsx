@@ -7,6 +7,7 @@ import { QuestsView } from './components/QuestsView';
 import { WellnessView } from './components/WellnessView';
 import { TradesView } from './components/TradesView';
 import { AnalyticsView } from './components/AnalyticsView';
+import { CoachView } from './components/CoachView';
 import { JournalView } from './components/JournalView';
 import { NotesView } from './components/NotesView';
 import { TradeLoggerModal } from './components/TradeLoggerModal';
@@ -82,6 +83,8 @@ function AppContent() {
         return <QuestsView />;
       case 'wellness':
         return <WellnessView />;
+      case 'coach':
+        return <CoachView />;
       default:
         return <Dashboard />;
     }

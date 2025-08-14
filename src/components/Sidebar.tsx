@@ -94,6 +94,12 @@ const navItems: NavItem[] = [
     icon: Heart,
     href: '/wellness',
   },
+  {
+    id: 'coach',
+    label: 'Coach',
+    icon: MessageCircle,
+    href: '/coach',
+  },
 ];
 
 const createVariants = (reduced: boolean) => {
