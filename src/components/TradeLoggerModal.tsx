@@ -473,9 +473,9 @@ export const TradeLoggerModal: React.FC<TradeLoggerModalProps> = ({
 
           // Update consistency progress for all account trades (after new trade is added)
           setTimeout(() => {
-            const accountTrades = trades.filter(t => t.accountId === selectedAccountId);
+            const accountTrades = useTradeStore.getState().trades.filter(t => t.accountId === selectedAccountId);
             updateConsistencyProgress(selectedAccountId, accountTrades);
-          }, 100); // Small delay to ensure new trade is in the store
+          }, 150); // Small delay to ensure new trade is in the store
         }
       }
 

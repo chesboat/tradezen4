@@ -206,7 +206,7 @@ export const useQuestStore = create<QuestState>((set, get) => ({
     const currentQuests = get().quests;
     const consistencyQuests = currentQuests.filter(quest => 
       (quest.title === 'Consistency Builder' || quest.description.toLowerCase().includes('consecutive')) &&
-      quest.accountId === accountId &&
+      (quest.accountId === accountId || quest.accountId === 'all') &&
       quest.status !== 'completed' &&
       quest.status !== 'cancelled' &&
       quest.status !== 'failed'
