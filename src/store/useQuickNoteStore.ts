@@ -3,6 +3,7 @@ import { QuickNote } from '@/types';
 import { QuickNoteState } from '@/types/stores';
 import { FirestoreService } from '@/lib/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import app from '@/lib/firebase';
 import { useQuickNoteModalStore } from './useQuickNoteModalStore';
 
 const quickNoteService = new FirestoreService<QuickNote>('quickNotes');
@@ -66,7 +67,12 @@ export const useQuickNoteStore = create<QuickNoteState>((set, get) => ({
 
   // Upload an image Blob/File and return a URL
   uploadImage: async (file: Blob | File): Promise<string> => {
-    const storage = getStorage();
+    const projectId = (import.meta as any).env.VITE_FIREBASE_PROJECT_ID as string | undefined;
+    const storageBucket = (import.meta as any).env.VITE_FIREBASE_STORAGE_BUCKET as string | undefined;
+    const bucketUrl = storageBucket && storageBucket.includes('firebasestorage.app') && projectId
+      ? `gs://${projectId}.appspot.com`
+      : undefined;
+    const storage = bucketUrl ? getStorage(app as any, bucketUrl) : getStorage(app as any);
     const id = Math.random().toString(36).slice(2) + Date.now().toString(36);
     const path = `quickNotes/${id}`;
     const storageRef = ref(storage, path);
