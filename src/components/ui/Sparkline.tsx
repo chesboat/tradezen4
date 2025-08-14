@@ -128,19 +128,16 @@ interface TrendIndicatorProps {
 export const TrendIndicator: React.FC<TrendIndicatorProps> = ({ data, className }) => {
   if (!data || data.length < 2) return null;
   
-  // Find first non-zero value for more meaningful percentage calculation
-  const firstNonZero = data.find(val => val !== 0) || 0;
+  // Robust baseline to avoid absurd percentages when the first value is near zero
+  const firstNonZero = data.find(val => val !== 0) ?? 0;
   const last = data[data.length - 1];
   const change = last - firstNonZero;
-  
-  // Calculate percentage change more intelligently
-  let changePercent = 0;
-  if (firstNonZero !== 0) {
-    changePercent = (change / Math.abs(firstNonZero)) * 100;
-  } else if (last !== 0) {
-    // If starting from zero but ending with value, show as new gain
-    changePercent = 100;
-  }
+  // Use the max absolute magnitude across the series as baseline
+  const baseline = Math.max(1, ...data.map(v => Math.abs(v)));
+  let changePercent = (change / baseline) * 100;
+  // Clamp to a sane range
+  if (!Number.isFinite(changePercent)) changePercent = 0;
+  changePercent = Math.max(-999, Math.min(999, changePercent));
   
   // Don't show if change is too small to be meaningful
   if (Math.abs(changePercent) < 0.1 && Math.abs(change) < 1) {
