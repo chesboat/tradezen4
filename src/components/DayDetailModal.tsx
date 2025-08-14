@@ -42,6 +42,7 @@ import { formatCurrency, formatDate, getMoodColor, formatTime } from '@/lib/loca
 
 import { cn } from '@/lib/utils';
 import { TagPill, TagList, TagInput } from './TagPill';
+import { NoteContent } from './NoteContent';
 import { MoodTimeline } from './MoodTimeline';
 import { Sparkline } from './ui/Sparkline';
 import { Tooltip } from './ui/Tooltip';
@@ -1444,7 +1445,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
                                     </span>
                                   )}
                                 </div>
-                                            <p className="text-sm text-foreground leading-relaxed mb-2">{note.content}</p>
+                                            <div className="text-sm text-foreground leading-relaxed mb-2"><NoteContent content={note.content} /></div>
                                             {note.tags && note.tags.length > 0 && (
                                               <TagList 
                                                 tags={note.tags}
@@ -1500,7 +1501,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
                                   </span>
                                               )}
                                             </div>
-                                            <p className="text-sm text-foreground leading-relaxed mb-2">{note.content}</p>
+                                             <div className="text-sm text-foreground leading-relaxed mb-2"><NoteContent content={note.content} /></div>
                                             {note.tags && note.tags.length > 0 && (
                                               <TagList 
                                                 tags={note.tags}

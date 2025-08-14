@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FileText, Search, Trash2, Edit2, Calendar as CalendarIcon, Hash, Smile, CheckSquare, Square, Save, Bookmark, X } from 'lucide-react';
+import { NoteContent } from './NoteContent';
 import { SmartTagFilterBar } from './SmartTagFilterBar';
 import { useQuickNoteStore, useQuickNoteModal } from '@/store/useQuickNoteStore';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
@@ -227,7 +228,7 @@ export const NotesView: React.FC = () => {
                           </span>
                         )}
                       </div>
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap">{note.content}</p>
+                      <NoteContent content={note.content} />
                       {note.tags && note.tags.length > 0 && (
                         <div className="flex items-center gap-1.5 mt-2 flex-wrap">
                           {note.tags.map((t) => (
