@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Heart, MessageCircle, Target, ThumbsUp, TrendingUp, Zap, CheckCircle } from 'lucide-react';
 import { useTradeStore } from '@/store/useTradeStore';
+import { useQuickNoteStore } from '@/store/useQuickNoteStore';
 import { useDailyReflectionStore } from '@/store/useDailyReflectionStore';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
 import { useNavigationStore } from '@/store/useNavigationStore';
@@ -11,6 +12,7 @@ import { formatCurrency } from '@/lib/localStorageUtils';
 import { cn } from '@/lib/utils';
 import { useCoachHabitStore } from '@/store/useCoachHabitStore';
 import { useCoachStore } from '@/store/useCoachStore';
+import { CoachService } from '@/lib/ai/coachService';
 
 export const CoachView: React.FC = () => {
   const { trades } = useTradeStore();
@@ -30,6 +32,7 @@ export const CoachView: React.FC = () => {
   const filteredTrades = useMemo(() => {
     return trades.filter(t => !selectedAccountId || t.accountId === selectedAccountId);
   }, [trades, selectedAccountId]);
+  const { notes } = useQuickNoteStore();
 
   const todayTrades = useMemo(() => {
     const d0 = new Date(); d0.setHours(0,0,0,0);
@@ -133,10 +136,26 @@ export const CoachView: React.FC = () => {
           <div className="flex items-center gap-2"><Zap className="w-5 h-5 text-yellow-500"/><h3 className="text-sm font-semibold">Next Best Action</h3></div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button className="px-3 py-1.5 rounded-full bg-muted text-sm hover:bg-muted/80" onClick={() => {
+          <button className="px-3 py-1.5 rounded-full bg-muted text-sm hover:bg-muted/80" onClick={async () => {
             const accId = selectedAccountId || 'default';
+            const prompt = "Give me a 3-bullet plan to improve tomorrow based on today's trades.";
             openChat();
-            addChatMessage({ role: 'user', content: "Give me a 3-bullet plan to improve tomorrow based on today's trades.", date: todayStr, accountId: accId });
+            addChatMessage({ role: 'user', content: prompt, date: todayStr, accountId: accId });
+            try {
+              const answer = await CoachService.askCoach(prompt, {
+                date: todayStr,
+                accountId: accId,
+                trades: todayTrades as any,
+                notes: notes.filter(n => !selectedAccountId || n.accountId === selectedAccountId) as any,
+                rules: {
+                  dailyLossLimit: null,
+                  maxDrawdown: null,
+                  maxTrades: rules?.maxTrades ?? null,
+                  cutoffTime: rules?.cutoffTimeMinutes ? String(rules.cutoffTimeMinutes) : null,
+                },
+              });
+              addChatMessage({ role: 'assistant', content: answer, date: todayStr, accountId: accId });
+            } catch {}
           }}>Ask for 3-step plan</button>
           <button className="px-3 py-1.5 rounded-full bg-muted text-sm hover:bg-muted/80" onClick={() => {
             window.scrollTo({ top: 0, behavior: 'smooth' });
