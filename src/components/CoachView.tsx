@@ -129,10 +129,13 @@ export const CoachView: React.FC = () => {
         </div>
         <div className="flex flex-wrap gap-2">
           <button className="px-3 py-1.5 rounded-full bg-muted text-sm hover:bg-muted/80" onClick={() => {
-            try { require('@/store/useCoachStore'); } catch {}
-            const { useCoachStore } = require('@/store/useCoachStore');
-            useCoachStore.getState().open();
-            useCoachStore.getState().addMessage({ role: 'user', content: 'Give me a 3-bullet plan to improve tomorrow based on today\'s trades.' });
+            try {
+              const { useCoachStore } = require('@/store/useCoachStore');
+              const s = useCoachStore.getState();
+              s.open();
+              const accId = (require('@/store/useAccountFilterStore') as any).useAccountFilterStore.getState().selectedAccountId || 'default';
+              s.addMessage({ role: 'user', content: "Give me a 3-bullet plan to improve tomorrow based on today's trades.", date: new Date().toISOString().split('T')[0], accountId: accId });
+            } catch {}
           }}>Ask for 3-step plan</button>
           <button className="px-3 py-1.5 rounded-full bg-muted text-sm hover:bg-muted/80" onClick={() => {
             window.scrollTo({ top: 0, behavior: 'smooth' });
