@@ -153,8 +153,8 @@ export interface ClassificationOptions {
 }
 
 export const defaultClassificationOptions: Required<ClassificationOptions> = {
-  breakevenBandR: 0.05,
-  breakevenBandUSD: 10,
+  breakevenBandR: 0.08, // Increased from 5% to 8% of risk
+  breakevenBandUSD: 15, // Increased from $10 to $15
   ignoreFeesForClassification: true,
 };
 
@@ -172,15 +172,19 @@ export function classifyTradeResult(trade: Trade, options: ClassificationOptions
   const pnl = getComputedPnL(trade);
   const risk = Number(trade.riskAmount) || 0;
 
-  // Prefer R-based classification
+  // Use hybrid approach: whichever band is more generous
   if (risk > 0 && Number.isFinite(risk)) {
-    const r = pnl / risk;
-    if (r > opts.breakevenBandR) return 'win';
-    if (r < -opts.breakevenBandR) return 'loss';
+    // Calculate R-based band
+    const rBand = risk * opts.breakevenBandR;
+    // Use whichever band is larger (more generous)
+    const band = Math.max(rBand, opts.breakevenBandUSD);
+    
+    if (pnl > band) return 'win';
+    if (pnl < -band) return 'loss';
     return 'breakeven';
   }
 
-  // Fallback: absolute dollar band
+  // Fallback: absolute dollar band only
   const band = Math.max(0, opts.breakevenBandUSD);
   if (pnl > band) return 'win';
   if (pnl < -band) return 'loss';
