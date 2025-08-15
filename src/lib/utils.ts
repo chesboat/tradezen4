@@ -192,11 +192,24 @@ export function summarizeWinLossScratch(
   options: ClassificationOptions = {}
 ): { wins: number; losses: number; scratches: number; winRateExclScratches: number } {
   let wins = 0, losses = 0, scratches = 0;
+  
+  // Debug logging
+  console.log('summarizeWinLossScratch called with', trades.length, 'trades');
+  
   for (const t of trades) {
     const r = classifyTradeResult(t, options);
+    const pnl = getComputedPnL(t);
+    const risk = Number(t.riskAmount) || 0;
+    
+    console.log(`Trade ${t.id}: PnL=${pnl}, Risk=${risk}, R=${risk > 0 ? (pnl/risk).toFixed(3) : 'N/A'}, Result=${r}`);
+    
     if (r === 'win') wins++; else if (r === 'loss') losses++; else scratches++;
   }
+  
   const denom = wins + losses;
   const winRateExclScratches = denom > 0 ? (wins / denom) * 100 : 0;
+  
+  console.log(`Summary: ${wins} wins, ${losses} losses, ${scratches} scratches, ${winRateExclScratches.toFixed(1)}% win rate`);
+  
   return { wins, losses, scratches, winRateExclScratches };
 }
