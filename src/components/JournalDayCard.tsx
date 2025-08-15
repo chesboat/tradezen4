@@ -110,27 +110,8 @@ export const JournalDayCard: React.FC<JournalDayCardProps> = ({
       const matches = tradeDate >= dayStart && tradeDate <= dayEnd &&
              (!selectedAccountId || trade.accountId === selectedAccountId);
       
-      // Debug logging for today's card
-      if (isToday) {
-        console.log(`JournalDayCard DEBUG - Today (${date}):`, {
-          trade: trade.id,
-          symbol: trade.symbol,
-          entryTime: trade.entryTime,
-          tradeDate: tradeDate.toISOString(),
-          dayStart: dayStart.toISOString(),
-          dayEnd: dayEnd.toISOString(),
-          matches
-        });
-      }
-      
       return matches;
     });
-    
-    // Debug summary for today's card
-    if (isToday) {
-      console.log(`JournalDayCard SUMMARY - Today (${date}): ${filtered.length} trades found`, 
-        filtered.map(t => ({ id: t.id, symbol: t.symbol, pnl: t.pnl })));
-    }
     
     return filtered;
   }, [trades, date, selectedAccountId, isToday]);
