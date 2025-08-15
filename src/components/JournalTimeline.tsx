@@ -12,6 +12,7 @@ import {
 import { useTradeStore } from '@/store/useTradeStore';
 import { useQuickNoteStore } from '@/store/useQuickNoteStore';
 import { useDailyReflectionStore } from '@/store/useDailyReflectionStore';
+import { summarizeWinLossScratch } from '@/lib/utils';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
 
 import { formatDate } from '@/lib/localStorageUtils';
@@ -76,10 +77,11 @@ export const JournalTimeline: React.FC<JournalTimelineProps> = ({ className }) =
                (!selectedAccountId || note.accountId === selectedAccountId);
       });
       
-      // Calculate stats
+      // Calculate stats (exclude scratches and tiny fee negatives)
       const totalPnL = dayTrades.reduce((sum, trade) => sum + (trade.pnl || 0), 0);
-      const winningTrades = dayTrades.filter(t => (t.pnl || 0) > 0).length;
-      const winRate = dayTrades.length > 0 ? (winningTrades / dayTrades.length) * 100 : 0;
+      const { wins, losses, winRateExclScratches } = summarizeWinLossScratch(dayTrades);
+      const winningTrades = wins;
+      const winRate = winRateExclScratches;
       const avgRR = dayTrades.length > 0 
         ? dayTrades.reduce((sum, trade) => sum + trade.riskRewardRatio, 0) / dayTrades.length 
         : 0;
