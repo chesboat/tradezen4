@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { useTradeStore } from '@/store/useTradeStore';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
-import { summarizeWinLossScratch } from '@/lib/utils';
+import { summarizeWinLossScratch, classifyTradeResult } from '@/lib/utils';
 import { Trade, TradeResult, MoodType } from '@/types';
 import { formatCurrency, formatRelativeTime } from '@/lib/localStorageUtils';
 import { cn } from '@/lib/utils';
@@ -560,6 +560,66 @@ export const AnalyticsView: React.FC = () => {
             ))}
           </div>
         </div>
+      </div>
+
+      {/* Recent Trades (Analytics) */}
+      <div className="bg-muted/30 rounded-lg p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold flex items-center gap-2">
+            <Calendar className="w-5 h-5" />
+            Recent Trades
+          </h3>
+          <div className="text-xs text-muted-foreground">Showing latest 20</div>
+        </div>
+        {filteredTrades.length === 0 ? (
+          <div className="text-center py-6 text-sm text-muted-foreground">No trades in selected period</div>
+        ) : (
+          <div className="overflow-x-auto rounded-lg border border-border/60">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/40 text-muted-foreground">
+                <tr>
+                  <th className="text-left px-3 py-2">Date</th>
+                  <th className="text-left px-3 py-2">Symbol</th>
+                  <th className="text-left px-3 py-2">Side</th>
+                  <th className="text-right px-3 py-2">P&L</th>
+                  <th className="text-right px-3 py-2">R</th>
+                  <th className="text-left px-3 py-2">Result</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredTrades
+                  .slice()
+                  .sort((a, b) => new Date(b.entryTime).getTime() - new Date(a.entryTime).getTime())
+                  .slice(0, 20)
+                  .map((t) => {
+                    const cls = classifyTradeResult(t);
+                    const isScratch = cls === 'breakeven';
+                    return (
+                      <tr key={t.id} className="border-t border-border/60 hover:bg-muted/20">
+                        <td className="px-3 py-2 whitespace-nowrap">{new Date(t.entryTime).toLocaleDateString()}</td>
+                        <td className="px-3 py-2 font-medium">{t.symbol}</td>
+                        <td className="px-3 py-2">
+                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${t.direction === 'long' ? 'bg-green-500/20 text-green-500' : 'bg-red-500/20 text-red-500'}`}>
+                            {t.direction?.toUpperCase()}
+                          </span>
+                        </td>
+                        <td className={`px-3 py-2 text-right ${((t.pnl || 0) >= 0) ? 'text-green-500' : 'text-red-500'}`}>{formatCurrency(t.pnl || 0)}</td>
+                        <td className="px-3 py-2 text-right">{Number.isFinite(t.riskRewardRatio) ? t.riskRewardRatio.toFixed(2) : '—'}</td>
+                        <td className="px-3 py-2">
+                          <div className="flex items-center gap-1">
+                            <span className="capitalize text-muted-foreground">{cls}</span>
+                            {isScratch && (
+                              <span className="inline-flex items-center gap-1 text-[11px] text-yellow-500" title="Scratch (excluded from win rate)">⊖</span>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Risk Analysis */}
