@@ -25,14 +25,15 @@ import {
   X,
   CheckCircle,
   AlertCircle,
-  Minus
+  Minus,
+  MinusCircle
 } from 'lucide-react';
 import { useTradeStore } from '@/store/useTradeStore';
 import TradeImageImport from '@/components/TradeImageImport';
 import { useAccountFilterStore, getAccountIdsForSelection } from '@/store/useAccountFilterStore';
 import { useTradeLoggerModal } from '@/hooks/useTradeLoggerModal';
 import { Trade, TradeResult, MoodType } from '@/types';
-import { summarizeWinLossScratch } from '@/lib/utils';
+import { summarizeWinLossScratch, classifyTradeResult } from '@/lib/utils';
 import { formatCurrency, formatRelativeTime, getMoodColor, getMoodEmoji } from '@/lib/localStorageUtils';
 import { cn } from '@/lib/utils';
 import { TagList } from './TagPill';
@@ -740,6 +741,20 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                         <span className={cn('text-sm capitalize', trade.result && getResultColor(trade.result))}>
                           {trade.result || 'Pending'}
                         </span>
+                        {(() => {
+                          const classification = classifyTradeResult(trade);
+                          if (classification === 'breakeven') {
+                            return (
+                              <div className="group relative">
+                                <MinusCircle className="w-4 h-4 text-yellow-500/60" />
+                                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-popover border border-border rounded text-xs text-foreground opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                                  Scratch (excluded from win rate)
+                                </div>
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
                       </div>
                     </td>
                     <td className="p-3">
@@ -843,6 +858,20 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                   <span className={cn('text-sm capitalize', trade.result && getResultColor(trade.result))}>
                     {trade.result || 'Pending'}
                   </span>
+                  {(() => {
+                    const classification = classifyTradeResult(trade);
+                    if (classification === 'breakeven') {
+                      return (
+                        <div className="group relative">
+                          <MinusCircle className="w-4 h-4 text-yellow-500/60" />
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-popover border border-border rounded text-xs text-foreground opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                            Scratch (excluded from win rate)
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
                 </div>
                 <div className="flex items-center gap-2">
                   <span className={cn('text-lg', getMoodColor(trade.mood))}>
