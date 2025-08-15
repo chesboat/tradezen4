@@ -398,7 +398,9 @@ export const AnalyticsView: React.FC = () => {
             onMouseLeave={() => setHoverIdx(null)}
             onMouseMove={(e) => {
               const rect = (e.target as SVGElement).closest('svg')!.getBoundingClientRect();
-              const x = e.clientX - rect.left - paddingX;
+              // Convert cursor position to SVG "virtual" coords (width x height)
+              const xSvg = ((e.clientX - rect.left) / rect.width) * width;
+              const x = xSvg - paddingX;
               const i = Math.min(data.length - 1, Math.max(0, Math.floor(x / barSpace)));
               setHoverIdx(i);
             }}
@@ -414,13 +416,13 @@ export const AnalyticsView: React.FC = () => {
             {/* bars */}
             {data.map((d, i) => {
               const x = xForIndex(i);
-              const y = yForValue(Math.max(d.value, 0));
-              const yNeg = yForValue(Math.min(d.value, 0));
-              const h = Math.abs(y - zeroY);
               const color = d.value >= 0 ? 'rgb(34,197,94)' : 'rgb(239,68,68)';
+              // Positive bars go up from zero, negatives go down from zero
+              const yTop = d.value >= 0 ? yForValue(d.value) : zeroY;
+              const h = Math.max(1, Math.abs((d.value >= 0 ? zeroY - yTop : yForValue(d.value) - zeroY)));
               return (
-                <rect key={d.date} x={x} width={barWidth} y={Math.min(y, zeroY)} height={h}
-                  fill={color} opacity={hoverIdx === i ? 0.95 : 0.7} rx={2} />
+                <rect key={d.date} x={x} width={barWidth} y={yTop} height={h}
+                  fill={color} opacity={hoverIdx === i ? 0.95 : 0.75} rx={2} />
               );
             })}
 
