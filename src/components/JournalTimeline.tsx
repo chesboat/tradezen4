@@ -58,10 +58,11 @@ export const JournalTimeline: React.FC<JournalTimelineProps> = ({ className }) =
       // Get day's trades
       const dayTrades = trades.filter(trade => {
         const tradeDate = new Date(trade.entryTime);
-        const dayStart = new Date(d);
-        dayStart.setHours(0, 0, 0, 0);
-        const dayEnd = new Date(d);
-        dayEnd.setHours(23, 59, 59, 999);
+        
+        // Fix timezone issue: create date from YYYY-MM-DD string in local timezone  
+        const dayStart = new Date(dateStr + 'T00:00:00');
+        const dayEnd = new Date(dateStr + 'T23:59:59.999');
+        
         return tradeDate >= dayStart && tradeDate <= dayEnd &&
                (!selectedAccountId || trade.accountId === selectedAccountId);
       });

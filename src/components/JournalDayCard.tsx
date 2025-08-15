@@ -102,10 +102,11 @@ export const JournalDayCard: React.FC<JournalDayCardProps> = ({
   const dayTrades = useMemo(() => {
     const filtered = trades.filter(trade => {
       const tradeDate = new Date(trade.entryTime);
-      const dayStart = new Date(date);
-      dayStart.setHours(0, 0, 0, 0);
-      const dayEnd = new Date(date);
-      dayEnd.setHours(23, 59, 59, 999);
+      
+      // Fix timezone issue: create date from YYYY-MM-DD string in local timezone
+      const dayStart = new Date(date + 'T00:00:00');
+      const dayEnd = new Date(date + 'T23:59:59.999');
+      
       const matches = tradeDate >= dayStart && tradeDate <= dayEnd &&
              (!selectedAccountId || trade.accountId === selectedAccountId);
       
