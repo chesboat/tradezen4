@@ -366,6 +366,96 @@ export const AnalyticsView: React.FC = () => {
     );
   };
 
+  // Net Daily P&L bar chart with tooltip
+  const NetDailyPnLChart: React.FC<{ data: ChartDataPoint[] }>
+    = ({ data }) => {
+    if (data.length === 0) return (
+      <div className="h-56 flex items-center justify-center text-muted-foreground">No data available</div>
+    );
+
+    const paddingX = 16; // svg inner padding
+    const paddingY = 18;
+    const width = 800; // virtual width for math; SVG scales responsively
+    const height = 220;
+
+    const minDaily = Math.min(0, ...data.map(d => d.value));
+    const maxDaily = Math.max(0, ...data.map(d => d.value));
+    const rangeDaily = (maxDaily - minDaily) || 1;
+    const zeroY = (1 - ((0 - minDaily) / rangeDaily)) * (height - paddingY * 2) + paddingY;
+
+    const barSpace = (width - paddingX * 2) / data.length;
+    const barWidth = Math.max(2, Math.min(18, barSpace * 0.7));
+
+    const [hoverIdx, setHoverIdx] = React.useState<number | null>(null);
+
+    const xForIndex = (i: number) => paddingX + i * barSpace + (barSpace - barWidth) / 2;
+    const yForValue = (v: number) => (1 - ((v - minDaily) / rangeDaily)) * (height - paddingY * 2) + paddingY;
+
+    return (
+      <div className="w-full">
+        <div className="h-56 relative">
+          <svg className="w-full h-full" viewBox={`0 0 ${width} ${height}`}
+            onMouseLeave={() => setHoverIdx(null)}
+            onMouseMove={(e) => {
+              const rect = (e.target as SVGElement).closest('svg')!.getBoundingClientRect();
+              const x = e.clientX - rect.left - paddingX;
+              const i = Math.min(data.length - 1, Math.max(0, Math.floor(x / barSpace)));
+              setHoverIdx(i);
+            }}
+          >
+            {/* grid */}
+            {[0, 25, 50, 75, 100].map((p) => (
+              <line key={p} x1={0} y1={(p/100)*height} x2={width} y2={(p/100)*height}
+                stroke="currentColor" strokeOpacity="0.06" />
+            ))}
+            {/* zero line */}
+            <line x1={0} y1={zeroY} x2={width} y2={zeroY} stroke="currentColor" strokeOpacity="0.25" />
+
+            {/* bars */}
+            {data.map((d, i) => {
+              const x = xForIndex(i);
+              const y = yForValue(Math.max(d.value, 0));
+              const yNeg = yForValue(Math.min(d.value, 0));
+              const h = Math.abs(y - zeroY);
+              const color = d.value >= 0 ? 'rgb(34,197,94)' : 'rgb(239,68,68)';
+              return (
+                <rect key={d.date} x={x} width={barWidth} y={Math.min(y, zeroY)} height={h}
+                  fill={color} opacity={hoverIdx === i ? 0.95 : 0.7} rx={2} />
+              );
+            })}
+
+            {/* hover rule */}
+            {hoverIdx !== null && (
+              <line x1={paddingX + hoverIdx * barSpace + barSpace/2} y1={paddingY/2}
+                x2={paddingX + hoverIdx * barSpace + barSpace/2} y2={height - paddingY/2}
+                stroke="currentColor" strokeOpacity="0.2" />
+            )}
+          </svg>
+
+          {/* tooltip */}
+          {hoverIdx !== null && (
+            <div className="absolute left-0 top-0 pointer-events-none"
+              style={{ transform: `translateX(calc(${(hoverIdx + 0.5) / data.length * 100}% - 50%))`, width: 160 }}>
+              <div className="-translate-y-3 mx-auto w-max px-3 py-2 rounded-md bg-popover border border-border text-xs shadow-sm">
+                <div className="font-medium text-foreground mb-1">{new Date(data[hoverIdx].date).toLocaleDateString()}</div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-muted-foreground">P&L</span>
+                  <span className={data[hoverIdx].value >= 0 ? 'text-green-500' : 'text-red-500'}>
+                    {formatCurrency(data[hoverIdx].value)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
+          <span>{new Date(data[0].date).toLocaleDateString()}</span>
+          <span>{new Date(data[data.length - 1].date).toLocaleDateString()}</span>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -440,7 +530,16 @@ export const AnalyticsView: React.FC = () => {
         />
       </div>
 
-      {/* Performance Chart */}
+      {/* Net Daily P&L */}
+      <div className="bg-card rounded-2xl p-6 border border-border">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold">Net Daily P&L</h2>
+          <div className="text-xs text-muted-foreground">Bars: daily net</div>
+        </div>
+        <NetDailyPnLChart data={chartData} />
+      </div>
+
+      {/* Performance Chart (cumulative/others) */}
       <div className="bg-muted/30 rounded-lg p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold">Performance Overview</h2>
