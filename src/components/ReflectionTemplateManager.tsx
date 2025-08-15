@@ -24,6 +24,7 @@ import { useTradeStore } from '@/store/useTradeStore';
 import { useQuickNoteStore } from '@/store/useQuickNoteStore';
 import { useDailyReflectionStore } from '@/store/useDailyReflectionStore';
 import { useActivityLogStore } from '@/store/useActivityLogStore';
+import { useAppSettingsStore } from '@/store/useAppSettingsStore';
 import { CustomTemplate, InsightBlock, TemplateBlock } from '@/types';
 import { cn } from '@/lib/utils';
 import { debounce, formatDate } from '@/lib/localStorageUtils';
@@ -518,7 +519,10 @@ export const ReflectionTemplateManager: React.FC<ReflectionTemplateManagerProps>
   };
 
   const handleCompleteReflection = async () => {
-    if (!currentReflection || !selectedAccountId || completionScore < 70) return;
+    const { completionThreshold, requireContentToComplete } = useAppSettingsStore.getState().reflection;
+    const threshold = typeof completionThreshold === 'number' ? completionThreshold : 70;
+    if (!currentReflection || !selectedAccountId) return;
+    if (requireContentToComplete && completionScore < threshold) return;
     const totalXP = calculateTotalXP(currentReflection.insightBlocks);
     const bonusXP = completionScore >= 90 ? 25 : completionScore >= 80 ? 15 : 10;
 
@@ -995,7 +999,7 @@ export const ReflectionTemplateManager: React.FC<ReflectionTemplateManagerProps>
           ) : (
             <motion.button
               onClick={handleCompleteReflection}
-              disabled={completionScore < 70}
+              disabled={useAppSettingsStore.getState().reflection.requireContentToComplete && completionScore < (useAppSettingsStore.getState().reflection.completionThreshold ?? 70)}
               className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}

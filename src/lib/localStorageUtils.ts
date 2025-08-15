@@ -86,6 +86,7 @@ export const STORAGE_KEYS = {
   TRADE_LOGGER_DEFAULTS: 'tradzen_trade_logger_defaults',
   RECENT_SYMBOLS: 'tradzen_recent_symbols',
   USER_PROFILE: 'tradzen_user_profile',
+  APP_SETTINGS: 'tradzen_app_settings',
   TODO_TASKS: 'tradzen_todo_tasks',
   TODO_DRAWER_EXPANDED: 'tradzen_todo_drawer_expanded',
 } as const;

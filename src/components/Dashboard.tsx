@@ -32,6 +32,7 @@ import { useSessionStore } from '@/store/useSessionStore';
 import { useNavigationStore } from '@/store/useNavigationStore';
 import { useReflectionTemplateStore } from '@/store/useReflectionTemplateStore';
 import { CoachChat } from './CoachChat';
+import { useAppSettingsStore } from '@/store/useAppSettingsStore';
 import { summarizeWinLossScratch } from '@/lib/utils';
 
 interface KPICardProps {
@@ -1178,7 +1179,7 @@ export const Dashboard: React.FC = () => {
                 >Close</button>
                 <button
                   className="px-3 py-1.5 rounded bg-blue-500 text-white hover:bg-blue-600 text-sm disabled:opacity-50"
-                  disabled={rfSaving || (!rfGood.trim() && !rfBad.trim() && !rfFocus.trim())}
+                  disabled={rfSaving || (!rfGood.trim() && !rfBad.trim() && !rfFocus.trim() && (useAppSettingsStore.getState().reflection.requireContentToComplete !== false))}
                   onClick={async () => {
                     if (!selectedAccountId) return;
                     setRfSaving(true);
