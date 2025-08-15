@@ -73,6 +73,7 @@ export const AnalyticsView: React.FC = () => {
   
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodFilter>(periodFilters[2]); // 90D default
   const [activeChart, setActiveChart] = useState<'pnl' | 'winrate' | 'trades'>('pnl');
+  const [pnlMode, setPnlMode] = useState<'daily' | 'cumulative'>('daily');
 
   // Filter trades by account and period
   const filteredTrades = useMemo(() => {
@@ -535,10 +536,30 @@ export const AnalyticsView: React.FC = () => {
       {/* Net Daily P&L */}
       <div className="bg-card rounded-2xl p-6 border border-border">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold">Net Daily P&L</h2>
-          <div className="text-xs text-muted-foreground">Bars: daily net</div>
+          <h2 className="text-xl font-semibold">Net P&L</h2>
+          <div className="flex items-center gap-3">
+            <div className="text-xs text-muted-foreground hidden md:block">
+              {pnlMode === 'daily' ? 'Bars: daily net' : 'Line: cumulative'}
+            </div>
+            <div className="flex bg-muted/40 rounded-md p-1">
+              {(['daily','cumulative'] as const).map(mode => (
+                <button
+                  key={mode}
+                  onClick={() => setPnlMode(mode)}
+                  className={cn(
+                    'px-2.5 py-1 rounded text-xs font-medium transition-colors',
+                    pnlMode === mode ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >{mode === 'daily' ? 'Daily' : 'Cumulative'}</button>
+              ))}
+            </div>
+          </div>
         </div>
-        <NetDailyPnLChart data={chartData} />
+        {pnlMode === 'daily' ? (
+          <NetDailyPnLChart data={chartData} />
+        ) : (
+          <SimpleChart data={chartData} />
+        )}
       </div>
 
       {/* Performance Chart (cumulative/others) */}
