@@ -308,9 +308,19 @@ export const AnalyticsView: React.FC = () => {
   const SimpleChart: React.FC<{ data: ChartDataPoint[] }> = ({ data }) => {
     if (data.length === 0) return <div className="h-48 flex items-center justify-center text-muted-foreground">No data available</div>;
 
-    const maxValue = Math.max(...data.map(d => Math.abs(d.cumulative)));
+    const maxValue = Math.max(...data.map(d => d.cumulative));
     const minValue = Math.min(...data.map(d => d.cumulative));
     const range = maxValue - minValue || 1;
+    const leftPad = 4;  // % padding on left
+    const rightPad = 4; // % padding on right
+    const denom = Math.max(1, data.length - 1);
+
+    const xPercent = (i: number) => leftPad + (i / denom) * (100 - leftPad - rightPad);
+    const yPercent = (v: number) => 100 - ((v - minValue) / range) * 100;
+
+    const points = data.length === 1
+      ? `${leftPad},${yPercent(data[0].cumulative)} ${100 - rightPad},${yPercent(data[0].cumulative)}`
+      : data.map((d, i) => `${xPercent(i)},${yPercent(d.cumulative)}`).join(' ');
 
     return (
       <div className="h-48 relative">
@@ -338,11 +348,7 @@ export const AnalyticsView: React.FC = () => {
           
           {/* Chart line */}
           <polyline
-            points={data.map((d, i) => {
-              const x = (i / (data.length - 1)) * 100;
-              const y = 100 - ((d.cumulative - minValue) / range) * 100;
-              return `${x},${y}`;
-            }).join(' ')}
+            points={points}
             fill="none"
             stroke="rgb(34, 197, 94)"
             strokeWidth="2"
@@ -352,13 +358,11 @@ export const AnalyticsView: React.FC = () => {
           {/* Fill area */}
           <polygon
             points={[
-              `0,100`,
-              ...data.map((d, i) => {
-                const x = (i / (data.length - 1)) * 100;
-                const y = 100 - ((d.cumulative - minValue) / range) * 100;
-                return `${x},${y}`;
-              }),
-              `100,100`
+              `${leftPad},100`,
+              ...(data.length === 1
+                ? [`${leftPad},${yPercent(data[0].cumulative)}`, `${100 - rightPad},${yPercent(data[0].cumulative)}`]
+                : data.map((d, i) => `${xPercent(i)},${yPercent(d.cumulative)}`)),
+              `${100 - rightPad},100`
             ].join(' ')}
             fill="url(#pnlGradient)"
           />
