@@ -40,7 +40,7 @@ import { generateQuestSuggestions } from '@/lib/ai/generateQuestSuggestions';
 import { CalendarDay, TradeResult, MoodType, Quest } from '@/types';
 import { formatCurrency, formatDate, getMoodColor, formatTime } from '@/lib/localStorageUtils';
 
-import { cn } from '@/lib/utils';
+import { cn, summarizeWinLossScratch } from '@/lib/utils';
 import { TagPill, TagList, TagInput } from './TagPill';
 import { NoteContent } from './NoteContent';
 import { MoodTimeline } from './MoodTimeline';
@@ -672,7 +672,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
         .filter(note => !selectedAccountId || note.accountId === selectedAccountId);
 
       const totalPnL = dayTrades.reduce((sum, trade) => sum + (trade.pnl || 0), 0);
-      const winningTrades = dayTrades.filter(t => (t.pnl || 0) > 0).length;
+      const { wins: winningTrades } = summarizeWinLossScratch(dayTrades);
       const winRate = dayTrades.length > 0 ? (winningTrades / dayTrades.length) * 100 : 0;
 
       const dailyData = {

@@ -26,7 +26,7 @@ import { useDailyReflectionStore } from '@/store/useDailyReflectionStore';
 import { useActivityLogStore } from '@/store/useActivityLogStore';
 import { useAppSettingsStore } from '@/store/useAppSettingsStore';
 import { CustomTemplate, InsightBlock, TemplateBlock } from '@/types';
-import { cn } from '@/lib/utils';
+import { cn, summarizeWinLossScratch } from '@/lib/utils';
 import { debounce, formatDate } from '@/lib/localStorageUtils';
 import { FavoritesManager } from './FavoritesManager';
 
@@ -451,7 +451,7 @@ export const ReflectionTemplateManager: React.FC<ReflectionTemplateManagerProps>
       });
 
       const totalPnL = dayTrades.reduce((sum, trade) => sum + (trade.pnl || 0), 0);
-      const winningTrades = dayTrades.filter(t => (t.pnl || 0) > 0).length;
+      const { wins: winningTrades } = summarizeWinLossScratch(dayTrades);
       const winRate = dayTrades.length > 0 ? (winningTrades / dayTrades.length) * 100 : 0;
 
       const context = {

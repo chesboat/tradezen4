@@ -20,7 +20,7 @@ import { useAccountFilterStore } from '@/store/useAccountFilterStore';
 import { useActivityLogStore } from '@/store/useActivityLogStore';
 import { useQuestStore } from '@/store/useQuestStore';
 import { formatCurrency, formatDate, getMoodEmoji } from '@/lib/localStorageUtils';
-import { cn } from '@/lib/utils';
+import { cn, summarizeWinLossScratch } from '@/lib/utils';
 import { ReflectionHub } from './ReflectionHub';
 import { CircularProgress } from './ui/CircularProgress';
 
@@ -535,15 +535,20 @@ export const JournalDayCard: React.FC<JournalDayCardProps> = ({
                     <div className="text-xs text-muted-foreground">P&L</div>
                   </div>
                   <div className="text-center">
-                    <CircularProgress
-                      wins={dayTrades.filter(t => (t.pnl || 0) > 0).length}
-                      losses={dayTrades.filter(t => (t.pnl || 0) < 0).length}
-                      breakeven={dayTrades.filter(t => (t.pnl || 0) === 0).length}
-                      size="sm"
-                      showLabels={false}
-                      showPercentage={true}
-                      showInlineNumbers={true}
-                    />
+                    {(() => {
+                      const { wins, losses, scratches } = summarizeWinLossScratch(dayTrades);
+                      return (
+                        <CircularProgress
+                          wins={wins}
+                          losses={losses}
+                          breakeven={scratches}
+                          size="sm"
+                          showLabels={false}
+                          showPercentage={true}
+                          showInlineNumbers={true}
+                        />
+                      );
+                    })()}
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold text-foreground">{stats.avgRR.toFixed(1)}:1</div>

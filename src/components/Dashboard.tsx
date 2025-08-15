@@ -469,7 +469,7 @@ export const Dashboard: React.FC = () => {
         return accountOk && nd >= startOfDay && nd <= endOfDay;
       });
 
-      const winRateToday = todaysTrades.length > 0 ? (todaysTrades.filter(t => (t.pnl || 0) > 0).length / todaysTrades.length) * 100 : 0;
+      const { winRateExclScratches: winRateToday } = summarizeWinLossScratch(todaysTrades);
       const totalPnLToday = todaysTrades.reduce((s, t) => s + (t.pnl || 0), 0);
       const avgRiskToday = todaysTrades.length > 0 ? todaysTrades.reduce((s, t) => s + (t.riskAmount || 0), 0) / todaysTrades.length : 100;
 

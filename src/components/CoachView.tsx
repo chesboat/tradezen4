@@ -9,7 +9,7 @@ import { useNavigationStore } from '@/store/useNavigationStore';
 import { useSessionStore } from '@/store/useSessionStore';
 import { generateDailySummary } from '@/lib/ai/generateDailySummary';
 import { formatCurrency } from '@/lib/localStorageUtils';
-import { cn } from '@/lib/utils';
+import { cn, summarizeWinLossScratch } from '@/lib/utils';
 import { useCoachHabitStore } from '@/store/useCoachHabitStore';
 import { useCoachStore } from '@/store/useCoachStore';
 import { CoachService } from '@/lib/ai/coachService';
@@ -44,8 +44,7 @@ export const CoachView: React.FC = () => {
 
   const stats = useMemo(() => {
     const totalPnL = todayTrades.reduce((s, t) => s + (t.pnl || 0), 0);
-    const wins = todayTrades.filter(t => (t.pnl || 0) > 0).length;
-    const wr = todayTrades.length ? (wins / todayTrades.length) * 100 : 0;
+    const { wins, winRateExclScratches: wr } = summarizeWinLossScratch(todayTrades);
     const lossesAbs = Math.abs(todayTrades.filter(t => (t.pnl || 0) < 0).reduce((s, t) => s + (t.pnl || 0), 0));
     return { totalPnL, winRate: wr, lossesAbs };
   }, [todayTrades]);
