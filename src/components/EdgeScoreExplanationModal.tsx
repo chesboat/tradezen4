@@ -120,11 +120,11 @@ const EdgeScoreExplanationModal: React.FC<EdgeScoreExplanationModalProps> = ({
             onClick={onClose}
           >
             <div
-              className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden"
+              className="bg-white dark:bg-black rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden border border-gray-200 dark:border-gray-800"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-800">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                     Edge Score Metrics Explained
@@ -135,7 +135,7 @@ const EdgeScoreExplanationModal: React.FC<EdgeScoreExplanationModalProps> = ({
                 </div>
                 <button
                   onClick={onClose}
-                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-lg transition-colors"
                 >
                   <X className="w-5 h-5 text-gray-500" />
                 </button>
@@ -145,7 +145,7 @@ const EdgeScoreExplanationModal: React.FC<EdgeScoreExplanationModalProps> = ({
               <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
                 <div className="space-y-8">
                   {/* Overall Explanation */}
-                  <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+                  <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-4 border border-blue-200 dark:border-blue-900/50">
                     <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
                       What is Edge Score?
                     </h3>
@@ -163,7 +163,7 @@ const EdgeScoreExplanationModal: React.FC<EdgeScoreExplanationModalProps> = ({
                       return (
                         <div
                           key={index}
-                          className="border border-gray-200 dark:border-gray-700 rounded-lg p-6"
+                          className="border border-gray-200 dark:border-gray-800 rounded-lg p-6 bg-white dark:bg-gray-950/30"
                         >
                           <div className="flex items-start gap-4">
                             <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
@@ -179,7 +179,7 @@ const EdgeScoreExplanationModal: React.FC<EdgeScoreExplanationModalProps> = ({
                                 {metric.description}
                               </p>
                               
-                              <div className="bg-gray-50 dark:bg-gray-700/50 rounded p-3 mb-3">
+                              <div className="bg-gray-50 dark:bg-gray-900/50 rounded p-3 mb-3 border border-gray-200 dark:border-gray-800">
                                 <p className="text-sm font-mono text-gray-700 dark:text-gray-300">
                                   <span className="font-semibold">Formula:</span> {metric.formula}
                                 </p>
@@ -193,7 +193,7 @@ const EdgeScoreExplanationModal: React.FC<EdgeScoreExplanationModalProps> = ({
                                   {metric.scoring.map((score, scoreIndex) => (
                                     <div
                                       key={scoreIndex}
-                                      className="flex justify-between items-center text-xs bg-white dark:bg-gray-800 rounded px-2 py-1 border border-gray-200 dark:border-gray-600"
+                                      className="flex justify-between items-center text-xs bg-white dark:bg-gray-900 rounded px-2 py-1 border border-gray-200 dark:border-gray-700"
                                     >
                                       <span className="font-medium">{score.range}</span>
                                       <span className={score.color}>{score.score}</span>
@@ -202,7 +202,7 @@ const EdgeScoreExplanationModal: React.FC<EdgeScoreExplanationModalProps> = ({
                                 </div>
                               </div>
                               
-                              <div className="bg-green-50 dark:bg-green-900/20 rounded p-3">
+                              <div className="bg-green-50 dark:bg-green-950/30 rounded p-3 border border-green-200 dark:border-green-900/50">
                                 <p className="text-sm text-green-800 dark:text-green-200">
                                   <span className="font-semibold">Example:</span> {metric.example}
                                 </p>
@@ -215,7 +215,7 @@ const EdgeScoreExplanationModal: React.FC<EdgeScoreExplanationModalProps> = ({
                   </div>
 
                   {/* Footer Note */}
-                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                  <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 border border-gray-200 dark:border-gray-800">
                     <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
                       Metric Weights
                     </h4>
