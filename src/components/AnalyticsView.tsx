@@ -31,6 +31,8 @@ import { Trade, TradeResult, MoodType } from '@/types';
 import { formatCurrency, formatRelativeTime } from '@/lib/localStorageUtils';
 import { cn } from '@/lib/utils';
 import EdgeScoreExplanationModal from './EdgeScoreExplanationModal';
+import { useAnalyticsTilesStore } from '@/store/useAnalyticsTilesStore';
+import AnalyticsTilesModal from './AnalyticsTilesModal';
 import { Tooltip } from './ui/Tooltip';
 
 interface PeriodFilter {
@@ -558,6 +560,9 @@ export const AnalyticsView: React.FC = () => {
     );
   };
 
+  const analyticsTiles = useAnalyticsTilesStore();
+  const [showTilesModal, setShowTilesModal] = useState(false);
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -568,6 +573,7 @@ export const AnalyticsView: React.FC = () => {
         </div>
         
         <div className="flex items-center gap-4">
+          <button className="px-2 py-1 rounded bg-muted text-muted-foreground hover:bg-muted/80 text-xs" onClick={() => setShowTilesModal(true)}>Customize</button>
           {/* Period Filter */}
           <div className="flex bg-muted/30 rounded-lg p-1">
             {periodFilters.map((period) => (
@@ -609,6 +615,7 @@ export const AnalyticsView: React.FC = () => {
           format="percentage"
         />
         {/* Edge Score Card with Radar Chart */}
+        {useAnalyticsTilesStore.getState().getLayout(selectedAccountId).find(t => t.id === 'edgeScore')?.visible && (
         <motion.div className="bg-muted/30 rounded-lg p-6 col-span-2" whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
@@ -697,6 +704,7 @@ export const AnalyticsView: React.FC = () => {
              "🔴 Needs significant improvement - review strategy"}
           </div>
         </motion.div>
+        )}
         <MetricCard
           title="Profit Factor"
           value={metrics.profitFactor}
@@ -722,6 +730,7 @@ export const AnalyticsView: React.FC = () => {
       </div>
 
       {/* Net Daily P&L */}
+      {useAnalyticsTilesStore.getState().getLayout(selectedAccountId).find(t => t.id === 'netDailyPnl')?.visible && (
       <div className="bg-card rounded-2xl p-6 border border-border">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold">Net P&L</h2>
@@ -749,6 +758,7 @@ export const AnalyticsView: React.FC = () => {
           <SimpleChart data={chartData} />
         )}
       </div>
+      )}
 
       {/* Removed secondary Performance Overview chart per request */}
 
@@ -817,6 +827,7 @@ export const AnalyticsView: React.FC = () => {
         </div>
 
         {/* Top Symbols */}
+        {useAnalyticsTilesStore.getState().getLayout(selectedAccountId).find(t => t.id === 'topSymbols')?.visible && (
         <div className="bg-muted/30 rounded-lg p-6">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <Award className="w-5 h-5" />
@@ -843,9 +854,11 @@ export const AnalyticsView: React.FC = () => {
             ))}
           </div>
         </div>
+        )}
       </div>
 
       {/* Recent Trades (Analytics) */}
+      {useAnalyticsTilesStore.getState().getLayout(selectedAccountId).find(t => t.id === 'recentTrades')?.visible && (
       <div className="bg-muted/30 rounded-lg p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold flex items-center gap-2">
@@ -908,8 +921,10 @@ export const AnalyticsView: React.FC = () => {
           </div>
         )}
       </div>
+      )}
 
       {/* Risk Analysis */}
+      {useAnalyticsTilesStore.getState().getLayout(selectedAccountId).find(t => t.id === 'riskAnalysis')?.visible && (
       <div className="bg-muted/30 rounded-lg p-6">
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <AlertTriangle className="w-5 h-5" />
@@ -939,6 +954,7 @@ export const AnalyticsView: React.FC = () => {
           </div>
         </div>
       </div>
+      )}
 
       {/* Empty State */}
       {filteredTrades.length === 0 && (
@@ -956,6 +972,7 @@ export const AnalyticsView: React.FC = () => {
         isOpen={showEdgeScoreModal}
         onClose={() => setShowEdgeScoreModal(false)}
       />
+      <AnalyticsTilesModal isOpen={showTilesModal} onClose={() => setShowTilesModal(false)} />
     </div>
   );
 }; 

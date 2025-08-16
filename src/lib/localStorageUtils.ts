@@ -90,6 +90,7 @@ export const STORAGE_KEYS = {
   TODO_TASKS: 'tradzen_todo_tasks',
   TODO_DRAWER_EXPANDED: 'tradzen_todo_drawer_expanded',
   DASHBOARD_TILES: 'tradzen_dashboard_tiles',
+  ANALYTICS_TILES: 'tradzen_analytics_tiles',
 } as const;
 
 /**
