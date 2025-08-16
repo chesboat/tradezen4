@@ -319,9 +319,30 @@ export const AnalyticsView: React.FC = () => {
     const xPercent = (i: number) => leftPad + (i / denom) * (100 - leftPad - rightPad);
     const yPercent = (v: number) => 100 - ((v - minValue) / range) * 100;
 
-    const points = data.length === 1
-      ? `${leftPad},${yPercent(data[0].cumulative)} ${100 - rightPad},${yPercent(data[0].cumulative)}`
-      : data.map((d, i) => `${xPercent(i)},${yPercent(d.cumulative)}`).join(' ');
+    // Prepare points in SVG 0..100 space
+    const pts = data.map((d, i) => ({ x: xPercent(i), y: yPercent(d.cumulative) }));
+    if (pts.length === 1) {
+      const y = pts[0].y;
+      pts.push({ x: 100 - rightPad, y });
+      pts.unshift({ x: leftPad, y });
+    }
+
+    // Smooth line using cubic Bézier control points
+    const smoothing = 0.18; // smaller = tighter
+    const controlPoint = (current: any, previous: any, next: any, reverse?: boolean) => {
+      const p = previous || current;
+      const n = next || current;
+      const o = { x: n.x - p.x, y: n.y - p.y };
+      const angle = Math.atan2(o.y, o.x) + (reverse ? Math.PI : 0);
+      const length = Math.hypot(o.x, o.y) * smoothing;
+      return { x: current.x + Math.cos(angle) * length, y: current.y + Math.sin(angle) * length };
+    };
+    const pathD = pts.reduce((acc, point, i, a) => {
+      if (i === 0) return `M ${point.x},${point.y}`;
+      const cp1 = controlPoint(a[i - 1], a[i - 2], point);
+      const cp2 = controlPoint(point, a[i - 1], a[i + 1], true);
+      return `${acc} C ${cp1.x},${cp1.y} ${cp2.x},${cp2.y} ${point.x},${point.y}`;
+    }, '');
 
     const lineColor = styleKey === 'mono' ? 'currentColor' : 'rgb(34, 197, 94)';
     const strokeWidth = styleKey === 'glow' ? 2 : (styleKey === 'mono' ? 1.25 : 1.5);
@@ -363,29 +384,16 @@ export const AnalyticsView: React.FC = () => {
           ))}
           
           {/* Chart line */}
-          <polyline
-            points={points}
-            fill="none"
-            stroke={lineColor}
-            strokeWidth={strokeWidth}
+          <path d={pathD} fill="none" stroke={lineColor} strokeWidth={strokeWidth}
+            strokeLinecap="round" strokeLinejoin="round"
             filter={styleKey === 'glow' ? 'url(#glow)' : undefined}
-            className="drop-shadow-sm"
           />
           {dot && data.map((d, i) => (
-            <circle key={d.date} cx={xPercent(i)} cy={yPercent(d.cumulative)} r={0.6} fill={lineColor} />
+            <circle key={d.date} cx={xPercent(i)} cy={yPercent(d.cumulative)} r={0.5} fill={lineColor} />
           ))}
           
           {/* Fill area */}
-          <polygon
-            points={[
-              `${leftPad},100`,
-              ...(data.length === 1
-                ? [`${leftPad},${yPercent(data[0].cumulative)}`, `${100 - rightPad},${yPercent(data[0].cumulative)}`]
-                : data.map((d, i) => `${xPercent(i)},${yPercent(d.cumulative)}`)),
-              `${100 - rightPad},100`
-            ].join(' ')}
-            fill="url(#pnlGradient)"
-          />
+          <path d={`${pathD} L ${100 - rightPad},100 L ${leftPad},100 Z`} fill="url(#pnlGradient)" />
         </svg>
       </div>
     );
