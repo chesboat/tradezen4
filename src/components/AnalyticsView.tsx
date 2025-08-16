@@ -533,7 +533,7 @@ export const AnalyticsView: React.FC = () => {
           icon={<Target className="w-5 h-5" />}
           format="percentage"
         />
-        {/* Edge Score Card */}
+        {/* Edge Score Card with Radar Chart */}
         <motion.div className="bg-muted/30 rounded-lg p-6 col-span-2" whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
@@ -543,59 +543,160 @@ export const AnalyticsView: React.FC = () => {
             <div className="text-xs text-muted-foreground">Trading Performance Composite</div>
           </div>
           
-          <div className="flex items-center gap-6">
-            {/* Score Display */}
-            <div className="flex flex-col items-center">
-              <div className="text-5xl font-bold text-foreground mb-1">{edge.score}</div>
-              <div className="text-sm text-muted-foreground">out of 100</div>
-              
-              {/* Color-coded progress bar */}
-              <div className="w-24 h-2 bg-muted rounded-full mt-2 overflow-hidden">
-                <div 
-                  className={`h-full transition-all duration-1000 ${
-                    edge.score >= 80 ? 'bg-green-500' :
-                    edge.score >= 60 ? 'bg-yellow-500' :
-                    edge.score >= 40 ? 'bg-orange-500' : 'bg-red-500'
-                  }`}
-                  style={{ width: `${edge.score}%` }}
+          <div className="flex items-center gap-8">
+            {/* Radar Chart */}
+            <div className="flex-shrink-0">
+              <svg width="160" height="160" viewBox="0 0 160 160" className="drop-shadow-sm">
+                <defs>
+                  <linearGradient id="radarGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor="rgb(59, 130, 246)" stopOpacity="0.3" />
+                    <stop offset="100%" stopColor="rgb(59, 130, 246)" stopOpacity="0.1" />
+                  </linearGradient>
+                </defs>
+                
+                {/* Background hexagon grid */}
+                {[20, 40, 60, 80, 100].map(radius => {
+                  const points = Array.from({ length: 6 }, (_, i) => {
+                    const angle = (i * Math.PI) / 3 - Math.PI / 2;
+                    const x = 80 + (radius * 0.6) * Math.cos(angle);
+                    const y = 80 + (radius * 0.6) * Math.sin(angle);
+                    return `${x},${y}`;
+                  }).join(' ');
+                  return (
+                    <polygon
+                      key={radius}
+                      points={points}
+                      fill="none"
+                      stroke="currentColor"
+                      strokeOpacity="0.1"
+                      strokeWidth="1"
+                    />
+                  );
+                })}
+                
+                {/* Axis lines */}
+                {Array.from({ length: 6 }, (_, i) => {
+                  const angle = (i * Math.PI) / 3 - Math.PI / 2;
+                  const x = 80 + 60 * Math.cos(angle);
+                  const y = 80 + 60 * Math.sin(angle);
+                  return (
+                    <line
+                      key={i}
+                      x1="80"
+                      y1="80"
+                      x2={x}
+                      y2={y}
+                      stroke="currentColor"
+                      strokeOpacity="0.1"
+                      strokeWidth="1"
+                    />
+                  );
+                })}
+                
+                {/* Data polygon */}
+                <polygon
+                  points={[
+                    edge.breakdown.winRate,
+                    edge.breakdown.profitFactor,
+                    edge.breakdown.avgWinLoss,
+                    edge.breakdown.maxDrawdown,
+                    edge.breakdown.recoveryFactor,
+                    edge.breakdown.consistency
+                  ].map((value, i) => {
+                    const angle = (i * Math.PI) / 3 - Math.PI / 2;
+                    const radius = (value / 100) * 60;
+                    const x = 80 + radius * Math.cos(angle);
+                    const y = 80 + radius * Math.sin(angle);
+                    return `${x},${y}`;
+                  }).join(' ')}
+                  fill="url(#radarGradient)"
+                  stroke="rgb(59, 130, 246)"
+                  strokeWidth="2"
+                  strokeLinejoin="round"
                 />
-              </div>
+                
+                {/* Data points */}
+                {[
+                  edge.breakdown.winRate,
+                  edge.breakdown.profitFactor,
+                  edge.breakdown.avgWinLoss,
+                  edge.breakdown.maxDrawdown,
+                  edge.breakdown.recoveryFactor,
+                  edge.breakdown.consistency
+                ].map((value, i) => {
+                  const angle = (i * Math.PI) / 3 - Math.PI / 2;
+                  const radius = (value / 100) * 60;
+                  const x = 80 + radius * Math.cos(angle);
+                  const y = 80 + radius * Math.sin(angle);
+                  return (
+                    <circle
+                      key={i}
+                      cx={x}
+                      cy={y}
+                      r="3"
+                      fill="rgb(59, 130, 246)"
+                    />
+                  );
+                })}
+              </svg>
             </div>
             
-            {/* Breakdown */}
-            <div className="flex-1 grid grid-cols-2 gap-3 text-xs">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Win Rate:</span>
-                <span className="font-medium">{edge.breakdown.winRate}/100</span>
+            {/* Score Display & Breakdown */}
+            <div className="flex-1">
+              <div className="flex items-center gap-6 mb-4">
+                <div className="text-center">
+                  <div className="text-4xl font-bold text-foreground mb-1">{edge.score}</div>
+                  <div className="text-sm text-muted-foreground">EDGE SCORE</div>
+                  
+                  {/* Color-coded progress bar */}
+                  <div className="w-32 h-2 bg-muted rounded-full mt-2 overflow-hidden">
+                    <div 
+                      className={`h-full transition-all duration-1000 ${
+                        edge.score >= 80 ? 'bg-green-500' :
+                        edge.score >= 60 ? 'bg-yellow-500' :
+                        edge.score >= 40 ? 'bg-orange-500' : 'bg-red-500'
+                      }`}
+                      style={{ width: `${edge.score}%` }}
+                    />
+                  </div>
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Profit Factor:</span>
-                <span className="font-medium">{edge.breakdown.profitFactor}/100</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Expectancy:</span>
-                <span className="font-medium">{edge.breakdown.expectancy}/100</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Consistency:</span>
-                <span className="font-medium">{edge.breakdown.consistency}/100</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Drawdown:</span>
-                <span className="font-medium">{edge.breakdown.drawdown}/100</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Sample Size:</span>
-                <span className="font-medium">{edge.breakdown.sampleSize}/100</span>
+              
+              {/* Metric Labels */}
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Win %:</span>
+                  <span className="font-medium">{edge.breakdown.winRate}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Profit Factor:</span>
+                  <span className="font-medium">{edge.breakdown.profitFactor}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Avg Win/Loss:</span>
+                  <span className="font-medium">{edge.breakdown.avgWinLoss}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Max Drawdown:</span>
+                  <span className="font-medium">{edge.breakdown.maxDrawdown}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Recovery Factor:</span>
+                  <span className="font-medium">{edge.breakdown.recoveryFactor}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Consistency:</span>
+                  <span className="font-medium">{edge.breakdown.consistency}</span>
+                </div>
               </div>
             </div>
           </div>
           
           {/* Interpretation */}
           <div className="mt-4 text-xs text-muted-foreground">
-            {edge.score >= 80 ? "🟢 Excellent trading edge - strong across all metrics" :
-             edge.score >= 60 ? "🟡 Good edge with room for improvement" :
-             edge.score >= 40 ? "🟠 Developing edge - focus on weak areas" :
+            {edge.score >= 80 ? "🟢 Excellent trading performance - strong across all metrics" :
+             edge.score >= 60 ? "🟡 Good performance with room for improvement" :
+             edge.score >= 40 ? "🟠 Developing performance - focus on weak areas" :
              "🔴 Needs significant improvement - review strategy"}
           </div>
         </motion.div>
