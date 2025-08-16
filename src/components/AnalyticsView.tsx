@@ -600,6 +600,7 @@ export const AnalyticsView: React.FC = () => {
       </div>
 
       {/* Key Performance Metrics */}
+      {useAnalyticsTilesStore.getState().getLayout(selectedAccountId).find(t => t.id === 'keyMetrics')?.visible && (
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
         <MetricCard
           title="Total P&L"
@@ -728,6 +729,7 @@ export const AnalyticsView: React.FC = () => {
           icon={<Activity className="w-5 h-5" />}
         />
       </div>
+      )}
 
       {/* Net Daily P&L */}
       {useAnalyticsTilesStore.getState().getLayout(selectedAccountId).find(t => t.id === 'netDailyPnl')?.visible && (

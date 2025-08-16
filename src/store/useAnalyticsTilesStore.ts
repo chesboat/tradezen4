@@ -4,6 +4,7 @@ import { STORAGE_KEYS } from '@/lib/localStorageUtils';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
 
 export type AnalyticsTileId =
+  | 'keyMetrics'
   | 'edgeScore'
   | 'netDailyPnl'
   | 'topSymbols'
@@ -20,6 +21,7 @@ interface AnalyticsTilesState {
 }
 
 const DEFAULT_LAYOUT: AnalyticsTileConfig[] = [
+  { id: 'keyMetrics', visible: true },
   { id: 'edgeScore', visible: true },
   { id: 'netDailyPnl', visible: true },
   { id: 'topSymbols', visible: true },
