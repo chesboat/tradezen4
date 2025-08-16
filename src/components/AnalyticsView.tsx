@@ -19,7 +19,8 @@ import {
   Eye,
   Filter,
   Download,
-  RefreshCw
+  RefreshCw,
+  Info
 } from 'lucide-react';
 import { useTradeStore } from '@/store/useTradeStore';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
@@ -28,6 +29,7 @@ import { computeEdgeScore } from '@/lib/edgeScore';
 import { Trade, TradeResult, MoodType } from '@/types';
 import { formatCurrency, formatRelativeTime } from '@/lib/localStorageUtils';
 import { cn } from '@/lib/utils';
+import EdgeScoreExplanationModal from './EdgeScoreExplanationModal';
 
 interface PeriodFilter {
   label: string;
@@ -74,6 +76,7 @@ export const AnalyticsView: React.FC = () => {
   
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodFilter>(periodFilters[2]); // 90D default
   const [pnlMode, setPnlMode] = useState<'daily' | 'cumulative'>('daily');
+  const [showEdgeScoreModal, setShowEdgeScoreModal] = useState(false);
 
   // Filter trades by account and period
   const filteredTrades = useMemo(() => {
@@ -609,6 +612,13 @@ export const AnalyticsView: React.FC = () => {
             <div className="flex items-center gap-2">
               <Award className="w-5 h-5 text-muted-foreground" />
               <h3 className="text-lg font-semibold">Edge Score</h3>
+              <button
+                onClick={() => setShowEdgeScoreModal(true)}
+                className="p-1 hover:bg-muted rounded transition-colors"
+                title="Learn about Edge Score metrics"
+              >
+                <Info className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+              </button>
             </div>
             <div className="text-xs text-muted-foreground">Trading Performance Composite</div>
           </div>
@@ -934,6 +944,12 @@ export const AnalyticsView: React.FC = () => {
           </p>
         </div>
       )}
+
+      {/* Edge Score Explanation Modal */}
+      <EdgeScoreExplanationModal
+        isOpen={showEdgeScoreModal}
+        onClose={() => setShowEdgeScoreModal(false)}
+      />
     </div>
   );
 }; 
