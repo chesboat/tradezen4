@@ -545,12 +545,12 @@ export const AnalyticsView: React.FC = () => {
           
           <div className="flex items-center gap-8">
             {/* Radar Chart */}
-            <div className="flex-shrink-0">
-              <svg width="160" height="160" viewBox="0 0 160 160" className="drop-shadow-sm">
+            <div className="flex-shrink-0 relative">
+              <svg width="200" height="200" viewBox="0 0 200 200" className="drop-shadow-sm">
                 <defs>
                   <linearGradient id="radarGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="rgb(59, 130, 246)" stopOpacity="0.3" />
-                    <stop offset="100%" stopColor="rgb(59, 130, 246)" stopOpacity="0.1" />
+                    <stop offset="0%" stopColor="rgb(139, 92, 246)" stopOpacity="0.4" />
+                    <stop offset="100%" stopColor="rgb(139, 92, 246)" stopOpacity="0.1" />
                   </linearGradient>
                 </defs>
                 
@@ -558,8 +558,8 @@ export const AnalyticsView: React.FC = () => {
                 {[20, 40, 60, 80, 100].map(radius => {
                   const points = Array.from({ length: 6 }, (_, i) => {
                     const angle = (i * Math.PI) / 3 - Math.PI / 2;
-                    const x = 80 + (radius * 0.6) * Math.cos(angle);
-                    const y = 80 + (radius * 0.6) * Math.sin(angle);
+                    const x = 100 + (radius * 0.7) * Math.cos(angle);
+                    const y = 100 + (radius * 0.7) * Math.sin(angle);
                     return `${x},${y}`;
                   }).join(' ');
                   return (
@@ -568,8 +568,8 @@ export const AnalyticsView: React.FC = () => {
                       points={points}
                       fill="none"
                       stroke="currentColor"
-                      strokeOpacity="0.1"
-                      strokeWidth="1"
+                      strokeOpacity={radius === 100 ? "0.2" : "0.08"}
+                      strokeWidth={radius === 100 ? "1.5" : "1"}
                     />
                   );
                 })}
@@ -577,17 +577,17 @@ export const AnalyticsView: React.FC = () => {
                 {/* Axis lines */}
                 {Array.from({ length: 6 }, (_, i) => {
                   const angle = (i * Math.PI) / 3 - Math.PI / 2;
-                  const x = 80 + 60 * Math.cos(angle);
-                  const y = 80 + 60 * Math.sin(angle);
+                  const x = 100 + 70 * Math.cos(angle);
+                  const y = 100 + 70 * Math.sin(angle);
                   return (
                     <line
                       key={i}
-                      x1="80"
-                      y1="80"
+                      x1="100"
+                      y1="100"
                       x2={x}
                       y2={y}
                       stroke="currentColor"
-                      strokeOpacity="0.1"
+                      strokeOpacity="0.15"
                       strokeWidth="1"
                     />
                   );
@@ -604,14 +604,14 @@ export const AnalyticsView: React.FC = () => {
                     edge.breakdown.consistency
                   ].map((value, i) => {
                     const angle = (i * Math.PI) / 3 - Math.PI / 2;
-                    const radius = (value / 100) * 60;
-                    const x = 80 + radius * Math.cos(angle);
-                    const y = 80 + radius * Math.sin(angle);
+                    const radius = (value / 100) * 70;
+                    const x = 100 + radius * Math.cos(angle);
+                    const y = 100 + radius * Math.sin(angle);
                     return `${x},${y}`;
                   }).join(' ')}
                   fill="url(#radarGradient)"
-                  stroke="rgb(59, 130, 246)"
-                  strokeWidth="2"
+                  stroke="rgb(139, 92, 246)"
+                  strokeWidth="2.5"
                   strokeLinejoin="round"
                 />
                 
@@ -625,17 +625,57 @@ export const AnalyticsView: React.FC = () => {
                   edge.breakdown.consistency
                 ].map((value, i) => {
                   const angle = (i * Math.PI) / 3 - Math.PI / 2;
-                  const radius = (value / 100) * 60;
-                  const x = 80 + radius * Math.cos(angle);
-                  const y = 80 + radius * Math.sin(angle);
+                  const radius = (value / 100) * 70;
+                  const x = 100 + radius * Math.cos(angle);
+                  const y = 100 + radius * Math.sin(angle);
                   return (
                     <circle
                       key={i}
                       cx={x}
                       cy={y}
-                      r="3"
-                      fill="rgb(59, 130, 246)"
+                      r="4"
+                      fill="rgb(139, 92, 246)"
+                      stroke="white"
+                      strokeWidth="2"
                     />
+                  );
+                })}
+                
+                {/* Metric Labels */}
+                {[
+                  { label: 'Win %', value: `(${filteredTrades.length > 0 ? ((filteredTrades.filter(t => (t.pnl || 0) > 0).length / filteredTrades.length) * 100).toFixed(1) : '0'}%)` },
+                  { label: 'Profit factor', value: `(${metrics.profitFactor.toFixed(1)})` },
+                  { label: 'Avg win/loss', value: `(${(metrics.avgWin / Math.max(metrics.avgLoss, 1)).toFixed(1)})` },
+                  { label: 'Max drawdown', value: `(${metrics.maxDrawdown.toFixed(1)}%)` },
+                  { label: 'Recovery factor', value: `(${(Math.abs(metrics.totalPnL) / Math.max(metrics.maxDrawdown * Math.abs(metrics.totalPnL) / 100, 1)).toFixed(1)})` },
+                  { label: 'Consistency', value: `(${edge.breakdown.consistency})` }
+                ].map((metric, i) => {
+                  const angle = (i * Math.PI) / 3 - Math.PI / 2;
+                  const labelRadius = 85;
+                  const x = 100 + labelRadius * Math.cos(angle);
+                  const y = 100 + labelRadius * Math.sin(angle);
+                  
+                  return (
+                    <g key={i}>
+                      <text
+                        x={x}
+                        y={y - 2}
+                        textAnchor="middle"
+                        className="text-xs font-medium fill-current text-muted-foreground"
+                        dominantBaseline="middle"
+                      >
+                        {metric.label}
+                      </text>
+                      <text
+                        x={x}
+                        y={y + 10}
+                        textAnchor="middle"
+                        className="text-xs fill-current text-muted-foreground"
+                        dominantBaseline="middle"
+                      >
+                        {metric.value}
+                      </text>
+                    </g>
                   );
                 })}
               </svg>
