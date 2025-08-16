@@ -323,10 +323,10 @@ export const AnalyticsView: React.FC = () => {
       : data.map((d, i) => `${xPercent(i)},${yPercent(d.cumulative)}`).join(' ');
 
     const lineColor = styleKey === 'mono' ? 'currentColor' : 'rgb(34, 197, 94)';
-    const strokeWidth = styleKey === 'glow' ? 3 : 2;
+    const strokeWidth = styleKey === 'glow' ? 2 : (styleKey === 'mono' ? 1.25 : 1.5);
     const dot = styleKey === 'glow';
-    const gradTop = styleKey === 'mono' ? 'rgba(120,120,120,0.15)' : (styleKey === 'glow' ? 'rgba(34,197,94,0.45)' : 'rgba(34,197,94,0.8)');
-    const gradBottom = styleKey === 'mono' ? 'rgba(120,120,120,0.03)' : (styleKey === 'glow' ? 'rgba(34,197,94,0.05)' : 'rgba(34,197,94,0.1)');
+    const gradTop = styleKey === 'mono' ? 'rgba(120,120,120,0.10)' : (styleKey === 'glow' ? 'rgba(34,197,94,0.30)' : 'rgba(34,197,94,0.25)');
+    const gradBottom = styleKey === 'mono' ? 'rgba(120,120,120,0.02)' : (styleKey === 'glow' ? 'rgba(34,197,94,0.04)' : 'rgba(34,197,94,0.05)');
 
     return (
       <div className="h-48 relative">
@@ -371,7 +371,7 @@ export const AnalyticsView: React.FC = () => {
             className="drop-shadow-sm"
           />
           {dot && data.map((d, i) => (
-            <circle key={d.date} cx={xPercent(i)} cy={yPercent(d.cumulative)} r={0.8} fill={lineColor} />
+            <circle key={d.date} cx={xPercent(i)} cy={yPercent(d.cumulative)} r={0.6} fill={lineColor} />
           ))}
           
           {/* Fill area */}
