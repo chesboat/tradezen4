@@ -24,6 +24,7 @@ import {
 import { useTradeStore } from '@/store/useTradeStore';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
 import { summarizeWinLossScratch, classifyTradeResult } from '@/lib/utils';
+import { computeEdgeScore } from '@/lib/edgeScore';
 import { Trade, TradeResult, MoodType } from '@/types';
 import { formatCurrency, formatRelativeTime } from '@/lib/localStorageUtils';
 import { cn } from '@/lib/utils';
@@ -203,6 +204,9 @@ export const AnalyticsView: React.FC = () => {
       worstDay,
     };
   }, [filteredTrades]);
+
+  // Edge Score
+  const edge = useMemo(() => computeEdgeScore(filteredTrades), [filteredTrades]);
 
   // Generate chart data
   const chartData = useMemo((): ChartDataPoint[] => {
@@ -529,6 +533,23 @@ export const AnalyticsView: React.FC = () => {
           icon={<Target className="w-5 h-5" />}
           format="percentage"
         />
+        <motion.div className="bg-muted/30 rounded-lg p-6 flex flex-col justify-between" whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-muted-foreground flex items-center gap-2">
+              <Award className="w-5 h-5" />
+              Edge Score
+            </div>
+            <div className="text-xs text-muted-foreground">0-100</div>
+          </div>
+          <div className="flex items-end justify-between">
+            <div className="text-4xl font-bold text-foreground">{edge.score}</div>
+            <div className="text-xs text-muted-foreground text-right">
+              WR {edge.breakdown.winRate} • PF {edge.breakdown.profitFactor}
+              <br/>
+              EXP {edge.breakdown.expectancy} • CONS {edge.breakdown.consistency}
+            </div>
+          </div>
+        </motion.div>
         <MetricCard
           title="Profit Factor"
           value={metrics.profitFactor}
