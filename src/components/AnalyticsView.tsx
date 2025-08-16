@@ -324,7 +324,7 @@ export const AnalyticsView: React.FC = () => {
 
     return (
       <div className="h-48 relative">
-        <svg className="w-full h-full">
+        <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
           <defs>
             <linearGradient id="pnlGradient" x1="0%" y1="0%" x2="0%" y2="100%">
               <stop offset="0%" stopColor="rgb(34, 197, 94)" stopOpacity="0.8" />
@@ -336,13 +336,13 @@ export const AnalyticsView: React.FC = () => {
           {[0, 25, 50, 75, 100].map(percent => (
             <line
               key={percent}
-              x1="0"
-              y1={`${percent}%`}
-              x2="100%"
-              y2={`${percent}%`}
+              x1={0}
+              y1={percent}
+              x2={100}
+              y2={percent}
               stroke="currentColor"
               strokeOpacity="0.1"
-              strokeWidth="1"
+              strokeWidth={1}
             />
           ))}
           
@@ -399,7 +399,7 @@ export const AnalyticsView: React.FC = () => {
     return (
       <div className="w-full">
         <div className="h-56 relative">
-          <svg className="w-full h-full" viewBox={`0 0 ${width} ${height}`}
+          <svg className="w-full h-full" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none"
             onMouseLeave={() => setHoverIdx(null)}
             onMouseMove={(e) => {
               const rect = (e.target as SVGElement).closest('svg')!.getBoundingClientRect();
