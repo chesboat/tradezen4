@@ -391,6 +391,76 @@ export const AnalyticsView: React.FC = () => {
     );
   };
 
+  // Unique Petal (Rose) Chart for Edge Score metrics
+  const PetalChart: React.FC<{ items: { label: string; value: number; sub?: string }[] }>
+    = ({ items }) => {
+    const cx = 100; const cy = 100; // center
+    const innerR = 28;             // inner radius for petal base
+    const maxR = 78;               // max radius for petal tip
+    const angleStep = (Math.PI * 2) / items.length;
+
+    const polar = (r: number, a: number) => ({ x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) });
+    const colors = ['#8b5cf6','#3b82f6','#22c55e','#eab308','#f59e0b','#ef4444'];
+
+    return (
+      <svg width={220} height={220} viewBox="0 0 200 200" className="drop-shadow-sm">
+        {/* background ring */}
+        <circle cx={cx} cy={cy} r={maxR} fill="none" stroke="currentColor" strokeOpacity={0.12} />
+        <circle cx={cx} cy={cy} r={innerR} fill="currentColor" opacity={0.05} />
+
+        {items.map((item, i) => {
+          const baseAngle = -Math.PI / 2 + i * angleStep; // start from top
+          const a0 = baseAngle - angleStep / 2 + 0.02;     // slight gap between petals
+          const a1 = baseAngle + angleStep / 2 - 0.02;
+          const am = (a0 + a1) / 2;
+          const tipR = innerR + (Math.max(0, Math.min(100, item.value)) / 100) * (maxR - innerR);
+
+          const p0 = polar(innerR, a0);
+          const p1 = polar(innerR, a1);
+          const tip = polar(tipR, am);
+          const c0 = polar((innerR + tipR) / 2, (a0 + am) / 2);
+          const c1 = polar((innerR + tipR) / 2, (a1 + am) / 2);
+
+          const path = `M ${p0.x},${p0.y} Q ${c0.x},${c0.y} ${tip.x},${tip.y} Q ${c1.x},${c1.y} ${p1.x},${p1.y} Z`;
+
+          return (
+            <g key={i}>
+              <path d={path}
+                fill={colors[i % colors.length]}
+                fillOpacity={0.32}
+                stroke={colors[i % colors.length]}
+                strokeOpacity={0.65}
+              />
+              {/* tick to show potential full extent */}
+              <line x1={cx} y1={cy} x2={polar(maxR, am).x} y2={polar(maxR, am).y}
+                stroke="currentColor" strokeOpacity={0.08} />
+              {/* label */}
+              {(() => {
+                const labelR = maxR + 12;
+                const lp = polar(labelR, am);
+                return (
+                  <g>
+                    <text x={lp.x} y={lp.y - 6} textAnchor="middle" className="text-[10px] fill-current text-muted-foreground">
+                      {item.label}
+                    </text>
+                    {item.sub && (
+                      <text x={lp.x} y={lp.y + 6} textAnchor="middle" className="text-[10px] fill-current text-muted-foreground">
+                        {item.sub}
+                      </text>
+                    )}
+                  </g>
+                );
+              })()}
+            </g>
+          );
+        })}
+
+        {/* center dot */}
+        <circle cx={cx} cy={cy} r={2} fill="currentColor" opacity={0.4} />
+      </svg>
+    );
+  };
+
   // Net Daily P&L bar chart with tooltip
   const NetDailyPnLChart: React.FC<{ data: ChartDataPoint[] }>
     = ({ data }) => {
@@ -544,141 +614,18 @@ export const AnalyticsView: React.FC = () => {
           </div>
           
           <div className="flex items-center gap-8">
-            {/* Radar Chart */}
-            <div className="flex-shrink-0 relative">
-              <svg width="200" height="200" viewBox="0 0 200 200" className="drop-shadow-sm">
-                <defs>
-                  <linearGradient id="radarGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="rgb(139, 92, 246)" stopOpacity="0.4" />
-                    <stop offset="100%" stopColor="rgb(139, 92, 246)" stopOpacity="0.1" />
-                  </linearGradient>
-                </defs>
-                
-                {/* Background hexagon grid */}
-                {[20, 40, 60, 80, 100].map(radius => {
-                  const points = Array.from({ length: 6 }, (_, i) => {
-                    const angle = (i * Math.PI) / 3 - Math.PI / 2;
-                    const x = 100 + (radius * 0.7) * Math.cos(angle);
-                    const y = 100 + (radius * 0.7) * Math.sin(angle);
-                    return `${x},${y}`;
-                  }).join(' ');
-                  return (
-                    <polygon
-                      key={radius}
-                      points={points}
-                      fill="none"
-                      stroke="currentColor"
-                      strokeOpacity={radius === 100 ? "0.2" : "0.08"}
-                      strokeWidth={radius === 100 ? "1.5" : "1"}
-                    />
-                  );
-                })}
-                
-                {/* Axis lines */}
-                {Array.from({ length: 6 }, (_, i) => {
-                  const angle = (i * Math.PI) / 3 - Math.PI / 2;
-                  const x = 100 + 70 * Math.cos(angle);
-                  const y = 100 + 70 * Math.sin(angle);
-                  return (
-                    <line
-                      key={i}
-                      x1="100"
-                      y1="100"
-                      x2={x}
-                      y2={y}
-                      stroke="currentColor"
-                      strokeOpacity="0.15"
-                      strokeWidth="1"
-                    />
-                  );
-                })}
-                
-                {/* Data polygon */}
-                <polygon
-                  points={[
-                    edge.breakdown.winRate,
-                    edge.breakdown.profitFactor,
-                    edge.breakdown.avgWinLoss,
-                    edge.breakdown.maxDrawdown,
-                    edge.breakdown.recoveryFactor,
-                    edge.breakdown.consistency
-                  ].map((value, i) => {
-                    const angle = (i * Math.PI) / 3 - Math.PI / 2;
-                    const radius = (value / 100) * 70;
-                    const x = 100 + radius * Math.cos(angle);
-                    const y = 100 + radius * Math.sin(angle);
-                    return `${x},${y}`;
-                  }).join(' ')}
-                  fill="url(#radarGradient)"
-                  stroke="rgb(139, 92, 246)"
-                  strokeWidth="2.5"
-                  strokeLinejoin="round"
-                />
-                
-                {/* Data points */}
-                {[
-                  edge.breakdown.winRate,
-                  edge.breakdown.profitFactor,
-                  edge.breakdown.avgWinLoss,
-                  edge.breakdown.maxDrawdown,
-                  edge.breakdown.recoveryFactor,
-                  edge.breakdown.consistency
-                ].map((value, i) => {
-                  const angle = (i * Math.PI) / 3 - Math.PI / 2;
-                  const radius = (value / 100) * 70;
-                  const x = 100 + radius * Math.cos(angle);
-                  const y = 100 + radius * Math.sin(angle);
-                  return (
-                    <circle
-                      key={i}
-                      cx={x}
-                      cy={y}
-                      r="4"
-                      fill="rgb(139, 92, 246)"
-                      stroke="white"
-                      strokeWidth="2"
-                    />
-                  );
-                })}
-                
-                {/* Metric Labels */}
-                {[
-                  { label: 'Win %', value: `(${filteredTrades.length > 0 ? ((filteredTrades.filter(t => (t.pnl || 0) > 0).length / filteredTrades.length) * 100).toFixed(1) : '0'}%)` },
-                  { label: 'Profit factor', value: `(${metrics.profitFactor.toFixed(1)})` },
-                  { label: 'Avg win/loss', value: `(${(metrics.avgWin / Math.max(metrics.avgLoss, 1)).toFixed(1)})` },
-                  { label: 'Max drawdown', value: `(${metrics.maxDrawdown.toFixed(1)}%)` },
-                  { label: 'Recovery factor', value: `(${(Math.abs(metrics.totalPnL) / Math.max(metrics.maxDrawdown * Math.abs(metrics.totalPnL) / 100, 1)).toFixed(1)})` },
-                  { label: 'Consistency', value: `(${edge.breakdown.consistency})` }
-                ].map((metric, i) => {
-                  const angle = (i * Math.PI) / 3 - Math.PI / 2;
-                  const labelRadius = 85;
-                  const x = 100 + labelRadius * Math.cos(angle);
-                  const y = 100 + labelRadius * Math.sin(angle);
-                  
-                  return (
-                    <g key={i}>
-                      <text
-                        x={x}
-                        y={y - 2}
-                        textAnchor="middle"
-                        className="text-xs font-medium fill-current text-muted-foreground"
-                        dominantBaseline="middle"
-                      >
-                        {metric.label}
-                      </text>
-                      <text
-                        x={x}
-                        y={y + 10}
-                        textAnchor="middle"
-                        className="text-xs fill-current text-muted-foreground"
-                        dominantBaseline="middle"
-                      >
-                        {metric.value}
-                      </text>
-                    </g>
-                  );
-                })}
-              </svg>
+            {/* Petal (Rose) Chart - unique visual */}
+            <div className="flex-shrink-0">
+              <PetalChart
+                items={[
+                  { label: 'Win %', value: edge.breakdown.winRate, sub: `${metrics.winRate.toFixed(1)}%` },
+                  { label: 'PF', value: edge.breakdown.profitFactor, sub: metrics.profitFactor.toFixed(2) },
+                  { label: 'Avg W/L', value: edge.breakdown.avgWinLoss, sub: (metrics.avgWin/Math.max(metrics.avgLoss,1)).toFixed(2) },
+                  { label: 'Max DD', value: edge.breakdown.maxDrawdown, sub: `${metrics.maxDrawdown.toFixed(1)}%` },
+                  { label: 'Recovery', value: edge.breakdown.recoveryFactor, sub: ((Math.abs(metrics.totalPnL))/Math.max(metrics.maxDrawdown * Math.abs(metrics.totalPnL)/100,1)).toFixed(2) },
+                  { label: 'Consistency', value: edge.breakdown.consistency, sub: '' },
+                ]}
+              />
             </div>
             
             {/* Score Display & Breakdown */}
