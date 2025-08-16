@@ -5,7 +5,12 @@ import { useAnalyticsTilesStore, type AnalyticsTileConfig, type AnalyticsTileId 
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
 
 const LABELS: Record<AnalyticsTileId, string> = {
-  keyMetrics: 'Key Metrics',
+  totalPnl: 'Total P&L',
+  winRate: 'Win Rate',
+  profitFactor: 'Profit Factor',
+  sharpeRatio: 'Sharpe Ratio',
+  maxDrawdown: 'Max Drawdown',
+  totalTrades: 'Total Trades',
   edgeScore: 'Edge Score',
   netDailyPnl: 'Net Daily P&L',
   topSymbols: 'Top Symbols',

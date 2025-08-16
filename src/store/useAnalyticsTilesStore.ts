@@ -4,7 +4,12 @@ import { STORAGE_KEYS } from '@/lib/localStorageUtils';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
 
 export type AnalyticsTileId =
-  | 'keyMetrics'
+  | 'totalPnl'
+  | 'winRate'
+  | 'profitFactor'
+  | 'sharpeRatio'
+  | 'maxDrawdown'
+  | 'totalTrades'
   | 'edgeScore'
   | 'netDailyPnl'
   | 'topSymbols'
@@ -21,7 +26,12 @@ interface AnalyticsTilesState {
 }
 
 const DEFAULT_LAYOUT: AnalyticsTileConfig[] = [
-  { id: 'keyMetrics', visible: true },
+  { id: 'totalPnl', visible: true },
+  { id: 'winRate', visible: true },
+  { id: 'profitFactor', visible: true },
+  { id: 'sharpeRatio', visible: true },
+  { id: 'maxDrawdown', visible: true },
+  { id: 'totalTrades', visible: true },
   { id: 'edgeScore', visible: true },
   { id: 'netDailyPnl', visible: true },
   { id: 'topSymbols', visible: true },

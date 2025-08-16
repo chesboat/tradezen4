@@ -599,22 +599,25 @@ export const AnalyticsView: React.FC = () => {
         </div>
       </div>
 
-      {/* Key Performance Metrics */}
-      {useAnalyticsTilesStore.getState().getLayout(selectedAccountId).find(t => t.id === 'keyMetrics')?.visible && (
+      {/* Key Performance Metrics (individually controlled tiles) */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-        <MetricCard
-          title="Total P&L"
-          value={metrics.totalPnL}
-          icon={<DollarSign className="w-5 h-5" />}
-          format="currency"
-          className={metrics.totalPnL >= 0 ? 'border-l-4 border-green-500' : 'border-l-4 border-red-500'}
-        />
-        <MetricCard
-          title="Win Rate"
-          value={metrics.winRate}
-          icon={<Target className="w-5 h-5" />}
-          format="percentage"
-        />
+        {useAnalyticsTilesStore.getState().getLayout(selectedAccountId).find(t => t.id === 'totalPnl')?.visible && (
+          <MetricCard
+            title="Total P&L"
+            value={metrics.totalPnL}
+            icon={<DollarSign className="w-5 h-5" />}
+            format="currency"
+            className={metrics.totalPnL >= 0 ? 'border-l-4 border-green-500' : 'border-l-4 border-red-500'}
+          />
+        )}
+        {useAnalyticsTilesStore.getState().getLayout(selectedAccountId).find(t => t.id === 'winRate')?.visible && (
+          <MetricCard
+            title="Win Rate"
+            value={metrics.winRate}
+            icon={<Target className="w-5 h-5" />}
+            format="percentage"
+          />
+        )}
         {/* Edge Score Card with Radar Chart */}
         {useAnalyticsTilesStore.getState().getLayout(selectedAccountId).find(t => t.id === 'edgeScore')?.visible && (
         <motion.div className="bg-muted/30 rounded-lg p-6 col-span-2" whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
@@ -706,30 +709,37 @@ export const AnalyticsView: React.FC = () => {
           </div>
         </motion.div>
         )}
-        <MetricCard
-          title="Profit Factor"
-          value={metrics.profitFactor}
-          icon={<TrendingUp className="w-5 h-5" />}
-        />
-        <MetricCard
-          title="Sharpe Ratio"
-          value={metrics.sharpeRatio}
-          icon={<BarChart3 className="w-5 h-5" />}
-        />
-        <MetricCard
-          title="Max Drawdown"
-          value={metrics.maxDrawdown}
-          icon={<TrendingDown className="w-5 h-5" />}
-          format="percentage"
-          className="border-l-4 border-orange-500"
-        />
-        <MetricCard
-          title="Total Trades"
-          value={metrics.totalTrades}
-          icon={<Activity className="w-5 h-5" />}
-        />
+        {useAnalyticsTilesStore.getState().getLayout(selectedAccountId).find(t => t.id === 'profitFactor')?.visible && (
+          <MetricCard
+            title="Profit Factor"
+            value={metrics.profitFactor}
+            icon={<TrendingUp className="w-5 h-5" />}
+          />
+        )}
+        {useAnalyticsTilesStore.getState().getLayout(selectedAccountId).find(t => t.id === 'sharpeRatio')?.visible && (
+          <MetricCard
+            title="Sharpe Ratio"
+            value={metrics.sharpeRatio}
+            icon={<BarChart3 className="w-5 h-5" />}
+          />
+        )}
+        {useAnalyticsTilesStore.getState().getLayout(selectedAccountId).find(t => t.id === 'maxDrawdown')?.visible && (
+          <MetricCard
+            title="Max Drawdown"
+            value={metrics.maxDrawdown}
+            icon={<TrendingDown className="w-5 h-5" />}
+            format="percentage"
+            className="border-l-4 border-orange-500"
+          />
+        )}
+        {useAnalyticsTilesStore.getState().getLayout(selectedAccountId).find(t => t.id === 'totalTrades')?.visible && (
+          <MetricCard
+            title="Total Trades"
+            value={metrics.totalTrades}
+            icon={<Activity className="w-5 h-5" />}
+          />
+        )}
       </div>
-      )}
 
       {/* Net Daily P&L */}
       {useAnalyticsTilesStore.getState().getLayout(selectedAccountId).find(t => t.id === 'netDailyPnl')?.visible && (
