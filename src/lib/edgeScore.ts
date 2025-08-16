@@ -1,12 +1,12 @@
 import { Trade } from '@/types';
 
 export interface EdgeScoreBreakdown {
-	winRate: number;
-	profitFactor: number;
-	expectancy: number;
-	consistency: number;
-	drawdown: number;
-	sampleSize: number;
+	winRate: number;        // 0-100: Win rate performance vs target (50%+)
+	profitFactor: number;   // 0-100: Profit factor performance vs target (1.5+)
+	expectancy: number;     // 0-100: Expected return per trade in R
+	consistency: number;    // 0-100: Sharpe-like consistency measure
+	drawdown: number;       // 0-100: Drawdown control (lower is better)
+	sampleSize: number;     // 0-100: Statistical significance (50+ trades)
 }
 
 export interface EdgeScoreResult {

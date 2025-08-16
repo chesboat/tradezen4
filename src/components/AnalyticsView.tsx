@@ -533,21 +533,70 @@ export const AnalyticsView: React.FC = () => {
           icon={<Target className="w-5 h-5" />}
           format="percentage"
         />
-        <motion.div className="bg-muted/30 rounded-lg p-6 flex flex-col justify-between" whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-muted-foreground flex items-center gap-2">
-              <Award className="w-5 h-5" />
-              Edge Score
+        {/* Edge Score Card */}
+        <motion.div className="bg-muted/30 rounded-lg p-6 col-span-2" whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Award className="w-5 h-5 text-muted-foreground" />
+              <h3 className="text-lg font-semibold">Edge Score</h3>
             </div>
-            <div className="text-xs text-muted-foreground">0-100</div>
+            <div className="text-xs text-muted-foreground">Trading Performance Composite</div>
           </div>
-          <div className="flex items-end justify-between">
-            <div className="text-4xl font-bold text-foreground">{edge.score}</div>
-            <div className="text-xs text-muted-foreground text-right">
-              WR {edge.breakdown.winRate} • PF {edge.breakdown.profitFactor}
-              <br/>
-              EXP {edge.breakdown.expectancy} • CONS {edge.breakdown.consistency}
+          
+          <div className="flex items-center gap-6">
+            {/* Score Display */}
+            <div className="flex flex-col items-center">
+              <div className="text-5xl font-bold text-foreground mb-1">{edge.score}</div>
+              <div className="text-sm text-muted-foreground">out of 100</div>
+              
+              {/* Color-coded progress bar */}
+              <div className="w-24 h-2 bg-muted rounded-full mt-2 overflow-hidden">
+                <div 
+                  className={`h-full transition-all duration-1000 ${
+                    edge.score >= 80 ? 'bg-green-500' :
+                    edge.score >= 60 ? 'bg-yellow-500' :
+                    edge.score >= 40 ? 'bg-orange-500' : 'bg-red-500'
+                  }`}
+                  style={{ width: `${edge.score}%` }}
+                />
+              </div>
             </div>
+            
+            {/* Breakdown */}
+            <div className="flex-1 grid grid-cols-2 gap-3 text-xs">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Win Rate:</span>
+                <span className="font-medium">{edge.breakdown.winRate}/100</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Profit Factor:</span>
+                <span className="font-medium">{edge.breakdown.profitFactor}/100</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Expectancy:</span>
+                <span className="font-medium">{edge.breakdown.expectancy}/100</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Consistency:</span>
+                <span className="font-medium">{edge.breakdown.consistency}/100</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Drawdown:</span>
+                <span className="font-medium">{edge.breakdown.drawdown}/100</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Sample Size:</span>
+                <span className="font-medium">{edge.breakdown.sampleSize}/100</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Interpretation */}
+          <div className="mt-4 text-xs text-muted-foreground">
+            {edge.score >= 80 ? "🟢 Excellent trading edge - strong across all metrics" :
+             edge.score >= 60 ? "🟡 Good edge with room for improvement" :
+             edge.score >= 40 ? "🟠 Developing edge - focus on weak areas" :
+             "🔴 Needs significant improvement - review strategy"}
           </div>
         </motion.div>
         <MetricCard
