@@ -17,6 +17,8 @@ import {
   ArrowDown,
   Minus,
   Eye,
+  EyeOff,
+  GripVertical,
   Filter,
   Download,
   RefreshCw,
@@ -561,7 +563,61 @@ export const AnalyticsView: React.FC = () => {
   };
 
   const analyticsTiles = useAnalyticsTilesStore();
+  const { getLayout, setLayout, toggleTile } = analyticsTiles;
+  const layout = getLayout(selectedAccountId);
   const [showTilesModal, setShowTilesModal] = useState(false);
+  const [editLayout, setEditLayout] = useState(false);
+
+  // IDs we allow to be re-ordered inline
+  const REORDERABLE_IDS = new Set(['edgeScore', 'netDailyPnl', 'topSymbols', 'recentTrades', 'riskAnalysis']);
+
+  const onDragStart = (e: React.DragEvent<HTMLDivElement>, id: string) => {
+    e.dataTransfer.setData('text/plain', id);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+  const onDrop = (e: React.DragEvent<HTMLDivElement>, targetId: string) => {
+    const sourceId = e.dataTransfer.getData('text/plain');
+    if (!sourceId || sourceId === targetId) return;
+    const current = [...layout];
+    const from = current.findIndex(t => t.id === sourceId);
+    const to = current.findIndex(t => t.id === targetId);
+    if (from < 0 || to < 0) return;
+    const moved = current.splice(from, 1)[0];
+    current.splice(to, 0, moved);
+    setLayout(selectedAccountId, current);
+  };
+
+  const TileFrame: React.FC<{ id: string; children: React.ReactNode; className?: string }>
+    = ({ id, children, className }) => {
+    const cfg = layout.find(t => t.id === id);
+    if (!cfg || !cfg.visible) return null;
+    return (
+      <div
+        className={cn('relative', className)}
+        draggable={editLayout}
+        onDragStart={e => onDragStart(e, id)}
+        onDragOver={e => editLayout && e.preventDefault()}
+        onDrop={e => editLayout && onDrop(e, id)}
+      >
+        {editLayout && (
+          <div className="absolute inset-x-0 -top-3 flex items-center justify-between px-2 text-muted-foreground">
+            <div className="flex items-center gap-1 text-xs">
+              <GripVertical className="w-4 h-4" />
+              Drag to reorder
+            </div>
+            <button
+              className="p-1 rounded hover:bg-muted"
+              onClick={() => toggleTile(selectedAccountId, id as any)}
+              title="Hide tile"
+            >
+              <Eye className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+        {children}
+      </div>
+    );
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -573,7 +629,13 @@ export const AnalyticsView: React.FC = () => {
         </div>
         
         <div className="flex items-center gap-4">
-          <button className="px-2 py-1 rounded bg-muted text-muted-foreground hover:bg-muted/80 text-xs" onClick={() => setShowTilesModal(true)}>Customize</button>
+          <button
+            className={cn('px-2 py-1 rounded text-xs', editLayout ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'bg-muted text-muted-foreground hover:bg-muted/80')}
+            onClick={() => setEditLayout(v => !v)}
+          >{editLayout ? 'Done' : 'Edit layout'}</button>
+          {!editLayout && (
+            <button className="px-2 py-1 rounded bg-muted text-muted-foreground hover:bg-muted/80 text-xs" onClick={() => setShowTilesModal(true)}>Customize</button>
+          )}
           {/* Period Filter */}
           <div className="flex bg-muted/30 rounded-lg p-1">
             {periodFilters.map((period) => (
@@ -741,37 +803,6 @@ export const AnalyticsView: React.FC = () => {
         )}
       </div>
 
-      {/* Net Daily P&L */}
-      {useAnalyticsTilesStore.getState().getLayout(selectedAccountId).find(t => t.id === 'netDailyPnl')?.visible && (
-      <div className="bg-card rounded-2xl p-6 border border-border">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold">Net P&L</h2>
-          <div className="flex items-center gap-3">
-            <div className="text-xs text-muted-foreground hidden md:block">
-              {pnlMode === 'daily' ? 'Bars: daily net' : 'Line: cumulative'}
-            </div>
-            <div className="flex bg-muted/40 rounded-md p-1">
-              {(['daily','cumulative'] as const).map(mode => (
-                <button
-                  key={mode}
-                  onClick={() => setPnlMode(mode)}
-                  className={cn(
-                    'px-2.5 py-1 rounded text-xs font-medium transition-colors',
-                    pnlMode === mode ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
-                  )}
-                >{mode === 'daily' ? 'Daily' : 'Cumulative'}</button>
-              ))}
-            </div>
-          </div>
-        </div>
-        {pnlMode === 'daily' ? (
-          <NetDailyPnLChart data={chartData} />
-        ) : (
-          <SimpleChart data={chartData} />
-        )}
-      </div>
-      )}
-
       {/* Removed secondary Performance Overview chart per request */}
 
       {/* Detailed Metrics Grid */}
@@ -838,8 +869,8 @@ export const AnalyticsView: React.FC = () => {
           </div>
         </div>
 
-        {/* Top Symbols */}
-        {useAnalyticsTilesStore.getState().getLayout(selectedAccountId).find(t => t.id === 'topSymbols')?.visible && (
+        {/* Top Symbols (kept here for grouping when not reordered) */}
+        {layout.find(t => t.id === 'topSymbols')?.visible && (
         <div className="bg-muted/30 rounded-lg p-6">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <Award className="w-5 h-5" />
@@ -870,7 +901,7 @@ export const AnalyticsView: React.FC = () => {
       </div>
 
       {/* Recent Trades (Analytics) */}
-      {useAnalyticsTilesStore.getState().getLayout(selectedAccountId).find(t => t.id === 'recentTrades')?.visible && (
+      {layout.find(t => t.id === 'recentTrades')?.visible && (
       <div className="bg-muted/30 rounded-lg p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold flex items-center gap-2">
@@ -936,7 +967,7 @@ export const AnalyticsView: React.FC = () => {
       )}
 
       {/* Risk Analysis */}
-      {useAnalyticsTilesStore.getState().getLayout(selectedAccountId).find(t => t.id === 'riskAnalysis')?.visible && (
+      {layout.find(t => t.id === 'riskAnalysis')?.visible && (
       <div className="bg-muted/30 rounded-lg p-6">
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <AlertTriangle className="w-5 h-5" />
@@ -966,6 +997,196 @@ export const AnalyticsView: React.FC = () => {
           </div>
         </div>
       </div>
+      )}
+
+      {/* Inline re-orderable grid for large tiles */}
+      <div className={cn('grid gap-6', 'md:grid-cols-2')}>
+        {layout
+          .filter(t => REORDERABLE_IDS.has(t.id))
+          .map(t => {
+            if (!t.visible && !editLayout) return null;
+            const id = t.id;
+            const content = (() => {
+              switch (id) {
+                case 'netDailyPnl':
+                  return (
+                    <div className="bg-card rounded-2xl p-6 border border-border">
+                      <div className="flex items-center justify-between mb-6">
+                        <h2 className="text-xl font-semibold">Net P&L</h2>
+                        <div className="flex items-center gap-3">
+                          <div className="text-xs text-muted-foreground hidden md:block">
+                            {pnlMode === 'daily' ? 'Bars: daily net' : 'Line: cumulative'}
+                          </div>
+                          <div className="flex bg-muted/40 rounded-md p-1">
+                            {(['daily','cumulative'] as const).map(mode => (
+                              <button
+                                key={mode}
+                                onClick={() => setPnlMode(mode)}
+                                className={cn('px-2.5 py-1 rounded text-xs font-medium transition-colors',
+                                  pnlMode === mode ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground')}
+                              >{mode === 'daily' ? 'Daily' : 'Cumulative'}</button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                      {pnlMode === 'daily' ? (
+                        <NetDailyPnLChart data={chartData} />
+                      ) : (
+                        <SimpleChart data={chartData} />
+                      )}
+                    </div>
+                  );
+                case 'edgeScore':
+                  return (
+                    <motion.div className="bg-muted/30 rounded-lg p-6" whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                          <Award className="w-5 h-5 text-muted-foreground" />
+                          <h3 className="text-lg font-semibold">Edge Score</h3>
+                          <button onClick={() => setShowEdgeScoreModal(true)} className="p-1 hover:bg-muted rounded transition-colors" title="Learn about Edge Score metrics">
+                            <Info className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+                          </button>
+                        </div>
+                        <div className="text-xs text-muted-foreground">Trading Performance Composite</div>
+                      </div>
+                      <div className="flex items-center gap-8">
+                        <div className="flex-shrink-0">
+                          <PetalChart
+                            items={[
+                              { label: 'Win %', value: edge.breakdown.winRate, sub: `${metrics.winRate.toFixed(1)}%` },
+                              { label: 'PF', value: edge.breakdown.profitFactor, sub: metrics.profitFactor.toFixed(2) },
+                              { label: 'Avg W/L', value: edge.breakdown.avgWinLoss, sub: (metrics.avgWin/Math.max(metrics.avgLoss,1)).toFixed(2) },
+                              { label: 'Max DD', value: edge.breakdown.maxDrawdown, sub: `${metrics.maxDrawdown.toFixed(1)}%` },
+                              { label: 'Recovery', value: edge.breakdown.recoveryFactor, sub: ((Math.abs(metrics.totalPnL))/Math.max(metrics.maxDrawdown * Math.abs(metrics.totalPnL)/100,1)).toFixed(2) },
+                              { label: 'Consistency', value: edge.breakdown.consistency, sub: '' },
+                            ]}
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-center mb-6">
+                            <div className="text-5xl font-bold text-foreground mb-2">{edge.score}</div>
+                            <div className="text-sm text-muted-foreground mb-3">EDGE SCORE</div>
+                            <div className="w-40 h-2 bg-muted rounded-full mx-auto overflow-hidden">
+                              <div className={`h-full transition-all duration-1000 ${edge.score >= 80 ? 'bg-green-500' : edge.score >= 60 ? 'bg-yellow-500' : edge.score >= 40 ? 'bg-orange-500' : 'bg-red-500'}`} style={{ width: `${edge.score}%` }} />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-3 gap-x-4 gap-y-3 text-xs">
+                            <div className="text-center"><div className="text-muted-foreground mb-1">Win %</div><div className="font-semibold">{edge.breakdown.winRate}</div></div>
+                            <div className="text-center"><div className="text-muted-foreground mb-1">Profit Factor</div><div className="font-semibold">{edge.breakdown.profitFactor}</div></div>
+                            <div className="text-center"><div className="text-muted-foreground mb-1">Avg W/L</div><div className="font-semibold">{edge.breakdown.avgWinLoss}</div></div>
+                            <div className="text-center"><div className="text-muted-foreground mb-1">Max DD</div><div className="font-semibold">{edge.breakdown.maxDrawdown}</div></div>
+                            <div className="text-center"><div className="text-muted-foreground mb-1">Recovery</div><div className="font-semibold">{edge.breakdown.recoveryFactor}</div></div>
+                            <div className="text-center"><div className="text-muted-foreground mb-1">Consistency</div><div className="font-semibold">{edge.breakdown.consistency}</div></div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-4 text-xs text-muted-foreground">
+                        {edge.score >= 80 ? '🟢 Excellent trading performance - strong across all metrics' : edge.score >= 60 ? '🟡 Good performance with room for improvement' : edge.score >= 40 ? '🟠 Developing performance - focus on weak areas' : '🔴 Needs significant improvement - review strategy'}
+                      </div>
+                    </motion.div>
+                  );
+                case 'topSymbols':
+                  return (
+                    <div className="bg-muted/30 rounded-lg p-6">
+                      <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><Award className="w-5 h-5" /> Top Performing Symbols</h3>
+                      <div className="space-y-3">
+                        {symbolPerformance.slice(0, 5).map((symbol, index) => (
+                          <div key={symbol.symbol} className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="w-6 h-6 bg-primary/20 text-primary text-xs rounded-full flex items-center justify-center">{index + 1}</span>
+                              <span className="font-medium">{symbol.symbol}</span>
+                            </div>
+                            <div className="text-right">
+                              <div className={cn('font-medium', symbol.pnl >= 0 ? 'text-green-500' : 'text-red-500')}>{formatCurrency(symbol.pnl)}</div>
+                              <div className="text-xs text-muted-foreground">{symbol.winRate.toFixed(0)}% • {symbol.trades} trades</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                case 'recentTrades':
+                  return (
+                    <div className="bg-muted/30 rounded-lg p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold flex items-center gap-2"><Calendar className="w-5 h-5" /> Recent Trades</h3>
+                        <div className="text-xs text-muted-foreground">Showing latest 20</div>
+                      </div>
+                      {filteredTrades.length === 0 ? (
+                        <div className="text-center py-6 text-sm text-muted-foreground">No trades in selected period</div>
+                      ) : (
+                        <div className="overflow-x-auto rounded-lg border border-border/60">
+                          <table className="w-full text-sm">
+                            <thead className="bg-muted/40 text-muted-foreground">
+                              <tr>
+                                <th className="text-left px-3 py-2">Date</th>
+                                <th className="text-left px-3 py-2">Symbol</th>
+                                <th className="text-left px-3 py-2">Side</th>
+                                <th className="text-right px-3 py-2">P&L</th>
+                                <th className="text-right px-3 py-2">R</th>
+                                <th className="text-left px-3 py-2">Result</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {filteredTrades.slice().sort((a, b) => new Date(b.entryTime).getTime() - new Date(a.entryTime).getTime()).slice(0, 20).map((t) => {
+                                const cls = classifyTradeResult(t);
+                                const isScratch = cls === 'breakeven';
+                                return (
+                                  <tr key={t.id} className="border-t border-border/60 hover:bg-muted/20">
+                                    <td className="px-3 py-2 whitespace-nowrap">{new Date(t.entryTime).toLocaleDateString()}</td>
+                                    <td className="px-3 py-2 font-medium">{t.symbol}</td>
+                                    <td className="px-3 py-2"><span className={`px-2 py-0.5 rounded text-xs font-medium ${t.direction === 'long' ? 'bg-green-500/20 text-green-500' : 'bg-red-500/20 text-red-500'}`}>{t.direction?.toUpperCase()}</span></td>
+                                    <td className={`px-3 py-2 text-right ${((t.pnl || 0) >= 0) ? 'text-green-500' : 'text-red-500'}`}>{formatCurrency(t.pnl || 0)}</td>
+                                    <td className="px-3 py-2 text-right">{Number.isFinite(t.riskRewardRatio) ? t.riskRewardRatio.toFixed(2) : '—'}</td>
+                                    <td className="px-3 py-2"><div className="flex items-center gap-1"><span className="capitalize text-muted-foreground">{cls}</span>{isScratch && (<Tooltip content="Scratch (excluded from win rate)"><span className="inline-flex items-center gap-1 text-[11px] text-yellow-500"><MinusCircle className="w-3.5 h-3.5" /></span></Tooltip>)}</div></td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  );
+                case 'riskAnalysis':
+                  return (
+                    <div className="bg-muted/30 rounded-lg p-6">
+                      <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><AlertTriangle className="w-5 h-5" /> Risk Analysis</h3>
+                      <div className="grid md:grid-cols-3 gap-6">
+                        <div className="text-center"><div className="text-2xl font-bold text-orange-500 mb-2">{metrics.maxDrawdown.toFixed(1)}%</div><div className="text-sm text-muted-foreground">Maximum Drawdown</div><div className="text-xs text-muted-foreground mt-1">Largest peak-to-trough decline</div></div>
+                        <div className="text-center"><div className="text-2xl font-bold text-blue-500 mb-2">{metrics.sharpeRatio.toFixed(2)}</div><div className="text-sm text-muted-foreground">Sharpe Ratio</div><div className="text-xs text-muted-foreground mt-1">Risk-adjusted returns</div></div>
+                        <div className="text-center"><div className="text-2xl font-bold text-purple-500 mb-2">{metrics.profitFactor.toFixed(2)}</div><div className="text-sm text-muted-foreground">Profit Factor</div><div className="text-xs text-muted-foreground mt-1">Gross profit / Gross loss</div></div>
+                      </div>
+                    </div>
+                  );
+                default:
+                  return null;
+              }
+            })();
+            return editLayout ? (
+              <div key={id} className="relative">
+                <div className="absolute right-2 top-2 z-10">
+                  <button className="p-1 rounded bg-white/50 dark:bg-black/40 border border-border hover:bg-white/70 dark:hover:bg-black/60" onClick={() => toggleTile(selectedAccountId, id as any)}>
+                    <EyeOff className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                </div>
+                <div draggable onDragStart={(e) => onDragStart(e, id)} onDragOver={(e) => e.preventDefault()} onDrop={(e) => onDrop(e, id)}>{content}</div>
+              </div>
+            ) : (
+              <div key={id}>{content}</div>
+            );
+          })}
+      </div>
+
+      {editLayout && (
+        <div className="mt-2 text-xs text-muted-foreground flex flex-wrap items-center gap-2">
+          Hidden:
+          {layout.filter(t => REORDERABLE_IDS.has(t.id) && !t.visible).map(t => (
+            <button key={t.id} className="px-2 py-0.5 rounded border border-border hover:bg-muted" onClick={() => toggleTile(selectedAccountId, t.id)}>
+              <Eye className="w-3.5 h-3.5 inline mr-1" /> {t.id}
+            </button>
+          ))}
+        </div>
       )}
 
       {/* Empty State */}
