@@ -40,7 +40,7 @@ import { generateQuestSuggestions } from '@/lib/ai/generateQuestSuggestions';
 import { CalendarDay, TradeResult, MoodType, Quest } from '@/types';
 import { formatCurrency, formatDate, getMoodColor, formatTime } from '@/lib/localStorageUtils';
 
-import { cn, summarizeWinLossScratch } from '@/lib/utils';
+import { cn, summarizeWinLossScratch, classifyTradeResult } from '@/lib/utils';
 import { TagPill, TagList, TagInput } from './TagPill';
 import { NoteContent } from './NoteContent';
 import { MoodTimeline } from './MoodTimeline';
@@ -1887,8 +1887,21 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
                               )}>
                                 {trade.pnl ? formatCurrency(trade.pnl) : 'N/A'}
                               </div>
-                              <div className="text-sm text-muted-foreground">
+                              <div className="text-sm text-muted-foreground flex items-center gap-1">
                                 {formatTime(trade.entryTime)}
+                                {(() => {
+                                  const cls = classifyTradeResult(trade);
+                                  if (cls === 'breakeven') {
+                                    return (
+                                      <Tooltip content="Scratch (excluded from win rate)">
+                                        <span className="inline-flex items-center gap-1 text-[11px] text-yellow-500">
+                                          <Minus className="w-3.5 h-3.5" />
+                                        </span>
+                                      </Tooltip>
+                                    );
+                                  }
+                                  return null;
+                                })()}
                               </div>
                             </div>
                           </div>

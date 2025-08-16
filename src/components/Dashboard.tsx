@@ -35,6 +35,7 @@ import { useReflectionTemplateStore } from '@/store/useReflectionTemplateStore';
 import { CoachChat } from './CoachChat';
 import { useAppSettingsStore } from '@/store/useAppSettingsStore';
 import { summarizeWinLossScratch, classifyTradeResult } from '@/lib/utils';
+import { Tooltip } from './ui/Tooltip';
 
 interface KPICardProps {
   title: string;
@@ -1004,9 +1005,11 @@ export const Dashboard: React.FC = () => {
                             <div className="flex items-center gap-1">
                               <span className="capitalize text-muted-foreground">{cls}</span>
                               {isScratch && (
-                                <span className="inline-flex items-center gap-1 text-[11px] text-yellow-500" title="Scratch (excluded from win rate)">
-                                  <MinusCircle className="w-3.5 h-3.5" />
-                                </span>
+                                <Tooltip content="Scratch (excluded from win rate)">
+                                  <span className="inline-flex items-center gap-1 text-[11px] text-yellow-500">
+                                    <MinusCircle className="w-3.5 h-3.5" />
+                                  </span>
+                                </Tooltip>
                               )}
                             </div>
                           </td>

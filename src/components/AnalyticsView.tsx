@@ -20,7 +20,8 @@ import {
   Filter,
   Download,
   RefreshCw,
-  Info
+  Info,
+  MinusCircle
 } from 'lucide-react';
 import { useTradeStore } from '@/store/useTradeStore';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
@@ -30,6 +31,7 @@ import { Trade, TradeResult, MoodType } from '@/types';
 import { formatCurrency, formatRelativeTime } from '@/lib/localStorageUtils';
 import { cn } from '@/lib/utils';
 import EdgeScoreExplanationModal from './EdgeScoreExplanationModal';
+import { Tooltip } from './ui/Tooltip';
 
 interface PeriodFilter {
   label: string;
@@ -890,7 +892,11 @@ export const AnalyticsView: React.FC = () => {
                           <div className="flex items-center gap-1">
                             <span className="capitalize text-muted-foreground">{cls}</span>
                             {isScratch && (
-                              <span className="inline-flex items-center gap-1 text-[11px] text-yellow-500" title="Scratch (excluded from win rate)">⊖</span>
+                              <Tooltip content="Scratch (excluded from win rate)">
+                                <span className="inline-flex items-center gap-1 text-[11px] text-yellow-500">
+                                  <MinusCircle className="w-3.5 h-3.5" />
+                                </span>
+                              </Tooltip>
                             )}
                           </div>
                         </td>
