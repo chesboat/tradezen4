@@ -32,6 +32,7 @@ import type { Quest, QuickNote } from '@/types';
 import { useSessionStore } from '@/store/useSessionStore';
 import { useNavigationStore } from '@/store/useNavigationStore';
 import { useDashboardTilesStore, type DashboardTileId } from '@/store/useDashboardTilesStore';
+import DashboardTilesModal from './DashboardTilesModal';
 import { useReflectionTemplateStore } from '@/store/useReflectionTemplateStore';
 import { CoachChat } from './CoachChat';
 import { useAppSettingsStore } from '@/store/useAppSettingsStore';
@@ -181,6 +182,7 @@ const XPLevelWidget: React.FC = () => {
 
 export const Dashboard: React.FC = () => {
   const { layoutByAccount, getLayout, toggleTile, setLayout, resetLayout } = useDashboardTilesStore();
+  const [showTilesModal, setShowTilesModal] = useState(false);
   const { trades } = useTradeStore();
   const { accounts, selectedAccountId } = useAccountFilterStore();
   const { quests, pinnedQuests, cleanupPinnedQuests } = useQuestStore();
@@ -631,7 +633,7 @@ export const Dashboard: React.FC = () => {
       <div className="mb-4 flex items-center justify-end">
         <button
           className="text-xs px-3 py-1.5 rounded bg-muted text-muted-foreground hover:bg-muted/80"
-          onClick={() => setShowMoreIdeas(v => !v)}
+          onClick={() => setShowTilesModal(true)}
           title="Customize dashboard tiles"
         >Customize</button>
       </div>
@@ -1379,6 +1381,8 @@ export const Dashboard: React.FC = () => {
           ))}
         </div>
       )}
+      {/* Customize Tiles Modal */}
+      <DashboardTilesModal isOpen={showTilesModal} onClose={() => setShowTilesModal(false)} />
     </div>
   );
 }; 
