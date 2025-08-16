@@ -31,6 +31,7 @@ import { getFormattedLevel, getXPProgressPercentage } from '@/store/useUserProfi
 import type { Quest, QuickNote } from '@/types';
 import { useSessionStore } from '@/store/useSessionStore';
 import { useNavigationStore } from '@/store/useNavigationStore';
+import { useDashboardTilesStore, type DashboardTileId } from '@/store/useDashboardTilesStore';
 import { useReflectionTemplateStore } from '@/store/useReflectionTemplateStore';
 import { CoachChat } from './CoachChat';
 import { useAppSettingsStore } from '@/store/useAppSettingsStore';
@@ -179,6 +180,7 @@ const XPLevelWidget: React.FC = () => {
 };
 
 export const Dashboard: React.FC = () => {
+  const { layoutByAccount, getLayout, toggleTile, setLayout, resetLayout } = useDashboardTilesStore();
   const { trades } = useTradeStore();
   const { accounts, selectedAccountId } = useAccountFilterStore();
   const { quests, pinnedQuests, cleanupPinnedQuests } = useQuestStore();
@@ -625,9 +627,19 @@ export const Dashboard: React.FC = () => {
         </motion.div>
       </div>
 
-      {/* Top row: Daily Focus, Guardrails, Mini-KPIs */}
+      {/* Customize button */}
+      <div className="mb-4 flex items-center justify-end">
+        <button
+          className="text-xs px-3 py-1.5 rounded bg-muted text-muted-foreground hover:bg-muted/80"
+          onClick={() => setShowMoreIdeas(v => !v)}
+          title="Customize dashboard tiles"
+        >Customize</button>
+      </div>
+
+      {/* Top row: Daily Focus, Guardrails, Mini-KPIs (rendered if visible) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         {/* Daily Focus */}
+        {useDashboardTilesStore.getState().getLayout(selectedAccountId).find(t => t.id === 'dailyFocus')?.visible && (
         <motion.div className="bg-card rounded-2xl p-5 border border-border" whileHover={{ scale: 1.01 }}>
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
@@ -735,8 +747,10 @@ export const Dashboard: React.FC = () => {
             </div>
           )}
         </motion.div>
+        )}
 
         {/* Session Guardrails */}
+        {useDashboardTilesStore.getState().getLayout(selectedAccountId).find(t => t.id === 'guardrails')?.visible && (
         <motion.div className="bg-card rounded-2xl p-5 border border-border" whileHover={{ scale: 1.01 }}>
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
@@ -848,8 +862,10 @@ export const Dashboard: React.FC = () => {
             )}
           </div>
         </motion.div>
+        )}
 
         {/* Compact Focus + Exec tile */}
+        {useDashboardTilesStore.getState().getLayout(selectedAccountId).find(t => t.id === 'miniKpis')?.visible && (
         <motion.div className="bg-card rounded-2xl p-5 border border-border" whileHover={{ scale: 1.01 }}>
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
@@ -879,6 +895,7 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
         </motion.div>
+        )}
       </div>
 
       {/* KPI Cards */}
@@ -948,6 +965,7 @@ export const Dashboard: React.FC = () => {
       {/* Recent Trades + Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* Recent Trades tile */}
+        {useDashboardTilesStore.getState().getLayout(selectedAccountId).find(t => t.id === 'recentTrades')?.visible && (
         <motion.div
           className="bg-card rounded-2xl p-6 border border-border"
           initial={{ opacity: 0, x: -20 }}
@@ -1021,7 +1039,9 @@ export const Dashboard: React.FC = () => {
             </div>
           )}
         </motion.div>
+        )}
         <motion.div
+          style={{ display: useDashboardTilesStore.getState().getLayout(selectedAccountId).find(t => t.id === 'pinnedQuests')?.visible ? undefined : 'none' }}
           className="bg-card rounded-2xl p-6 border border-border"
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -1091,6 +1111,7 @@ export const Dashboard: React.FC = () => {
         </motion.div>
 
         <motion.div
+          style={{ display: useDashboardTilesStore.getState().getLayout(selectedAccountId).find(t => t.id === 'gptInsights')?.visible ? undefined : 'none' }}
           className="bg-card rounded-2xl p-6 border border-border"
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -1142,7 +1163,8 @@ export const Dashboard: React.FC = () => {
       {/* Pattern Radar + Reflection Progress + XP/Level */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         {/* Pattern Radar */}
-        <motion.div className="bg-card rounded-2xl p-6 border border-border" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+        <motion.div className="bg-card rounded-2xl p-6 border border-border" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+          style={{ display: useDashboardTilesStore.getState().getLayout(selectedAccountId).find(t => t.id === 'patternRadar')?.visible ? undefined : 'none' }}>
           <div className="flex items-center gap-3 mb-3">
             <Brain className="w-6 h-6 text-blue-500" />
             <h2 className="text-xl font-semibold text-card-foreground">Pattern Radar</h2>
@@ -1151,7 +1173,8 @@ export const Dashboard: React.FC = () => {
         </motion.div>
 
         {/* Reflection Progress */}
-        <motion.div className="bg-card rounded-2xl p-6 border border-border" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+        <motion.div className="bg-card rounded-2xl p-6 border border-border" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+          style={{ display: useDashboardTilesStore.getState().getLayout(selectedAccountId).find(t => t.id === 'reflectionProgress')?.visible ? undefined : 'none' }}>
           <div className="flex items-center gap-3 mb-3">
             <BookOpen className="w-6 h-6 text-emerald-500" />
             <h2 className="text-xl font-semibold text-card-foreground">Reflection Progress</h2>
@@ -1160,7 +1183,8 @@ export const Dashboard: React.FC = () => {
         </motion.div>
 
         {/* XP / Level */}
-        <motion.div className="bg-card rounded-2xl p-6 border border-border" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+        <motion.div className="bg-card rounded-2xl p-6 border border-border" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+          style={{ display: useDashboardTilesStore.getState().getLayout(selectedAccountId).find(t => t.id === 'xpLevel')?.visible ? undefined : 'none' }}>
           <div className="flex items-center gap-3 mb-3">
             <Trophy className="w-6 h-6 text-purple-500" />
             <h2 className="text-xl font-semibold text-card-foreground">Progress</h2>

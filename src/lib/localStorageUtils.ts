@@ -89,6 +89,7 @@ export const STORAGE_KEYS = {
   APP_SETTINGS: 'tradzen_app_settings',
   TODO_TASKS: 'tradzen_todo_tasks',
   TODO_DRAWER_EXPANDED: 'tradzen_todo_drawer_expanded',
+  DASHBOARD_TILES: 'tradzen_dashboard_tiles',
 } as const;
 
 /**
