@@ -45,15 +45,24 @@ export const useAnalyticsTilesStore = create<AnalyticsTilesState>()(
       layoutByAccount: {},
       getLayout: (accountSelection) => {
         const key = accountSelection || 'all';
-        return get().layoutByAccount[key] || DEFAULT_LAYOUT;
+        const existing = get().layoutByAccount[key] || [];
+        const knownIds = new Set(DEFAULT_LAYOUT.map(t => t.id));
+        const filtered = existing.filter(t => knownIds.has(t.id));
+        const missing = DEFAULT_LAYOUT.filter(t => !filtered.some(x => x.id === t.id));
+        const normalized = [...filtered, ...missing];
+        return normalized.length > 0 ? normalized : DEFAULT_LAYOUT;
       },
       setLayout: (accountSelection, layout) => {
         const key = accountSelection || 'all';
-        set((state) => ({ layoutByAccount: { ...state.layoutByAccount, [key]: layout } }));
+        const knownIds = new Set(DEFAULT_LAYOUT.map(t => t.id));
+        const filtered = layout.filter(t => knownIds.has(t.id));
+        const missing = DEFAULT_LAYOUT.filter(t => !filtered.some(x => x.id === t.id));
+        const normalized = [...filtered, ...missing];
+        set((state) => ({ layoutByAccount: { ...state.layoutByAccount, [key]: normalized } }));
       },
       toggleTile: (accountSelection, id) => {
         const key = accountSelection || 'all';
-        const current = get().layoutByAccount[key] || DEFAULT_LAYOUT;
+        const current = get().getLayout(accountSelection);
         const next = current.map(t => t.id === id ? { ...t, visible: !t.visible } : t);
         set((state) => ({ layoutByAccount: { ...state.layoutByAccount, [key]: next } }));
       },
