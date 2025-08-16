@@ -74,6 +74,7 @@ export const AnalyticsView: React.FC = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodFilter>(periodFilters[2]); // 90D default
   const [activeChart, setActiveChart] = useState<'pnl' | 'winrate' | 'trades'>('pnl');
   const [pnlMode, setPnlMode] = useState<'daily' | 'cumulative'>('daily');
+  const [chartStyle, setChartStyle] = useState<'classic' | 'glow' | 'mono'>('classic');
 
   // Filter trades by account and period
   const filteredTrades = useMemo(() => {
