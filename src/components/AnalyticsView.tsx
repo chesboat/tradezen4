@@ -72,9 +72,7 @@ export const AnalyticsView: React.FC = () => {
   const { selectedAccountId } = useAccountFilterStore();
   
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodFilter>(periodFilters[2]); // 90D default
-  const [activeChart, setActiveChart] = useState<'pnl' | 'winrate' | 'trades'>('pnl');
   const [pnlMode, setPnlMode] = useState<'daily' | 'cumulative'>('daily');
-  const [chartStyle, setChartStyle] = useState<'classic' | 'glow' | 'mono'>('classic');
 
   // Filter trades by account and period
   const filteredTrades = useMemo(() => {
@@ -306,7 +304,7 @@ export const AnalyticsView: React.FC = () => {
     );
   };
 
-  const SimpleChart: React.FC<{ data: ChartDataPoint[]; styleKey?: 'classic' | 'glow' | 'mono' }> = ({ data, styleKey = 'classic' }) => {
+  const SimpleChart: React.FC<{ data: ChartDataPoint[] }> = ({ data }) => {
     if (data.length === 0) return <div className="h-48 flex items-center justify-center text-muted-foreground">No data available</div>;
 
     const maxValue = Math.max(...data.map(d => d.cumulative));
@@ -344,11 +342,11 @@ export const AnalyticsView: React.FC = () => {
       return `${acc} C ${cp1.x},${cp1.y} ${cp2.x},${cp2.y} ${point.x},${point.y}`;
     }, '');
 
-    const lineColor = styleKey === 'mono' ? 'currentColor' : 'rgb(34, 197, 94)';
-    const strokeWidth = styleKey === 'glow' ? 1.2 : (styleKey === 'mono' ? 0.8 : 1);
-    const dot = styleKey === 'glow';
-    const gradTop = styleKey === 'mono' ? 'rgba(120,120,120,0.10)' : (styleKey === 'glow' ? 'rgba(34,197,94,0.30)' : 'rgba(34,197,94,0.25)');
-    const gradBottom = styleKey === 'mono' ? 'rgba(120,120,120,0.02)' : (styleKey === 'glow' ? 'rgba(34,197,94,0.04)' : 'rgba(34,197,94,0.05)');
+    const lineColor = 'rgb(34, 197, 94)';
+    const strokeWidth = 1; // slim
+    const dot = false; // no dots for cleaner look
+    const gradTop = 'rgba(34,197,94,0.22)';
+    const gradBottom = 'rgba(34,197,94,0.05)';
 
     return (
       <div className="h-48 relative">
@@ -358,15 +356,7 @@ export const AnalyticsView: React.FC = () => {
               <stop offset="0%" stopColor={gradTop} />
               <stop offset="100%" stopColor={gradBottom} />
             </linearGradient>
-            {styleKey === 'glow' && (
-              <filter id="glow">
-                <feGaussianBlur stdDeviation="1.5" result="coloredBlur" />
-                <feMerge>
-                  <feMergeNode in="coloredBlur" />
-                  <feMergeNode in="SourceGraphic" />
-                </feMerge>
-              </filter>
-            )}
+            
           </defs>
           
           {/* Grid lines */}
@@ -385,9 +375,7 @@ export const AnalyticsView: React.FC = () => {
           
           {/* Chart line */}
           <path d={pathD} fill="none" stroke={lineColor} strokeWidth={strokeWidth}
-            strokeLinecap="round" strokeLinejoin="round"
-            filter={styleKey === 'glow' ? 'url(#glow)' : undefined}
-          />
+            strokeLinecap="round" strokeLinejoin="round" />
           {dot && data.map((d, i) => (
             <circle key={d.date} cx={xPercent(i)} cy={yPercent(d.cumulative)} r={0.5} fill={lineColor} />
           ))}
@@ -400,8 +388,8 @@ export const AnalyticsView: React.FC = () => {
   };
 
   // Net Daily P&L bar chart with tooltip
-  const NetDailyPnLChart: React.FC<{ data: ChartDataPoint[]; styleKey?: 'classic' | 'glow' | 'mono' }>
-    = ({ data, styleKey = 'classic' }) => {
+  const NetDailyPnLChart: React.FC<{ data: ChartDataPoint[] }>
+    = ({ data }) => {
     if (data.length === 0) return (
       <div className="h-56 flex items-center justify-center text-muted-foreground">No data available</div>
     );
@@ -449,13 +437,13 @@ export const AnalyticsView: React.FC = () => {
             {/* bars */}
             {data.map((d, i) => {
               const x = xForIndex(i);
-              const color = d.value >= 0 ? (styleKey === 'mono' ? 'currentColor' : 'rgb(34,197,94)') : 'rgb(239,68,68)';
+              const color = d.value >= 0 ? 'rgb(34,197,94)' : 'rgb(239,68,68)';
               // Positive bars go up from zero, negatives go down from zero
               const yTop = d.value >= 0 ? yForValue(d.value) : zeroY;
               const h = Math.max(1, Math.abs((d.value >= 0 ? zeroY - yTop : yForValue(d.value) - zeroY)));
               return (
                 <rect key={d.date} x={x} width={barWidth} y={yTop} height={h}
-                  fill={color} opacity={hoverIdx === i ? 0.95 : 0.75} rx={styleKey === 'glow' ? 3 : 2} />
+                  fill={color} opacity={hoverIdx === i ? 0.95 : 0.75} rx={2} />
               );
             })}
 
@@ -585,56 +573,16 @@ export const AnalyticsView: React.FC = () => {
                 >{mode === 'daily' ? 'Daily' : 'Cumulative'}</button>
               ))}
             </div>
-            <div className="hidden sm:flex bg-muted/40 rounded-md p-1 ml-2">
-              {(['classic','glow','mono'] as const).map(s => (
-                <button
-                  key={s}
-                  onClick={() => setChartStyle(s)}
-                  className={cn(
-                    'px-2.5 py-1 rounded text-xs font-medium transition-colors',
-                    chartStyle === s ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'
-                  )}
-                  title={s === 'mono' ? 'Monochrome' : s}
-                >{s}</button>
-              ))}
-            </div>
           </div>
         </div>
         {pnlMode === 'daily' ? (
-          <NetDailyPnLChart data={chartData} styleKey={chartStyle as any} />
+          <NetDailyPnLChart data={chartData} />
         ) : (
-          <SimpleChart data={chartData} styleKey={chartStyle as any} />
+          <SimpleChart data={chartData} />
         )}
       </div>
 
-      {/* Performance Chart (cumulative/others) */}
-      <div className="bg-muted/30 rounded-lg p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold">Performance Overview</h2>
-          <div className="flex bg-muted/30 rounded-lg p-1">
-            {[
-              { key: 'pnl', label: 'P&L', icon: DollarSign },
-              { key: 'winrate', label: 'Win Rate', icon: Target },
-              { key: 'trades', label: 'Trade Count', icon: BarChart3 },
-            ].map(({ key, label, icon: Icon }) => (
-              <button
-                key={key}
-                onClick={() => setActiveChart(key as any)}
-                className={cn(
-                  'flex items-center gap-2 px-3 py-1 rounded text-sm font-medium transition-colors',
-                  activeChart === key
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:text-foreground'
-                )}
-              >
-                <Icon className="w-4 h-4" />
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-        <SimpleChart data={chartData} />
-      </div>
+      {/* Removed secondary Performance Overview chart per request */}
 
       {/* Detailed Metrics Grid */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
