@@ -394,16 +394,16 @@ export const AnalyticsView: React.FC = () => {
   // Unique Petal (Rose) Chart for Edge Score metrics
   const PetalChart: React.FC<{ items: { label: string; value: number; sub?: string }[] }>
     = ({ items }) => {
-    const cx = 100; const cy = 100; // center
-    const innerR = 28;             // inner radius for petal base
-    const maxR = 78;               // max radius for petal tip
+    const cx = 110; const cy = 110; // center (moved to accommodate labels)
+    const innerR = 28;              // inner radius for petal base
+    const maxR = 70;                // max radius for petal tip (reduced)
     const angleStep = (Math.PI * 2) / items.length;
 
     const polar = (r: number, a: number) => ({ x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) });
     const colors = ['#8b5cf6','#3b82f6','#22c55e','#eab308','#f59e0b','#ef4444'];
 
     return (
-      <svg width={220} height={220} viewBox="0 0 200 200" className="drop-shadow-sm">
+      <svg width={220} height={220} viewBox="0 0 220 220" className="drop-shadow-sm">
         {/* background ring */}
         <circle cx={cx} cy={cy} r={maxR} fill="none" stroke="currentColor" strokeOpacity={0.12} />
         <circle cx={cx} cy={cy} r={innerR} fill="currentColor" opacity={0.05} />
@@ -436,15 +436,15 @@ export const AnalyticsView: React.FC = () => {
                 stroke="currentColor" strokeOpacity={0.08} />
               {/* label */}
               {(() => {
-                const labelR = maxR + 12;
+                const labelR = maxR + 18;
                 const lp = polar(labelR, am);
                 return (
                   <g>
-                    <text x={lp.x} y={lp.y - 6} textAnchor="middle" className="text-[10px] fill-current text-muted-foreground">
+                    <text x={lp.x} y={lp.y - 4} textAnchor="middle" className="text-[11px] font-medium fill-current text-muted-foreground">
                       {item.label}
                     </text>
                     {item.sub && (
-                      <text x={lp.x} y={lp.y + 6} textAnchor="middle" className="text-[10px] fill-current text-muted-foreground">
+                      <text x={lp.x} y={lp.y + 8} textAnchor="middle" className="text-[10px] fill-current text-muted-foreground">
                         {item.sub}
                       </text>
                     )}
@@ -630,50 +630,48 @@ export const AnalyticsView: React.FC = () => {
             
             {/* Score Display & Breakdown */}
             <div className="flex-1">
-              <div className="flex items-center gap-6 mb-4">
-                <div className="text-center">
-                  <div className="text-4xl font-bold text-foreground mb-1">{edge.score}</div>
-                  <div className="text-sm text-muted-foreground">EDGE SCORE</div>
-                  
-                  {/* Color-coded progress bar */}
-                  <div className="w-32 h-2 bg-muted rounded-full mt-2 overflow-hidden">
-                    <div 
-                      className={`h-full transition-all duration-1000 ${
-                        edge.score >= 80 ? 'bg-green-500' :
-                        edge.score >= 60 ? 'bg-yellow-500' :
-                        edge.score >= 40 ? 'bg-orange-500' : 'bg-red-500'
-                      }`}
-                      style={{ width: `${edge.score}%` }}
-                    />
-                  </div>
+              <div className="text-center mb-6">
+                <div className="text-5xl font-bold text-foreground mb-2">{edge.score}</div>
+                <div className="text-sm text-muted-foreground mb-3">EDGE SCORE</div>
+                
+                {/* Color-coded progress bar */}
+                <div className="w-40 h-2 bg-muted rounded-full mx-auto overflow-hidden">
+                  <div 
+                    className={`h-full transition-all duration-1000 ${
+                      edge.score >= 80 ? 'bg-green-500' :
+                      edge.score >= 60 ? 'bg-yellow-500' :
+                      edge.score >= 40 ? 'bg-orange-500' : 'bg-red-500'
+                    }`}
+                    style={{ width: `${edge.score}%` }}
+                  />
                 </div>
               </div>
               
-              {/* Metric Labels */}
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Win %:</span>
-                  <span className="font-medium">{edge.breakdown.winRate}</span>
+              {/* Compact Metric Grid */}
+              <div className="grid grid-cols-3 gap-x-4 gap-y-3 text-xs">
+                <div className="text-center">
+                  <div className="text-muted-foreground mb-1">Win %</div>
+                  <div className="font-semibold">{edge.breakdown.winRate}</div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Profit Factor:</span>
-                  <span className="font-medium">{edge.breakdown.profitFactor}</span>
+                <div className="text-center">
+                  <div className="text-muted-foreground mb-1">Profit Factor</div>
+                  <div className="font-semibold">{edge.breakdown.profitFactor}</div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Avg Win/Loss:</span>
-                  <span className="font-medium">{edge.breakdown.avgWinLoss}</span>
+                <div className="text-center">
+                  <div className="text-muted-foreground mb-1">Avg W/L</div>
+                  <div className="font-semibold">{edge.breakdown.avgWinLoss}</div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Max Drawdown:</span>
-                  <span className="font-medium">{edge.breakdown.maxDrawdown}</span>
+                <div className="text-center">
+                  <div className="text-muted-foreground mb-1">Max DD</div>
+                  <div className="font-semibold">{edge.breakdown.maxDrawdown}</div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Recovery Factor:</span>
-                  <span className="font-medium">{edge.breakdown.recoveryFactor}</span>
+                <div className="text-center">
+                  <div className="text-muted-foreground mb-1">Recovery</div>
+                  <div className="font-semibold">{edge.breakdown.recoveryFactor}</div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Consistency:</span>
-                  <span className="font-medium">{edge.breakdown.consistency}</span>
+                <div className="text-center">
+                  <div className="text-muted-foreground mb-1">Consistency</div>
+                  <div className="font-semibold">{edge.breakdown.consistency}</div>
                 </div>
               </div>
             </div>
