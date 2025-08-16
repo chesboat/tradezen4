@@ -64,20 +64,20 @@ export function computeEdgeScore(trades: Trade[]): EdgeScoreResult {
 		if (peak > 0) maxDD = Math.max(maxDD, (peak - equity) / peak * 100);
 	});
 
-	// Map to 0..100 sub-scores
-	const winRateScore = clamp((winRatePct - 35) / (65 - 35) * 100, 0, 100);
-	const profitFactorScore = profitFactor >= 2
+	// Map to 0..100 sub-scores with realistic thresholds
+	const winRateScore = clamp(((winRatePct - 30) / (70 - 30)) * 100, 0, 100); // 30-70% range
+	const profitFactorScore = profitFactor >= 1.5
 		? 100
-		: profitFactor <= 0.6
+		: profitFactor <= 0.8
 			? 0
-			: ((profitFactor - 0.6) / (2 - 0.6)) * 100;
-	const expectancyScore = clamp(((expectancyR - (-0.25)) / (0.5 - (-0.25))) * 100, 0, 100);
-	const consistencyScore = sharpe <= 0 ? 0 : clamp((sharpe / 2) * 100, 0, 100); // SR 2 ~= 100
-	const drawdownScore = clamp(100 - maxDD * 1.2, 0, 100);
-	const sampleSizeScore = clamp((total / 50) * 100, 0, 100); // 50 trades ~= 100
+			: ((profitFactor - 0.8) / (1.5 - 0.8)) * 100;
+	const expectancyScore = clamp(((expectancyR - (-0.5)) / (0.3 - (-0.5))) * 100, 0, 100); // -0.5R to +0.3R
+	const consistencyScore = sharpe <= -0.5 ? 0 : clamp(((sharpe + 0.5) / 1.5) * 100, 0, 100); // -0.5 to 1.0 SR
+	const drawdownScore = clamp(100 - maxDD * 2, 0, 100); // Less harsh on drawdown
+	const sampleSizeScore = clamp((total / 30) * 100, 0, 100); // 30 trades for full score
 
-	// Weights sum to 100
-	const weights = { winRate: 20, profitFactor: 25, expectancy: 20, consistency: 15, drawdown: 10, sampleSize: 10 };
+	// Weights sum to 100 - emphasize profitability over perfection
+	const weights = { winRate: 15, profitFactor: 30, expectancy: 25, consistency: 10, drawdown: 15, sampleSize: 5 };
 	const score = (
 		winRateScore * (weights.winRate / 100) +
 		profitFactorScore * (weights.profitFactor / 100) +
