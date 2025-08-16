@@ -37,6 +37,11 @@ service cloud.firestore {
       allow read, write: if isOwner(userId);
     }
     
+    // Improvement tasks collection under each user
+    match /users/{userId}/tasks/{taskId} {
+      allow read, write: if isOwner(userId);
+    }
+    
     // Trading accounts collection under each user
     match /users/{userId}/tradingAccounts/{accountId} {
       allow read, write: if isOwner(userId);
