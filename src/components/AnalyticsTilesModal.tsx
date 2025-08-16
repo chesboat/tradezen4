@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Eye, EyeOff, GripVertical } from 'lucide-react';
+import { X, Eye, EyeOff } from 'lucide-react';
 import { useAnalyticsTilesStore, type AnalyticsTileConfig, type AnalyticsTileId } from '@/store/useAnalyticsTilesStore';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
 
@@ -28,21 +28,7 @@ export const AnalyticsTilesModal: React.FC<{ isOpen: boolean; onClose: () => voi
     if (isOpen) setOrder(getLayout(selectedAccountId));
   }, [isOpen, selectedAccountId, getLayout]);
 
-  const onDragStart = (e: React.DragEvent<HTMLDivElement>, id: AnalyticsTileId) => {
-    e.dataTransfer.setData('text/plain', id);
-    e.dataTransfer.effectAllowed = 'move';
-  };
-  const onDrop = (e: React.DragEvent<HTMLDivElement>, targetId: AnalyticsTileId) => {
-    const sourceId = e.dataTransfer.getData('text/plain') as AnalyticsTileId;
-    if (!sourceId || sourceId === targetId) return;
-    const next = [...order];
-    const from = next.findIndex(t => t.id === sourceId);
-    const to = next.findIndex(t => t.id === targetId);
-    if (from < 0 || to < 0) return;
-    const moved = next.splice(from, 1)[0];
-    next.splice(to, 0, moved);
-    setOrder(next);
-  };
+  // Reordering removed: modal now only toggles visibility
 
   const save = () => { setLayout(selectedAccountId, order); onClose(); };
 
@@ -58,11 +44,11 @@ export const AnalyticsTilesModal: React.FC<{ isOpen: boolean; onClose: () => voi
                 <button className="p-2 rounded hover:bg-muted" onClick={onClose}><X className="w-4 h-4" /></button>
               </div>
               <div className="p-4">
-                <p className="text-xs text-muted-foreground mb-3">Drag to reorder. Toggle visibility per account selection.</p>
+                <p className="text-xs text-muted-foreground mb-3">Toggle visibility per account selection.</p>
                 <div className="space-y-2">
                   {order.map((t) => (
-                    <div key={t.id} className="flex items-center justify-between bg-muted/30 border border-border rounded-lg p-2" draggable onDragStart={(e) => onDragStart(e, t.id)} onDragOver={(e) => e.preventDefault()} onDrop={(e) => onDrop(e, t.id)}>
-                      <div className="flex items-center gap-2"><GripVertical className="w-4 h-4 text-muted-foreground" /><span className="text-sm">{LABELS[t.id]}</span></div>
+                    <div key={t.id} className="flex items-center justify-between bg-muted/30 border border-border rounded-lg p-2">
+                      <div className="flex items-center gap-2"><span className="text-sm">{LABELS[t.id]}</span></div>
                       <button className="p-2 rounded hover:bg-muted" onClick={() => setOrder(order.map(x => x.id === t.id ? { ...x, visible: !x.visible } : x))}>
                         {t.visible ? <Eye className="w-4 h-4 text-muted-foreground" /> : <EyeOff className="w-4 h-4 text-muted-foreground" />}
                       </button>

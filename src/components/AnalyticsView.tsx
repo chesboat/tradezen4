@@ -17,8 +17,6 @@ import {
   ArrowDown,
   Minus,
   Eye,
-  EyeOff,
-  GripVertical,
   Filter,
   Download,
   RefreshCw,
@@ -563,61 +561,10 @@ export const AnalyticsView: React.FC = () => {
   };
 
   const analyticsTiles = useAnalyticsTilesStore();
-  const { getLayout, setLayout, toggleTile } = analyticsTiles;
+  const { getLayout, toggleTile } = analyticsTiles;
   const layout = getLayout(selectedAccountId);
   const [showTilesModal, setShowTilesModal] = useState(false);
-  const [editLayout, setEditLayout] = useState(false);
-
-  // IDs we allow to be re-ordered inline
-  const REORDERABLE_IDS = new Set(['edgeScore', 'netDailyPnl', 'topSymbols', 'recentTrades', 'riskAnalysis']);
-
-  const onDragStart = (e: React.DragEvent<HTMLDivElement>, id: string) => {
-    e.dataTransfer.setData('text/plain', id);
-    e.dataTransfer.effectAllowed = 'move';
-  };
-  const onDrop = (e: React.DragEvent<HTMLDivElement>, targetId: string) => {
-    const sourceId = e.dataTransfer.getData('text/plain');
-    if (!sourceId || sourceId === targetId) return;
-    const current = [...layout];
-    const from = current.findIndex(t => t.id === sourceId);
-    const to = current.findIndex(t => t.id === targetId);
-    if (from < 0 || to < 0) return;
-    const moved = current.splice(from, 1)[0];
-    current.splice(to, 0, moved);
-    setLayout(selectedAccountId, current);
-  };
-
-  const TileFrame: React.FC<{ id: string; children: React.ReactNode; className?: string }>
-    = ({ id, children, className }) => {
-    const cfg = layout.find(t => t.id === id);
-    if (!cfg || !cfg.visible) return null;
-    return (
-      <div
-        className={cn('relative', className)}
-        draggable={editLayout}
-        onDragStart={e => onDragStart(e, id)}
-        onDragOver={e => editLayout && e.preventDefault()}
-        onDrop={e => editLayout && onDrop(e, id)}
-      >
-        {editLayout && (
-          <div className="absolute inset-x-0 -top-3 flex items-center justify-between px-2 text-muted-foreground">
-            <div className="flex items-center gap-1 text-xs">
-              <GripVertical className="w-4 h-4" />
-              Drag to reorder
-            </div>
-            <button
-              className="p-1 rounded hover:bg-muted"
-              onClick={() => toggleTile(selectedAccountId, id as any)}
-              title="Hide tile"
-            >
-              <Eye className="w-4 h-4" />
-            </button>
-          </div>
-        )}
-        {children}
-      </div>
-    );
-  };
+  const [editLayout, setEditLayout] = useState(false); // now only controls hide/show affordances
 
   return (
     <div className="p-6 space-y-6">
@@ -632,7 +579,7 @@ export const AnalyticsView: React.FC = () => {
           <button
             className={cn('px-2 py-1 rounded text-xs', editLayout ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'bg-muted text-muted-foreground hover:bg-muted/80')}
             onClick={() => setEditLayout(v => !v)}
-          >{editLayout ? 'Done' : 'Edit layout'}</button>
+          >{editLayout ? 'Done' : 'Toggle visibility'}</button>
           {!editLayout && (
             <button className="px-2 py-1 rounded bg-muted text-muted-foreground hover:bg-muted/80 text-xs" onClick={() => setShowTilesModal(true)}>Customize</button>
           )}
@@ -999,10 +946,10 @@ export const AnalyticsView: React.FC = () => {
       </div>
       )}
 
-      {/* Inline re-orderable grid for large tiles */}
+      {/* Primary large tiles (fixed order; visibility only) */}
       <div className={cn('grid gap-6', 'md:grid-cols-2')}>
         {layout
-          .filter(t => REORDERABLE_IDS.has(t.id))
+          .filter(t => ['edgeScore','netDailyPnl','topSymbols','recentTrades','riskAnalysis'].includes(t.id))
           .map(t => {
             if (!t.visible && !editLayout) return null;
             const id = t.id;
@@ -1167,21 +1114,19 @@ export const AnalyticsView: React.FC = () => {
               <div key={id} className="relative">
                 <div className="absolute right-2 top-2 z-10">
                   <button className="p-1 rounded bg-white/50 dark:bg-black/40 border border-border hover:bg-white/70 dark:hover:bg-black/60" onClick={() => toggleTile(selectedAccountId, id as any)}>
-                    <EyeOff className="w-4 h-4 text-muted-foreground" />
+                    Hide
                   </button>
                 </div>
-                <div draggable onDragStart={(e) => onDragStart(e, id)} onDragOver={(e) => e.preventDefault()} onDrop={(e) => onDrop(e, id)}>{content}</div>
+                <div>{content}</div>
               </div>
-            ) : (
-              <div key={id}>{content}</div>
-            );
+            ) : (<div key={id}>{content}</div>);
           })}
       </div>
 
       {editLayout && (
         <div className="mt-2 text-xs text-muted-foreground flex flex-wrap items-center gap-2">
           Hidden:
-          {layout.filter(t => REORDERABLE_IDS.has(t.id) && !t.visible).map(t => (
+          {layout.filter(t => ['edgeScore','netDailyPnl','topSymbols','recentTrades','riskAnalysis'].includes(t.id) && !t.visible).map(t => (
             <button key={t.id} className="px-2 py-0.5 rounded border border-border hover:bg-muted" onClick={() => toggleTile(selectedAccountId, t.id)}>
               <Eye className="w-3.5 h-3.5 inline mr-1" /> {t.id}
             </button>
