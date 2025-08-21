@@ -2576,68 +2576,7 @@ export const PublicSharePage: React.FC = () => {
               </div>
             </motion.div>
 
-            {/* Notes Section */}
-            {data?.options?.includeNotes && data?.notes && data.notes.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="space-y-4"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                      <FileText className="w-4 h-4 text-purple-500" />
-                    </div>
-                    <h3 className="text-lg font-semibold">Quick Notes</h3>
-                    <span className="px-2 py-1 text-xs bg-primary/10 text-primary rounded-full">
-                      {data.notes.length}
-                    </span>
-                  </div>
-                  <motion.button
-                    onClick={() => toggleSection('notes')}
-                    className="p-1 hover:bg-muted rounded transition-colors"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    {collapsedSections.notes ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
-                  </motion.button>
-                </div>
 
-                <AnimatePresence initial={false}>
-                  {!collapsedSections.notes && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.3, ease: "easeInOut" }}
-                      className="overflow-hidden space-y-2"
-                    >
-                      {data.notes.map((note: any, index: number) => (
-                        <div
-                          key={index}
-                          className="p-3 rounded-lg bg-card/30 border border-border/30"
-                        >
-                          <div className="text-sm text-foreground/90">{note.content}</div>
-                          {note.tags && note.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mt-2">
-                              {note.tags.map((tag: string, tagIndex: number) => (
-                                <span
-                                  key={tagIndex}
-                                  className="px-1.5 py-0.5 text-xs rounded bg-primary/10 text-primary"
-                                >
-                                  #{tag}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-            )}
 
             {/* Calendar Snapshot Section */}
             {data?.options?.includeCalendar && data?.calendar && (
