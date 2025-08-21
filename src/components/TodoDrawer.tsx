@@ -148,7 +148,7 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                   ]}
                   placeholder="Priority"
                   size="md"
-                  className="min-w-[80px]"
+                  className="min-w-[100px]"
                 />
                 <CustomSelect
                   value={newCategory}
@@ -165,7 +165,7 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                   ]}
                   placeholder="Category"
                   size="md"
-                  className="min-w-[90px]"
+                  className="min-w-[110px]"
                 />
               </div>
             </div>
@@ -202,7 +202,7 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                 ]}
                 placeholder="All categories"
                 size="lg"
-                className="min-w-[140px]"
+                className="min-w-[160px]"
               />
               <div className="ml-auto relative">
                 <input

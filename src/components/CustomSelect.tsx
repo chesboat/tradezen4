@@ -1,6 +1,32 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
 
+// Custom scrollbar styles
+const scrollbarStyles = `
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 3px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.5);
+  }
+  
+  /* Firefox scrollbar */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
+  }
+`;
+
 interface Option {
   value: string;
   label: string;
@@ -122,7 +148,11 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
   };
 
   return (
-    <div className={`relative ${className}`} ref={selectRef}>
+    <>
+      {/* Inject custom scrollbar styles */}
+      <style>{scrollbarStyles}</style>
+      
+      <div className={`relative ${className}`} ref={selectRef}>
       {/* Select Button */}
       <button
         type="button"
@@ -156,7 +186,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
 
       {/* Dropdown Options */}
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-lg max-h-60 overflow-auto">
+        <div className="absolute z-50 w-full min-w-max mt-1 bg-popover border border-border rounded-md shadow-lg max-h-60 overflow-auto custom-scrollbar">
           <div ref={optionsRef}>
             {options.map((option, index) => (
               <button
@@ -183,6 +213,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 };
