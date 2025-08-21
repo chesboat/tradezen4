@@ -297,7 +297,8 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
+  /* Use themed background so Safari overlay scrollbars don't appear light */
+  background: hsl(var(--popover));
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
@@ -327,3 +328,12 @@
 .dark .custom-scrollbar {
   scrollbar-color: hsl(240, 5%, 65%, 0.4) transparent;
 } 
+
+/* Hint Safari's overlay scrollbars to use dark palette in dark mode */
+.custom-scrollbar {
+  color-scheme: light;
+}
+
+.dark .custom-scrollbar {
+  color-scheme: dark;
+}
