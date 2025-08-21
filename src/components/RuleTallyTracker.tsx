@@ -155,7 +155,7 @@ const TallyMarks: React.FC<TallyMarkProps> = ({
   const showOverflow = count > maxVisible;
 
   const renderGroup = (groupIndex: number) => {
-    const marks = [];
+    const marks: JSX.Element[] = [];
     
     // Four vertical lines
     for (let i = 0; i < 4; i++) {
@@ -183,7 +183,7 @@ const TallyMarks: React.FC<TallyMarkProps> = ({
   };
 
   const renderRemainder = () => {
-    const marks = [];
+    const marks: JSX.Element[] = [];
     for (let i = 0; i < remainder; i++) {
       marks.push(
         <div
