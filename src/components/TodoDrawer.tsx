@@ -4,6 +4,7 @@ import { CheckCircle2, Circle, ChevronLeft, ChevronRight, Clock, Tag, MoreVertic
 import { useTodoStore, initializeSampleTasks } from '@/store/useTodoStore';
 import { ImprovementTask } from '@/types';
 import { useActivityLogStore } from '@/store/useActivityLogStore';
+import { CustomSelect } from './CustomSelect';
 
 interface TodoDrawerProps {
   className?: string;
@@ -136,46 +137,36 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
               </div>
               {/* Priority and Category selectors for new tasks */}
               <div className="flex items-center gap-2">
-                <div className="relative">
-                  <select
-                    value={newPriority}
-                    onChange={(e) => setNewPriority(e.target.value as 'low' | 'med' | 'high' | '')}
-                    className="px-2 py-1 pr-6 rounded text-xs bg-muted border border-border/50 outline-none appearance-none cursor-pointer hover:bg-accent transition-colors w-full"
-                    style={{ WebkitAppearance: 'none', MozAppearance: 'none' }}
-                  >
-                    <option value="">Priority</option>
-                    <option value="high">🔴 High</option>
-                    <option value="med">🟡 Medium</option>
-                    <option value="low">🟢 Low</option>
-                  </select>
-                  <div className="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                    <svg className="w-3 h-3 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
-                </div>
-                <div className="relative">
-                  <select
-                    value={newCategory}
-                    onChange={(e) => setNewCategory(e.target.value)}
-                    className="px-2 py-1 pr-6 rounded text-xs bg-muted border border-border/50 outline-none appearance-none cursor-pointer hover:bg-accent transition-colors w-full"
-                    style={{ WebkitAppearance: 'none', MozAppearance: 'none' }}
-                  >
-                    <option value="">Category</option>
-                    <option value="risk">🔴 Risk</option>
-                    <option value="analysis">🔵 Analysis</option>
-                    <option value="journal">🟢 Journal</option>
-                    <option value="wellness">🟣 Wellness</option>
-                    <option value="execution">🟠 Execution</option>
-                    <option value="learning">🔷 Learning</option>
-                    <option value="mindset">🩷 Mindset</option>
-                  </select>
-                  <div className="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                    <svg className="w-3 h-3 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
-                </div>
+                <CustomSelect
+                  value={newPriority}
+                  onChange={(value) => setNewPriority(value as 'low' | 'med' | 'high' | '')}
+                  options={[
+                    { value: '', label: 'Priority' },
+                    { value: 'high', label: 'High', emoji: '🔴' },
+                    { value: 'med', label: 'Medium', emoji: '🟡' },
+                    { value: 'low', label: 'Low', emoji: '🟢' }
+                  ]}
+                  placeholder="Priority"
+                  size="md"
+                  className="min-w-[80px]"
+                />
+                <CustomSelect
+                  value={newCategory}
+                  onChange={(value) => setNewCategory(value)}
+                  options={[
+                    { value: '', label: 'Category' },
+                    { value: 'risk', label: 'Risk', emoji: '🔴' },
+                    { value: 'analysis', label: 'Analysis', emoji: '🔵' },
+                    { value: 'journal', label: 'Journal', emoji: '🟢' },
+                    { value: 'wellness', label: 'Wellness', emoji: '🟣' },
+                    { value: 'execution', label: 'Execution', emoji: '🟠' },
+                    { value: 'learning', label: 'Learning', emoji: '🔷' },
+                    { value: 'mindset', label: 'Mindset', emoji: '🩷' }
+                  ]}
+                  placeholder="Category"
+                  size="md"
+                  className="min-w-[90px]"
+                />
               </div>
             </div>
           </motion.div>
@@ -196,28 +187,23 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                   {f[0].toUpperCase() + f.slice(1)}
                 </button>
               ))}
-              <div className="relative">
-                <select
-                  className="px-3 py-1.5 pr-8 rounded-lg bg-muted border border-border/50 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground appearance-none cursor-pointer transition-colors w-full"
-                  style={{ WebkitAppearance: 'none', MozAppearance: 'none' }}
-                  value={categoryFilter}
-                  onChange={(e) => setCategoryFilter(e.target.value as any)}
-                >
-                  <option value="all">All categories</option>
-                  <option value="risk">🔴 Risk</option>
-                  <option value="analysis">🔵 Analysis</option>
-                  <option value="execution">🟠 Execution</option>
-                  <option value="journal">🟢 Journal</option>
-                  <option value="learning">🔷 Learning</option>
-                  <option value="wellness">🟣 Wellness</option>
-                  <option value="mindset">🩷 Mindset</option>
-                </select>
-                <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                  <svg className="w-3 h-3 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-              </div>
+              <CustomSelect
+                value={categoryFilter}
+                onChange={(value) => setCategoryFilter(value as any)}
+                options={[
+                  { value: 'all', label: 'All categories', emoji: '✓' },
+                  { value: 'risk', label: 'Risk', emoji: '🔴' },
+                  { value: 'analysis', label: 'Analysis', emoji: '🔵' },
+                  { value: 'execution', label: 'Execution', emoji: '🟠' },
+                  { value: 'journal', label: 'Journal', emoji: '🟢' },
+                  { value: 'learning', label: 'Learning', emoji: '🔷' },
+                  { value: 'wellness', label: 'Wellness', emoji: '🟣' },
+                  { value: 'mindset', label: 'Mindset', emoji: '🩷' }
+                ]}
+                placeholder="All categories"
+                size="lg"
+                className="min-w-[140px]"
+              />
               <div className="ml-auto relative">
                 <input
                   value={query}
