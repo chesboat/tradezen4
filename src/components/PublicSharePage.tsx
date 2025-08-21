@@ -2687,27 +2687,14 @@ export const PublicSharePage: React.FC = () => {
                           </div>
                         </div>
 
-                                            {/* Calendar Grid - Mobile Optimized */}
-                    <div className="grid grid-cols-1 lg:grid-cols-8 gap-3">
-                      {/* Day Headers - Hidden on mobile, shown on desktop */}
-                      <div className="hidden lg:block lg:col-span-7 grid grid-cols-7 gap-3 mb-4">
-                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                          <div key={day} className="text-center font-semibold text-muted-foreground py-2">
-                            {day}
-                          </div>
-                        ))}
-                      </div>
-                      
-                      {/* Week Header - Hidden on mobile */}
-                      <div className="hidden lg:block text-center font-semibold text-muted-foreground py-2">
-                        Week
-                      </div>
-                      
-                      {/* Mobile Day Headers - Only shown on mobile */}
-                      <div className="lg:hidden grid grid-cols-7 gap-1 mb-2">
+                                            {/* Mobile-First Calendar Design */}
+                    <div className="space-y-4">
+                      {/* Day Headers */}
+                      <div className="grid grid-cols-7 gap-1 lg:gap-3">
                         {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
-                          <div key={index} className="text-center text-xs font-semibold text-muted-foreground py-1">
-                            {day}
+                          <div key={index} className="text-center text-xs lg:text-sm font-semibold text-muted-foreground py-2">
+                            <span className="lg:hidden">{day}</span>
+                            <span className="hidden lg:inline">{['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][index]}</span>
                           </div>
                         ))}
                       </div>
@@ -2782,18 +2769,32 @@ export const PublicSharePage: React.FC = () => {
                               const weekActiveDays = weekDays.length;
                               
                               return (
-                                <React.Fragment key={weekIndex}>
-                                  {/* Week Days - Mobile optimized */}
-                                  <div className="lg:col-span-7 grid grid-cols-7 gap-1 lg:gap-3">
+                                <div key={weekIndex} className="space-y-2">
+                                  {/* Week Summary Header */}
+                                  <div className="flex items-center justify-between px-2 py-1 bg-muted/20 rounded-lg lg:hidden">
+                                    <span className="text-xs font-medium text-muted-foreground">Week {weekIndex + 1}</span>
+                                    <div className="flex items-center gap-2 text-xs">
+                                      <span className={`font-medium ${
+                                        weekTotalPnl > 0 ? 'text-green-500' : 
+                                        weekTotalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
+                                      }`}>
+                                        {weekTotalPnl !== 0 ? formatCurrency(weekTotalPnl) : '$0'}
+                                      </span>
+                                      <span className="text-muted-foreground">• {weekActiveDays}d</span>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Week Days - Clean Mobile Design */}
+                                  <div className="grid grid-cols-7 gap-1 lg:gap-3">
                                     {week.map((day, dayIndex) => {
                                       const getDayClassName = () => {
-                                        let classes = 'relative p-1 lg:p-3 rounded-lg lg:rounded-xl border border-border/50 transition-all duration-200 cursor-pointer hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 min-h-[70px] lg:min-h-auto aspect-square lg:aspect-auto overflow-hidden';
+                                        let classes = 'relative p-2 lg:p-3 rounded-lg border border-border/30 transition-all duration-200 cursor-pointer hover:border-primary/50 min-h-[50px] lg:min-h-[80px] flex flex-col';
                                         
-                                        if (day.isOtherMonth) classes += ' opacity-40';
-                                        if (day.isToday) classes += ' ring-1 lg:ring-2 ring-primary/50';
-                                        if (day.tradesCount > 0) classes += ' bg-muted/30';
-                                        if (day.pnl > 0) classes += ' border-green-500/30 bg-green-50/10';
-                                        if (day.pnl < 0) classes += ' border-red-500/30 bg-red-50/10';
+                                        if (day.isOtherMonth) classes += ' opacity-30';
+                                        if (day.isToday) classes += ' ring-1 ring-primary/50 bg-primary/5';
+                                        if (day.tradesCount > 0) classes += ' bg-muted/20';
+                                        if (day.pnl > 0) classes += ' border-green-500/40';
+                                        if (day.pnl < 0) classes += ' border-red-500/40';
                                         
                                         return classes;
                                       };
@@ -2816,41 +2817,39 @@ export const PublicSharePage: React.FC = () => {
                                           whileTap={{ scale: 0.98 }}
                                           title="Sign up to view day details"
                                         >
-                                                                                  <div className="h-full flex flex-col justify-between text-center lg:text-left">
-                                          {/* Date - Top */}
-                                          <div className="flex items-start justify-between">
-                                            <span className={`text-xs lg:text-sm font-medium leading-none ${
-                                              day.isOtherMonth ? 'text-muted-foreground' : 'text-foreground'
+                                                                                  <div className="h-full flex flex-col justify-between">
+                                          {/* Top Row - Date and Indicator */}
+                                          <div className="flex items-center justify-between mb-1">
+                                            <span className={`text-xs lg:text-sm font-medium ${
+                                              day.isOtherMonth ? 'text-muted-foreground/60' : 'text-foreground'
                                             }`}>
                                               {day.day}
                                             </span>
                                             {day.hasReflection && (
-                                              <BookOpen className="w-2 lg:w-3 h-2 lg:h-3 text-green-500 flex-shrink-0" />
+                                              <div className="w-1.5 h-1.5 lg:w-2 lg:h-2 rounded-full bg-green-500"></div>
                                             )}
                                           </div>
                                           
-                                          {/* Content - Center/Bottom */}
-                                          <div className="flex-1 flex flex-col justify-end items-center lg:items-start">
-                                            {/* P&L - Compact for mobile */}
-                                            {day.pnl !== 0 && (
-                                              <div className={`text-[10px] lg:text-xs font-bold leading-none ${day.pnl > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                                                <span className="lg:hidden">{day.pnl > 0 ? '+' : ''}{Math.abs(day.pnl) > 999 ? `${Math.round(day.pnl/1000)}k` : Math.round(day.pnl)}</span>
-                                                <span className="hidden lg:inline">{formatCurrency(day.pnl)}</span>
+                                          {/* Bottom Row - P&L or Trade Count */}
+                                          <div className="flex flex-col items-center lg:items-start">
+                                            {day.pnl !== 0 ? (
+                                              <div className={`text-[10px] lg:text-xs font-bold ${day.pnl > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                                {Math.abs(day.pnl) > 999 ? 
+                                                  `${day.pnl > 0 ? '+' : ''}${(day.pnl/1000).toFixed(1)}k` : 
+                                                  `${day.pnl > 0 ? '+' : ''}${Math.round(day.pnl)}`
+                                                }
                                               </div>
-                                            )}
-                                            
-                                            {/* Trade Count - Very compact for mobile */}
-                                            {day.tradesCount > 0 && (
-                                              <div className="text-[9px] lg:text-xs text-muted-foreground leading-none mt-0.5">
-                                                <span className="lg:hidden">{day.tradesCount}t</span>
-                                                <span className="hidden lg:inline">{day.tradesCount} trade{day.tradesCount > 1 ? 's' : ''}</span>
+                                            ) : day.tradesCount > 0 ? (
+                                              <div className="text-[10px] lg:text-xs text-muted-foreground">
+                                                {day.tradesCount}
                                               </div>
-                                            )}
+                                            ) : null}
                                             
-                                            {/* Metrics - Desktop only */}
+                                            {/* Desktop Additional Info */}
                                             {day.tradesCount > 0 && (
-                                              <div className="hidden lg:block text-xs text-muted-foreground mt-0.5">
-                                                <div className="leading-tight">{day.avgRR.toFixed(1)}:1R, {day.winRate.toFixed(0)}%</div>
+                                              <div className="hidden lg:block text-xs text-muted-foreground mt-1 space-y-0.5">
+                                                <div>{day.tradesCount} trade{day.tradesCount > 1 ? 's' : ''}</div>
+                                                <div>{day.avgRR.toFixed(1)}:1R • {day.winRate.toFixed(0)}%</div>
                                               </div>
                                             )}
                                           </div>
@@ -2860,45 +2859,31 @@ export const PublicSharePage: React.FC = () => {
                                     })}
                                   </div>
                                   
-                                  {/* Weekly Summary - Hidden on mobile */}
-                                  <motion.div
-                                    className="hidden lg:block bg-muted/30 border border-border/50 rounded-xl p-4 hover:bg-muted/50 transition-colors cursor-pointer"
-                                    onClick={redirectToSignup}
-                                    whileHover={{ scale: 1.01 }}
-                                    title="Sign up to view weekly details"
-                                  >
-                                    <div className="text-center space-y-2">
-                                      <div className="text-sm font-medium text-muted-foreground">
-                                        Week {weekIndex + 1}
-                                      </div>
-                                      <div className={`text-lg font-bold ${
-                                        weekTotalPnl > 0 ? 'text-green-500' : 
-                                        weekTotalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
-                                      }`}>
-                                        {formatCurrency(weekTotalPnl)}
-                                      </div>
-                                      <div className="text-xs text-muted-foreground">
-                                        {weekActiveDays} days
-                                      </div>
-                                    </div>
-                                  </motion.div>
-                                  
-                                  {/* Mobile Weekly Summary - Compact version */}
-                                  <div className="lg:hidden mt-2 p-2 bg-muted/20 rounded-lg">
-                                    <div className="flex items-center justify-between text-xs">
-                                      <span className="text-muted-foreground">Week {weekIndex + 1}</span>
-                                      <div className="flex items-center gap-2">
-                                        <span className={`font-medium ${
+                                  {/* Desktop Weekly Summary */}
+                                  <div className="hidden lg:flex lg:justify-end mt-4">
+                                    <motion.div
+                                      className="bg-muted/30 border border-border/50 rounded-xl p-4 hover:bg-muted/50 transition-colors cursor-pointer min-w-[120px]"
+                                      onClick={redirectToSignup}
+                                      whileHover={{ scale: 1.01 }}
+                                      title="Sign up to view weekly details"
+                                    >
+                                      <div className="text-center space-y-2">
+                                        <div className="text-sm font-medium text-muted-foreground">
+                                          Week {weekIndex + 1}
+                                        </div>
+                                        <div className={`text-lg font-bold ${
                                           weekTotalPnl > 0 ? 'text-green-500' : 
                                           weekTotalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
                                         }`}>
-                                          {weekTotalPnl !== 0 ? formatCurrency(weekTotalPnl) : '$0'}
-                                        </span>
-                                        <span className="text-muted-foreground">• {weekActiveDays}d</span>
+                                          {formatCurrency(weekTotalPnl)}
+                                        </div>
+                                        <div className="text-xs text-muted-foreground">
+                                          {weekActiveDays} days
+                                        </div>
                                       </div>
-                                    </div>
+                                    </motion.div>
                                   </div>
-                                </React.Fragment>
+                                </div>
                               );
                             });
                           })()}
