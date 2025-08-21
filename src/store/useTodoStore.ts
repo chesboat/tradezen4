@@ -205,4 +205,45 @@ export const useTodoStore = create<TodoState>((set, get) => ({
   },
 }));
 
+// Initialize with some sample colorful tasks if none exist
+export const initializeSampleTasks = async () => {
+  const store = useTodoStore.getState();
+  
+  if (store.tasks.length === 0) {
+    const sampleTasks = [
+      {
+        text: 'Review and update risk management rules',
+        priority: 'high' as const,
+        category: 'risk',
+        pinned: true,
+      },
+      {
+        text: 'Analyze last week\'s losing trades for patterns',
+        priority: 'med' as const,
+        category: 'analysis',
+      },
+      {
+        text: 'Update trading journal with screenshots',
+        priority: 'low' as const,
+        category: 'journal',
+      },
+      {
+        text: 'Practice mindfulness before trading session',
+        priority: 'med' as const,
+        category: 'wellness',
+      },
+      {
+        text: 'Set up alerts for key support/resistance levels',
+        priority: 'high' as const,
+        category: 'execution',
+      },
+    ];
+
+    // Add each sample task
+    for (const task of sampleTasks) {
+      await store.addTask(task.text, task);
+    }
+  }
+};
+
 

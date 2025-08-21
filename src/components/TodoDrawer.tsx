@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, Circle, ChevronLeft, ChevronRight, Clock, Tag, MoreVertical, Plus, X, Pin } from 'lucide-react';
-import { useTodoStore } from '@/store/useTodoStore';
+import { useTodoStore, initializeSampleTasks } from '@/store/useTodoStore';
 import { ImprovementTask } from '@/types';
 import { useActivityLogStore } from '@/store/useActivityLogStore';
 
@@ -27,12 +27,18 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
   const [filter, setFilter] = useState<'all' | 'open' | 'done' | 'snoozed'>('all');
   const [query, setQuery] = useState('');
   const [newText, setNewText] = useState('');
+  const [newPriority, setNewPriority] = useState<'low' | 'med' | 'high' | ''>('');
+  const [newCategory, setNewCategory] = useState<string>('');
   const [categoryFilter, setCategoryFilter] = useState<string | 'all'>('all');
   const inputRef = useRef<HTMLInputElement>(null);
   const [snoozeForId, setSnoozeForId] = useState<string | null>(null);
 
   useEffect(() => {
-    initialize();
+    const init = async () => {
+      await initialize();
+      await initializeSampleTasks();
+    };
+    init();
   }, [initialize]);
 
   useEffect(() => {
@@ -55,8 +61,13 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
   const handleAdd = async () => {
     const text = newText.trim();
     if (!text) return;
-    await addTask(text);
+    const extras: Partial<ImprovementTask> = {};
+    if (newPriority) extras.priority = newPriority;
+    if (newCategory) extras.category = newCategory;
+    await addTask(text, extras);
     setNewText('');
+    setNewPriority('');
+    setNewCategory('');
   };
 
   const rightOffset = Math.max(60, (activityExpanded ? 320 : 60));
@@ -109,18 +120,47 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
       <AnimatePresence mode="wait">
         {isExpanded && (
           <motion.div className="p-3 border-b border-border" variants={contentVariants} initial="collapsed" animate="expanded" exit="collapsed">
-            <div className="flex items-center gap-2">
-              <input
-                ref={inputRef}
-                value={newText}
-                onChange={(e) => setNewText(e.target.value)}
-                placeholder="Add a task to improve your trading..."
-                className="flex-1 px-3 py-2 rounded-lg bg-muted text-sm outline-none focus:ring-2 ring-primary/40"
-                onKeyDown={(e) => { if (e.key === 'Enter') handleAdd(); }}
-              />
-              <button className="p-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90" onClick={handleAdd}>
-                <Plus className="w-4 h-4" />
-              </button>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <input
+                  ref={inputRef}
+                  value={newText}
+                  onChange={(e) => setNewText(e.target.value)}
+                  placeholder="Add a task to improve your trading..."
+                  className="flex-1 px-3 py-2 rounded-lg bg-muted text-sm outline-none focus:ring-2 ring-primary/40"
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleAdd(); }}
+                />
+                <button className="p-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90" onClick={handleAdd}>
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
+              {/* Priority and Category selectors for new tasks */}
+              <div className="flex items-center gap-2">
+                <select
+                  value={newPriority}
+                  onChange={(e) => setNewPriority(e.target.value as 'low' | 'med' | 'high' | '')}
+                  className="px-2 py-1 rounded text-xs bg-muted border-none outline-none"
+                >
+                  <option value="">Priority</option>
+                  <option value="high">🔴 High</option>
+                  <option value="med">🟡 Medium</option>
+                  <option value="low">🟢 Low</option>
+                </select>
+                <select
+                  value={newCategory}
+                  onChange={(e) => setNewCategory(e.target.value)}
+                  className="px-2 py-1 rounded text-xs bg-muted border-none outline-none"
+                >
+                  <option value="">Category</option>
+                  <option value="risk">🔴 Risk</option>
+                  <option value="analysis">🔵 Analysis</option>
+                  <option value="journal">🟢 Journal</option>
+                  <option value="wellness">🟣 Wellness</option>
+                  <option value="execution">🟠 Execution</option>
+                  <option value="learning">🔷 Learning</option>
+                  <option value="mindset">🩷 Mindset</option>
+                </select>
+              </div>
             </div>
           </motion.div>
         )}
@@ -146,11 +186,13 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                 onChange={(e) => setCategoryFilter(e.target.value as any)}
               >
                 <option value="all">All categories</option>
-                <option value="risk">Risk</option>
-                <option value="execution">Execution</option>
-                <option value="journal">Journal</option>
-                <option value="learning">Learning</option>
-                <option value="mindset">Mindset</option>
+                <option value="risk">🔴 Risk</option>
+                <option value="analysis">🔵 Analysis</option>
+                <option value="execution">🟠 Execution</option>
+                <option value="journal">🟢 Journal</option>
+                <option value="learning">🔷 Learning</option>
+                <option value="wellness">🟣 Wellness</option>
+                <option value="mindset">🩷 Mindset</option>
               </select>
               <div className="ml-auto relative">
                 <input
@@ -197,9 +239,19 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                 }}
               >
                 <div className="flex items-start gap-3">
-                  <button className="mt-1 p-1 rounded-full hover:bg-accent" onClick={() => toggleDone(task.id)} aria-label="toggle done">
-                    {task.status === 'done' ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : <Circle className="w-4 h-4 text-muted-foreground" />}
-                  </button>
+                  <div className="flex items-center gap-2 mt-1">
+                    <button className="p-1 rounded-full hover:bg-accent" onClick={() => toggleDone(task.id)} aria-label="toggle done">
+                      {task.status === 'done' ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : <Circle className="w-4 h-4 text-muted-foreground" />}
+                    </button>
+                    {/* Priority indicator dot */}
+                    {task.priority && (
+                      <div className={`w-2 h-2 rounded-full ${
+                        task.priority === 'high' ? 'bg-red-500' :
+                        task.priority === 'med' ? 'bg-yellow-500' :
+                        'bg-green-500'
+                      }`} title={`${task.priority} priority`} />
+                    )}
+                  </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between">
                       <input
@@ -233,26 +285,60 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                         </button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                      {task.dueAt && (
-                        <span className="inline-flex items-center gap-1"><Clock className="w-3 h-3" /> {new Date(task.dueAt).toLocaleDateString()}</span>
-                      )}
-                      {(task.tags && task.tags.length > 0) && (
-                        <span className="inline-flex items-center gap-1"><Tag className="w-3 h-3" /> {task.tags.join(', ')}</span>
-                      )}
-                      <select
-                        className="ml-auto px-2 py-1 rounded bg-muted text-[11px]"
-                        defaultValue={task.category || ''}
-                        onChange={(e) => setCategory(task.id, e.target.value || undefined)}
-                        title="Category"
-                      >
-                        <option value="">No category</option>
-                        <option value="risk">Risk</option>
-                        <option value="execution">Execution</option>
-                        <option value="journal">Journal</option>
-                        <option value="learning">Learning</option>
-                        <option value="mindset">Mindset</option>
-                      </select>
+                    <div className="flex items-center justify-between mt-1 text-xs">
+                      <div className="flex items-center gap-2">
+                        {task.dueAt && (
+                          <span className="inline-flex items-center gap-1 text-muted-foreground"><Clock className="w-3 h-3" /> {new Date(task.dueAt).toLocaleDateString()}</span>
+                        )}
+                        {/* Colorful category tag */}
+                        {task.category && (
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                            task.category === 'risk' ? 'bg-red-500/10 text-red-500 border border-red-500/20' :
+                            task.category === 'analysis' ? 'bg-blue-500/10 text-blue-500 border border-blue-500/20' :
+                            task.category === 'journal' ? 'bg-green-500/10 text-green-500 border border-green-500/20' :
+                            task.category === 'wellness' ? 'bg-purple-500/10 text-purple-500 border border-purple-500/20' :
+                            task.category === 'execution' ? 'bg-orange-500/10 text-orange-500 border border-orange-500/20' :
+                            task.category === 'learning' ? 'bg-indigo-500/10 text-indigo-500 border border-indigo-500/20' :
+                            task.category === 'mindset' ? 'bg-pink-500/10 text-pink-500 border border-pink-500/20' :
+                            'bg-gray-500/10 text-gray-500 border border-gray-500/20'
+                          }`}>
+                            {task.category}
+                          </span>
+                        )}
+                        {(task.tags && task.tags.length > 0) && (
+                          <span className="inline-flex items-center gap-1 text-muted-foreground"><Tag className="w-3 h-3" /> {task.tags.join(', ')}</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {/* Priority selector */}
+                        <select
+                          className="px-1.5 py-0.5 rounded text-[10px] bg-muted border-none outline-none"
+                          defaultValue={task.priority || ''}
+                          onChange={(e) => updateTask(task.id, { priority: e.target.value as 'low' | 'med' | 'high' || undefined })}
+                          title="Priority"
+                        >
+                          <option value="">Priority</option>
+                          <option value="low">Low</option>
+                          <option value="med">Med</option>
+                          <option value="high">High</option>
+                        </select>
+                        {/* Category selector */}
+                        <select
+                          className="px-1.5 py-0.5 rounded text-[10px] bg-muted border-none outline-none"
+                          defaultValue={task.category || ''}
+                          onChange={(e) => setCategory(task.id, e.target.value || undefined)}
+                          title="Category"
+                        >
+                          <option value="">Category</option>
+                          <option value="risk">Risk</option>
+                          <option value="analysis">Analysis</option>
+                          <option value="execution">Execution</option>
+                          <option value="journal">Journal</option>
+                          <option value="learning">Learning</option>
+                          <option value="wellness">Wellness</option>
+                          <option value="mindset">Mindset</option>
+                        </select>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -295,9 +381,19 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                 }}
               >
                 <div className="flex items-start gap-3">
-                  <button className="mt-1 p-1 rounded-full hover:bg-accent" onClick={() => toggleDone(task.id)} aria-label="toggle done">
-                    {task.status === 'done' ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : <Circle className="w-4 h-4 text-muted-foreground" />}
-                  </button>
+                  <div className="flex items-center gap-2 mt-1">
+                    <button className="p-1 rounded-full hover:bg-accent" onClick={() => toggleDone(task.id)} aria-label="toggle done">
+                      {task.status === 'done' ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : <Circle className="w-4 h-4 text-muted-foreground" />}
+                    </button>
+                    {/* Priority indicator dot */}
+                    {task.priority && (
+                      <div className={`w-2 h-2 rounded-full ${
+                        task.priority === 'high' ? 'bg-red-500' :
+                        task.priority === 'med' ? 'bg-yellow-500' :
+                        'bg-green-500'
+                      }`} title={`${task.priority} priority`} />
+                    )}
+                  </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between">
                       <input
@@ -331,26 +427,60 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                         </button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                      {task.dueAt && (
-                        <span className="inline-flex items-center gap-1"><Clock className="w-3 h-3" /> {new Date(task.dueAt).toLocaleDateString()}</span>
-                      )}
-                      {(task.tags && task.tags.length > 0) && (
-                        <span className="inline-flex items-center gap-1"><Tag className="w-3 h-3" /> {task.tags.join(', ')}</span>
-                      )}
-                      <select
-                        className="ml-auto px-2 py-1 rounded bg-muted text-[11px]"
-                        defaultValue={task.category || ''}
-                        onChange={(e) => setCategory(task.id, e.target.value || undefined)}
-                        title="Category"
-                      >
-                        <option value="">No category</option>
-                        <option value="risk">Risk</option>
-                        <option value="execution">Execution</option>
-                        <option value="journal">Journal</option>
-                        <option value="learning">Learning</option>
-                        <option value="mindset">Mindset</option>
-                      </select>
+                    <div className="flex items-center justify-between mt-1 text-xs">
+                      <div className="flex items-center gap-2">
+                        {task.dueAt && (
+                          <span className="inline-flex items-center gap-1 text-muted-foreground"><Clock className="w-3 h-3" /> {new Date(task.dueAt).toLocaleDateString()}</span>
+                        )}
+                        {/* Colorful category tag */}
+                        {task.category && (
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                            task.category === 'risk' ? 'bg-red-500/10 text-red-500 border border-red-500/20' :
+                            task.category === 'analysis' ? 'bg-blue-500/10 text-blue-500 border border-blue-500/20' :
+                            task.category === 'journal' ? 'bg-green-500/10 text-green-500 border border-green-500/20' :
+                            task.category === 'wellness' ? 'bg-purple-500/10 text-purple-500 border border-purple-500/20' :
+                            task.category === 'execution' ? 'bg-orange-500/10 text-orange-500 border border-orange-500/20' :
+                            task.category === 'learning' ? 'bg-indigo-500/10 text-indigo-500 border border-indigo-500/20' :
+                            task.category === 'mindset' ? 'bg-pink-500/10 text-pink-500 border border-pink-500/20' :
+                            'bg-gray-500/10 text-gray-500 border border-gray-500/20'
+                          }`}>
+                            {task.category}
+                          </span>
+                        )}
+                        {(task.tags && task.tags.length > 0) && (
+                          <span className="inline-flex items-center gap-1 text-muted-foreground"><Tag className="w-3 h-3" /> {task.tags.join(', ')}</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {/* Priority selector */}
+                        <select
+                          className="px-1.5 py-0.5 rounded text-[10px] bg-muted border-none outline-none"
+                          defaultValue={task.priority || ''}
+                          onChange={(e) => updateTask(task.id, { priority: e.target.value as 'low' | 'med' | 'high' || undefined })}
+                          title="Priority"
+                        >
+                          <option value="">Priority</option>
+                          <option value="low">Low</option>
+                          <option value="med">Med</option>
+                          <option value="high">High</option>
+                        </select>
+                        {/* Category selector */}
+                        <select
+                          className="px-1.5 py-0.5 rounded text-[10px] bg-muted border-none outline-none"
+                          defaultValue={task.category || ''}
+                          onChange={(e) => setCategory(task.id, e.target.value || undefined)}
+                          title="Category"
+                        >
+                          <option value="">Category</option>
+                          <option value="risk">Risk</option>
+                          <option value="analysis">Analysis</option>
+                          <option value="execution">Execution</option>
+                          <option value="journal">Journal</option>
+                          <option value="learning">Learning</option>
+                          <option value="wellness">Wellness</option>
+                          <option value="mindset">Mindset</option>
+                        </select>
+                      </div>
                     </div>
                   </div>
                 </div>
