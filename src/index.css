@@ -309,8 +309,21 @@
   background: hsl(var(--muted-foreground) / 0.5);
 }
 
+/* Dark mode specific WebKit scrollbar */
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: hsl(240, 5%, 65%, 0.4);
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: hsl(240, 5%, 65%, 0.6);
+}
+
 /* Firefox scrollbar */
 .custom-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
+}
+
+.dark .custom-scrollbar {
+  scrollbar-color: hsl(240, 5%, 65%, 0.4) transparent;
 } 
