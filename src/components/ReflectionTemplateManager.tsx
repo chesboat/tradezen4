@@ -17,6 +17,8 @@ import {
   Target,
   CheckCircle,
   MoreHorizontal,
+  Image as ImageIcon,
+  Camera,
 } from 'lucide-react';
 import { useReflectionTemplateStore } from '@/store/useReflectionTemplateStore';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
@@ -28,6 +30,10 @@ import { useAppSettingsStore } from '@/store/useAppSettingsStore';
 import { CustomTemplate, InsightBlock, TemplateBlock } from '@/types';
 import { cn, summarizeWinLossScratch } from '@/lib/utils';
 import { debounce, formatDate } from '@/lib/localStorageUtils';
+import { ImageUpload } from './ImageUpload';
+import { ImageGallery } from './ImageGallery';
+import { EnhancedRichTextEditor } from './EnhancedRichTextEditor';
+import { BlockTagPicker } from './BlockTagPicker';
 import { FavoritesManager } from './FavoritesManager';
 
 interface ReflectionTemplateManagerProps {
@@ -934,6 +940,7 @@ export const ReflectionTemplateManager: React.FC<ReflectionTemplateManagerProps>
                           toggleBlockFavorite(currentReflection.id, block.id);
                         }
                       }}
+                      reflectionId={currentReflection?.id}
                     />
                   </motion.div>
                 </Reorder.Item>
@@ -1030,6 +1037,7 @@ interface InsightBlockCardProps {
   onDelete: () => void;
   onDuplicate: () => void;
   onToggleFavorite?: () => void;
+  reflectionId?: string;
 }
 
 const InsightBlockCard: React.FC<InsightBlockCardProps> = ({
@@ -1038,8 +1046,11 @@ const InsightBlockCard: React.FC<InsightBlockCardProps> = ({
   onDelete,
   onDuplicate,
   onToggleFavorite,
+  reflectionId,
 }) => {
   const [showActions, setShowActions] = useState(false);
+  const [showImageUpload, setShowImageUpload] = useState(false);
+  const { addImageToBlock, removeImageFromBlock } = useReflectionTemplateStore();
 
   const handleContentChange = (content: string) => {
     onUpdate({ content });
@@ -1056,6 +1067,22 @@ const InsightBlockCard: React.FC<InsightBlockCardProps> = ({
       newExpanded: !block.isExpanded 
     });
     onUpdate({ isExpanded: !block.isExpanded });
+  };
+
+  const handleImageUpload = (imageUrl: string) => {
+    if (reflectionId) {
+      addImageToBlock(reflectionId, block.id, imageUrl);
+    }
+  };
+
+  const handleImageRemove = (imageIndex: number) => {
+    if (reflectionId) {
+      removeImageFromBlock(reflectionId, block.id, imageIndex);
+    }
+  };
+
+  const handleTagsChange = (newTags: string[]) => {
+    onUpdate({ tags: newTags });
   };
 
   const wordCount = block.content.trim().split(/\s+/).filter(word => word.length > 0).length;
@@ -1082,6 +1109,12 @@ const InsightBlockCard: React.FC<InsightBlockCardProps> = ({
         
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <span>{wordCount} words</span>
+          {block.images && block.images.length > 0 && (
+            <span className="flex items-center gap-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 px-2 py-1 rounded-lg font-medium">
+              <ImageIcon className="w-3 h-3" />
+              {block.images.length}
+            </span>
+          )}
           {xpEarned > 0 && (
             <span className="bg-primary/10 text-primary px-2 py-1 rounded-lg font-medium">
               +{xpEarned} XP
@@ -1176,28 +1209,80 @@ const InsightBlockCard: React.FC<InsightBlockCardProps> = ({
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="overflow-hidden"
+            className="overflow-visible"
           >
-            <div className="p-4">
-              <RichTextEditor
+            <div className="p-4 space-y-4">
+              <EnhancedRichTextEditor
                 content={block.content}
                 onChange={handleContentChange}
                 placeholder={`Write your thoughts about ${block.title.toLowerCase()}...`}
               />
               
-              {/* Tags and additional metadata could go here */}
-              {block.tags && block.tags.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {block.tags.map((tag, index) => (
-                    <span
-                      key={index}
-                      className="px-2 py-1 bg-primary/10 text-primary rounded-lg text-xs font-medium"
-                    >
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
+              {/* Image Gallery */}
+              {block.images && block.images.length > 0 && (
+                <ImageGallery
+                  images={block.images}
+                  onRemoveImage={handleImageRemove}
+                  className="mt-4"
+                />
               )}
+              
+              {/* Image Upload Toggle */}
+              <div className="flex items-center justify-between">
+                <motion.button
+                  onClick={() => setShowImageUpload(!showImageUpload)}
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground bg-muted/30 hover:bg-muted/50 rounded-lg transition-colors"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Camera className="w-4 h-4" />
+                  <span>Add Screenshots</span>
+                  {showImageUpload ? (
+                    <ChevronUp className="w-3 h-3" />
+                  ) : (
+                    <ChevronDown className="w-3 h-3" />
+                  )}
+                </motion.button>
+                
+                {block.images && block.images.length > 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    {block.images.length}/5 images
+                  </span>
+                )}
+              </div>
+              
+              {/* Collapsible Image Upload */}
+              <AnimatePresence initial={false}>
+                {showImageUpload && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="overflow-hidden"
+                  >
+                    <ImageUpload
+                      onImageUpload={(imageUrl) => {
+                        handleImageUpload(imageUrl);
+                        // Auto-collapse after successful upload for cleaner UX
+                        setTimeout(() => setShowImageUpload(false), 1000);
+                      }}
+                      currentImages={block.images || []}
+                      maxImages={5}
+                      className="mt-3"
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              
+              {/* Tags */}
+              <div className="border-t border-border/50 pt-4">
+                <BlockTagPicker
+                  tags={block.tags || []}
+                  onTagsChange={handleTagsChange}
+                  placeholder="Add tags to categorize this insight..."
+                />
+              </div>
             </div>
           </motion.div>
               )}

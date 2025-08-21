@@ -5,17 +5,32 @@ import { useAnalyticsTilesStore, type AnalyticsTileConfig, type AnalyticsTileId 
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
 
 const LABELS: Record<AnalyticsTileId, string> = {
+  // Core metrics
   totalPnl: 'Total P&L',
   winRate: 'Win Rate',
   profitFactor: 'Profit Factor',
   sharpeRatio: 'Sharpe Ratio',
   maxDrawdown: 'Max Drawdown',
   totalTrades: 'Total Trades',
+  
+  // Main analytics
   edgeScore: 'Edge Score',
   netDailyPnl: 'Net Daily P&L',
   topSymbols: 'Top Symbols',
   recentTrades: 'Recent Trades',
   riskAnalysis: 'Risk Analysis',
+  
+  // Additional stats
+  avgWin: 'Average Win',
+  avgLoss: 'Average Loss',
+  expectancy: 'Expectancy',
+  longestWinStreak: 'Longest Win Streak',
+  longestLossStreak: 'Longest Loss Streak',
+  avgRR: 'Average Risk:Reward',
+  largestWin: 'Largest Win',
+  largestLoss: 'Largest Loss',
+  longVsShort: 'Long vs Short Analysis',
+  aiSummary: 'AI Trading Summary',
 };
 
 export const AnalyticsTilesModal: React.FC<{ isOpen: boolean; onClose: () => void }>
@@ -44,13 +59,33 @@ export const AnalyticsTilesModal: React.FC<{ isOpen: boolean; onClose: () => voi
                 <button className="p-2 rounded hover:bg-muted" onClick={onClose}><X className="w-4 h-4" /></button>
               </div>
               <div className="p-4">
-                <p className="text-xs text-muted-foreground mb-3">Toggle visibility per account selection.</p>
-                <div className="space-y-2">
+                <p className="text-xs text-muted-foreground mb-3">Toggle visibility per account selection. Drag tiles in the main view to reorder.</p>
+                <div className="space-y-2 max-h-80 overflow-y-auto analytics-tiles-scroll">
                   {order.map((t) => (
-                    <div key={t.id} className="flex items-center justify-between bg-muted/30 border border-border rounded-lg p-2">
-                      <div className="flex items-center gap-2"><span className="text-sm">{LABELS[t.id]}</span></div>
-                      <button className="p-2 rounded hover:bg-muted" onClick={() => setOrder(order.map(x => x.id === t.id ? { ...x, visible: !x.visible } : x))}>
-                        {t.visible ? <Eye className="w-4 h-4 text-muted-foreground" /> : <EyeOff className="w-4 h-4 text-muted-foreground" />}
+                    <div key={t.id} className={`flex items-center justify-between border rounded-lg p-2 transition-colors ${
+                      t.visible ? 'bg-muted/30 border-border' : 'bg-muted/10 border-border/50'
+                    }`}>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-sm ${
+                          t.visible ? 'text-foreground' : 'text-muted-foreground'
+                        }`}>
+                          {LABELS[t.id]}
+                        </span>
+                        {!t.visible && (
+                          <span className="text-xs text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded">
+                            Hidden
+                          </span>
+                        )}
+                      </div>
+                      <button 
+                        className="p-2 rounded hover:bg-muted transition-colors" 
+                        onClick={() => setOrder(order.map(x => x.id === t.id ? { ...x, visible: !x.visible } : x))}
+                        title={t.visible ? 'Hide tile' : 'Show tile'}
+                      >
+                        {t.visible ? 
+                          <Eye className="w-4 h-4 text-green-600" /> : 
+                          <EyeOff className="w-4 h-4 text-muted-foreground" />
+                        }
                       </button>
                     </div>
                   ))}

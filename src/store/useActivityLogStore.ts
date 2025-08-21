@@ -23,7 +23,7 @@ export const useActivityLogStore = create<ActivityLogState>((set, get) => ({
       const now = new Date();
       const newActivity = {
         ...activity,
-        id: Date.now().toString(),
+        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         createdAt: now,
         updatedAt: now,
       };

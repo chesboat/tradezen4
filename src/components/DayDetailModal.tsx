@@ -29,6 +29,7 @@ import {
   ArrowDown,
   RotateCcw
 } from 'lucide-react';
+import { PublicShareDialog } from './PublicShareDialog';
 import { useTradeStore } from '@/store/useTradeStore';
 import { useQuickNoteStore } from '@/store/useQuickNoteStore';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
@@ -114,6 +115,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
   
   // Focus suggestion states
   const [focusSuggestions, setFocusSuggestions] = useState<string[]>([]);
+  const [shareOpen, setShareOpen] = useState(false);
   const [previousDayFocus, setPreviousDayFocus] = useState<string>('');
   const [isGeneratingFocus, setIsGeneratingFocus] = useState(false);
   const [showFocusAlternatives, setShowFocusAlternatives] = useState(false);
@@ -937,12 +939,21 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
                   </p>
                 </div>
               </div>
-              <button
-                onClick={onClose}
-                className="p-2 rounded-full hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShareOpen(true)}
+                  className="px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm hover:bg-primary/90"
+                  title="Share this day publicly"
+                >
+                  Share
+                </button>
+                <button
+                  onClick={onClose}
+                  className="p-2 rounded-full hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
             {/* Tabs */}
@@ -2088,6 +2099,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
               )}
             </div>
           </motion.div>
+          <PublicShareDialog date={dateString} accountId={selectedAccountId || 'all'} isOpen={shareOpen} onClose={() => setShareOpen(false)} />
           
 
         </motion.div>

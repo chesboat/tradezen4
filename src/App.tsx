@@ -1,4 +1,5 @@
 import React from 'react';
+import { PublicSharePage } from './components/PublicSharePage';
 import { Sidebar } from './components/Sidebar';
 import { ActivityLog } from './components/ActivityLog';
 import { Dashboard } from './components/Dashboard';
@@ -6,7 +7,7 @@ import { CalendarView } from './components/CalendarView';
 import { QuestsView } from './components/QuestsView';
 import { WellnessView } from './components/WellnessView';
 import { TradesView } from './components/TradesView';
-import { AnalyticsView } from './components/AnalyticsView';
+import { CleanAnalyticsDashboard } from './components/CleanAnalyticsDashboard';
 import { CoachView } from './components/CoachView';
 import { JournalView } from './components/JournalView';
 import { NotesView } from './components/NotesView';
@@ -61,6 +62,11 @@ function AppContent() {
     initializeData();
   }, [currentUser, initializeProfile]);
 
+  // If visiting a public share link, bypass auth gating entirely
+  if (typeof window !== 'undefined' && window.location.pathname.startsWith('/share/')) {
+    return <PublicSharePage />;
+  }
+
   // Render current view
   const renderCurrentView = () => {
     switch (currentView) {
@@ -81,7 +87,7 @@ function AppContent() {
       case 'notes':
         return <NotesView />;
       case 'analytics':
-        return <AnalyticsView />;
+        return <CleanAnalyticsDashboard />;
       case 'quests':
         return <QuestsView />;
       case 'wellness':

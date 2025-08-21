@@ -17,13 +17,13 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
   const sizeClasses = {
     sm: 'w-10 h-6',
     md: 'w-12 h-7',
-    lg: 'w-14 h-8'
+    lg: 'w-12 h-7'
   };
   
   const iconSizes = {
     sm: 12,
     md: 14,
-    lg: 16
+    lg: 14
   };
 
   return (
@@ -54,7 +54,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
             ${theme === 'light' ? 'translate-x-0' : `translate-x-[${sizeClasses[size].split(' ')[0].replace('w-', '').replace('10', '16').replace('12', '20').replace('14', '24')}px]`}
           `}
           animate={{ 
-            x: theme === 'light' ? 0 : size === 'sm' ? 16 : size === 'md' ? 20 : 24 
+            x: theme === 'light' ? 0 : size === 'sm' ? 16 : 20 
           }}
           transition={{ type: 'spring', stiffness: 500, damping: 30 }}
         >

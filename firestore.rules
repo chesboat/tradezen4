@@ -47,6 +47,40 @@ service cloud.firestore {
       allow read, write: if isOwner(userId);
     }
     
+    // Tally rules collection under each user
+    match /users/{userId}/tallyRules/{ruleId} {
+      allow read, write: if isOwner(userId);
+    }
+    
+    // Tally logs collection under each user
+    match /users/{userId}/tallyLogs/{logId} {
+      allow read, write: if isOwner(userId);
+    }
+    
+    // Public share snapshots (explicitly sanitized content only)
+    match /publicShares/{shareId} {
+      // PUBLIC read for developer testing; tighten later with expiration if desired
+      allow read: if true;
+      // Only authenticated users can create/update/delete shares
+      // Enforce isPublic on create to avoid accidental private exposure via this collection
+      allow create: if isAuthenticated() && request.resource.data.isPublic == true;
+      allow update, delete: if isAuthenticated();
+    }
+    
+    // Public share images - separate collection for images to avoid 1MB limit
+    match /publicShareImages/{imageId} {
+      // PUBLIC read for public shares
+      allow read: if true;
+      // Only authenticated users can create/update/delete image collections
+      allow create, update, delete: if isAuthenticated();
+    }
+
+    // Public share blocks - full HTML content per block
+    match /publicShareBlocks/{blockId} {
+      allow read: if true;
+      allow create, update, delete: if isAuthenticated();
+    }
+
     // Default deny all other access
     match /{document=**} {
       allow read, write: if false;

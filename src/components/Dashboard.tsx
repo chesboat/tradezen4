@@ -38,6 +38,7 @@ import { CoachChat } from './CoachChat';
 import { useAppSettingsStore } from '@/store/useAppSettingsStore';
 import { summarizeWinLossScratch, classifyTradeResult } from '@/lib/utils';
 import { Tooltip } from './ui/Tooltip';
+import { RuleTallyTracker } from './RuleTallyTracker';
 
 interface KPICardProps {
   title: string;
@@ -638,7 +639,81 @@ export const Dashboard: React.FC = () => {
         >Customize</button>
       </div>
 
-      {/* Top row: Daily Focus, Guardrails, Mini-KPIs (rendered if visible) */}
+      {/* KPI Cards - Primary Focus */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <KPICard
+          title="P&L Today"
+          value={isFocusMode ? '••••' : (todayTrades.length > 0 ? formatCurrency(todayPnL) : '$0.00')}
+          change={todayTrades.length > 0 ? (todayPnL >= 0 ? '+' : '') + Math.abs(todayPnL).toFixed(0) : undefined}
+          changeType={todayPnL > 0 ? 'positive' : todayPnL < 0 ? 'negative' : 'neutral'}
+          icon={DollarSign}
+          trendData={dailyPnLTrend}
+        />
+        
+        {/* Win Rate with Circular Progress */}
+        <motion.div
+          className="bg-card rounded-2xl p-6 border border-border hover:border-primary/50 transition-all duration-200 hover:shadow-glow-sm"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 rounded-xl bg-muted">
+              <Target className="w-6 h-6 text-primary" />
+            </div>
+            <div className="text-sm text-muted-foreground">
+              {filteredTrades.length} trades
+            </div>
+          </div>
+          <h3 className="text-sm font-medium text-muted-foreground mb-2">Win Rate</h3>
+          
+          {filteredTrades.length > 0 ? (
+            <CircularProgress
+              wins={winningTrades}
+              losses={losingTrades}
+              breakeven={breakEvenTrades}
+              size="sm"
+              showLabels={false}
+              showInlineNumbers={true}
+              className="mx-auto"
+            />
+          ) : (
+            <div className="text-center py-4">
+              <div className="text-2xl font-bold text-foreground mb-1">0%</div>
+              <div className="text-xs text-muted-foreground">No trades yet</div>
+            </div>
+          )}
+        </motion.div>
+        
+        <KPICard
+          title="Total P&L"
+          value={isFocusMode ? '••••' : (filteredTrades.length > 0 ? formatCurrency(totalPnL) : '$0.00')}
+          change={filteredTrades.length > 0 ? (totalPnL >= 0 ? 'Profitable' : 'Drawdown') : undefined}
+          changeType={totalPnL > 0 ? 'positive' : totalPnL < 0 ? 'negative' : 'neutral'}
+          icon={TrendingUp}
+          trendData={weeklyPnLTrend}
+        />
+        <KPICard
+          title="Total Trades"
+          value={filteredTrades.length.toString()}
+          change={filteredTrades.length === 0 ? 'Get started!' : `${winningTrades} wins`}
+          changeType={filteredTrades.length > 0 ? 'positive' : 'neutral'}
+          icon={Trophy}
+          trendData={tradeCountTrend}
+        />
+      </div>
+
+      {/* Rule Tracker - Behavioral Focus */}
+      <div className="mb-8">
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }} 
+          animate={{ opacity: 1, y: 0 }}
+          style={{ display: useDashboardTilesStore.getState().getLayout(selectedAccountId).find(t => t.id === 'ruleTracker')?.visible ? undefined : 'none' }}
+        >
+          <RuleTallyTracker />
+        </motion.div>
+      </div>
+
+      {/* Secondary row: Daily Focus, Guardrails, Mini-KPIs */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         {/* Daily Focus */}
         {useDashboardTilesStore.getState().getLayout(selectedAccountId).find(t => t.id === 'dailyFocus')?.visible && (
@@ -900,69 +975,7 @@ export const Dashboard: React.FC = () => {
         )}
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <KPICard
-          title="P&L Today"
-          value={isFocusMode ? '••••' : (todayTrades.length > 0 ? formatCurrency(todayPnL) : '$0.00')}
-          change={todayTrades.length > 0 ? (todayPnL >= 0 ? '+' : '') + Math.abs(todayPnL).toFixed(0) : undefined}
-          changeType={todayPnL > 0 ? 'positive' : todayPnL < 0 ? 'negative' : 'neutral'}
-          icon={DollarSign}
-          trendData={dailyPnLTrend}
-        />
-        
-        {/* Win Rate with Circular Progress */}
-        <motion.div
-          className="bg-card rounded-2xl p-6 border border-border hover:border-primary/50 transition-all duration-200 hover:shadow-glow-sm"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 rounded-xl bg-muted">
-              <Target className="w-6 h-6 text-primary" />
-            </div>
-            <div className="text-sm text-muted-foreground">
-              {filteredTrades.length} trades
-            </div>
-          </div>
-          <h3 className="text-sm font-medium text-muted-foreground mb-2">Win Rate</h3>
-          
-          {filteredTrades.length > 0 ? (
-            <CircularProgress
-              wins={winningTrades}
-              losses={losingTrades}
-              breakeven={breakEvenTrades}
-              size="sm"
-              showLabels={false}
-              showInlineNumbers={true}
-              className="mx-auto"
-            />
-          ) : (
-            <div className="text-center py-4">
-              <div className="text-2xl font-bold text-foreground mb-1">0%</div>
-              <div className="text-xs text-muted-foreground">No trades yet</div>
-            </div>
-          )}
-        </motion.div>
-        
-        <KPICard
-          title="Total P&L"
-          value={isFocusMode ? '••••' : (filteredTrades.length > 0 ? formatCurrency(totalPnL) : '$0.00')}
-          change={filteredTrades.length > 0 ? (totalPnL >= 0 ? 'Profitable' : 'Drawdown') : undefined}
-          changeType={totalPnL > 0 ? 'positive' : totalPnL < 0 ? 'negative' : 'neutral'}
-          icon={TrendingUp}
-          trendData={weeklyPnLTrend}
-        />
-        <KPICard
-          title="Total Trades"
-          value={filteredTrades.length.toString()}
-          change={filteredTrades.length === 0 ? 'Get started!' : `${winningTrades} wins`}
-          changeType={filteredTrades.length > 0 ? 'positive' : 'neutral'}
-          icon={Trophy}
-          trendData={tradeCountTrend}
-        />
-        {/* Replaced Execution Score card with compact tile above */}
-      </div>
+
 
       {/* Recent Trades + Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
@@ -1194,6 +1207,8 @@ export const Dashboard: React.FC = () => {
           <XPLevelWidget />
         </motion.div>
       </div>
+
+
 
       {/* Removed floating action buttons to declutter UI; Coach chat is global */}
 

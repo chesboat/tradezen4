@@ -3,7 +3,7 @@ export type TradeResult = 'win' | 'loss' | 'breakeven';
 export type MoodType = 'excellent' | 'good' | 'neutral' | 'poor' | 'terrible';
 export type QuestStatus = 'pending' | 'in_progress' | 'completed' | 'failed' | 'cancelled';
 export type WellnessActionType = 'breathwork' | 'meditation' | 'exercise' | 'gratitude' | 'break';
-export type ActivityType = 'trade' | 'note' | 'quest' | 'wellness' | 'xp' | 'reflection' | 'journal';
+export type ActivityType = 'trade' | 'note' | 'quest' | 'wellness' | 'xp' | 'reflection' | 'journal' | 'habit';
 
 // Base interface for Firestore documents
 export interface FirestoreDocument {
@@ -249,6 +249,7 @@ export interface InsightBlock extends FirestoreDocument {
   templateId?: string;
   templateBlockId?: string;
   isFavorite?: boolean;
+  images?: string[]; // Array of image URLs for trade screenshots and charts
 }
 
 export interface FavoriteBlock extends FirestoreDocument {
@@ -294,4 +295,26 @@ export interface ImprovementTask extends FirestoreDocument {
   pinned?: boolean;
   order?: number;
   accountId: string;
+}
+
+export interface TallyRule extends FirestoreDocument {
+  label: string;
+  emoji: string;
+  accountId: string;
+  isActive: boolean;
+}
+
+export interface TallyLog extends FirestoreDocument {
+  date: string; // YYYY-MM-DD format
+  ruleId: string;
+  tallyCount: number;
+  xpEarned: number;
+  accountId: string;
+}
+
+export interface TallyStreak {
+  ruleId: string;
+  currentStreak: number;
+  longestStreak: number;
+  lastTallyDate: string | null;
 }

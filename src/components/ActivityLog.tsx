@@ -12,7 +12,8 @@ import {
   Clock,
   Filter,
   MoreVertical,
-  Edit
+  Edit,
+  Target
 } from 'lucide-react';
 import { useActivityLogStore } from '@/store/useActivityLogStore';
 import { ActivityLogEntry, ActivityType } from '@/types';
@@ -30,6 +31,7 @@ const activityIcons: Record<ActivityType, React.ComponentType<{ className?: stri
   xp: Zap,
   reflection: Activity,
   journal: Edit,
+  habit: Target,
 };
 
 const activityColors: Record<ActivityType, string> = {
@@ -40,6 +42,7 @@ const activityColors: Record<ActivityType, string> = {
   xp: 'text-orange-500',
   reflection: 'text-blue-500',
   journal: 'text-indigo-500',
+  habit: 'text-emerald-500',
 };
 
 const sidebarVariants = {

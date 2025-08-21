@@ -12,7 +12,8 @@ export type DashboardTileId =
   | 'gptInsights'
   | 'patternRadar'
   | 'reflectionProgress'
-  | 'xpLevel';
+  | 'xpLevel'
+  | 'ruleTracker';
 
 export interface DashboardTileConfig {
   id: DashboardTileId;
@@ -37,6 +38,7 @@ const DEFAULT_LAYOUT: DashboardTileConfig[] = [
   { id: 'patternRadar', visible: true },
   { id: 'reflectionProgress', visible: true },
   { id: 'xpLevel', visible: true },
+  { id: 'ruleTracker', visible: true },
 ];
 
 export const useDashboardTilesStore = create<DashboardTilesState>()(

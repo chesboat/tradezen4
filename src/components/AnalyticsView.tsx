@@ -896,8 +896,9 @@ export const AnalyticsView: React.FC = () => {
                             <span className="capitalize text-muted-foreground">{cls}</span>
                             {isScratch && (
                               <Tooltip content="Scratch (excluded from win rate)">
-                                <span className="inline-flex items-center gap-1 text-[11px] text-yellow-500">
-                                  <MinusCircle className="w-3.5 h-3.5" />
+                                <span className="inline-flex items-center gap-1 text-[11px] text-yellow-500 bg-yellow-100 dark:bg-yellow-900 px-1 rounded">
+                                  <MinusCircle className="w-4 h-4" />
+                                  SCRATCH
                                 </span>
                               </Tooltip>
                             )}

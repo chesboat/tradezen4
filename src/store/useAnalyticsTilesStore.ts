@@ -14,7 +14,17 @@ export type AnalyticsTileId =
   | 'netDailyPnl'
   | 'topSymbols'
   | 'recentTrades'
-  | 'riskAnalysis';
+  | 'riskAnalysis'
+  | 'avgWin'
+  | 'avgLoss'
+  | 'expectancy'
+  | 'longestWinStreak'
+  | 'longestLossStreak'
+  | 'avgRR'
+  | 'largestWin'
+  | 'largestLoss'
+  | 'longVsShort'
+  | 'aiSummary';
 
 export interface AnalyticsTileConfig { id: AnalyticsTileId; visible: boolean }
 
@@ -26,17 +36,34 @@ interface AnalyticsTilesState {
 }
 
 const DEFAULT_LAYOUT: AnalyticsTileConfig[] = [
+  // Core metrics - always visible by default
   { id: 'totalPnl', visible: true },
   { id: 'winRate', visible: true },
   { id: 'profitFactor', visible: true },
   { id: 'sharpeRatio', visible: true },
   { id: 'maxDrawdown', visible: true },
   { id: 'totalTrades', visible: true },
+  
+  // Main analytics tiles
   { id: 'edgeScore', visible: true },
   { id: 'netDailyPnl', visible: true },
   { id: 'topSymbols', visible: true },
   { id: 'recentTrades', visible: true },
   { id: 'riskAnalysis', visible: true },
+  
+  // Additional stats - visible by default but can be hidden
+  { id: 'avgWin', visible: true },
+  { id: 'avgLoss', visible: true },
+  { id: 'expectancy', visible: true },
+  { id: 'longestWinStreak', visible: true },
+  { id: 'longestLossStreak', visible: true },
+  { id: 'avgRR', visible: true },
+  
+  // Advanced metrics - hidden by default to avoid clutter
+  { id: 'largestWin', visible: false },
+  { id: 'largestLoss', visible: false },
+  { id: 'longVsShort', visible: false },
+  { id: 'aiSummary', visible: false },
 ];
 
 export const useAnalyticsTilesStore = create<AnalyticsTilesState>()(

@@ -4,6 +4,7 @@ import { X, Filter, Hash, Pin, Search, ChevronDown, ChevronUp } from 'lucide-rea
 import { useDailyReflectionStore } from '@/store/useDailyReflectionStore';
 import { useQuickNoteStore } from '@/store/useQuickNoteStore';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
+import { useReflectionTemplateStore } from '@/store/useReflectionTemplateStore';
 import { cn } from '@/lib/utils';
 
 interface SmartTagFilterBarProps {
@@ -28,6 +29,7 @@ export const SmartTagFilterBar: React.FC<SmartTagFilterBarProps> = ({ className 
     getTagFrequency
   } = useDailyReflectionStore();
   const { allTags: quickNoteTags, notes } = useQuickNoteStore();
+  const { getAllInsightBlockTags, getInsightBlockTagFrequency } = useReflectionTemplateStore();
 
   // Local state
   const [showMoreDropdown, setShowMoreDropdown] = useState(false);
@@ -40,9 +42,10 @@ export const SmartTagFilterBar: React.FC<SmartTagFilterBarProps> = ({ className 
   const searchDropdownRef = useRef<HTMLDivElement>(null);
   const moreDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Combine tags from both sources with frequency calculation
+  // Combine tags from all sources with frequency calculation
   const allTagsWithFrequency = useMemo(() => {
     const reflectionTags = getReflectionTags(selectedAccountId || undefined);
+    const insightBlockTags = getAllInsightBlockTags(selectedAccountId || undefined);
     
     // Filter quick note tags by account if needed
     const filteredQuickNoteTags = selectedAccountId 
@@ -53,11 +56,12 @@ export const SmartTagFilterBar: React.FC<SmartTagFilterBarProps> = ({ className 
         })
       : quickNoteTags;
 
-    const combinedTags = [...new Set([...reflectionTags, ...filteredQuickNoteTags])];
+    const combinedTags = [...new Set([...reflectionTags, ...filteredQuickNoteTags, ...insightBlockTags])];
     
     return combinedTags.map(tag => {
-      // Calculate frequency from both sources
+      // Calculate frequency from all sources
       const reflectionFreq = getTagFrequency(tag, selectedAccountId || undefined);
+      const insightBlockFreq = getInsightBlockTagFrequency(tag, selectedAccountId || undefined);
       
       // Calculate quick note frequency
       const quickNoteFreq = notes.filter(note => {
@@ -67,7 +71,7 @@ export const SmartTagFilterBar: React.FC<SmartTagFilterBarProps> = ({ className 
       
       return {
         tag,
-        frequency: reflectionFreq + quickNoteFreq,
+        frequency: reflectionFreq + quickNoteFreq + insightBlockFreq,
         isPinned: pinnedTags.includes(tag)
       };
     }).sort((a, b) => {
@@ -77,7 +81,7 @@ export const SmartTagFilterBar: React.FC<SmartTagFilterBarProps> = ({ className 
       if (a.frequency !== b.frequency) return b.frequency - a.frequency;
       return a.tag.localeCompare(b.tag);
     });
-  }, [getReflectionTags, quickNoteTags, selectedAccountId, notes, getTagFrequency, pinnedTags]);
+  }, [getReflectionTags, quickNoteTags, getAllInsightBlockTags, selectedAccountId, notes, getTagFrequency, getInsightBlockTagFrequency, pinnedTags]);
 
   // Split tags into visible and overflow
   const maxVisibleTags = 8;

@@ -19,6 +19,7 @@ const TILE_LABELS: Record<DashboardTileId, string> = {
   patternRadar: 'Pattern Radar',
   reflectionProgress: 'Reflection Progress',
   xpLevel: 'Progress (XP / Level)',
+  ruleTracker: 'Rule Tracker',
 };
 
 export const DashboardTilesModal: React.FC<DashboardTilesModalProps> = ({ isOpen, onClose }) => {

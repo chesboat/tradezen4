@@ -49,6 +49,14 @@ interface ReflectionTemplateState {
   reorderInsightBlocks: (reflectionId: string, fromIndex: number, toIndex: number) => void;
   duplicateInsightBlock: (reflectionId: string, blockId: string) => InsightBlock;
   
+  // Image management for insight blocks
+  addImageToBlock: (reflectionId: string, blockId: string, imageUrl: string) => void;
+  removeImageFromBlock: (reflectionId: string, blockId: string, imageIndex: number) => void;
+  
+  // Tag management for insight blocks
+  getAllInsightBlockTags: (accountId?: string) => string[];
+  getInsightBlockTagFrequency: (tag: string, accountId?: string) => number;
+  
   // Template usage and analytics
   incrementTemplateUsage: (templateId: string) => void;
   getPopularTemplates: (accountId?: string) => CustomTemplate[];
@@ -358,6 +366,81 @@ export const useReflectionTemplateStore = create<ReflectionTemplateState>()(
         });
 
         return duplicatedBlock;
+      },
+
+      // Image management for insight blocks
+      addImageToBlock: (reflectionId, blockId, imageUrl) => {
+        set((state) => ({
+          reflectionData: state.reflectionData.map((reflection) =>
+            reflection.id === reflectionId
+              ? {
+                  ...reflection,
+                  insightBlocks: reflection.insightBlocks.map((block) =>
+                    block.id === blockId
+                      ? { 
+                          ...block, 
+                          images: [...(block.images || []), imageUrl],
+                          updatedAt: new Date() 
+                        }
+                      : block
+                  ),
+                  updatedAt: new Date(),
+                }
+              : reflection
+          ),
+        }));
+        get().saveToStorage();
+      },
+
+      removeImageFromBlock: (reflectionId, blockId, imageIndex) => {
+        set((state) => ({
+          reflectionData: state.reflectionData.map((reflection) =>
+            reflection.id === reflectionId
+              ? {
+                  ...reflection,
+                  insightBlocks: reflection.insightBlocks.map((block) =>
+                    block.id === blockId
+                      ? { 
+                          ...block, 
+                          images: (block.images || []).filter((_, index) => index !== imageIndex),
+                          updatedAt: new Date() 
+                        }
+                      : block
+                  ),
+                  updatedAt: new Date(),
+                }
+              : reflection
+          ),
+        }));
+        get().saveToStorage();
+      },
+
+      // Tag management for insight blocks
+      getAllInsightBlockTags: (accountId) => {
+        const { reflectionData } = get();
+        const filteredReflections = accountId 
+          ? reflectionData.filter(r => r.accountId === accountId)
+          : reflectionData;
+
+        const allTags = filteredReflections
+          .flatMap(r => r.insightBlocks || [])
+          .flatMap(block => block.tags || [])
+          .filter(Boolean);
+
+        return [...new Set(allTags)].sort();
+      },
+
+      getInsightBlockTagFrequency: (tag, accountId) => {
+        const { reflectionData } = get();
+        const filteredReflections = accountId 
+          ? reflectionData.filter(r => r.accountId === accountId)
+          : reflectionData;
+
+        return filteredReflections
+          .flatMap(r => r.insightBlocks || [])
+          .flatMap(block => block.tags || [])
+          .filter(blockTag => blockTag === tag)
+          .length;
       },
 
       // Template analytics
