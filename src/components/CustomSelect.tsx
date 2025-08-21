@@ -1,32 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
 
-// Custom scrollbar styles
-const scrollbarStyles = `
-  .custom-scrollbar::-webkit-scrollbar {
-    width: 6px;
-  }
-  
-  .custom-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  
-  .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: hsl(var(--muted-foreground) / 0.3);
-    border-radius: 3px;
-  }
-  
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--muted-foreground) / 0.5);
-  }
-  
-  /* Firefox scrollbar */
-  .custom-scrollbar {
-    scrollbar-width: thin;
-    scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
-  }
-`;
-
 interface Option {
   value: string;
   label: string;
@@ -148,11 +122,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
   };
 
   return (
-    <>
-      {/* Inject custom scrollbar styles */}
-      <style>{scrollbarStyles}</style>
-      
-      <div className={`relative ${className}`} ref={selectRef}>
+    <div className={`relative ${className}`} ref={selectRef}>
       {/* Select Button */}
       <button
         type="button"
@@ -213,7 +183,6 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
           </div>
         </div>
       )}
-      </div>
-    </>
+    </div>
   );
 };
