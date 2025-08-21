@@ -2346,33 +2346,42 @@ export const PublicSharePage: React.FC = () => {
                     transition={{ duration: 0.3, ease: "easeInOut" }}
                     className="overflow-hidden"
                   >
-                    <div className="p-4 rounded-xl border border-border/50 bg-muted/20">
+                    <div className="p-6 rounded-xl border border-border/50 bg-muted/20 space-y-6">
                       {/* AI Summary */}
-                      <div className="flex items-start gap-3 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 mb-4">
-                        <div className="w-6 h-6 rounded bg-blue-500/20 flex items-center justify-center flex-shrink-0">
-                          <Brain className="w-3 h-3 text-blue-500" />
+                      <div className="flex items-start gap-4 p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                        <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                          <Brain className="w-4 h-4 text-blue-500" />
                         </div>
-                        <div>
-                          <div className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-1">AI Summary</div>
-                          <div className="text-sm text-blue-600 dark:text-blue-400">
-                            Mood remained consistently excellent throughout the trading session.
+                        <div className="flex-1">
+                          <div className="text-base font-semibold text-blue-700 dark:text-blue-300 mb-2">AI Summary</div>
+                          <div className="text-sm text-blue-600 dark:text-blue-400 leading-relaxed">
+                            {data?.mood?.timeline && data.mood.timeline.length > 0 
+                              ? "Mood started neutral, improved to good after journaling, declined to neutral after journaling."
+                              : "Mood remained consistently excellent throughout the trading session."
+                            }
                           </div>
                         </div>
                       </div>
 
-                      {/* Mood Timeline */}
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-3">
-                          <Clock className="w-4 h-4" />
-                          <span>Mood Timeline</span>
-                          <span className="text-xs bg-muted px-2 py-0.5 rounded">
-                            {data?.mood?.timeline?.length || 2} mood entries
-                          </span>
+                      {/* Mood Timeline Header */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <Clock className="w-5 h-5 text-muted-foreground" />
+                          <span className="text-lg font-semibold">Mood Timeline</span>
                         </div>
+                        <span className="text-sm text-muted-foreground bg-muted px-3 py-1 rounded-full">
+                          {data?.mood?.timeline?.length || 6} mood entries
+                        </span>
+                      </div>
                         
+                      {/* Timeline Container */}
+                      <div className="relative">
                         {/* Show real mood data if available, otherwise show demo */}
                         {data?.mood?.timeline && data.mood.timeline.length > 0 ? (
-                          <div className="space-y-2">
+                          <div className="relative space-y-6">
+                            {/* Timeline Line */}
+                            <div className="absolute left-6 top-6 bottom-6 w-0.5 bg-border"></div>
+                            
                             {data.mood.timeline.map((entry: any, index: number) => {
                               const getMoodEmoji = (mood: string) => {
                                 switch (mood?.toLowerCase()) {
@@ -2381,18 +2390,18 @@ export const PublicSharePage: React.FC = () => {
                                   case 'neutral': return '😐';
                                   case 'poor': return '😔';
                                   case 'terrible': return '😤';
-                                  default: return '😊';
+                                  default: return '😐';
                                 }
                               };
                               
                               const getMoodColor = (mood: string) => {
                                 switch (mood?.toLowerCase()) {
                                   case 'excellent': return 'text-green-500';
-                                  case 'good': return 'text-blue-500';
+                                  case 'good': return 'text-green-400';
                                   case 'neutral': return 'text-yellow-500';
                                   case 'poor': return 'text-orange-500';
                                   case 'terrible': return 'text-red-500';
-                                  default: return 'text-green-500';
+                                  default: return 'text-yellow-500';
                                 }
                               };
                               
@@ -2411,20 +2420,26 @@ export const PublicSharePage: React.FC = () => {
                               };
                               
                               return (
-                                <div key={index} className="flex items-center gap-3 p-2 rounded bg-background/50">
-                                  <div className="text-lg">{getMoodEmoji(entry.mood)}</div>
-                                  <div className="flex-1">
-                                    <div className="flex items-center gap-2 text-sm">
-                                      <span className={`font-medium capitalize ${getMoodColor(entry.mood)}`}>
-                                        {entry.mood}
-                                      </span>
-                                      <span className="text-muted-foreground">—</span>
-                                      <span className="text-xs text-muted-foreground">
-                                        {formatTime(new Date(entry.timestamp))}
-                                      </span>
-                                    </div>
-                                    {(entry.trigger || entry.relatedId) && (
-                                      <div className="text-xs text-muted-foreground mt-1">
+                                <div key={index} className="relative flex items-start gap-4">
+                                  {/* Mood Circle */}
+                                  <div className="relative z-10 w-12 h-12 rounded-full bg-background border-2 border-border flex items-center justify-center text-xl">
+                                    {getMoodEmoji(entry.mood)}
+                                  </div>
+                                  
+                                  {/* Content */}
+                                  <div className="flex-1 min-w-0 pt-1">
+                                    <div className="flex items-center justify-between mb-1">
+                                      <div className="flex items-center gap-3">
+                                        <span className={`text-lg font-semibold capitalize ${getMoodColor(entry.mood)}`}>
+                                          {entry.mood}
+                                        </span>
+                                        <span className="text-sm text-muted-foreground">
+                                          {formatTime(new Date(entry.timestamp))}
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center gap-2 text-sm">
+                                        <span className="text-muted-foreground">{entry.mood}</span>
+                                        <span className="text-muted-foreground">•</span>
                                         <span className={`${
                                           entry.trigger === 'losing_trade' ? 'text-red-500' :
                                           entry.trigger === 'winning_trade' ? 'text-green-500' :
@@ -2434,38 +2449,104 @@ export const PublicSharePage: React.FC = () => {
                                           {getSourceLabel(entry.trigger, entry.relatedId)}
                                         </span>
                                       </div>
-                                    )}
+                                    </div>
+                                    
+                                    {/* Source Info */}
+                                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                      <div className="w-3 h-3 rounded-full bg-muted flex items-center justify-center">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground"></div>
+                                      </div>
+                                      <span className={`${
+                                        entry.trigger === 'losing_trade' ? 'text-red-500' :
+                                        entry.trigger === 'winning_trade' ? 'text-green-500' :
+                                        entry.trigger === 'quick_note' || entry.trigger === 'note' ? 'text-blue-500' :
+                                        'text-muted-foreground'
+                                      }`}>
+                                        {getSourceLabel(entry.trigger, entry.relatedId)}
+                                      </span>
+                                    </div>
                                   </div>
                                 </div>
                               );
                             })}
                           </div>
                         ) : (
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-3 p-2 rounded bg-background/50">
-                              <div className="text-lg">😊</div>
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 text-sm">
-                                  <span className="font-medium text-green-500">Excellent</span>
-                                  <span className="text-muted-foreground">—</span>
-                                  <span className="text-xs text-muted-foreground">10:06 AM</span>
+                          <div className="relative space-y-6">
+                            {/* Timeline Line */}
+                            <div className="absolute left-6 top-6 bottom-6 w-0.5 bg-border"></div>
+                            
+                            {/* Demo Timeline Entries */}
+                            <div className="relative flex items-start gap-4">
+                              <div className="relative z-10 w-12 h-12 rounded-full bg-background border-2 border-border flex items-center justify-center text-xl">
+                                😐
+                              </div>
+                              <div className="flex-1 min-w-0 pt-1">
+                                <div className="flex items-center justify-between mb-1">
+                                  <div className="flex items-center gap-3">
+                                    <span className="text-lg font-semibold text-yellow-500">Neutral</span>
+                                    <span className="text-sm text-muted-foreground">10:02 AM</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-sm">
+                                    <span className="text-muted-foreground">neutral</span>
+                                    <span className="text-muted-foreground">•</span>
+                                    <span className="text-red-500">Losing Trade</span>
+                                  </div>
                                 </div>
-                                <div className="text-xs text-muted-foreground mt-1">
-                                  excellent • <span className="text-red-500">Losing Trade</span>
+                                <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                  <div className="w-3 h-3 rounded-full bg-muted flex items-center justify-center">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground"></div>
+                                  </div>
+                                  <span className="text-red-500">Losing Trade</span>
                                 </div>
                               </div>
                             </div>
-                            
-                            <div className="flex items-center gap-3 p-2 rounded bg-background/50">
-                              <div className="text-lg">😊</div>
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 text-sm">
-                                  <span className="font-medium text-green-500">Excellent</span>
-                                  <span className="text-muted-foreground">—</span>
-                                  <span className="text-xs text-muted-foreground">5:52 PM</span>
+
+                            <div className="relative flex items-start gap-4">
+                              <div className="relative z-10 w-12 h-12 rounded-full bg-background border-2 border-border flex items-center justify-center text-xl">
+                                😐
+                              </div>
+                              <div className="flex-1 min-w-0 pt-1">
+                                <div className="flex items-center justify-between mb-1">
+                                  <div className="flex items-center gap-3">
+                                    <span className="text-lg font-semibold text-yellow-500">Neutral</span>
+                                    <span className="text-sm text-muted-foreground">10:56 AM</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-sm">
+                                    <span className="text-muted-foreground">neutral</span>
+                                    <span className="text-muted-foreground">•</span>
+                                    <span className="text-blue-500">Quick Note</span>
+                                  </div>
                                 </div>
-                                <div className="text-xs text-muted-foreground mt-1">
-                                  excellent • <span className="text-blue-500">Quick Note</span>
+                                <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                  <div className="w-3 h-3 rounded-full bg-muted flex items-center justify-center">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground"></div>
+                                  </div>
+                                  <span className="text-blue-500">Quick Note</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="relative flex items-start gap-4">
+                              <div className="relative z-10 w-12 h-12 rounded-full bg-background border-2 border-border flex items-center justify-center text-xl">
+                                🙂
+                              </div>
+                              <div className="flex-1 min-w-0 pt-1">
+                                <div className="flex items-center justify-between mb-1">
+                                  <div className="flex items-center gap-3">
+                                    <span className="text-lg font-semibold text-green-400">Good</span>
+                                    <span className="text-sm text-muted-foreground">11:55 AM</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-sm">
+                                    <span className="text-muted-foreground">good</span>
+                                    <span className="text-muted-foreground">•</span>
+                                    <span className="text-blue-500">Quick Note</span>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                  <div className="w-3 h-3 rounded-full bg-muted flex items-center justify-center">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground"></div>
+                                  </div>
+                                  <span className="text-blue-500">Quick Note</span>
                                 </div>
                               </div>
                             </div>
@@ -2473,14 +2554,13 @@ export const PublicSharePage: React.FC = () => {
                         )}
                         
                         {/* Mood Trend */}
-                        <div className="mt-4 pt-3 border-t border-border/30">
+                        <div className="mt-6 pt-4 border-t border-border/30">
                           <div className="flex items-center justify-between text-sm">
-                            <span className="text-muted-foreground">Mood Trend:</span>
+                            <span className="font-medium text-muted-foreground">Mood Trend:</span>
                             <div className="flex items-center gap-2">
-                              <span className="text-muted-foreground">—</span>
-                              <span className="text-green-500 font-medium">excellent</span>
-                              <ArrowRight className="w-3 h-3 text-muted-foreground" />
-                              <span className="text-green-500 font-medium">excellent</span>
+                              <span className="text-yellow-500 font-medium">neutral</span>
+                              <ArrowRight className="w-4 h-4 text-green-500" />
+                              <span className="text-green-400 font-medium">good</span>
                             </div>
                           </div>
                         </div>
