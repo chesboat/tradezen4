@@ -711,7 +711,12 @@ export const useReflectionTemplateStore = create<ReflectionTemplateState>()(
                 updatedAt: new Date(block.updatedAt),
               })),
             }));
-            set({ reflectionData: parsedReflectionData });
+            // Merge with any in-memory data (e.g., preloaded from server) by id to avoid overwrites
+            set((state) => {
+              const byId = new Map<string, any>();
+              [...parsedReflectionData, ...state.reflectionData].forEach((r) => byId.set(r.id, r));
+              return { reflectionData: Array.from(byId.values()) };
+            });
           }
 
           if (storedFavoriteBlocks.length > 0) {

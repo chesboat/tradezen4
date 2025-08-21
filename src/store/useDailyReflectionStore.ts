@@ -503,7 +503,12 @@ export const useDailyReflectionStore = create<DailyReflectionState>()(
                 timestamp: new Date(entry.timestamp),
               })),
             }));
-            set({ reflections: parsedReflections });
+            // Merge with current in-memory state to avoid overwriting newer data
+            set((state) => {
+              const byId = new Map<string, any>();
+              [...parsedReflections, ...state.reflections].forEach((r) => byId.set(r.id, r));
+              return { reflections: Array.from(byId.values()) };
+            });
           }
 
           // Load pinned tags

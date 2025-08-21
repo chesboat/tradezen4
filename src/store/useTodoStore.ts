@@ -55,8 +55,22 @@ export const useTodoStore = create<TodoState>((set, get) => ({
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       // Extract known categories for filtering UI
       const categories = Array.from(new Set(normalized.map(t => t.category).filter(Boolean) as string[])).sort();
-      set({ tasks: normalized, categories });
-      localStorage.setItem(STORAGE_KEYS.TODO_TASKS, normalized);
+      const localExisting = deserializeTasks(localStorage.getItem(STORAGE_KEYS.TODO_TASKS, [] as ImprovementTask[]));
+
+      // Guard: never overwrite existing local tasks with an empty remote fetch
+      if (normalized.length === 0 && localExisting.length > 0) {
+        set({ tasks: localExisting, categories });
+        // Keep local copy as source of truth until remote has data
+        return;
+      }
+
+      // Merge unique by id when both exist
+      const byId = new Map<string, ImprovementTask>();
+      [...localExisting, ...normalized].forEach((t) => byId.set(t.id, t));
+      const merged = Array.from(byId.values()).sort((a, b) => (new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+
+      set({ tasks: merged, categories });
+      localStorage.setItem(STORAGE_KEYS.TODO_TASKS, merged);
     } catch (err) {
       console.error('Failed to initialize tasks:', err);
     }
