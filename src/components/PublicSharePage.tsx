@@ -1973,38 +1973,32 @@ export const PublicSharePage: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               className="mx-4 sm:mx-6 mt-4 sm:mt-6 p-3 sm:p-4 rounded-xl border border-border/50 bg-gradient-to-r from-background/50 to-muted/20"
             >
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div className="grid grid-cols-2 sm:flex sm:items-center gap-3 sm:gap-6">
+              <div className="flex items-center justify-between text-xs sm:text-sm">
+                <div className="flex items-center gap-3 sm:gap-4">
                   <div className="text-center">
-                    <div className={`text-base sm:text-lg font-bold ${data.stats.totalPnL >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                    <span className={`font-bold ${data.stats.totalPnL >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                       {data.stats.totalPnL >= 0 ? '+' : ''}{formatCurrency(data.stats.totalPnL)}
-                    </div>
-                    <div className="text-xs text-muted-foreground">P&L</div>
+                    </span>
+                    <span className="text-muted-foreground ml-1">P&L</span>
                   </div>
                   
                   <div className="text-center">
-                    <div className="text-base sm:text-lg font-bold text-foreground">
-                      {data.stats.totalTrades}
-                    </div>
-                    <div className="text-xs text-muted-foreground">Trades</div>
+                    <span className="font-bold text-foreground">{data.stats.totalTrades}</span>
+                    <span className="text-muted-foreground ml-1">Trades</span>
                   </div>
                   
                   <div className="text-center">
-                    <div className="text-base sm:text-lg font-bold text-foreground">
-                      {data.stats.winRate}%
-                    </div>
-                    <div className="text-xs text-muted-foreground">Win Rate</div>
+                    <span className="font-bold text-foreground">{data.stats.winRate}%</span>
+                    <span className="text-muted-foreground ml-1">WR</span>
                   </div>
                   
                   <div className="text-center">
-                    <div className="text-base sm:text-lg font-bold text-foreground">
-                      {data.stats.avgRR}:1
-                    </div>
-                    <div className="text-xs text-muted-foreground">Avg R:R</div>
+                    <span className="font-bold text-foreground">{data.stats.avgRR}:1</span>
+                    <span className="text-muted-foreground ml-1">R:R</span>
                   </div>
                 </div>
                 
-                <div className="text-xs sm:text-sm text-muted-foreground text-center sm:text-right">{formatShareDate(data.date)}</div>
+                <div className="text-muted-foreground">{formatShareDate(data.date)}</div>
               </div>
             </motion.div>
           )}
@@ -2793,7 +2787,7 @@ export const PublicSharePage: React.FC = () => {
                                   <div className="lg:col-span-7 grid grid-cols-7 gap-1 lg:gap-3">
                                     {week.map((day, dayIndex) => {
                                       const getDayClassName = () => {
-                                        let classes = 'relative p-1 lg:p-3 rounded-lg lg:rounded-xl border border-border/50 transition-all duration-200 cursor-pointer hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 min-h-[60px] lg:min-h-auto';
+                                        let classes = 'relative p-1 lg:p-3 rounded-lg lg:rounded-xl border border-border/50 transition-all duration-200 cursor-pointer hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 min-h-[70px] lg:min-h-auto aspect-square lg:aspect-auto overflow-hidden';
                                         
                                         if (day.isOtherMonth) classes += ' opacity-40';
                                         if (day.isToday) classes += ' ring-1 lg:ring-2 ring-primary/50';
@@ -2822,42 +2816,44 @@ export const PublicSharePage: React.FC = () => {
                                           whileTap={{ scale: 0.98 }}
                                           title="Sign up to view day details"
                                         >
-                                                                                  <div className="space-y-0.5 lg:space-y-1">
-                                          {/* Date */}
-                                          <div className="flex items-center justify-between">
-                                            <span className={`text-xs lg:text-sm font-medium ${
+                                                                                  <div className="h-full flex flex-col justify-between text-center lg:text-left">
+                                          {/* Date - Top */}
+                                          <div className="flex items-start justify-between">
+                                            <span className={`text-xs lg:text-sm font-medium leading-none ${
                                               day.isOtherMonth ? 'text-muted-foreground' : 'text-foreground'
                                             }`}>
                                               {day.day}
                                             </span>
-                                            <div className="flex items-center gap-1">
-                                              {day.hasReflection && (
-                                                <BookOpen className="w-2 lg:w-3 h-2 lg:h-3 text-green-500" />
-                                              )}
-                                            </div>
+                                            {day.hasReflection && (
+                                              <BookOpen className="w-2 lg:w-3 h-2 lg:h-3 text-green-500 flex-shrink-0" />
+                                            )}
                                           </div>
                                           
-                                          {/* P&L - Only show on larger screens or significant amounts */}
-                                          {formatPnL(day.pnl) && (
-                                            <div className={`text-xs lg:text-sm font-bold ${day.pnl > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                                              {Math.abs(day.pnl) > 100 ? formatCurrency(day.pnl) : (day.pnl > 0 ? '+' : '-')}
-                                            </div>
-                                          )}
-                                          
-                                          {/* Trade Count - Simplified for mobile */}
-                                          {day.tradesCount > 0 && (
-                                            <div className="text-[10px] lg:text-xs text-muted-foreground">
-                                              <span className="lg:hidden">{day.tradesCount}</span>
-                                              <span className="hidden lg:inline">{day.tradesCount} trade{day.tradesCount > 1 ? 's' : ''}</span>
-                                            </div>
-                                          )}
-                                          
-                                          {/* Metrics - Hidden on mobile */}
-                                          {day.tradesCount > 0 && (
-                                            <div className="hidden lg:block text-xs text-muted-foreground space-y-0.5">
-                                              <div>{day.avgRR.toFixed(1)}:1R, {day.winRate.toFixed(0)}%</div>
-                                            </div>
-                                          )}
+                                          {/* Content - Center/Bottom */}
+                                          <div className="flex-1 flex flex-col justify-end items-center lg:items-start">
+                                            {/* P&L - Compact for mobile */}
+                                            {day.pnl !== 0 && (
+                                              <div className={`text-[10px] lg:text-xs font-bold leading-none ${day.pnl > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                                <span className="lg:hidden">{day.pnl > 0 ? '+' : ''}{Math.abs(day.pnl) > 999 ? `${Math.round(day.pnl/1000)}k` : Math.round(day.pnl)}</span>
+                                                <span className="hidden lg:inline">{formatCurrency(day.pnl)}</span>
+                                              </div>
+                                            )}
+                                            
+                                            {/* Trade Count - Very compact for mobile */}
+                                            {day.tradesCount > 0 && (
+                                              <div className="text-[9px] lg:text-xs text-muted-foreground leading-none mt-0.5">
+                                                <span className="lg:hidden">{day.tradesCount}t</span>
+                                                <span className="hidden lg:inline">{day.tradesCount} trade{day.tradesCount > 1 ? 's' : ''}</span>
+                                              </div>
+                                            )}
+                                            
+                                            {/* Metrics - Desktop only */}
+                                            {day.tradesCount > 0 && (
+                                              <div className="hidden lg:block text-xs text-muted-foreground mt-0.5">
+                                                <div className="leading-tight">{day.avgRR.toFixed(1)}:1R, {day.winRate.toFixed(0)}%</div>
+                                              </div>
+                                            )}
+                                          </div>
                                         </div>
                                         </motion.div>
                                       );
