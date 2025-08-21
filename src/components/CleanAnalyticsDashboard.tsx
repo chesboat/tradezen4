@@ -1375,14 +1375,14 @@ export const CleanAnalyticsDashboard: React.FC = () => {
           />
           <MetricTile
             title="Avg win/loss trade"
-            value={metrics.winLossRatio}
+            value={metrics.winLossRatio ?? 0}
             icon={<Activity className="w-5 h-5" />}
             format="number"
             visualType="winLoss"
             visualData={{
-              avgWin: metrics.avgWin,
-              avgLoss: metrics.avgLoss,
-              ratio: metrics.winLossRatio
+              avgWin: metrics.avgWin ?? 0,
+              avgLoss: metrics.avgLoss ?? 0,
+              ratio: metrics.winLossRatio ?? 0,
             }}
             tooltip={{
               title: "Average Win/Loss Ratio",

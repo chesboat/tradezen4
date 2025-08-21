@@ -25,7 +25,8 @@ export async function createPublicShareSnapshot(date: string, accountId: string,
 
   const reflection = rStore.getReflectionByDate(date, accountId);
   const daily = dStore.reflections.find(r => r.date === date && r.accountId === accountId);
-  const notes = qStore.getNotesForDate ? qStore.getNotesForDate(date, accountId) : [] as any[];
+  // Note: getNotesForDate(date) signature does not accept accountId; filter here if needed
+  const notes = qStore.getNotesForDate ? qStore.getNotesForDate(new Date(date)) : ([] as any[]);
   
   // Get trades for the specific date
   const startDate = new Date(date + 'T00:00:00');
@@ -54,7 +55,7 @@ export async function createPublicShareSnapshot(date: string, accountId: string,
     const monthTrades = tStore.getTradesByDateRange(monthStart, monthEnd)
       .filter(trade => trade.accountId === accountId);
     
-    const calendarDays = [];
+    const calendarDays: any[] = [];
     const daysInMonth = monthEnd.getDate();
     
     for (let day = 1; day <= daysInMonth; day++) {
@@ -85,7 +86,7 @@ export async function createPublicShareSnapshot(date: string, accountId: string,
       const hasReflection = !!dayReflection;
       
       // Check for notes
-      const dayNotes = qStore.getNotesForDate ? qStore.getNotesForDate(dayDateStr, accountId) : [];
+      const dayNotes = qStore.getNotesForDate ? qStore.getNotesForDate(new Date(dayDateStr)) : [];
       const hasNotes = dayNotes.length > 0;
       
       calendarDays.push({

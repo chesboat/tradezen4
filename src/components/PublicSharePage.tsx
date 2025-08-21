@@ -1047,7 +1047,7 @@ const DemoJournalView: React.FC = () => {
 
   // Generate demo timeline entries
   const demoEntries = useMemo(() => {
-    const entries = [];
+    const entries: any[] = [];
     const today = new Date();
     
     for (let i = 0; i < daysToShow; i++) {
@@ -1787,7 +1787,7 @@ export const PublicSharePage: React.FC = () => {
           return; 
         }
         
-        const shareData = { id: snap.id, ...snap.data() };
+        const shareData: any = { id: snap.id, ...(snap.data() as any) };
         
         // Load images and full blocks separately
         const [images, rawBlocks] = await Promise.all([
@@ -1890,7 +1890,7 @@ export const PublicSharePage: React.FC = () => {
         onToggle={() => setSidebarExpanded(!sidebarExpanded)}
         isDemo={demoMode}
         currentView={demoMode ? currentDemoView : 'journal'}
-        onViewChange={demoMode ? setCurrentDemoView : undefined}
+        onViewChange={demoMode ? ((view: string) => setCurrentDemoView(view as any)) : undefined}
       />
       
       <MockActivityLog 
@@ -2712,14 +2712,14 @@ export const PublicSharePage: React.FC = () => {
                           {/* Generate weeks from calendar data */}
                           {(() => {
                             // Group days into weeks
-                            const weeks = [];
+                            const weeks: any[][] = [];
                             const firstDay = new Date(data.calendar.year, data.calendar.month, 1);
                             const lastDay = new Date(data.calendar.year, data.calendar.month + 1, 0);
                             const startingDayOfWeek = firstDay.getDay();
                             const daysInMonth = lastDay.getDate();
                             
                             // Create full calendar grid including prev/next month days
-                            const allDays = [];
+                            const allDays: any[] = [];
                             
                             // Previous month days
                             const prevMonth = new Date(data.calendar.year, data.calendar.month - 1, 0);

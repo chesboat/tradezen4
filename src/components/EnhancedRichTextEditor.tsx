@@ -116,7 +116,7 @@ export const EnhancedRichTextEditor: React.FC<EnhancedRichTextEditorProps> = ({
     setIsUploadingImage(true);
     try {
       const imageUrl = await uploadImage(file);
-      editor.chain().focus().setImage({ src: imageUrl }).run();
+      editor.chain().focus().insertContent({ type: 'customImage', attrs: { src: imageUrl } }).run();
     } catch (error) {
       console.error('Failed to upload image:', error);
     } finally {
@@ -151,7 +151,7 @@ export const EnhancedRichTextEditor: React.FC<EnhancedRichTextEditorProps> = ({
     // Optional: if a URL is dropped, try to insert as image
     const uri = e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('text/plain');
     if (uri && /^https?:\/\//.test(uri)) {
-      editor.chain().focus().setImage({ src: uri }).run();
+      editor.chain().focus().insertContent({ type: 'customImage', attrs: { src: uri } }).run();
     }
     setIsDragOver(false);
     dragCounter.current = 0;

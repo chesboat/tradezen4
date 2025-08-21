@@ -528,7 +528,8 @@ export const RuleTallyTracker: React.FC = () => {
           ...data,
           accountId: selectedAccountId,
           isActive: true,
-        });
+          updatedAt: new Date(),
+        } as any);
       }
       setShowForm(false);
       setEditingRule(null);

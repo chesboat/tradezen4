@@ -124,14 +124,5 @@ export const CustomImage = Node.create({
     return ReactNodeViewRenderer(ImageComponent);
   },
   
-  addCommands() {
-    return {
-      setImage: (options: { src: string; alt?: string; title?: string }) => ({ commands }) => {
-        return commands.insertContent({
-          type: this.name,
-          attrs: options,
-        });
-      },
-    };
-  },
+  // Commands are invoked via editor.chain().insertContent({ type: 'customImage', attrs: { src } })
 });
