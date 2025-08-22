@@ -2438,8 +2438,6 @@ export const PublicSharePage: React.FC = () => {
                                         </span>
                                       </div>
                                       <div className="flex items-center gap-2 text-sm">
-                                        <span className="text-muted-foreground">{entry.mood}</span>
-                                        <span className="text-muted-foreground">•</span>
                                         <span className={`${
                                           entry.trigger === 'losing_trade' ? 'text-red-500' :
                                           entry.trigger === 'winning_trade' ? 'text-green-500' :
@@ -2942,63 +2940,7 @@ export const PublicSharePage: React.FC = () => {
               </motion.div>
             )}
 
-            {/* Mood Timeline */}
-            {data?.options?.includeMood && data?.mood?.timeline && data.mood.timeline.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="space-y-4"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-pink-500/10 flex items-center justify-center">
-                      <Smile className="w-4 h-4 text-pink-500" />
-                    </div>
-                    <h3 className="text-lg font-semibold">Mood Timeline</h3>
-                  </div>
-                  <motion.button
-                    onClick={() => toggleSection('mood')}
-                    className="p-1 hover:bg-muted rounded transition-colors"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    {collapsedSections.mood ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
-                  </motion.button>
-                </div>
 
-                <AnimatePresence initial={false}>
-                  {!collapsedSections.mood && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.3, ease: "easeInOut" }}
-                      className="overflow-hidden"
-                    >
-                      <div className="p-4 rounded-xl border border-border/50 bg-card/30">
-                        <div className="flex flex-wrap gap-2">
-                          {data.mood.timeline.map((entry: any, index: number) => (
-                            <div
-                              key={index}
-                              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/30 border border-border/30"
-                            >
-                              <span className="text-lg">{entry.mood}</span>
-                              <span className="text-xs text-muted-foreground">
-                                {new Date(entry.timestamp).toLocaleTimeString([], { 
-                                  hour: '2-digit', 
-                                  minute: '2-digit' 
-                                })}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-            )}
 
             {/* CTA Section */}
             <motion.div
