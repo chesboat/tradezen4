@@ -128,16 +128,50 @@ export const formatDate = (date: Date): string => {
 };
 
 /**
+ * Coerce various timestamp shapes into a valid Date
+ * - Firestore Timestamp-like: { seconds, nanoseconds }
+ * - Unix seconds: number < 1e12
+ * - Unix millis: number >= 1e12
+ * - ISO string or numeric string
+ */
+const coerceToDate = (value: any): Date => {
+  if (value instanceof Date) return value;
+  // Firestore Timestamp instance
+  if (value && typeof value.toDate === 'function') {
+    try {
+      return value.toDate();
+    } catch {
+      // fall through
+    }
+  }
+  if (typeof value === 'number') {
+    const ms = value < 1e12 ? value * 1000 : value;
+    return new Date(ms);
+  }
+  if (typeof value === 'string') {
+    const numeric = Number(value);
+    if (!Number.isNaN(numeric)) {
+      return coerceToDate(numeric);
+    }
+    return new Date(value);
+  }
+  if (value && typeof value === 'object') {
+    const seconds = (value.seconds ?? (value as any)._seconds) as number | undefined;
+    const nanoseconds = (value.nanoseconds ?? (value as any)._nanoseconds) as number | undefined;
+    if (typeof seconds === 'number') {
+      const ms = seconds * 1000 + (typeof nanoseconds === 'number' ? Math.floor(nanoseconds / 1e6) : 0);
+      return new Date(ms);
+    }
+  }
+  return new Date(NaN);
+};
+
+/**
  * Format time for display
  */
-export const formatTime = (date: Date | string): string => {
-  const targetDate = typeof date === 'string' ? new Date(date) : date;
-  
-  // Handle invalid dates
-  if (isNaN(targetDate.getTime())) {
-    return 'Unknown';
-  }
-  
+export const formatTime = (date: any): string => {
+  const targetDate = coerceToDate(date);
+  if (isNaN(targetDate.getTime())) return 'Unknown';
   return new Intl.DateTimeFormat('en-US', {
     hour: 'numeric',
     minute: '2-digit',
@@ -148,30 +182,19 @@ export const formatTime = (date: Date | string): string => {
 /**
  * Format date relative to now
  */
-export const formatRelativeTime = (date: Date | string): string => {
+export const formatRelativeTime = (date: any): string => {
   const now = new Date();
-  const targetDate = typeof date === 'string' ? new Date(date) : date;
-  
-  // Handle invalid dates
-  if (isNaN(targetDate.getTime())) {
-    return 'Unknown';
-  }
-  
+  const targetDate = coerceToDate(date);
+  if (isNaN(targetDate.getTime())) return 'Unknown';
   const diff = now.getTime() - targetDate.getTime();
   const seconds = Math.floor(diff / 1000);
   const minutes = Math.floor(seconds / 60);
   const hours = Math.floor(minutes / 60);
   const days = Math.floor(hours / 24);
-
-  if (days > 0) {
-    return `${days} day${days > 1 ? 's' : ''} ago`;
-  } else if (hours > 0) {
-    return `${hours} hour${hours > 1 ? 's' : ''} ago`;
-  } else if (minutes > 0) {
-    return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
-  } else {
-    return 'Just now';
-  }
+  if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`;
+  if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+  if (minutes > 0) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+  return 'Just now';
 };
 
 /**

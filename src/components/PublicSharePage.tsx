@@ -2406,17 +2406,21 @@ export const PublicSharePage: React.FC = () => {
                               };
                               
                               const getSourceLabel = (trigger: string, relatedId: string) => {
-                                if (trigger === 'trade' || trigger === 'losing_trade' || trigger === 'winning_trade') {
+                                const normalized = (trigger || '').toLowerCase();
+                                if (!normalized || normalized === 'unknown') {
+                                  return '';
+                                }
+                                if (normalized === 'trade' || normalized === 'losing_trade' || normalized === 'winning_trade') {
                                   return trigger === 'losing_trade' ? 'Losing Trade' : 
                                          trigger === 'winning_trade' ? 'Winning Trade' : 'Trade';
                                 }
-                                if (trigger === 'quick_note' || trigger === 'note') {
+                                if (normalized === 'quick_note' || normalized === 'note') {
                                   return 'Quick Note';
                                 }
-                                if (trigger === 'wellness') {
+                                if (normalized === 'wellness') {
                                   return 'Wellness Activity';
                                 }
-                                return trigger || 'Manual Entry';
+                                return 'Manual Entry';
                               };
                               
                               return (
@@ -2434,7 +2438,14 @@ export const PublicSharePage: React.FC = () => {
                                           {entry.mood && entry.mood.toLowerCase() !== 'unknown' ? entry.mood : ''}
                                         </span>
                                         <span className="text-sm text-muted-foreground">
-                                          {formatTime(new Date(entry.timestamp))}
+                                          {(() => {
+                                            const ts = formatTime(entry.timestamp as any);
+                                            return ts !== 'Unknown' ? (
+                                              <span className="text-sm text-muted-foreground">{ts}</span>
+                                            ) : (
+                                              <span className="text-sm text-muted-foreground">—</span>
+                                            );
+                                          })()}
                                         </span>
                                       </div>
                                       <div className="flex items-center gap-2 text-sm">
@@ -2603,22 +2614,13 @@ export const PublicSharePage: React.FC = () => {
                       <div key={index} className="flex items-center justify-between p-3 rounded bg-background/50 border border-border/30">
                         <div className="flex items-center gap-3">
                           <span className="font-mono text-sm font-medium">{trade.symbol}</span>
-                          <span className={`text-xs px-2 py-1 rounded-full ${
-                            trade.direction === 'long' 
-                              ? 'bg-green-500/10 text-green-500' 
-                              : 'bg-red-500/10 text-red-500'
-                          }`}>
-                            {trade.direction.toUpperCase()}
-                          </span>
-                          {trade.result && trade.result.toLowerCase() !== 'unknown' && (
+                          {trade.direction && trade.direction.toLowerCase() !== 'unknown' && (
                             <span className={`text-xs px-2 py-1 rounded-full ${
-                              trade.result === 'win' 
+                              trade.direction === 'long' 
                                 ? 'bg-green-500/10 text-green-500' 
-                                : trade.result === 'loss'
-                                ? 'bg-red-500/10 text-red-500'
-                                : 'bg-gray-500/10 text-gray-500'
+                                : 'bg-red-500/10 text-red-500'
                             }`}>
-                              {trade.result.toUpperCase()}
+                              {trade.direction.toUpperCase()}
                             </span>
                           )}
                         </div>
@@ -2627,7 +2629,14 @@ export const PublicSharePage: React.FC = () => {
                             {trade.riskRewardRatio ? `${trade.riskRewardRatio}:1 RR` : ''}
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            {formatTime(new Date(trade.entryTime))}
+                            {(() => {
+                              const ts = formatTime(trade.entryTime as any);
+                              return ts !== 'Unknown' ? (
+                                <div className="text-xs text-muted-foreground">{ts}</div>
+                              ) : (
+                                <div className="text-xs text-muted-foreground">—</div>
+                              );
+                            })()}
                           </div>
                           <div className={`font-mono text-sm font-medium ${
                             (trade.pnl || 0) > 0 ? 'text-green-500' : (trade.pnl || 0) < 0 ? 'text-red-500' : 'text-muted-foreground'
