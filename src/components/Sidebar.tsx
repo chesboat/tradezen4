@@ -250,8 +250,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
                 <Zap className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="text-lg font-bold text-card-foreground">MasteryLog</h1>
-                <p className="text-xs text-muted-foreground">Level up your edge</p>
+                <h1 className="text-lg font-bold text-card-foreground">TradeFutura</h1>
+                <p className="text-xs text-muted-foreground">Your edge, future-proofed</p>
               </div>
             </motion.div>
           )}
