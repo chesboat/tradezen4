@@ -8,7 +8,6 @@ import {
   Upload, 
   RefreshCw,
   Database,
-  Smartphone,
   Monitor,
   Sun,
   Moon,
@@ -18,13 +17,13 @@ import {
 } from 'lucide-react';
 import { useUserProfileStore } from '@/store/useUserProfileStore';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTheme } from '@/contexts/ThemeContext';
+import { useTheme } from '@/hooks/useTheme';
 import toast from 'react-hot-toast';
 
 export const SettingsPage: React.FC = () => {
   const { profile, updateProfile, updateDisplayName, refreshStats } = useUserProfileStore();
   const { currentUser } = useAuth();
-  const { theme, setTheme } = useTheme();
+  const { theme, toggleTheme } = useTheme();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [displayName, setDisplayNameLocal] = useState(profile?.displayName || '');
@@ -216,12 +215,15 @@ export const SettingsPage: React.FC = () => {
             <div className="flex gap-3">
               {[
                 { value: 'light', label: 'Light', icon: Sun },
-                { value: 'dark', label: 'Dark', icon: Moon },
-                { value: 'system', label: 'System', icon: Smartphone }
+                { value: 'dark', label: 'Dark', icon: Moon }
               ].map(({ value, label, icon: Icon }) => (
                 <button
                   key={value}
-                  onClick={() => setTheme(value as any)}
+                  onClick={() => {
+                    if (theme !== value) {
+                      toggleTheme();
+                    }
+                  }}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
                     theme === value
                       ? 'bg-primary text-primary-foreground border-primary'
