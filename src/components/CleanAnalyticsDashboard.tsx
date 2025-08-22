@@ -1273,7 +1273,7 @@ export const CleanAnalyticsDashboard: React.FC = () => {
     <div className="min-h-screen bg-background">
       {/* Header with Time Period Filters */}
       <div className="bg-card border-b border-border">
-        <div className="max-w-7xl 2xl:max-w-[1600px] 3xl:max-w-[1800px] 4xl:max-w-[2000px] mx-auto px-6 py-4">
+        <div className="max-w-7xl 2xl:max-w-[1800px] 3xl:max-w-[2200px] 4xl:max-w-[2600px] mx-auto px-6 2xl:px-8 3xl:px-10 py-4">
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
             <div className="flex items-center gap-4">
@@ -1303,7 +1303,7 @@ export const CleanAnalyticsDashboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="max-w-7xl 2xl:max-w-[1600px] 3xl:max-w-[1800px] 4xl:max-w-[2000px] mx-auto px-6 py-8">
+      <div className="max-w-7xl 2xl:max-w-[1800px] 3xl:max-w-[2200px] 4xl:max-w-[2600px] mx-auto px-6 2xl:px-8 3xl:px-10 py-8">
         {/* Top 5 Metric Tiles - TradeZella Style with Visuals */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8 items-stretch">
           <MetricTile

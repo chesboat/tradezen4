@@ -538,7 +538,7 @@ export const QuestsView: React.FC = () => {
   ];
 
   return (
-    <div className="p-8 max-w-6xl 2xl:max-w-[1400px] 3xl:max-w-[1600px] 4xl:max-w-[1800px] mx-auto space-y-8">
+    <div className="p-8 2xl:p-10 3xl:p-12 max-w-6xl 2xl:max-w-[1600px] 3xl:max-w-[2000px] 4xl:max-w-[2400px] mx-auto space-y-8">
       {/* Header */}
       <div className="text-center space-y-2">
         <h1 className="text-3xl font-bold text-foreground">Quest Hub</h1>

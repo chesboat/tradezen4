@@ -223,7 +223,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
     const isHovered = hoveredDay?.date.toDateString() === day.date.toDateString();
     
     return cn(
-      'relative p-3 rounded-xl border border-border/50 transition-all duration-200 cursor-pointer',
+      'relative p-3 2xl:p-4 3xl:p-5 rounded-xl border border-border/50 transition-all duration-200 cursor-pointer',
+      'min-h-[100px] 2xl:min-h-[120px] 3xl:min-h-[140px] 4xl:min-h-[160px]',
       'hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10',
       day.isOtherMonth && 'opacity-40',
       isToday && 'ring-2 ring-primary/50',
@@ -251,7 +252,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
   const currentYear = currentDate.getFullYear();
 
   return (
-    <div className={cn('w-full max-w-7xl 2xl:max-w-[1600px] 3xl:max-w-[1800px] 4xl:max-w-[2000px] mx-auto p-6', className)}>
+    <div className={cn('w-full max-w-7xl 2xl:max-w-[1800px] 3xl:max-w-[2200px] 4xl:max-w-[2600px] mx-auto p-6 2xl:p-8 3xl:p-10', className)}>
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
@@ -322,9 +323,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
       </div>
 
       {/* Calendar Grid */}
-      <div className="grid grid-cols-8 gap-3">
+      <div className="grid grid-cols-8 gap-3 2xl:gap-4 3xl:gap-5">
         {/* Day Headers */}
-        <div className="col-span-7 grid grid-cols-7 gap-3 mb-4">
+        <div className="col-span-7 grid grid-cols-7 gap-3 2xl:gap-4 3xl:gap-5 mb-4">
           {DAYS_OF_WEEK.map((day) => (
             <div key={day} className="text-center font-semibold text-muted-foreground py-2">
               {day}
@@ -341,7 +342,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
         {calendarData.weeks.map((week, weekIndex) => (
           <React.Fragment key={weekIndex}>
             {/* Week Days */}
-            <div className="col-span-7 grid grid-cols-7 gap-3">
+            <div className="col-span-7 grid grid-cols-7 gap-3 2xl:gap-4 3xl:gap-5">
               {week.map((day, dayIndex) => (
                 <motion.div
                   key={`${weekIndex}-${dayIndex}`}
@@ -395,7 +396,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
             
             {/* Weekly Summary */}
             <motion.div
-              className="bg-muted/30 border border-border/50 rounded-xl p-4 hover:bg-muted/50 transition-colors"
+              className="bg-muted/30 border border-border/50 rounded-xl p-4 2xl:p-5 3xl:p-6 hover:bg-muted/50 transition-colors min-h-[100px] 2xl:min-h-[120px] 3xl:min-h-[140px] 4xl:min-h-[160px] flex items-center justify-center"
               whileHover={{ scale: 1.01 }}
             >
               <div className="text-center space-y-2">
