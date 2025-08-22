@@ -2706,12 +2706,12 @@ export const PublicSharePage: React.FC = () => {
                           </div>
                         </div>
 
-                                            {/* Mobile-First Calendar Design */}
-                    <div className="space-y-4">
-                      {/* Day Headers - Sun through Fri + Week Summary */}
-                      <div className="grid grid-cols-7 gap-1 lg:gap-3">
+                    {/* Mobile-First Calendar Design */}
+                    <div className="space-y-2 lg:space-y-4">
+                      {/* Day Headers - Responsive */}
+                      <div className="grid grid-cols-7 gap-0.5 sm:gap-1 lg:gap-3">
                         {['S', 'M', 'T', 'W', 'T', 'F', 'Week'].map((day, index) => (
-                          <div key={index} className="text-center text-xs lg:text-sm font-semibold text-muted-foreground py-2">
+                          <div key={index} className="text-center text-[10px] sm:text-xs lg:text-sm font-semibold text-muted-foreground py-1 lg:py-2">
                             <span className="lg:hidden">{day}</span>
                             <span className="hidden lg:inline">
                               {index < 6 ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'][index] : 'Week'}
@@ -2806,11 +2806,11 @@ export const PublicSharePage: React.FC = () => {
                                   </div>
                                   
                                   {/* Week Row - 6 Days + Week Summary */}
-                                  <div className="grid grid-cols-7 gap-1 lg:gap-3">
+                                  <div className="grid grid-cols-7 gap-0.5 sm:gap-1 lg:gap-3">
                                     {/* Sunday through Friday (first 6 days) */}
                                     {week.slice(0, 6).map((day, dayIndex) => {
                                       const getDayClassName = () => {
-                                        let classes = 'relative p-2 lg:p-3 rounded-lg border border-border/30 transition-all duration-200 cursor-pointer hover:border-primary/50 min-h-[50px] lg:min-h-[80px] flex flex-col';
+                                        let classes = 'relative p-1 sm:p-2 lg:p-3 rounded border border-border/30 transition-all duration-200 cursor-pointer hover:border-primary/50 min-h-[35px] sm:min-h-[50px] lg:min-h-[80px] flex flex-col overflow-hidden';
                                         
                                         if (day.isOtherMonth) classes += ' opacity-30';
                                         if (day.isToday) classes += ' ring-1 ring-primary/50 bg-primary/5';
@@ -2823,9 +2823,16 @@ export const PublicSharePage: React.FC = () => {
                                       
                                       const formatPnL = (pnl) => {
                                         if (pnl === 0) return null;
+                                        // Ultra-compact formatting for mobile
+                                        const absVal = Math.abs(pnl);
+                                        let displayValue;
+                                        if (absVal >= 10000) displayValue = `${pnl > 0 ? '+' : ''}${Math.round(pnl / 1000)}k`;
+                                        else if (absVal >= 1000) displayValue = `${pnl > 0 ? '+' : ''}${(pnl / 1000).toFixed(1)}k`;
+                                        else displayValue = `${pnl > 0 ? '+' : ''}${Math.round(pnl)}`;
+                                        
                                         return (
-                                          <div className={`text-sm font-bold ${pnl > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                                            {formatCurrency(pnl)}
+                                          <div className={`text-[8px] sm:text-xs lg:text-sm font-medium leading-none ${pnl > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                            {displayValue}
                                           </div>
                                         );
                                       };
@@ -2842,7 +2849,7 @@ export const PublicSharePage: React.FC = () => {
                                                                                   <div className="h-full flex flex-col justify-between">
                                           {/* Top Row - Date and Indicator */}
                                           <div className="flex items-center justify-between mb-1">
-                                            <span className={`text-xs lg:text-sm font-medium ${
+                                            <span className={`text-[10px] sm:text-xs lg:text-sm font-medium ${
                                               day.isOtherMonth ? 'text-muted-foreground/60' : 'text-foreground'
                                             }`}>
                                               {day.day}
@@ -2855,15 +2862,15 @@ export const PublicSharePage: React.FC = () => {
                                           {/* Bottom Row - P&L or Trade Count */}
                                           <div className="flex flex-col items-center lg:items-start">
                                             {day.pnl !== 0 ? (
-                                              <div className={`text-[10px] lg:text-xs font-bold ${day.pnl > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                              <div className={`text-[8px] sm:text-[10px] lg:text-xs font-bold ${day.pnl > 0 ? 'text-green-500' : 'text-red-500'}`}>
                                                 {Math.abs(day.pnl) > 999 ? 
                                                   `${day.pnl > 0 ? '+' : ''}${(day.pnl/1000).toFixed(1)}k` : 
                                                   `${day.pnl > 0 ? '+' : ''}${Math.round(day.pnl)}`
                                                 }
                                               </div>
                                             ) : day.tradesCount > 0 ? (
-                                              <div className="text-[10px] lg:text-xs text-muted-foreground">
-                                                {day.tradesCount}
+                                              <div className="text-[8px] sm:text-[10px] lg:text-xs text-muted-foreground">
+                                                {day.tradesCount}<span className="hidden sm:inline">t</span>
                                               </div>
                                             ) : null}
                                             
@@ -2882,16 +2889,16 @@ export const PublicSharePage: React.FC = () => {
                                     
                                     {/* Week Summary Column (replaces Saturday) */}
                                     <motion.div
-                                      className="bg-muted/30 border border-border/50 rounded-lg lg:rounded-xl p-2 lg:p-4 hover:bg-muted/50 transition-colors cursor-pointer min-h-[50px] lg:min-h-[80px] flex flex-col justify-center"
+                                      className="bg-muted/30 border border-border/50 rounded p-1 sm:p-2 lg:p-4 hover:bg-muted/50 transition-colors cursor-pointer min-h-[35px] sm:min-h-[50px] lg:min-h-[80px] flex flex-col justify-center overflow-hidden"
                                       onClick={redirectToSignup}
                                       whileHover={{ scale: 1.01 }}
                                       title="Sign up to view weekly details"
                                     >
-                                      <div className="text-center space-y-1 lg:space-y-2">
-                                        <div className="text-xs lg:text-sm font-medium text-muted-foreground">
+                                      <div className="text-center space-y-0.5 sm:space-y-1 lg:space-y-2">
+                                        <div className="text-[8px] sm:text-[10px] lg:text-sm font-medium text-muted-foreground">
                                           W{weekIndex + 1}
                                         </div>
-                                        <div className={`text-xs lg:text-lg font-bold ${
+                                        <div className={`text-[8px] sm:text-xs lg:text-lg font-bold leading-none ${
                                           weekTotalPnl > 0 ? 'text-green-500' : 
                                           weekTotalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
                                         }`}>
