@@ -380,8 +380,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
             exit="collapsed"
           >
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center">
-                <User className="w-4 h-4 text-white" />
+              <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center overflow-hidden">
+                {profile?.avatar ? (
+                  <img 
+                    src={profile.avatar} 
+                    alt="Profile" 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <User className="w-4 h-4 text-white" />
+                )}
               </div>
               <div className="flex-1">
                 <p className="text-sm font-medium text-card-foreground">
@@ -461,13 +469,23 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
           </Tooltip>
           
           
-          <Tooltip content="John Trader" position="right" fullWidth>
+          <Tooltip content={profile?.displayName || getUserDisplayName()} position="right" fullWidth>
             <motion.button
               className="w-full flex items-center justify-center p-3 rounded-xl hover:bg-accent transition-colors"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <User className="w-5 h-5 text-muted-foreground" />
+              <div className="w-5 h-5 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center overflow-hidden">
+                {profile?.avatar ? (
+                  <img 
+                    src={profile.avatar} 
+                    alt="Profile" 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <User className="w-3 h-3 text-white" />
+                )}
+              </div>
             </motion.button>
           </Tooltip>
         </div>

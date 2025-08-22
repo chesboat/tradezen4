@@ -81,6 +81,11 @@ service cloud.firestore {
       allow create, update, delete: if isAuthenticated();
     }
 
+    // User profiles collection - for XP, level, stats, etc.
+    match /userProfiles/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
     // Default deny all other access
     match /{document=**} {
       allow read, write: if false;
