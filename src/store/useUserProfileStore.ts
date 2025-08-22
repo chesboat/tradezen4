@@ -44,6 +44,7 @@ interface UserProfileState {
   loadFromStorage: (userId: string) => UserProfile | null;
   syncToFirestore: () => Promise<void>;
   loadFromFirestore: (userId: string) => Promise<UserProfile | null>;
+  addXP?: (delta: number) => void;
 }
 
 // XP required for each level (exponential growth)
@@ -169,10 +170,10 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
     const { profile } = get();
     if (!profile) return;
 
-    // Calculate total XP
-    const totalXP = get().calculateTotalXP();
+    // Use Firestore-stored totalXP as source of truth
+    const totalXP = profile.totalXP ?? 0;
     
-    // Calculate level
+    // Calculate level from stored XP
     const { level, xpToNextLevel } = get().calculateLevel(totalXP);
     
     // Get activities for stats
@@ -204,7 +205,7 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
 
     const updatedProfile: UserProfile = {
       ...profile,
-      totalXP,
+      totalXP, // keep stored XP
       level,
       xpToNextLevel,
       stats: {
@@ -219,6 +220,8 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
 
     set({ profile: updatedProfile });
     get().saveToStorage();
+    // Don't overwrite Firestore XP here; only sync derived stats
+    get().syncToFirestore().catch(() => {});
   },
 
   saveToStorage: () => {
@@ -282,6 +285,18 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
     }
     return null;
   },
+
+  // Increment total XP in a controlled way and sync
+  addXP: (delta: number) => {
+    const { profile } = get();
+    if (!profile || !Number.isFinite(delta)) return;
+    const newTotal = Math.max(0, (profile.totalXP || 0) + delta);
+    const { level, xpToNextLevel } = get().calculateLevel(newTotal);
+    const updated: UserProfile = { ...profile, totalXP: newTotal, level, xpToNextLevel };
+    set({ profile: updated });
+    get().saveToStorage();
+    get().syncToFirestore().catch(console.error);
+  }
 }));
 
 // Helper function to get user's display name
