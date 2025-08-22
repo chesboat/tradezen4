@@ -21,9 +21,11 @@ import { motion } from 'framer-motion';
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
-type Breakpoint = 'lg' | 'md' | 'sm' | 'xs' | 'xxs';
+type Breakpoint = 'xxl' | 'xl' | 'lg' | 'md' | 'sm' | 'xs' | 'xxs';
 
 const BREAKPOINTS: Record<Breakpoint, number> = {
+  xxl: 1920,
+  xl: 1600,
   lg: 1200,
   md: 996,
   sm: 768,
@@ -32,6 +34,8 @@ const BREAKPOINTS: Record<Breakpoint, number> = {
 };
 
 const COLS: Record<Breakpoint, number> = {
+  xxl: 16,
+  xl: 14,
   lg: 12,
   md: 10,
   sm: 8,
@@ -59,7 +63,69 @@ const ADDITIONAL_STATS = [
   'longVsShort', 'avgRR', 'largestWin', 'largestLoss', 'aiSummary'
 ];
 
-// Reasonable default layout (lg) – 6 rows tall by default for large tiles
+// Layouts optimized for different screen sizes
+const DEFAULT_XXL_LAYOUT: Layout[] = [
+  // Top row - Key metrics (6 tiles across)
+  { i: 'totalPnl', x: 0, y: 0, w: 2, h: 3 },
+  { i: 'winRate', x: 2, y: 0, w: 2, h: 3 },
+  { i: 'profitFactor', x: 4, y: 0, w: 2, h: 3 },
+  { i: 'sharpeRatio', x: 6, y: 0, w: 2, h: 3 },
+  { i: 'maxDrawdown', x: 8, y: 0, w: 2, h: 3 },
+  { i: 'totalTrades', x: 10, y: 0, w: 2, h: 3 },
+  { i: 'avgWin', x: 12, y: 0, w: 2, h: 3 },
+  { i: 'avgLoss', x: 14, y: 0, w: 2, h: 3 },
+  
+  // Second row - More stats
+  { i: 'expectancy', x: 0, y: 3, w: 2, h: 3 },
+  { i: 'longestWinStreak', x: 2, y: 3, w: 2, h: 3 },
+  { i: 'longestLossStreak', x: 4, y: 3, w: 2, h: 3 },
+  { i: 'avgRR', x: 6, y: 3, w: 2, h: 3 },
+  { i: 'largestWin', x: 8, y: 3, w: 2, h: 3 },
+  { i: 'largestLoss', x: 10, y: 3, w: 2, h: 3 },
+  { i: 'longVsShort', x: 12, y: 3, w: 4, h: 3 },
+  
+  // Main analytics tiles - larger on 4K
+  { i: 'edgeScore', x: 0, y: 6, w: 8, h: 8, minW: 6, minH: 6 },
+  { i: 'netDailyPnl', x: 8, y: 6, w: 8, h: 8, minW: 6, minH: 6 },
+  { i: 'topSymbols', x: 0, y: 14, w: 5, h: 6 },
+  { i: 'recentTrades', x: 5, y: 14, w: 6, h: 6 },
+  { i: 'riskAnalysis', x: 11, y: 14, w: 5, h: 6 },
+  
+  // AI Summary - extra wide on 4K
+  { i: 'aiSummary', x: 0, y: 20, w: 16, h: 6, minW: 8, minH: 4 },
+];
+
+const DEFAULT_XL_LAYOUT: Layout[] = [
+  // Top row - Key metrics
+  { i: 'totalPnl', x: 0, y: 0, w: 2, h: 3 },
+  { i: 'winRate', x: 2, y: 0, w: 2, h: 3 },
+  { i: 'profitFactor', x: 4, y: 0, w: 2, h: 3 },
+  { i: 'sharpeRatio', x: 6, y: 0, w: 2, h: 3 },
+  { i: 'maxDrawdown', x: 8, y: 0, w: 2, h: 3 },
+  { i: 'totalTrades', x: 10, y: 0, w: 2, h: 3 },
+  { i: 'avgWin', x: 12, y: 0, w: 2, h: 3 },
+  
+  // Second row - Additional stats
+  { i: 'avgLoss', x: 0, y: 3, w: 2, h: 3 },
+  { i: 'expectancy', x: 2, y: 3, w: 2, h: 3 },
+  { i: 'longestWinStreak', x: 4, y: 3, w: 2, h: 3 },
+  { i: 'longestLossStreak', x: 6, y: 3, w: 2, h: 3 },
+  { i: 'avgRR', x: 8, y: 3, w: 2, h: 3 },
+  { i: 'largestWin', x: 10, y: 3, w: 2, h: 3 },
+  { i: 'largestLoss', x: 12, y: 3, w: 2, h: 3 },
+  
+  // Main analytics tiles
+  { i: 'edgeScore', x: 0, y: 6, w: 7, h: 8, minW: 5, minH: 6 },
+  { i: 'netDailyPnl', x: 7, y: 6, w: 7, h: 8, minW: 5, minH: 6 },
+  { i: 'topSymbols', x: 0, y: 14, w: 4, h: 6 },
+  { i: 'recentTrades', x: 4, y: 14, w: 5, h: 6 },
+  { i: 'riskAnalysis', x: 9, y: 14, w: 5, h: 6 },
+  
+  // AI Summary - wide
+  { i: 'aiSummary', x: 0, y: 20, w: 10, h: 6, minW: 7, minH: 4 },
+  { i: 'longVsShort', x: 10, y: 20, w: 4, h: 6 },
+];
+
 const DEFAULT_LG_LAYOUT: Layout[] = [
   // Top row - Key metrics
   { i: 'totalPnl', x: 0, y: 0, w: 2, h: 3 },
@@ -453,15 +519,18 @@ export const DashboardGrid: React.FC = () => {
   const [layouts, setLayouts] = React.useState<Layouts>(() => {
     const saved = loadLayouts(accountKey);
     if (saved) return saved;
-    // Seed from lg default, copy to other breakpoints with simple scaling
-    const lg = DEFAULT_LG_LAYOUT;
-    const scale = (cols: number): Layout[] => lg.map(l => ({ ...l, w: Math.min(l.w, cols), x: Math.min(l.x, Math.max(0, cols - l.w)) }));
+    // Use optimized layouts for each breakpoint
+    const scale = (baseLayout: Layout[], cols: number): Layout[] => 
+      baseLayout.map(l => ({ ...l, w: Math.min(l.w, cols), x: Math.min(l.x, Math.max(0, cols - l.w)) }));
+    
     return {
-      lg,
-      md: scale(COLS.md),
-      sm: scale(COLS.sm),
-      xs: scale(COLS.xs),
-      xxs: scale(COLS.xxs),
+      xxl: DEFAULT_XXL_LAYOUT,
+      xl: DEFAULT_XL_LAYOUT,
+      lg: DEFAULT_LG_LAYOUT,
+      md: scale(DEFAULT_LG_LAYOUT, COLS.md),
+      sm: scale(DEFAULT_LG_LAYOUT, COLS.sm),
+      xs: scale(DEFAULT_LG_LAYOUT, COLS.xs),
+      xxs: scale(DEFAULT_LG_LAYOUT, COLS.xxs),
     };
   });
 

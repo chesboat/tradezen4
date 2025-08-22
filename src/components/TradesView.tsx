@@ -357,7 +357,7 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-6">
+    <div className="p-8 max-w-7xl 2xl:max-w-[1600px] 3xl:max-w-[1800px] 4xl:max-w-[2000px] mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

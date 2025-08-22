@@ -76,14 +76,10 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
       const html2canvas = (await import('html2canvas')).default;
       
       const canvas = await html2canvas(canvasRef.current, {
-        backgroundColor: 'transparent',
-        scale: 2,
+        background: 'transparent',
         useCORS: true,
         allowTaint: true,
-        scrollX: 0,
-        scrollY: 0,
-        logging: false,
-      });
+      } as any);
 
       // Create download link
       const link = document.createElement('a');
@@ -108,14 +104,10 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
       const html2canvas = (await import('html2canvas')).default;
       
       const canvas = await html2canvas(canvasRef.current, {
-        backgroundColor: 'transparent',
-        scale: 2,
+        background: 'transparent',
         useCORS: true,
         allowTaint: true,
-        scrollX: 0,
-        scrollY: 0,
-        logging: false,
-      });
+      } as any);
 
       canvas.toBlob(async (blob) => {
         if (blob && navigator.clipboard && window.ClipboardItem) {
@@ -147,17 +139,18 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
       const html2canvas = (await import('html2canvas')).default;
       
       const canvas = await html2canvas(canvasRef.current, {
-        backgroundColor: 'transparent',
-        scale: 2,
+        background: 'transparent',
         useCORS: true,
         allowTaint: true,
-        scrollX: 0,
-        scrollY: 0,
-        logging: false,
-      });
+      } as any);
 
       // Check clipboard support and try multiple methods
-      const hasClipboardSupport = navigator.clipboard && window.ClipboardItem && navigator.clipboard.write;
+      const hasClipboardSupport =
+        typeof window !== 'undefined' &&
+        'ClipboardItem' in window &&
+        typeof navigator !== 'undefined' &&
+        'clipboard' in navigator &&
+        typeof (navigator as any).clipboard?.write === 'function';
       
       if (hasClipboardSupport) {
         canvas.toBlob(async (blob) => {
@@ -229,14 +222,10 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
       const html2canvas = (await import('html2canvas')).default;
       
       const canvas = await html2canvas(canvasRef.current, {
-        backgroundColor: 'transparent',
-        scale: 2,
+        background: 'transparent',
         useCORS: true,
         allowTaint: true,
-        scrollX: 0,
-        scrollY: 0,
-        logging: false,
-      });
+      } as any);
 
       // Download the image
       const link = document.createElement('a');
