@@ -9,6 +9,7 @@ import {
   FavoriteBlock
 } from '@/types';
 import { localStorage, STORAGE_KEYS, generateId } from '@/lib/localStorageUtils';
+import { FirestoreService } from '@/lib/firestore';
 import insightTemplatesData from '@/lib/insightTemplates.json';
 
 interface ReflectionTemplateState {
@@ -81,11 +82,65 @@ interface ReflectionTemplateState {
   // Storage management
   loadFromStorage: () => void;
   saveToStorage: () => void;
+
+  // Internal helpers (not part of public API but kept here for typing simplicity)
+  _reflectionService?: any;
+  _safeSync?: (reflection?: ReflectionTemplateData) => Promise<void>;
+  _loadRemote?: () => Promise<void>;
 }
 
 export const useReflectionTemplateStore = create<ReflectionTemplateState>()(
   devtools(
     (set, get) => ({
+      // --- Remote persistence helpers ---
+      _reflectionService: new FirestoreService<ReflectionTemplateData>('reflections'),
+      _safeSync: async (reflection?: ReflectionTemplateData) => {
+        try {
+          if (!reflection) return;
+          // Upsert reflection document remotely; Firestore offline persistence will queue if offline
+          // @ts-ignore - access private helper via any to keep file small
+          const svc: FirestoreService<ReflectionTemplateData> = (get() as any)._reflectionService;
+          await svc.setWithId(reflection.id, {
+            ...reflection,
+            // Serialize dates for Firestore
+            createdAt: (reflection.createdAt as any)?.toISOString?.() || reflection.createdAt,
+            updatedAt: (reflection.updatedAt as any)?.toISOString?.() || reflection.updatedAt,
+            insightBlocks: reflection.insightBlocks.map((b) => ({
+              ...b,
+              createdAt: (b.createdAt as any)?.toISOString?.() || b.createdAt,
+              updatedAt: (b.updatedAt as any)?.toISOString?.() || b.updatedAt,
+            })),
+          } as any);
+        } catch (e) {
+          // Auth not ready or user offline; Firestore SDK will retry when possible
+          console.warn('[reflections] remote sync deferred:', e);
+        }
+      },
+      _loadRemote: async () => {
+        try {
+          // @ts-ignore
+          const svc: FirestoreService<ReflectionTemplateData> = (get() as any)._reflectionService;
+          const remote = await svc.getAll();
+          const parsed = remote.map((r) => ({
+            ...r,
+            createdAt: new Date(r.createdAt),
+            updatedAt: new Date(r.updatedAt),
+            insightBlocks: (r.insightBlocks || []).map((b: any) => ({
+              ...b,
+              createdAt: new Date(b.createdAt),
+              updatedAt: new Date(b.updatedAt),
+            })),
+          }));
+          set((state) => {
+            const byId = new Map<string, any>();
+            [...state.reflectionData, ...parsed].forEach((r) => byId.set(r.id, r));
+            return { reflectionData: Array.from(byId.values()) };
+          });
+          get().saveToStorage();
+        } catch (e) {
+          console.warn('[reflections] failed to load remote (likely unauthenticated):', e);
+        }
+      },
       customTemplates: [],
       builtInTemplates: [],
       reflectionData: [],
@@ -266,6 +321,10 @@ export const useReflectionTemplateStore = create<ReflectionTemplateState>()(
         }
 
         get().saveToStorage();
+        // Best-effort remote sync
+        if (get()._safeSync) {
+          get()._safeSync!(reflection);
+        }
         return reflection;
       },
 
@@ -291,6 +350,10 @@ export const useReflectionTemplateStore = create<ReflectionTemplateState>()(
         }));
 
         get().saveToStorage();
+        const updated = get().reflectionData.find((r) => r.id === reflectionId);
+        if (get()._safeSync) {
+          get()._safeSync!(updated);
+        }
         return newBlock;
       },
 
@@ -311,6 +374,10 @@ export const useReflectionTemplateStore = create<ReflectionTemplateState>()(
           ),
         }));
         get().saveToStorage();
+        const updated = get().reflectionData.find((r) => r.id === reflectionId);
+        if (get()._safeSync) {
+          get()._safeSync!(updated);
+        }
       },
 
       deleteInsightBlock: (reflectionId, blockId) => {
@@ -326,6 +393,10 @@ export const useReflectionTemplateStore = create<ReflectionTemplateState>()(
           ),
         }));
         get().saveToStorage();
+        const updated = get().reflectionData.find((r) => r.id === reflectionId);
+        if (get()._safeSync) {
+          get()._safeSync!(updated);
+        }
       },
 
       reorderInsightBlocks: (reflectionId, fromIndex, toIndex) => {
@@ -727,6 +798,9 @@ export const useReflectionTemplateStore = create<ReflectionTemplateState>()(
             }));
             set({ favoriteBlocks: parsedFavoriteBlocks });
           }
+          // Kick off best-effort remote fetch to merge any existing cloud data
+          // @ts-ignore
+          get()._loadRemote?.();
         } catch (error) {
           console.error('Failed to load reflection template data from storage:', error);
         }

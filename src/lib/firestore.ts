@@ -91,6 +91,13 @@ export class FirestoreService<T extends FirestoreDocument> {
     }
   }
 
+  // Upsert helper when you want to control the document ID
+  async setWithId(id: string, data: T): Promise<void> {
+    const docRef = doc(this.getCollection(), id);
+    const toWrite = removeUndefined({ ...data, id }) as unknown as { [x: string]: any };
+    await setDoc(docRef, toWrite);
+  }
+
   async update(id: string, data: Partial<T>): Promise<void> {
     const docRef = doc(this.getCollection(), id);
     const updateData = removeUndefined({
