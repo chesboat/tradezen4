@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { useActivityLogStore } from './useActivityLogStore';
 import { useQuestStore } from './useQuestStore';
 import { localStorage, STORAGE_KEYS } from '@/lib/localStorageUtils';
+import { db } from '@/lib/firebase';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 
 export interface UserProfile {
   id: string;
@@ -32,14 +34,16 @@ interface UserProfileState {
   isLoading: boolean;
   
   // Actions
-  initializeProfile: (userId: string, email?: string) => void;
+  initializeProfile: (userId: string, email?: string) => Promise<void>;
   updateProfile: (updates: Partial<UserProfile>) => void;
   updateDisplayName: (name: string) => void;
   calculateTotalXP: () => number;
   calculateLevel: (xp: number) => { level: number; xpToNextLevel: number };
   refreshStats: () => void;
   saveToStorage: () => void;
-  loadFromStorage: (userId: string) => void;
+  loadFromStorage: (userId: string) => UserProfile | null;
+  syncToFirestore: () => Promise<void>;
+  loadFromFirestore: (userId: string) => Promise<UserProfile | null>;
 }
 
 // XP required for each level (exponential growth)
@@ -65,45 +69,56 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
   profile: null,
   isLoading: false,
 
-  initializeProfile: (userId, email) => {
+  initializeProfile: async (userId, email) => {
     set({ isLoading: true });
     
-    // Try to load existing profile from storage
-    const existingProfile = get().loadFromStorage(userId);
-    
-    if (!get().profile) {
-      // Create new profile
-      const newProfile: UserProfile = {
-        id: userId,
-        displayName: email?.split('@')[0] || 'Trader',
-        email,
-        totalXP: 0,
-        level: 1,
-        xpToNextLevel: 100,
-        joinedAt: new Date(),
-        preferences: {
-          theme: 'system',
-          notifications: true,
-          autoBackup: true,
-        },
-        stats: {
-          totalTrades: 0,
-          totalQuests: 0,
-          totalWellnessActivities: 0,
-          totalReflections: 0,
-          currentStreak: 0,
-          longestStreak: 0,
-        },
-      };
+    try {
+      // Try to load from Firestore first
+      let profile = await get().loadFromFirestore(userId);
       
-      set({ profile: newProfile, isLoading: false });
+      // If not in Firestore, try localStorage
+      if (!profile) {
+        profile = get().loadFromStorage(userId);
+      }
+      
+      if (!profile) {
+        // Create new profile
+        profile = {
+          id: userId,
+          displayName: email?.split('@')[0] || 'Trader',
+          email,
+          totalXP: 0,
+          level: 1,
+          xpToNextLevel: 100,
+          joinedAt: new Date(),
+          preferences: {
+            theme: 'system',
+            notifications: true,
+            autoBackup: true,
+          },
+          stats: {
+            totalTrades: 0,
+            totalQuests: 0,
+            totalWellnessActivities: 0,
+            totalReflections: 0,
+            currentStreak: 0,
+            longestStreak: 0,
+          },
+        };
+      }
+      
+      set({ profile, isLoading: false });
       get().saveToStorage();
-    } else {
+      
+      // Sync to Firestore
+      await get().syncToFirestore();
+      
+      // Refresh stats and XP
+      get().refreshStats();
+    } catch (error) {
+      console.error('Failed to initialize profile:', error);
       set({ isLoading: false });
     }
-    
-    // Refresh stats and XP
-    get().refreshStats();
   },
 
   updateProfile: (updates) => {
@@ -111,6 +126,8 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
       profile: state.profile ? { ...state.profile, ...updates } : null,
     }));
     get().saveToStorage();
+    // Sync to Firestore in background
+    get().syncToFirestore().catch(console.error);
   },
 
   updateDisplayName: (name) => {
@@ -224,6 +241,44 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
       }
     } catch (error) {
       console.error('Failed to load user profile from storage:', error);
+    }
+    return null;
+  },
+
+  syncToFirestore: async () => {
+    const { profile } = get();
+    if (!profile) return;
+
+    try {
+      const profileDoc = doc(db, 'userProfiles', profile.id);
+      await setDoc(profileDoc, {
+        ...profile,
+        joinedAt: profile.joinedAt instanceof Date ? profile.joinedAt.toISOString() : profile.joinedAt,
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+      console.log('Profile synced to Firestore');
+    } catch (error) {
+      console.error('Failed to sync profile to Firestore:', error);
+    }
+  },
+
+  loadFromFirestore: async (userId) => {
+    try {
+      const profileDoc = doc(db, 'userProfiles', userId);
+      const docSnap = await getDoc(profileDoc);
+      
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        const profile: UserProfile = {
+          ...data,
+          joinedAt: data.joinedAt ? new Date(data.joinedAt) : new Date(),
+        } as UserProfile;
+        
+        set({ profile });
+        return profile;
+      }
+    } catch (error) {
+      console.error('Failed to load profile from Firestore:', error);
     }
     return null;
   },

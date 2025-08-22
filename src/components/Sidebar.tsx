@@ -396,6 +396,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
             <div className="flex items-center gap-2">
               <motion.button
                 className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors"
+                onClick={() => setCurrentView('settings')}
                 whileHover={hoverScale}
                 whileTap={tapScale}
               >

@@ -1,5 +1,6 @@
 import React from 'react';
 import { PublicSharePage } from './components/PublicSharePage';
+import { SettingsPage } from './components/SettingsPage';
 import { Sidebar } from './components/Sidebar';
 import { ActivityLog } from './components/ActivityLog';
 import { Dashboard } from './components/Dashboard';
@@ -94,6 +95,8 @@ function AppContent() {
         return <WellnessView />;
       case 'coach':
         return <CoachView />;
+      case 'settings':
+        return <SettingsPage />;
       default:
         return <Dashboard />;
     }
