@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+// Settings page for profile management and XP sync
 import { motion } from 'framer-motion';
 import { 
   User, 
