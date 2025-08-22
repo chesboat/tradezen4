@@ -262,7 +262,7 @@ const MockSidebar: React.FC<{
                 <Zap className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="text-lg font-bold text-card-foreground">The Mastery Log</h1>
+                <h1 className="text-lg font-bold text-card-foreground">MasteryLog</h1>
                 <p className="text-xs text-muted-foreground">Level up your edge</p>
               </div>
             </motion.div>
