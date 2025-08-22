@@ -2431,7 +2431,7 @@ export const PublicSharePage: React.FC = () => {
                                     <div className="flex items-center justify-between mb-1">
                                       <div className="flex items-center gap-3">
                                         <span className={`text-lg font-semibold capitalize ${getMoodColor(entry.mood)}`}>
-                                          {entry.mood}
+                                          {entry.mood && entry.mood.toLowerCase() !== 'unknown' ? entry.mood : ''}
                                         </span>
                                         <span className="text-sm text-muted-foreground">
                                           {formatTime(new Date(entry.timestamp))}
@@ -2610,15 +2610,17 @@ export const PublicSharePage: React.FC = () => {
                           }`}>
                             {trade.direction.toUpperCase()}
                           </span>
-                          <span className={`text-xs px-2 py-1 rounded-full ${
-                            trade.result === 'win' 
-                              ? 'bg-green-500/10 text-green-500' 
-                              : trade.result === 'loss'
-                              ? 'bg-red-500/10 text-red-500'
-                              : 'bg-gray-500/10 text-gray-500'
-                          }`}>
-                            {trade.result?.toUpperCase() || 'OPEN'}
-                          </span>
+                          {trade.result && trade.result.toLowerCase() !== 'unknown' && (
+                            <span className={`text-xs px-2 py-1 rounded-full ${
+                              trade.result === 'win' 
+                                ? 'bg-green-500/10 text-green-500' 
+                                : trade.result === 'loss'
+                                ? 'bg-red-500/10 text-red-500'
+                                : 'bg-gray-500/10 text-gray-500'
+                            }`}>
+                              {trade.result.toUpperCase()}
+                            </span>
+                          )}
                         </div>
                         <div className="flex items-center gap-3 text-right">
                           <div className="text-xs text-muted-foreground">
