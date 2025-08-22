@@ -1,8 +1,9 @@
-import { db } from './firebase';
+import app, { db } from './firebase';
 import { collection, doc, setDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { useReflectionTemplateStore } from '@/store/useReflectionTemplateStore';
 import { useDailyReflectionStore } from '@/store/useDailyReflectionStore';
 import { useQuickNoteStore } from '@/store/useQuickNoteStore';
+import { getStorage, ref as storageRef, getDownloadURL } from 'firebase/storage';
 
 // Helper function to generate unique IDs
 const generateId = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -137,15 +138,59 @@ export async function createPublicShareSnapshot(date: string, accountId: string,
     return urls;
   };
 
+  // Resolve a Firebase Storage reference or legacy URL to a permanent download URL
+  const storage = getStorage(app as any);
+  const resolveStorageUrl = async (url: string): Promise<string> => {
+    if (!url) return url;
+    // Already a public download URL with token
+    if (/alt=media/.test(url) && /firebasestorage\.googleapis\.com\/.+\/o\//.test(url)) return url;
+    // gs:// bucket path
+    if (/^gs:\/\//.test(url)) {
+      try { return await getDownloadURL(storageRef(storage, url)); } catch { return url; }
+    }
+    // Legacy API style without token
+    if (/firebasestorage\.googleapis\.com\/v0\/b\/.+\/o\?name=/.test(url)) {
+      try {
+        const u = new URL(url);
+        const name = u.searchParams.get('name');
+        if (name) {
+          const ref = storageRef(storage, decodeURIComponent(name));
+          return await getDownloadURL(ref);
+        }
+      } catch { /* ignore */ }
+    }
+    return url;
+  };
+
+  // Replace any inline <img src> that points to Storage with download URLs
+  const replaceInlineStorageUrls = async (html: string): Promise<string> => {
+    if (!html) return html;
+    try {
+      const docEl = document.implementation.createHTMLDocument('tmp');
+      docEl.body.innerHTML = html;
+      const imgs = Array.from(docEl.body.querySelectorAll('img')) as HTMLImageElement[];
+      await Promise.all(imgs.map(async (img) => {
+        const src = img.getAttribute('src') || '';
+        const resolved = await resolveStorageUrl(src);
+        if (resolved && resolved !== src) img.setAttribute('src', resolved);
+      }));
+      return docEl.body.innerHTML;
+    } catch {
+      return html;
+    }
+  };
+
   // Process insight blocks and separate images
   const MAX_BLOCK_CONTENT = 4000; // chars
   const imageCollections: { blockId: string; images: string[] }[] = [];
   const blocksToWrite: { blockId: string; title: string; content: string; order: number; emoji?: string; tags?: string[] }[] = [];
   
-  const insightBlocks = (reflection?.insightBlocks || []).map(b => {
-    const galleryImages: string[] = options.includeImages ? ((b as any).images || []) : [];
-    const inlineImages: string[] = options.includeImages ? extractImageUrlsFromHtml((b as any).content) : [];
-    // Merge and de-duplicate
+  const insightBlocks = await Promise.all((reflection?.insightBlocks || []).map(async (b) => {
+    const galleryImagesRaw: string[] = options.includeImages ? ((b as any).images || []) : [];
+    const inlineImagesRaw: string[] = options.includeImages ? extractImageUrlsFromHtml((b as any).content) : [];
+    // Resolve all potential Storage URLs to downloadable URLs to avoid auth requirements on public page
+    const galleryImages = await Promise.all(galleryImagesRaw.map(resolveStorageUrl));
+    const inlineImages = await Promise.all(inlineImagesRaw.map(resolveStorageUrl));
     const images = Array.from(new Set([...(galleryImages || []), ...(inlineImages || [])]));
     const blockId = generateId();
     
@@ -163,11 +208,15 @@ export async function createPublicShareSnapshot(date: string, accountId: string,
     if (images.length > 0) {
       imageCollections.push({ blockId, images });
     }
+    // Replace inline storage URLs inside the HTML content so public page doesn't need to resolve them
+    const replacedContent = options.includeImages 
+      ? await replaceInlineStorageUrls((b.content || ''))
+      : (b.content || '');
     // Queue full block content to be written in a separate collection
     blocksToWrite.push({
       blockId,
       title: b.title,
-      content: (b.content || ''),
+      content: replacedContent,
       order: b.order,
       emoji: b.emoji,
       tags: b.tags || []
@@ -183,7 +232,7 @@ export async function createPublicShareSnapshot(date: string, accountId: string,
       emoji: b.emoji,
       tags: b.tags || []
     };
-  }).sort((a,b)=>a.order-b.order);
+  })).then(arr => arr.sort((a,b)=>a.order-b.order));
 
   // Build options without undefined
   const cleanOptions: any = {
