@@ -986,7 +986,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
               {activeTab === 'overview' && (
                 <div className="space-y-6">
                   {/* Enhanced Header with Streak */}
@@ -1409,7 +1409,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
                                   <p className="text-xs mt-1">Use the input above to add your first note</p>
                       </div>
                     ) : (
-                                <div className="space-y-3 max-h-64 overflow-y-auto overflow-x-hidden">
+                                <div className="space-y-3 max-h-64 overflow-y-auto overflow-x-hidden custom-scrollbar">
                                   {/* Pinned Notes First */}
                                   {(selectedTagFilter ? filteredDayNotes : dayNotes)
                                     .filter(note => pinnedNotes.has(note.id))
