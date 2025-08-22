@@ -17,19 +17,22 @@ import {
   Zap,
   FileText,
   Tag,
-  MessageCircle
+  MessageCircle,
+  LogOut
 } from 'lucide-react';
 import { useSidebarStore } from '@/store/useSidebarStore';
 import { useNavigationStore } from '@/store/useNavigationStore';
 import { useQuickNoteModal } from '@/store/useQuickNoteStore';
 import { useUserProfileStore, getUserDisplayName, getFormattedLevel } from '@/store/useUserProfileStore';
 import { useQuestStore } from '@/store/useQuestStore';
+import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { AccountFilter } from './AccountFilter';
 import { SearchBar } from './SearchBar';
 import { Tooltip } from './ui/Tooltip';
 import { ThemeToggle } from './ThemeToggle';
 import { TagManager } from './TagManager';
+import toast from 'react-hot-toast';
 
 interface SidebarProps {
   className?: string;
@@ -145,6 +148,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
   const { currentView, setCurrentView } = useNavigationStore();
   const { openModal: openQuickNote } = useQuickNoteModal();
   const { profile, refreshStats } = useUserProfileStore();
+  const { logout, currentUser } = useAuth();
   const [isTagManagerOpen, setIsTagManagerOpen] = useState(false);
 
   // Refresh user stats when component mounts
@@ -155,6 +159,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
   const handleQuickNote = (e: React.MouseEvent) => {
     e.preventDefault();
     openQuickNote();
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await logout();
+      toast.success('Successfully logged out');
+    } catch (error) {
+      toast.error('Failed to log out');
+      console.error('Logout error:', error);
+    }
   };
 
   // Initialize with first available account if none selected
@@ -348,6 +362,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
                 <Tag className="w-5 h-5" />
                 <span className="font-medium text-sm">Manage Tags</span>
               </button>
+              
+              <button
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-red-500/10 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors duration-200"
+                onClick={handleSignOut}
+              >
+                <LogOut className="w-5 h-5" />
+                <span className="font-medium text-sm">Sign Out</span>
+              </button>
             </div>
           </motion.div>
         )}
@@ -439,6 +461,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
               whileTap={{ scale: 0.95 }}
             >
               <Tag className="w-5 h-5" />
+            </motion.button>
+          </Tooltip>
+          
+          <Tooltip content="Sign Out" position="right" fullWidth>
+            <motion.button
+              className="w-full flex items-center justify-center p-3 rounded-xl hover:bg-red-500/10 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+              onClick={handleSignOut}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <LogOut className="w-5 h-5" />
             </motion.button>
           </Tooltip>
           
