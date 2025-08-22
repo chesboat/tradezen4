@@ -240,7 +240,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
     if (pnl === 0) return null;
     return (
       <div className={cn(
-        'text-sm font-bold',
+        'text-base 2xl:text-lg 3xl:text-xl 4xl:text-2xl font-bold',
         pnl > 0 ? 'text-green-500' : 'text-red-500'
       )}>
         {formatCurrency(pnl)}
@@ -327,14 +327,14 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
         {/* Day Headers */}
         <div className="col-span-7 grid grid-cols-7 gap-3 2xl:gap-4 3xl:gap-5 mb-4">
           {DAYS_OF_WEEK.map((day) => (
-            <div key={day} className="text-center font-semibold text-muted-foreground py-2">
+            <div key={day} className="text-center font-semibold text-muted-foreground py-2 text-sm 2xl:text-base 3xl:text-lg">
               {day}
             </div>
           ))}
         </div>
         
         {/* Week Header */}
-        <div className="text-center font-semibold text-muted-foreground py-2">
+        <div className="text-center font-semibold text-muted-foreground py-2 text-sm 2xl:text-base 3xl:text-lg">
           Week
         </div>
 
@@ -358,17 +358,17 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                     {/* Date */}
                     <div className="flex items-center justify-between">
                       <span className={cn(
-                        'text-sm font-medium',
+                        'text-sm 2xl:text-base 3xl:text-lg 4xl:text-xl font-medium',
                         day.isOtherMonth ? 'text-muted-foreground' : 'text-foreground'
                       )}>
                         {day.date.getDate()}
                       </span>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 2xl:gap-1.5">
                         {day.hasNews && (
-                          <CalendarIcon className="w-3 h-3 text-primary" />
+                          <CalendarIcon className="w-3 h-3 2xl:w-4 2xl:h-4 3xl:w-5 3xl:h-5 text-primary" />
                         )}
                         {day.hasReflection && (
-                          <BookOpen className="w-3 h-3 text-green-500" />
+                          <BookOpen className="w-3 h-3 2xl:w-4 2xl:h-4 3xl:w-5 3xl:h-5 text-green-500" />
                         )}
                       </div>
                     </div>
@@ -378,14 +378,14 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                     
                     {/* Trade Count */}
                     {day.tradesCount > 0 && (
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-xs 2xl:text-sm 3xl:text-base text-muted-foreground">
                         {day.tradesCount} trade{day.tradesCount > 1 ? 's' : ''}
                       </div>
                     )}
                     
                     {/* Metrics */}
                     {day.tradesCount > 0 && (
-                      <div className="text-xs text-muted-foreground space-y-0.5">
+                      <div className="text-xs 2xl:text-sm 3xl:text-base text-muted-foreground space-y-0.5">
                         <div>{day.avgRR.toFixed(1)}:1R, {day.winRate.toFixed(0)}%</div>
                       </div>
                     )}
@@ -400,17 +400,17 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
               whileHover={{ scale: 1.01 }}
             >
               <div className="text-center space-y-2">
-                <div className="text-sm font-medium text-muted-foreground">
+                <div className="text-sm 2xl:text-base 3xl:text-lg font-medium text-muted-foreground">
                   Week {weeklyData[weekIndex]?.weekNumber}
                 </div>
                 <div className={cn(
-                  'text-lg font-bold',
+                  'text-lg 2xl:text-xl 3xl:text-2xl 4xl:text-3xl font-bold',
                   weeklyData[weekIndex]?.totalPnl > 0 ? 'text-green-500' : 
                   weeklyData[weekIndex]?.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
                 )}>
                   {formatCurrency(weeklyData[weekIndex]?.totalPnl || 0)}
                 </div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-xs 2xl:text-sm 3xl:text-base text-muted-foreground">
                   {weeklyData[weekIndex]?.activeDays || 0} days
                 </div>
               </div>
