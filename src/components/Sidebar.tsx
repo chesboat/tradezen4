@@ -363,13 +363,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
                 <span className="font-medium text-sm">Manage Tags</span>
               </button>
               
-              <button
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-red-500/10 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors duration-200"
-                onClick={handleSignOut}
-              >
-                <LogOut className="w-5 h-5" />
-                <span className="font-medium text-sm">Sign Out</span>
-              </button>
+
             </div>
           </motion.div>
         )}
@@ -410,12 +404,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
               </motion.button>
               
               <motion.button
-                className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors"
+                className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg hover:bg-red-500/10 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                onClick={handleSignOut}
                 whileHover={hoverScale}
                 whileTap={tapScale}
               >
-                <HelpCircle className="w-4 h-4" />
-                <span className="text-sm">Help</span>
+                <LogOut className="w-4 h-4" />
+                <span className="text-sm">Logout</span>
               </motion.button>
             </div>
           </motion.div>
@@ -464,16 +459,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
             </motion.button>
           </Tooltip>
           
-          <Tooltip content="Sign Out" position="right" fullWidth>
-            <motion.button
-              className="w-full flex items-center justify-center p-3 rounded-xl hover:bg-red-500/10 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
-              onClick={handleSignOut}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <LogOut className="w-5 h-5" />
-            </motion.button>
-          </Tooltip>
           
           <Tooltip content="John Trader" position="right" fullWidth>
             <motion.button
