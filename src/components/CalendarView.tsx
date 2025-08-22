@@ -11,7 +11,8 @@ import {
   Zap,
   Eye,
   Settings,
-  BookOpen
+  BookOpen,
+  Share2
 } from 'lucide-react';
 import { useTradeStore } from '@/store/useTradeStore';
 import { useAccountFilterStore, getAccountIdsForSelection } from '@/store/useAccountFilterStore';
@@ -21,6 +22,7 @@ import { CalendarDay, WeeklySummary, MoodType } from '@/types';
 import { formatCurrency, formatDate, getMoodColor } from '@/lib/localStorageUtils';
 import { cn } from '@/lib/utils';
 import { DayDetailModal } from './DayDetailModal';
+import { CalendarShareModal } from './CalendarShareModal';
 
 const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = [
@@ -34,6 +36,7 @@ interface CalendarViewProps {
 
 export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
   const { selectedAccountId } = useAccountFilterStore();
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const { trades } = useTradeStore();
   const { getNotesForDate } = useQuickNoteStore();
   const { reflections, getReflectionByDate } = useDailyReflectionStore();
@@ -292,6 +295,15 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
           </div>
           <div className="flex items-center gap-2">
             <motion.button
+              onClick={() => setIsShareModalOpen(true)}
+              className="px-3 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all flex items-center gap-2"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Share2 className="w-4 h-4" />
+              Share Calendar
+            </motion.button>
+            <motion.button
               className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -411,6 +423,15 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
         day={selectedDay}
         isOpen={!!selectedDay}
         onClose={() => setSelectedDay(null)}
+      />
+
+      {/* Calendar Share Modal */}
+      <CalendarShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        currentDate={currentDate}
+        calendarData={calendarData}
+        weeklyData={weeklyData}
       />
     </div>
   );

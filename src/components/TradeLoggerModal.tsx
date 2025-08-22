@@ -14,7 +14,8 @@ import {
   Edit3,
   Calendar,
   Calculator,
-  Tag as TagIcon
+  Tag as TagIcon,
+  Camera
 } from 'lucide-react';
 import { useTradeActions } from '@/store/useTradeStore';
 import { useAccountFilterStore, getAccountIdsForSelection } from '@/store/useAccountFilterStore';
@@ -26,6 +27,7 @@ import { useQuestStore } from '@/store/useQuestStore';
 import { useTradeStore } from '@/store/useTradeStore';
 import { useQuickNoteStore } from '@/store/useQuickNoteStore';
 import { TagInput } from '@/components/TagPill';
+import TradeImageImport from '@/components/TradeImageImport';
 import { Trade, TradeDirection, MoodType, TradeResult } from '@/types';
 import { formatCurrency, localStorage, STORAGE_KEYS, getRecentSymbols, addRecentSymbol, getMostRecentSymbol } from '@/lib/localStorageUtils';
 import { cn } from '@/lib/utils';
@@ -108,6 +110,7 @@ export const TradeLoggerModal: React.FC<TradeLoggerModalProps> = ({
   const [customPnlInput, setCustomPnlInput] = useState('');
   const [recentSymbols, setRecentSymbols] = useState<string[]>(getRecentSymbols());
   const [lockoutRemaining, setLockoutRemaining] = useState<string | null>(null);
+  const [showImageImport, setShowImageImport] = useState(false);
   const { allTags } = useQuickNoteStore();
   
   const symbolInputRef = useRef<HTMLInputElement>(null);
@@ -590,6 +593,29 @@ export const TradeLoggerModal: React.FC<TradeLoggerModalProps> = ({
                   Lockout active{lockoutRemaining ? ` • ${lockoutRemaining} remaining` : ''}. You can log for accuracy; consider pausing execution.
                 </div>
                 <button className="px-2 py-0.5 rounded bg-yellow-200 hover:bg-yellow-300 text-yellow-900 dark:bg-yellow-500/20 dark:hover:bg-yellow-500/30 dark:text-yellow-200" onClick={cancelLockout}>End</button>
+              </div>
+            )}
+
+            {/* Screenshot Import CTA */}
+            {!editingTrade && (
+              <div className="mx-4 mt-3 mb-0">
+                <motion.button
+                  onClick={() => setShowImageImport(true)}
+                  className="w-full flex items-center justify-center gap-3 p-4 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 hover:from-blue-100 hover:to-indigo-100 dark:hover:from-blue-900/40 dark:hover:to-indigo-900/40 border border-blue-200/50 dark:border-blue-700/30 text-blue-700 dark:text-blue-300 transition-all duration-200 group"
+                  whileHover={{ scale: 1.005, y: -1 }}
+                  whileTap={{ scale: 0.995 }}
+                >
+                  <div className="p-2 rounded-xl bg-blue-500/10 group-hover:bg-blue-500/20 transition-colors">
+                    <Camera className="w-4 h-4" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <div className="font-semibold text-sm">Import from Screenshot</div>
+                    <div className="text-xs text-blue-600/70 dark:text-blue-400/70">Bulk import multiple trades instantly</div>
+                  </div>
+                  <div className="text-xs bg-blue-500/15 px-2.5 py-1 rounded-full font-medium">
+                    Try it
+                  </div>
+                </motion.button>
               </div>
             )}
 
@@ -1146,6 +1172,12 @@ export const TradeLoggerModal: React.FC<TradeLoggerModalProps> = ({
           </motion.div>
         </>
       )}
+
+      {/* Screenshot Import Modal */}
+      <TradeImageImport 
+        isOpen={showImageImport} 
+        onClose={() => setShowImageImport(false)} 
+      />
     </AnimatePresence>
   );
 }; 
