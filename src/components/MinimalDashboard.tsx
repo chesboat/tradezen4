@@ -18,6 +18,7 @@ import {
 import { useTradeStore } from '@/store/useTradeStore';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
 import { useRuleTallyStore } from '@/store/useRuleTallyStore';
+import { useUserProfileStore } from '@/store/useUserProfileStore';
 import { useDailyReflectionStore } from '@/store/useDailyReflectionStore';
 import { useNavigationStore } from '@/store/useNavigationStore';
 import { formatCurrency } from '@/lib/localStorageUtils';
@@ -365,13 +366,31 @@ const GrowthCorner: React.FC = () => {
   const { trades } = useTradeStore();
   const { selectedAccountId } = useAccountFilterStore();
   const { getReflectionStreak } = useDailyReflectionStore();
+  const { profile, calculateTotalXP, calculateLevel } = useUserProfileStore();
   const { setCurrentView } = useNavigationStore();
   
   // Filter trades by account
   const accountTrades = selectedAccountId ? trades.filter(t => t.accountId === selectedAccountId) : trades;
   const { wins: winningTrades } = summarizeWinLossScratch(accountTrades);
-  const currentLevel = Math.floor(winningTrades / 10) + 1;
-  const xpProgress = (winningTrades % 10) / 10;
+  
+  // Use XP-based level system for consistency with journal
+  const totalXP = calculateTotalXP();
+  const { level: currentLevel, xpToNextLevel } = calculateLevel(totalXP);
+  
+  // Calculate XP progress percentage for current level
+  const prevLevelXP = currentLevel > 1 ? (() => {
+    // Find XP required for previous level
+    let xp = 0;
+    for (let i = 1; i < currentLevel; i++) {
+      const levelXP = i < 30 ? [0, 100, 250, 450, 700, 1000, 1350, 1750, 2200, 2700, 3250, 3850, 4500, 5200, 5950, 6750, 7600, 8500, 9450, 10450, 11500, 12600, 13750, 14950, 16200, 17500, 18850, 20250, 21700, 23200][i] : 23200 + ((i - 29) * 1000);
+      if (levelXP) xp = levelXP;
+    }
+    return xp;
+  })() : 0;
+  
+  const currentLevelXP = totalXP - prevLevelXP;
+  const xpForThisLevel = (totalXP + xpToNextLevel) - prevLevelXP;
+  const xpProgress = xpForThisLevel > 0 ? currentLevelXP / xpForThisLevel : 0;
   
   // Get reflection streak for the selected account
   const reflectionStreak = selectedAccountId ? getReflectionStreak(selectedAccountId) : 0;
@@ -415,7 +434,7 @@ const GrowthCorner: React.FC = () => {
           />
         </div>
         <p className="text-xs text-muted-foreground mt-1">
-          {winningTrades} / {currentLevel * 10} wins to next level
+          {totalXP.toLocaleString()} XP • {xpToNextLevel} XP to next level
         </p>
       </div>
 
