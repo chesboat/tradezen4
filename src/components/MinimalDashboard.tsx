@@ -373,23 +373,19 @@ const GrowthCorner: React.FC = () => {
   const accountTrades = selectedAccountId ? trades.filter(t => t.accountId === selectedAccountId) : trades;
   const { wins: winningTrades } = summarizeWinLossScratch(accountTrades);
   
-  // Use XP-based level system for consistency with journal
-  const totalXP = calculateTotalXP();
-  const { level: currentLevel, xpToNextLevel } = calculateLevel(totalXP);
+  // Use stored profile level for consistency with journal (Level 12)
+  const currentLevel = profile?.level || 1;
+  const totalXP = profile?.totalXP || 0;
+  const xpToNextLevel = profile?.xpToNextLevel || 100;
   
   // Calculate XP progress percentage for current level
-  const prevLevelXP = currentLevel > 1 ? (() => {
-    // Find XP required for previous level
-    let xp = 0;
-    for (let i = 1; i < currentLevel; i++) {
-      const levelXP = i < 30 ? [0, 100, 250, 450, 700, 1000, 1350, 1750, 2200, 2700, 3250, 3850, 4500, 5200, 5950, 6750, 7600, 8500, 9450, 10450, 11500, 12600, 13750, 14950, 16200, 17500, 18850, 20250, 21700, 23200][i] : 23200 + ((i - 29) * 1000);
-      if (levelXP) xp = levelXP;
-    }
-    return xp;
-  })() : 0;
+  const XP_PER_LEVEL = [0, 100, 250, 450, 700, 1000, 1350, 1750, 2200, 2700, 3250, 3850, 4500, 5200, 5950, 6750, 7600, 8500, 9450, 10450, 11500, 12600, 13750, 14950, 16200, 17500, 18850, 20250, 21700, 23200];
+  const getXPForLevel = (level: number) => level < XP_PER_LEVEL.length ? XP_PER_LEVEL[level] : 23200 + ((level - 29) * 1000);
   
+  const prevLevelXP = currentLevel > 1 ? getXPForLevel(currentLevel - 1) : 0;
+  const nextLevelXP = getXPForLevel(currentLevel);
   const currentLevelXP = totalXP - prevLevelXP;
-  const xpForThisLevel = (totalXP + xpToNextLevel) - prevLevelXP;
+  const xpForThisLevel = nextLevelXP - prevLevelXP;
   const xpProgress = xpForThisLevel > 0 ? currentLevelXP / xpForThisLevel : 0;
   
   // Get reflection streak for the selected account
