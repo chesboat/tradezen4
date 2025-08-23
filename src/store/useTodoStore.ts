@@ -97,8 +97,9 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     const base: Omit<ImprovementTask, 'id' | 'createdAt' | 'updatedAt'> = {
       text: text.trim(),
       status: 'open',
-      priority: 'med',
+      priority: extras.priority || 'med',
       tags: [],
+      category: extras.category,
       accountId: (extras.accountId as string) || 'default',
       dueAt: extras.dueAt,
       sourceReflectionId: extras.sourceReflectionId,
