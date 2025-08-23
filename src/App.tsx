@@ -144,13 +144,11 @@ function AppContent() {
         {renderCurrentView()}
       </main>
       
-      {/* Desktop Activity Log - Hidden on mobile */}
+      {/* Desktop Activity Log & Todo - Hidden on mobile */}
       <div className="hidden lg:block">
         <ActivityLog />
+        <TodoDrawer />
       </div>
-      
-      {/* Todo Drawer - Available on all screen sizes */}
-      <TodoDrawer />
       
       {/* Trade Logger Modal */}
       <TradeLoggerModal

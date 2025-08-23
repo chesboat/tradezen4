@@ -102,7 +102,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({ onAddTrade }
   const { currentView, setCurrentView } = useNavigationStore();
   const { openModal: openQuickNote } = useQuickNoteModal();
   const { profile } = useUserProfileStore();
-  const { tasks, toggleDrawer } = useTodoStore();
+  const { tasks, toggleDrawer, toggleDone, addTask } = useTodoStore();
   const { logout } = useAuth();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isTagManagerOpen, setIsTagManagerOpen] = useState(false);
@@ -295,6 +295,73 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({ onAddTrade }
                 </div>
               </div>
 
+              {/* Todo List Section */}
+              {tasks.length > 0 && (
+                <div className="border-t border-border">
+                  <div className="p-4 pb-2">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                        <CheckSquare className="w-4 h-4" />
+                        Todo List
+                        {openTasksCount > 0 && (
+                          <div className="bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-full min-w-[18px] text-center">
+                            {openTasksCount}
+                          </div>
+                        )}
+                      </h3>
+                    </div>
+                    
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {tasks.slice(0, 5).map((task) => (
+                        <motion.div
+                          key={task.id}
+                          className="flex items-start gap-3 p-2 rounded-lg hover:bg-accent/50 transition-colors"
+                          whileTap={{ scale: 0.98 }}
+                        >
+                          <motion.button
+                            className={cn(
+                              'mt-0.5 flex-shrink-0 w-4 h-4 rounded border-2 transition-colors',
+                              task.status === 'done'
+                                ? 'bg-primary border-primary text-primary-foreground'
+                                : 'border-muted-foreground hover:border-primary'
+                            )}
+                            onClick={() => toggleDone(task.id)}
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                          >
+                            {task.status === 'done' && (
+                              <CheckCircle2 className="w-3 h-3" />
+                            )}
+                          </motion.button>
+                          
+                          <div className="flex-1 min-w-0">
+                            <p className={cn(
+                              'text-sm leading-relaxed',
+                              task.status === 'done' 
+                                ? 'line-through text-muted-foreground' 
+                                : 'text-foreground'
+                            )}>
+                              {task.text}
+                            </p>
+                            {task.dueAt && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Due: {new Date(task.dueAt).toLocaleDateString()}
+                              </p>
+                            )}
+                          </div>
+                        </motion.div>
+                      ))}
+                      
+                      {tasks.length > 5 && (
+                        <div className="text-xs text-muted-foreground text-center py-2">
+                          +{tasks.length - 5} more tasks
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Quick Actions */}
               <div className="p-4 border-t border-border">
                 <div className="space-y-2">
@@ -341,23 +408,22 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({ onAddTrade }
                   </motion.button>
                   
                   <motion.button
-                    className="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors"
-                    onClick={() => {
-                      toggleDrawer();
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors"
+                    onClick={async () => {
+                      // Add a quick task
+                      const taskText = prompt('Enter a new task:');
+                      if (taskText?.trim()) {
+                        await addTask(taskText.trim());
+                      }
                       setIsDrawerOpen(false);
                     }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    <div className="flex items-center gap-3">
-                      <CheckSquare className="w-5 h-5" />
-                      <span className="font-medium text-sm">Todo List</span>
-                    </div>
-                    {openTasksCount > 0 && (
-                      <div className="bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full min-w-[20px] text-center">
-                        {openTasksCount}
-                      </div>
-                    )}
+                    <CheckSquare className="w-5 h-5" />
+                    <span className="font-medium text-sm">Add Task</span>
                   </motion.button>
+                  
+
                 </div>
               </div>
 
