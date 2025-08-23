@@ -18,6 +18,7 @@ import { useTodoStore } from '@/store/useTodoStore';
 import { ImprovementTask } from '@/types';
 import { cn } from '@/lib/utils';
 import { CustomSelect } from './CustomSelect';
+import { CalendarPicker } from './CalendarPicker';
 
 export const MobileTodoPage: React.FC = () => {
   const { tasks, toggleDone, addTask, deleteTask, updateTask, scheduleTask, togglePin } = useTodoStore();
@@ -28,6 +29,8 @@ export const MobileTodoPage: React.FC = () => {
   const [filter, setFilter] = useState<'today' | 'all' | 'open' | 'done' | 'snoozed'>('today');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [activeTaskMenu, setActiveTaskMenu] = useState<string | null>(null);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [schedulingTaskId, setSchedulingTaskId] = useState<string | null>(null);
 
   const filteredTasks = useMemo(() => {
     const today = new Date();
@@ -98,6 +101,20 @@ export const MobileTodoPage: React.FC = () => {
   const handleTogglePin = async (taskId: string) => {
     await togglePin(taskId);
     setActiveTaskMenu(null);
+  };
+
+  const handleOpenCalendar = (taskId: string) => {
+    setSchedulingTaskId(taskId);
+    setIsCalendarOpen(true);
+    setActiveTaskMenu(null);
+  };
+
+  const handleCalendarDateSelect = async (date: Date) => {
+    if (schedulingTaskId) {
+      await scheduleTask(schedulingTaskId, date);
+      setSchedulingTaskId(null);
+    }
+    setIsCalendarOpen(false);
   };
 
   // Close menu when clicking outside
@@ -353,7 +370,7 @@ export const MobileTodoPage: React.FC = () => {
                 <div className="relative">
                   <motion.button
                     className="p-1 rounded hover:bg-accent text-muted-foreground hover:text-accent-foreground"
-                    onClick={() => setActiveTaskMenu(activeTaskMenu === task.id ? null : task.id)}
+                    onClick={(e) => { e.stopPropagation(); setActiveTaskMenu(activeTaskMenu === task.id ? null : task.id); }}
                     whileTap={{ scale: 0.95 }}
                   >
                     <MoreVertical className="w-4 h-4" />
@@ -366,7 +383,8 @@ export const MobileTodoPage: React.FC = () => {
                         initial={{ opacity: 0, scale: 0.95, y: -10 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                        className="absolute right-0 top-8 bg-card border border-border rounded-lg shadow-lg z-10 min-w-[160px]"
+                        className="absolute right-0 top-8 bg-card border border-border rounded-lg shadow-lg z-50 min-w-[160px]"
+                        onClick={(e) => e.stopPropagation()}
                       >
                         <div className="py-1">
                           <button
@@ -393,6 +411,13 @@ export const MobileTodoPage: React.FC = () => {
                           >
                             <Calendar className="w-3 h-3" />
                             Schedule for Tomorrow
+                          </button>
+                          <button
+                            className="w-full px-3 py-2 text-left text-sm hover:bg-accent flex items-center gap-2"
+                            onClick={() => handleOpenCalendar(task.id)}
+                          >
+                            <CalendarDays className="w-3 h-3" />
+                            Schedule for Date...
                           </button>
                           <div className="border-t border-border my-1" />
                           <button
@@ -434,6 +459,17 @@ export const MobileTodoPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Calendar Picker Modal */}
+      <CalendarPicker
+        isOpen={isCalendarOpen}
+        onClose={() => {
+          setIsCalendarOpen(false);
+          setSchedulingTaskId(null);
+        }}
+        onSelectDate={handleCalendarDateSelect}
+        title="Schedule Task"
+      />
     </div>
   );
 };
