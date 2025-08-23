@@ -4,6 +4,7 @@ import { SettingsPage } from './components/SettingsPage';
 import { Sidebar } from './components/Sidebar';
 import { ActivityLog } from './components/ActivityLog';
 import { Dashboard } from './components/Dashboard';
+import { MinimalDashboard } from './components/MinimalDashboard';
 import { CalendarView } from './components/CalendarView';
 import { QuestsView } from './components/QuestsView';
 import { WellnessView } from './components/WellnessView';
@@ -73,6 +74,8 @@ function AppContent() {
     switch (currentView) {
       case 'dashboard':
         return <Dashboard />;
+      case 'minimal-dashboard':
+        return <MinimalDashboard />;
       case 'calendar':
         return <CalendarView />;
       case 'trades':
