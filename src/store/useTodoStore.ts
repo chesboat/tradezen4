@@ -24,6 +24,7 @@ interface TodoState {
   reorder: (orderedIds: string[]) => void;
   togglePin: (id: string) => Promise<void>;
   setCategory: (id: string, category?: string) => Promise<void>;
+  scheduleTask: (id: string, scheduledFor?: Date) => Promise<void>;
 }
 
 function deserializeTasks(raw: any[]): ImprovementTask[] {
@@ -216,6 +217,10 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 
   setCategory: async (id, category) => {
     await get().updateTask(id, { category });
+  },
+
+  scheduleTask: async (id, scheduledFor) => {
+    await get().updateTask(id, { scheduledFor });
   },
 }));
 

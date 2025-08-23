@@ -290,6 +290,7 @@ export interface ImprovementTask extends FirestoreDocument {
   tags?: string[];
   category?: string;
   dueAt?: Date | string;
+  scheduledFor?: Date | string; // New: Things 3 style scheduling
   sourceReflectionId?: string;
   completedAt?: Date | string;
   pinned?: boolean;

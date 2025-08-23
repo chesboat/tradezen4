@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, Circle, ChevronLeft, ChevronRight, Clock, Tag, MoreVertical, Plus, X, Pin } from 'lucide-react';
+import { CheckCircle2, Circle, ChevronLeft, ChevronRight, Clock, Tag, MoreVertical, Plus, X, Pin, Calendar } from 'lucide-react';
 import { useTodoStore, initializeSampleTasks } from '@/store/useTodoStore';
 import { ImprovementTask } from '@/types';
 import { useActivityLogStore } from '@/store/useActivityLogStore';
@@ -22,10 +22,10 @@ const contentVariants = {
 };
 
 export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }) => {
-  const { isExpanded, tasks, toggleDrawer, addTask, toggleDone, deleteTask, updateTask, initialize, togglePin, setCategory, railWidth, setRailWidth } = useTodoStore();
+  const { isExpanded, tasks, toggleDrawer, addTask, toggleDone, deleteTask, updateTask, initialize, togglePin, setCategory, scheduleTask, railWidth, setRailWidth } = useTodoStore();
   const { isExpanded: activityExpanded } = useActivityLogStore();
   const { snoozeTask } = useTodoStore.getState();
-  const [filter, setFilter] = useState<'all' | 'open' | 'done' | 'snoozed'>('all');
+  const [filter, setFilter] = useState<'all' | 'today' | 'open' | 'done' | 'snoozed'>('today');
   const [query, setQuery] = useState('');
   const [newText, setNewText] = useState('');
   const [newPriority, setNewPriority] = useState<'low' | 'med' | 'high' | ''>('');
@@ -33,6 +33,8 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
   const [categoryFilter, setCategoryFilter] = useState<string | 'all'>('all');
   const inputRef = useRef<HTMLInputElement>(null);
   const [snoozeForId, setSnoozeForId] = useState<string | null>(null);
+  const [completingTasks, setCompletingTasks] = useState<Set<string>>(new Set());
+  const [schedulingTaskId, setSchedulingTaskId] = useState<string | null>(null);
 
   useEffect(() => {
     const init = async () => {
@@ -47,10 +49,25 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
   }, [isExpanded]);
 
   const filtered = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
     return tasks
       .slice()
       .sort((a, b) => (Number(!!b.pinned) - Number(!!a.pinned)) || ((b.order || 0) - (a.order || 0)))
-      .filter((t) => (filter === 'all' ? true : t.status === filter))
+      .filter((t) => {
+        if (filter === 'all') return true;
+        if (filter === 'today') {
+          // Show tasks scheduled for today, overdue tasks, or unscheduled open tasks
+          if (t.status !== 'open') return false;
+          if (!t.scheduledFor) return true; // Unscheduled open tasks show in Today
+          const scheduledDate = new Date(t.scheduledFor);
+          return scheduledDate < tomorrow; // Today or overdue
+        }
+        return t.status === filter;
+      })
       .filter((t) => categoryFilter === 'all' ? true : t.category === categoryFilter)
       .filter((t) => !query.trim() || t.text.toLowerCase().includes(query.toLowerCase()));
   }, [tasks, filter, query, categoryFilter]);
@@ -69,6 +86,29 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
     setNewText('');
     setNewPriority('');
     setNewCategory('');
+  };
+
+  const handleToggleDone = async (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    if (task.status === 'open') {
+      // Mark as completing for animation
+      setCompletingTasks(prev => new Set(prev).add(taskId));
+      
+      // Wait for animation, then toggle and remove from view
+      setTimeout(async () => {
+        await toggleDone(taskId);
+        setCompletingTasks(prev => {
+          const next = new Set(prev);
+          next.delete(taskId);
+          return next;
+        });
+      }, 600); // Animation duration
+    } else {
+      // Unchecking - no animation needed
+      await toggleDone(taskId);
+    }
   };
 
   const rightOffset = Math.max(60, (activityExpanded ? 320 : 60));
@@ -94,12 +134,24 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
              window.addEventListener('mouseup', onUp);
            }}>
         <motion.button
-          className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors"
+          className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors relative"
           onClick={toggleDrawer}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
           {isExpanded ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
+          {/* Badge count for collapsed state */}
+          {!isExpanded && tasks.filter(t => t.status === 'open').length > 0 && (
+            <motion.div
+              className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0 }}
+              transition={{ type: "spring", stiffness: 500, damping: 30 }}
+            >
+              {tasks.filter(t => t.status === 'open').length}
+            </motion.div>
+          )}
         </motion.button>
 
         <AnimatePresence mode="wait">
@@ -178,7 +230,7 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
         {isExpanded && (
           <motion.div className="p-3 border-b border-border" variants={contentVariants} initial="collapsed" animate="expanded" exit="collapsed">
             <div className="flex items-center gap-2 flex-wrap">
-              {(['all', 'open', 'done', 'snoozed'] as const).map((f) => (
+              {(['today', 'all', 'open', 'done', 'snoozed'] as const).map((f) => (
                 <button
                   key={f}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${filter === f ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground'}`}
@@ -250,9 +302,48 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
               >
                 <div className="flex items-start gap-3">
                   <div className="flex items-center gap-2 mt-1">
-                    <button className="p-1 rounded-full hover:bg-accent" onClick={() => toggleDone(task.id)} aria-label="toggle done">
-                      {task.status === 'done' ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : <Circle className="w-4 h-4 text-muted-foreground" />}
-                    </button>
+                    <motion.button 
+                      className="p-1 rounded-full hover:bg-accent relative" 
+                      onClick={() => handleToggleDone(task.id)} 
+                      aria-label="toggle done"
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                    >
+                      <AnimatePresence mode="wait">
+                        {completingTasks.has(task.id) ? (
+                          <motion.div
+                            key="completing"
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ 
+                              scale: [0.8, 1.2, 1], 
+                              opacity: 1,
+                              rotate: [0, 360]
+                            }}
+                            exit={{ scale: 0, opacity: 0 }}
+                            transition={{ 
+                              duration: 0.6, 
+                              ease: "easeOut",
+                              times: [0, 0.6, 1]
+                            }}
+                          >
+                            <CheckCircle2 className="w-4 h-4 text-green-500" />
+                          </motion.div>
+                        ) : (
+                          <motion.div
+                            key="normal"
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.8, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            {task.status === 'done' ? 
+                              <CheckCircle2 className="w-4 h-4 text-green-500" /> : 
+                              <Circle className="w-4 h-4 text-muted-foreground" />
+                            }
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </motion.button>
                     {/* Priority indicator dot */}
                     {task.priority && (
                       <div className={`w-2 h-2 rounded-full ${
@@ -290,6 +381,14 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                         >
                           <Clock className="w-3.5 h-3.5 text-muted-foreground" />
                         </button>
+                        <button
+                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-accent"
+                          onClick={() => setSchedulingTaskId(task.id)}
+                          aria-label="schedule"
+                          title="Schedule for date"
+                        >
+                          <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+                        </button>
                         <button className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-accent" onClick={() => deleteTask(task.id)} aria-label="delete" title="Delete">
                           <X className="w-3.5 h-3.5 text-muted-foreground" />
                         </button>
@@ -299,6 +398,9 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                       <div className="flex items-center gap-2">
                         {task.dueAt && (
                           <span className="inline-flex items-center gap-1 text-muted-foreground"><Clock className="w-3 h-3" /> {new Date(task.dueAt).toLocaleDateString()}</span>
+                        )}
+                        {task.scheduledFor && (
+                          <span className="inline-flex items-center gap-1 text-blue-500"><Calendar className="w-3 h-3" /> {new Date(task.scheduledFor).toLocaleDateString()}</span>
                         )}
                         {/* Colorful category tag */}
                         {task.category && (
@@ -394,9 +496,48 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
               >
                 <div className="flex items-start gap-3">
                   <div className="flex items-center gap-2 mt-1">
-                    <button className="p-1 rounded-full hover:bg-accent" onClick={() => toggleDone(task.id)} aria-label="toggle done">
-                      {task.status === 'done' ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : <Circle className="w-4 h-4 text-muted-foreground" />}
-                    </button>
+                    <motion.button 
+                      className="p-1 rounded-full hover:bg-accent relative" 
+                      onClick={() => handleToggleDone(task.id)} 
+                      aria-label="toggle done"
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                    >
+                      <AnimatePresence mode="wait">
+                        {completingTasks.has(task.id) ? (
+                          <motion.div
+                            key="completing"
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ 
+                              scale: [0.8, 1.2, 1], 
+                              opacity: 1,
+                              rotate: [0, 360]
+                            }}
+                            exit={{ scale: 0, opacity: 0 }}
+                            transition={{ 
+                              duration: 0.6, 
+                              ease: "easeOut",
+                              times: [0, 0.6, 1]
+                            }}
+                          >
+                            <CheckCircle2 className="w-4 h-4 text-green-500" />
+                          </motion.div>
+                        ) : (
+                          <motion.div
+                            key="normal"
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.8, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            {task.status === 'done' ? 
+                              <CheckCircle2 className="w-4 h-4 text-green-500" /> : 
+                              <Circle className="w-4 h-4 text-muted-foreground" />
+                            }
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </motion.button>
                     {/* Priority indicator dot */}
                     {task.priority && (
                       <div className={`w-2 h-2 rounded-full ${
@@ -434,6 +575,14 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                         >
                           <Clock className="w-3.5 h-3.5 text-muted-foreground" />
                         </button>
+                        <button
+                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-accent"
+                          onClick={() => setSchedulingTaskId(task.id)}
+                          aria-label="schedule"
+                          title="Schedule for date"
+                        >
+                          <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+                        </button>
                         <button className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-accent" onClick={() => deleteTask(task.id)} aria-label="delete" title="Delete">
                           <X className="w-3.5 h-3.5 text-muted-foreground" />
                         </button>
@@ -443,6 +592,9 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                       <div className="flex items-center gap-2">
                         {task.dueAt && (
                           <span className="inline-flex items-center gap-1 text-muted-foreground"><Clock className="w-3 h-3" /> {new Date(task.dueAt).toLocaleDateString()}</span>
+                        )}
+                        {task.scheduledFor && (
+                          <span className="inline-flex items-center gap-1 text-blue-500"><Calendar className="w-3 h-3" /> {new Date(task.scheduledFor).toLocaleDateString()}</span>
                         )}
                         {/* Colorful category tag */}
                         {task.category && (
@@ -517,6 +669,89 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
           </div>
         </div>
       )}
+
+      {/* Schedule Modal */}
+      <AnimatePresence>
+        {schedulingTaskId && (
+          <motion.div
+            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setSchedulingTaskId(null)}
+          >
+            <motion.div
+              className="bg-card border border-border rounded-xl p-6 shadow-xl max-w-sm w-full mx-4"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-primary" />
+                Schedule Task
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Select Date</label>
+                  <input
+                    type="date"
+                    className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
+                    min={new Date().toISOString().split('T')[0]}
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        const selectedDate = new Date(e.target.value);
+                        scheduleTask(schedulingTaskId, selectedDate);
+                        setSchedulingTaskId(null);
+                      }
+                    }}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                    onClick={() => {
+                      const today = new Date();
+                      scheduleTask(schedulingTaskId, today);
+                      setSchedulingTaskId(null);
+                    }}
+                  >
+                    Today
+                  </button>
+                  <button
+                    className="flex-1 px-4 py-2 bg-muted text-muted-foreground rounded-lg hover:bg-accent transition-colors"
+                    onClick={() => {
+                      const tomorrow = new Date();
+                      tomorrow.setDate(tomorrow.getDate() + 1);
+                      scheduleTask(schedulingTaskId, tomorrow);
+                      setSchedulingTaskId(null);
+                    }}
+                  >
+                    Tomorrow
+                  </button>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    className="flex-1 px-4 py-2 bg-muted text-muted-foreground rounded-lg hover:bg-accent transition-colors"
+                    onClick={() => {
+                      scheduleTask(schedulingTaskId, undefined); // Clear schedule
+                      setSchedulingTaskId(null);
+                    }}
+                  >
+                    Clear Schedule
+                  </button>
+                  <button
+                    className="flex-1 px-4 py-2 border border-border rounded-lg hover:bg-accent transition-colors"
+                    onClick={() => setSchedulingTaskId(null)}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.aside>
   );
 };
