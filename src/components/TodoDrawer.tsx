@@ -115,13 +115,27 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
   const clampedWidth = Math.max(280, Math.min(480, isExpanded ? (forcedWidth ?? railWidth) : 60));
 
   return (
-    <motion.aside
-      className={`fixed top-0 h-full bg-card border-l border-border z-50 flex flex-col shadow-xl ${className}`}
-      style={{ right: rightOffset, width: clampedWidth }}
-      variants={sidebarVariants}
-      animate={isExpanded ? 'expanded' : 'collapsed'}
-      initial={false}
-    >
+    <>
+      {/* Backdrop when expanded */}
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div
+            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={toggleDrawer}
+          />
+        )}
+      </AnimatePresence>
+
+      <motion.aside
+        className={`fixed top-0 h-full bg-card border-l border-border z-50 flex flex-col shadow-xl ${className}`}
+        style={{ right: rightOffset, width: clampedWidth }}
+        variants={sidebarVariants}
+        animate={isExpanded ? 'expanded' : 'collapsed'}
+        initial={false}
+      >
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-border cursor-ew-resize"
            onMouseDown={(e) => {
@@ -779,6 +793,7 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
         )}
       </AnimatePresence>
     </motion.aside>
+    </>
   );
 };
 

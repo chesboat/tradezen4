@@ -13,7 +13,8 @@ import {
   BarChart3,
   PlusCircle,
   User,
-  Sparkles,
+
+  Target,
   HelpCircle,
   Zap,
   FileText,
@@ -56,11 +57,12 @@ const navItems: NavItem[] = [
     icon: Home,
     href: '/',
   },
+
   {
-    id: 'minimal-dashboard',
-    label: 'Minimal Dashboard',
-    icon: Sparkles,
-    href: '/minimal',
+    id: 'habits',
+    label: 'Habits',
+    icon: Target,
+    href: '/habits',
   },
   {
     id: 'calendar',

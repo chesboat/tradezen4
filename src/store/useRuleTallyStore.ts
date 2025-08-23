@@ -57,6 +57,18 @@ export const useRuleTallyStore = create<RuleTallyState>()(
           set((state) => ({
             rules: [...state.rules, createdRule],
           }));
+
+          // Log habit creation activity
+          const { addActivity } = useActivityLogStore.getState();
+          addActivity({
+            type: 'habit',
+            title: 'New Habit Created',
+            description: `Created "${rule.label}" habit (${rule.category})`,
+            xpEarned: 10,
+            relatedId: rule.id,
+            accountId: rule.accountId,
+          });
+
           return createdRule;
         } catch (error) {
           console.error('Failed to create tally rule:', error);
@@ -66,12 +78,26 @@ export const useRuleTallyStore = create<RuleTallyState>()(
 
       updateRule: async (id, updates) => {
         try {
+          const rule = get().rules.find(r => r.id === id);
           await rulesService.update(id, updates);
           set((state) => ({
             rules: state.rules.map((rule) =>
               rule.id === id ? { ...rule, ...updates } : rule
             ),
           }));
+
+          // Log habit update activity
+          if (rule) {
+            const { addActivity } = useActivityLogStore.getState();
+            addActivity({
+              type: 'habit',
+              title: 'Habit Updated',
+              description: `Updated "${updates.label || rule.label}" habit`,
+              xpEarned: 5,
+              relatedId: id,
+              accountId: rule.accountId,
+            });
+          }
         } catch (error) {
           console.error('Failed to update tally rule:', error);
           throw error;
@@ -80,11 +106,24 @@ export const useRuleTallyStore = create<RuleTallyState>()(
 
       deleteRule: async (id) => {
         try {
+          const rule = get().rules.find(r => r.id === id);
           await rulesService.delete(id);
           set((state) => ({
             rules: state.rules.filter((rule) => rule.id !== id),
             logs: state.logs.filter((log) => log.ruleId !== id),
           }));
+
+          // Log habit deletion activity
+          if (rule) {
+            const { addActivity } = useActivityLogStore.getState();
+            addActivity({
+              type: 'habit',
+              title: 'Habit Deleted',
+              description: `Deleted "${rule.label}" habit`,
+              relatedId: id,
+              accountId: rule.accountId,
+            });
+          }
         } catch (error) {
           console.error('Failed to delete tally rule:', error);
           throw error;
@@ -142,18 +181,53 @@ export const useRuleTallyStore = create<RuleTallyState>()(
             }));
           }
 
-          // Log XP activity
+          // Log XP activity with enhanced messaging
           const rule = get().rules.find(r => r.id === ruleId);
           if (rule) {
             const { addActivity } = useActivityLogStore.getState();
+            const currentTallyCount = existingLog ? existingLog.tallyCount + 1 : 1;
+            
+            // Calculate streak for enhanced messaging
+            const streak = get().calculateStreak(ruleId);
+            
+            let title = 'Habit Completed! 🎯';
+            let description = `${rule.emoji} ${rule.label}`;
+            
+            // Add streak information for extra dopamine
+            if (streak.currentStreak > 1) {
+              const streakText = getStreakText(rule.category);
+              title = `${streak.currentStreak} ${streakText} streak! 🔥`;
+              description = `${rule.emoji} ${rule.label} - ${streak.currentStreak} ${streakText}s in a row!`;
+            }
+            
+            // Add milestone celebrations
+            if (currentTallyCount % 10 === 0) {
+              title = `${currentTallyCount} tallies milestone! 🏆`;
+              description = `${rule.emoji} ${rule.label} - Hit ${currentTallyCount} tallies today!`;
+            } else if (currentTallyCount % 5 === 0) {
+              title = `${currentTallyCount} tallies today! ⭐`;
+              description = `${rule.emoji} ${rule.label} - ${currentTallyCount} times today!`;
+            }
+
             addActivity({
               type: 'habit',
-              title: 'Rule Followed',
-              description: `Followed rule: ${rule.label}`,
+              title,
+              description,
               xpEarned: xpAmount,
               relatedId: ruleId,
               accountId,
             });
+          }
+
+          // Helper function for streak text (inline since it's not available in store)
+          function getStreakText(category: string): string {
+            switch (category) {
+              case 'trading': return 'market day';
+              case 'weekdays': return 'weekday';
+              case 'daily': return 'day';
+              case 'custom': return 'day';
+              default: return 'day';
+            }
           }
 
           // Update streak
@@ -180,7 +254,8 @@ export const useRuleTallyStore = create<RuleTallyState>()(
       },
 
       calculateStreak: (ruleId) => {
-        const { logs } = get();
+        const { logs, rules } = get();
+        const rule = rules.find(r => r.id === ruleId);
         const ruleLogs = logs
           .filter((log) => log.ruleId === ruleId)
           .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -194,48 +269,91 @@ export const useRuleTallyStore = create<RuleTallyState>()(
           };
         }
 
+        // Helper function to check if a date is a valid day for this habit
+        const isValidDay = (date: Date): boolean => {
+          if (!rule?.schedule?.days) return true; // Default to all days if no schedule
+          const dayOfWeek = date.getDay();
+          return rule.schedule.days.includes(dayOfWeek);
+        };
+
+        // Helper function to get the previous valid day
+        const getPreviousValidDay = (date: Date): Date => {
+          const prevDate = new Date(date);
+          do {
+            prevDate.setDate(prevDate.getDate() - 1);
+          } while (!isValidDay(prevDate));
+          return prevDate;
+        };
+
         const today = new Date();
-        const yesterday = new Date(today);
-        yesterday.setDate(yesterday.getDate() - 1);
-        
         let currentStreak = 0;
         let longestStreak = 0;
         let tempStreak = 0;
         
         // Calculate current streak
         const todayStr = today.toISOString().split('T')[0];
-        const yesterdayStr = yesterday.toISOString().split('T')[0];
         
-        if (ruleLogs[0].date === todayStr) {
+        // Check if today is a valid day for this habit
+        const todayIsValid = isValidDay(today);
+        
+        // Start streak calculation
+        if (ruleLogs[0].date === todayStr && todayIsValid) {
+          // User has logged today and today is a valid day
           currentStreak = 1;
-          tempStreak = 1;
+          let checkDate = getPreviousValidDay(today);
           
-          // Check consecutive days backwards
           for (let i = 1; i < ruleLogs.length; i++) {
-            const currentDate = new Date(ruleLogs[i-1].date);
-            const prevDate = new Date(ruleLogs[i].date);
-            const dayDiff = Math.floor((currentDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24));
+            const checkDateStr = checkDate.toISOString().split('T')[0];
             
-            if (dayDiff === 1) {
+            if (ruleLogs[i].date === checkDateStr) {
               currentStreak++;
-              tempStreak++;
+              checkDate = getPreviousValidDay(checkDate);
             } else {
-              break;
+              // Check if there are any missed valid days between logs
+              const logDate = new Date(ruleLogs[i].date);
+              if (logDate < checkDate) {
+                // There's a gap, streak is broken
+                break;
+              }
             }
           }
-        } else if (ruleLogs[0].date === yesterdayStr) {
-          // Streak broken today, but count yesterday
-          currentStreak = 0;
+        } else if (!todayIsValid) {
+          // Today is not a valid day (e.g., weekend for trading habits)
+          // Check the most recent valid day
+          let mostRecentValidDay = getPreviousValidDay(today);
+          const mostRecentValidDayStr = mostRecentValidDay.toISOString().split('T')[0];
+          
+          if (ruleLogs[0].date === mostRecentValidDayStr) {
+            currentStreak = 1;
+            let checkDate = getPreviousValidDay(mostRecentValidDay);
+            
+            for (let i = 1; i < ruleLogs.length; i++) {
+              const checkDateStr = checkDate.toISOString().split('T')[0];
+              
+              if (ruleLogs[i].date === checkDateStr) {
+                currentStreak++;
+                checkDate = getPreviousValidDay(checkDate);
+              } else {
+                const logDate = new Date(ruleLogs[i].date);
+                if (logDate < checkDate) {
+                  break;
+                }
+              }
+            }
+          }
         }
-
-        // Calculate longest streak
+        
+        // Calculate longest streak (considering only valid days)
         tempStreak = 1;
         for (let i = 1; i < ruleLogs.length; i++) {
-          const currentDate = new Date(ruleLogs[i-1].date);
-          const prevDate = new Date(ruleLogs[i].date);
-          const dayDiff = Math.floor((currentDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24));
+          const currentLogDate = new Date(ruleLogs[i - 1].date);
+          const nextLogDate = new Date(ruleLogs[i].date);
           
-          if (dayDiff === 1) {
+          // Find the expected previous valid day from current log
+          const expectedPrevDay = getPreviousValidDay(currentLogDate);
+          const expectedPrevDayStr = expectedPrevDay.toISOString().split('T')[0];
+          
+          if (ruleLogs[i].date === expectedPrevDayStr) {
             tempStreak++;
           } else {
             longestStreak = Math.max(longestStreak, tempStreak);

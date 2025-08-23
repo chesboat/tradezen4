@@ -298,11 +298,20 @@ export interface ImprovementTask extends FirestoreDocument {
   accountId: string;
 }
 
+export type HabitCategory = 'daily' | 'trading' | 'weekdays' | 'custom';
+
+export interface HabitSchedule {
+  days: number[]; // 0=Sunday, 1=Monday, etc.
+  skipHolidays?: boolean;
+}
+
 export interface TallyRule extends FirestoreDocument {
   label: string;
   emoji: string;
   accountId: string;
   isActive: boolean;
+  category: HabitCategory;
+  schedule?: HabitSchedule;
 }
 
 export interface TallyLog extends FirestoreDocument {

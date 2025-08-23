@@ -3,8 +3,9 @@ import { PublicSharePage } from './components/PublicSharePage';
 import { SettingsPage } from './components/SettingsPage';
 import { Sidebar } from './components/Sidebar';
 import { ActivityLog } from './components/ActivityLog';
-import { Dashboard } from './components/Dashboard';
+
 import { MinimalDashboard } from './components/MinimalDashboard';
+import { MinimalHabitTracker } from './components/MinimalHabitTracker';
 import { CalendarView } from './components/CalendarView';
 import { QuestsView } from './components/QuestsView';
 import { WellnessView } from './components/WellnessView';
@@ -73,9 +74,10 @@ function AppContent() {
   const renderCurrentView = () => {
     switch (currentView) {
       case 'dashboard':
-        return <Dashboard />;
-      case 'minimal-dashboard':
         return <MinimalDashboard />;
+
+      case 'habits':
+        return <MinimalHabitTracker />;
       case 'calendar':
         return <CalendarView />;
       case 'trades':
@@ -101,7 +103,7 @@ function AppContent() {
       case 'settings':
         return <SettingsPage />;
       default:
-        return <Dashboard />;
+        return <MinimalDashboard />;
     }
   };
 
@@ -120,10 +122,7 @@ function AppContent() {
           sidebarExpanded ? 'ml-[280px]' : 'ml-20'
         }`}
         style={{
-          marginRight:
-            (activityLogExpanded ? 320 : 60) +
-            (todoExpanded ? Math.max(220, Math.min(420, railWidth)) : 60) +
-            10,
+          marginRight: (activityLogExpanded ? 320 : 60) + (todoExpanded ? 0 : 60) + 10,
         }}
       >
         {renderCurrentView()}
