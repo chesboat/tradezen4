@@ -111,8 +111,14 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
     }
   };
 
-  const rightOffset = Math.max(60, (activityExpanded ? 320 : 60));
-  const clampedWidth = Math.max(280, Math.min(480, isExpanded ? (forcedWidth ?? railWidth) : 60));
+  // Mobile: Position from right edge, Desktop: Account for activity log
+  const rightOffset = typeof window !== 'undefined' && window.innerWidth < 1024 
+    ? 0 // Mobile: Full right edge
+    : Math.max(60, (activityExpanded ? 320 : 60)); // Desktop: Account for activity log
+    
+  const clampedWidth = typeof window !== 'undefined' && window.innerWidth < 1024
+    ? Math.min(320, window.innerWidth * 0.85) // Mobile: Max 85% of screen width
+    : Math.max(280, Math.min(480, isExpanded ? (forcedWidth ?? railWidth) : 60)); // Desktop: Current logic
 
   return (
     <>

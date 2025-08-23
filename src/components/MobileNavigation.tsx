@@ -18,11 +18,13 @@ import {
   MessageCircle,
   Tag,
   LogOut,
-  Zap
+  Zap,
+  CheckSquare
 } from 'lucide-react';
 import { useNavigationStore } from '@/store/useNavigationStore';
 import { useQuickNoteModal } from '@/store/useQuickNoteStore';
 import { useUserProfileStore, getUserDisplayName } from '@/store/useUserProfileStore';
+import { useTodoStore } from '@/store/useTodoStore';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { AccountFilter } from './AccountFilter';
@@ -100,9 +102,13 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({ onAddTrade }
   const { currentView, setCurrentView } = useNavigationStore();
   const { openModal: openQuickNote } = useQuickNoteModal();
   const { profile } = useUserProfileStore();
+  const { tasks, toggleDrawer } = useTodoStore();
   const { logout } = useAuth();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isTagManagerOpen, setIsTagManagerOpen] = useState(false);
+  
+  // Count open tasks for badge
+  const openTasksCount = tasks.filter(task => !task.done).length;
 
   const handleNavItemClick = (item: NavItem) => {
     setCurrentView(item.id as any);
@@ -203,7 +209,12 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({ onAddTrade }
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              transition={{ 
+                type: 'spring', 
+                damping: 30, 
+                stiffness: 300,
+                mass: 0.8
+              }}
             >
               {/* Drawer Header */}
               <div className="flex items-center justify-between p-4 border-b border-border">
@@ -231,7 +242,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({ onAddTrade }
               </div>
 
               {/* Navigation Items */}
-              <div className="flex-1 overflow-y-auto p-4">
+              <div className="flex-1 overflow-y-auto p-4 scroll-smooth">
                 <div className="space-y-1">
                   {/* Main nav items */}
                   {navItems.map((item) => {
@@ -327,6 +338,25 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({ onAddTrade }
                   >
                     <Tag className="w-5 h-5" />
                     <span className="font-medium text-sm">Manage Tags</span>
+                  </motion.button>
+                  
+                  <motion.button
+                    className="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors"
+                    onClick={() => {
+                      toggleDrawer();
+                      setIsDrawerOpen(false);
+                    }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <CheckSquare className="w-5 h-5" />
+                      <span className="font-medium text-sm">Todo List</span>
+                    </div>
+                    {openTasksCount > 0 && (
+                      <div className="bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full min-w-[20px] text-center">
+                        {openTasksCount}
+                      </div>
+                    )}
                   </motion.button>
                 </div>
               </div>
