@@ -236,8 +236,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
   return (
     <motion.aside
       className={cn(
-        'fixed left-0 top-0 h-full bg-card border-r border-border z-50',
-        'flex flex-col shadow-xl',
+        'fixed left-0 top-0 h-screen bg-card border-r border-border z-50',
+        'flex flex-col shadow-xl overflow-hidden',
         className
       )}
       variants={sidebarVariants}
@@ -315,7 +315,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
       </AnimatePresence>
 
       {/* Navigation */}
-      <nav className={cn("flex-1 p-4", isExpanded ? 'space-y-2' : 'space-y-3')}
+      <nav 
+        className={cn(
+          "flex-1 overflow-y-auto p-4", 
+          isExpanded ? 'space-y-2' : 'space-y-3'
+        )}
+        style={{
+          scrollbarWidth: 'thin',
+          scrollbarColor: 'hsl(var(--border)) transparent'
+        }}
       >
         {navItems.map((item) => (
           <div key={item.id} className={cn(!isExpanded && 'flex justify-center')}> 
@@ -437,7 +445,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
 
       {/* Collapsed State Indicators */}
       {!isExpanded && (
-        <div className="p-4 space-y-4">
+        <div className="p-4 space-y-4 overflow-y-auto flex-shrink-0">
           <Tooltip content="Theme" position="right" fullWidth>
             <div className="flex justify-center">
               <ThemeToggle size="sm" />
