@@ -910,6 +910,7 @@ export const MinimalHabitTracker: React.FC = () => {
         isActive: true,
         category,
         schedule,
+        updatedAt: new Date(),
       });
     } catch (error) {
       console.error('Failed to create habit:', error);
