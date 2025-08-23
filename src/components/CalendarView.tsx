@@ -234,16 +234,17 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
     const isSelected = selectedDay?.date.toDateString() === day.date.toDateString();
     const isHovered = hoveredDay?.date.toDateString() === day.date.toDateString();
     
-    // Mobile-first responsive padding and height
+    // Mobile-first responsive padding and height - make mobile tiles square
     const paddingClasses = bothSidebarsExpanded 
-      ? 'p-1.5 sm:p-2 lg:p-2 2xl:p-3 3xl:p-4' 
-      : 'p-2 sm:p-2.5 lg:p-3 2xl:p-4 3xl:p-5';
+      ? 'p-1 sm:p-2 lg:p-2 2xl:p-3 3xl:p-4' 
+      : 'p-1.5 sm:p-2.5 lg:p-3 2xl:p-4 3xl:p-5';
     
+    // Mobile: Use aspect-square for perfect squares, desktop: use min-height
     const heightClasses = allExpanded
-      ? 'min-h-[60px] sm:min-h-[70px] lg:min-h-[80px] 2xl:min-h-[90px] 3xl:min-h-[100px] 4xl:min-h-[110px]'
+      ? 'aspect-square sm:aspect-auto sm:min-h-[70px] lg:min-h-[80px] 2xl:min-h-[90px] 3xl:min-h-[100px] 4xl:min-h-[110px]'
       : bothSidebarsExpanded
-      ? 'min-h-[65px] sm:min-h-[75px] lg:min-h-[85px] 2xl:min-h-[100px] 3xl:min-h-[115px] 4xl:min-h-[130px]'
-      : 'min-h-[70px] sm:min-h-[80px] lg:min-h-[100px] 2xl:min-h-[120px] 3xl:min-h-[140px] 4xl:min-h-[160px]';
+      ? 'aspect-square sm:aspect-auto sm:min-h-[75px] lg:min-h-[85px] 2xl:min-h-[100px] 3xl:min-h-[115px] 4xl:min-h-[130px]'
+      : 'aspect-square sm:aspect-auto sm:min-h-[80px] lg:min-h-[100px] 2xl:min-h-[120px] 3xl:min-h-[140px] 4xl:min-h-[160px]';
     
     return cn(
       'relative rounded-lg sm:rounded-xl border border-border/50 transition-all duration-300 cursor-pointer',
@@ -462,18 +463,24 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
           "gap-1 sm:gap-2",
           bothSidebarsExpanded ? "lg:gap-2 2xl:gap-3" : "lg:gap-3 2xl:gap-4 3xl:gap-5"
         )}>
-          {DAYS_OF_WEEK.map((day, index) => (
-            <div key={day} className="text-center font-semibold text-muted-foreground py-2">
-              {/* Mobile: Show abbreviated day names */}
-              <span className="text-xs sm:text-sm lg:hidden">
-                {day.slice(0, 1)}
-              </span>
-              {/* Desktop: Show full day names */}
-              <span className="hidden lg:block text-sm 2xl:text-base 3xl:text-lg">
-                {day}
-              </span>
-            </div>
-          ))}
+          {DAYS_OF_WEEK.map((day, index) => {
+            // On mobile, replace Saturday (index 6) with "Week"
+            const isSaturday = index === 6;
+            const displayText = isSaturday ? 'Week' : day;
+            
+            return (
+              <div key={day} className="text-center font-semibold text-muted-foreground py-2">
+                {/* Mobile: Show abbreviated day names, "Week" for Saturday */}
+                <span className="text-xs sm:text-sm lg:hidden">
+                  {isSaturday ? 'Week' : day.slice(0, 1)}
+                </span>
+                {/* Desktop: Show full day names */}
+                <span className="hidden lg:block text-sm 2xl:text-base 3xl:text-lg">
+                  {day}
+                </span>
+              </div>
+            );
+          })}
         </div>
         
         {/* Week Header - Desktop only */}
@@ -490,33 +497,81 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
               "gap-1 sm:gap-2",
               bothSidebarsExpanded ? "lg:gap-2 2xl:gap-3" : "lg:gap-3 2xl:gap-4 3xl:gap-5"
             )}>
-              {week.map((day, dayIndex) => (
-                <motion.div
-                  key={`${weekIndex}-${dayIndex}`}
-                  className={getDayClassName(day)}
-                  onClick={() => setSelectedDay(day)}
-                  onMouseEnter={() => setHoveredDay(day)}
-                  onMouseLeave={() => setHoveredDay(null)}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  layout
-                >
+              {week.map((day, dayIndex) => {
+                const isSaturday = dayIndex === 6;
+                
+                // On mobile, show weekly summary instead of Saturday
+                if (isSaturday) {
+                  const weekSummary = weeklyData[weekIndex];
+                  return (
+                    <div key={`${weekIndex}-weekly-summary`} className="lg:hidden">
+                      <motion.div
+                        className={cn(
+                          'relative rounded-lg border border-border/50 transition-all duration-300 cursor-pointer aspect-square',
+                          'p-1.5 bg-muted/30 hover:bg-muted/50'
+                        )}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <div className="h-full flex flex-col justify-center items-center text-center">
+                          <div className="text-xs font-medium text-muted-foreground mb-1">
+                            W{weekSummary?.weekNumber || weekIndex + 1}
+                          </div>
+                          {weekSummary && (
+                            <>
+                              <div className={cn(
+                                'text-xs font-bold mb-0.5',
+                                weekSummary.totalPnl > 0 ? 'text-green-500' : 
+                                weekSummary.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
+                              )}>
+                                {Math.abs(weekSummary.totalPnl) >= 1000 
+                                  ? `${weekSummary.totalPnl > 0 ? '+' : ''}${(weekSummary.totalPnl/1000).toFixed(1)}k`
+                                  : formatCurrency(weekSummary.totalPnl)
+                                }
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {weekSummary.tradesCount}T
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </motion.div>
+                    </div>
+                  );
+                }
+                
+                // Show Saturday normally on desktop, other days on all screens
+                return (
+                  <motion.div
+                    key={`${weekIndex}-${dayIndex}`}
+                    className={cn(
+                      getDayClassName(day),
+                      // Hide Saturday on mobile (it's replaced by weekly summary)
+                      isSaturday && 'hidden lg:block'
+                    )}
+                    onClick={() => setSelectedDay(day)}
+                    onMouseEnter={() => setHoveredDay(day)}
+                    onMouseLeave={() => setHoveredDay(null)}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    layout
+                  >
                   <div className="space-y-1">
                     {/* Date */}
                     <div className="flex items-center justify-between">
                       <span className={cn(
-                        // Mobile: smaller text
-                        'text-sm sm:text-base lg:text-sm 2xl:text-base 3xl:text-lg 4xl:text-xl font-medium',
+                        // Mobile: much smaller text to prevent overflow
+                        'text-xs sm:text-base lg:text-sm 2xl:text-base 3xl:text-lg 4xl:text-xl font-medium',
                         day.isOtherMonth ? 'text-muted-foreground' : 'text-foreground'
                       )}>
                         {day.date.getDate()}
                       </span>
                       <div className="flex items-center gap-0.5 sm:gap-1 2xl:gap-1.5">
                         {day.hasNews && (
-                          <CalendarIcon className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-3 lg:h-3 2xl:w-4 2xl:h-4 3xl:w-5 3xl:h-5 text-primary" />
+                          <CalendarIcon className="w-2 h-2 sm:w-3 sm:h-3 lg:w-3 lg:h-3 2xl:w-4 2xl:h-4 3xl:w-5 3xl:h-5 text-primary" />
                         )}
                         {day.hasReflection && (
-                          <BookOpen className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-3 lg:h-3 2xl:w-4 2xl:h-4 3xl:w-5 3xl:h-5 text-green-500" />
+                          <BookOpen className="w-2 h-2 sm:w-3 sm:h-3 lg:w-3 lg:h-3 2xl:w-4 2xl:h-4 3xl:w-5 3xl:h-5 text-green-500" />
                         )}
                       </div>
                     </div>
@@ -524,13 +579,16 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                     {/* P&L - Mobile optimized */}
                     {day.pnl !== 0 && (
                       <div className={cn(
-                        // Mobile: smaller, more compact
-                        'text-xs sm:text-sm lg:text-base 2xl:text-lg 3xl:text-xl 4xl:text-2xl font-bold',
+                        // Mobile: very small text to prevent overflow
+                        'text-xs sm:text-sm lg:text-base 2xl:text-lg 3xl:text-xl 4xl:text-2xl font-bold truncate',
                         day.pnl > 0 ? 'text-green-500' : 'text-red-500'
                       )}>
-                        {/* Mobile: Show abbreviated currency */}
+                        {/* Mobile: Show very abbreviated currency */}
                         <span className="lg:hidden">
-                          {day.pnl > 0 ? '+' : ''}{Math.abs(day.pnl) >= 1000 ? `${(day.pnl/1000).toFixed(1)}k` : formatCurrency(day.pnl)}
+                          {Math.abs(day.pnl) >= 1000 
+                            ? `${day.pnl > 0 ? '+' : ''}${(day.pnl/1000).toFixed(0)}k`
+                            : `${day.pnl > 0 ? '+' : ''}${Math.round(day.pnl)}`
+                          }
                         </span>
                         {/* Desktop: Show full currency */}
                         <span className="hidden lg:block">
@@ -543,9 +601,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                     {day.tradesCount > 0 && (
                       <>
                         {/* Mobile: Simple dot indicator */}
-                        <div className="lg:hidden flex justify-center">
+                        <div className="lg:hidden flex justify-center mt-1">
                           <div className={cn(
-                            "w-1.5 h-1.5 rounded-full",
+                            "w-1 h-1 rounded-full",
                             day.pnl > 0 ? 'bg-green-500' : day.pnl < 0 ? 'bg-red-500' : 'bg-muted-foreground'
                           )} />
                         </div>
@@ -564,7 +622,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                     )}
                   </div>
                 </motion.div>
-              ))}
+                );
+              })}
             </div>
             
             {/* Weekly Summary - Desktop only */}

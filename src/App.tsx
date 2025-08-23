@@ -160,12 +160,6 @@ function AppContent() {
       {/* Quick Note Modal */}
       <QuickNoteModal />
 
-      {/* Global Command Bar */}
-      <CommandBar />
-
-      {/* Global AI Coach */}
-      <CoachChat date={new Date().toISOString().split('T')[0]} />
-
       {/* Global Nudge Toast */}
       <NudgeToast />
     </div>
