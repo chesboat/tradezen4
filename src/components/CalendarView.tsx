@@ -18,6 +18,9 @@ import { useTradeStore } from '@/store/useTradeStore';
 import { useAccountFilterStore, getAccountIdsForSelection } from '@/store/useAccountFilterStore';
 import { useQuickNoteStore } from '@/store/useQuickNoteStore';
 import { useDailyReflectionStore } from '@/store/useDailyReflectionStore';
+import { useSidebarStore } from '@/store/useSidebarStore';
+import { useActivityLogStore } from '@/store/useActivityLogStore';
+import { useTodoStore } from '@/store/useTodoStore';
 import { CalendarDay, WeeklySummary, MoodType } from '@/types';
 import { formatCurrency, formatDate, getMoodColor } from '@/lib/localStorageUtils';
 import { cn } from '@/lib/utils';
@@ -40,6 +43,15 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
   const { trades } = useTradeStore();
   const { getNotesForDate } = useQuickNoteStore();
   const { reflections, getReflectionByDate } = useDailyReflectionStore();
+  
+  // Sidebar state detection for dynamic layout
+  const { isExpanded: sidebarExpanded } = useSidebarStore();
+  const { isExpanded: activityLogExpanded } = useActivityLogStore();
+  const { isExpanded: todoExpanded } = useTodoStore();
+  
+  // Calculate available space and adjust layout accordingly
+  const bothSidebarsExpanded = sidebarExpanded && activityLogExpanded;
+  const allExpanded = sidebarExpanded && activityLogExpanded && todoExpanded;
   
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState<CalendarDay | null>(null);
@@ -222,9 +234,21 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
     const isSelected = selectedDay?.date.toDateString() === day.date.toDateString();
     const isHovered = hoveredDay?.date.toDateString() === day.date.toDateString();
     
+    // Dynamic height and padding based on sidebar states
+    const paddingClasses = bothSidebarsExpanded 
+      ? 'p-2 2xl:p-3 3xl:p-4' 
+      : 'p-3 2xl:p-4 3xl:p-5';
+    
+    const heightClasses = allExpanded
+      ? 'min-h-[80px] 2xl:min-h-[90px] 3xl:min-h-[100px] 4xl:min-h-[110px]'
+      : bothSidebarsExpanded
+      ? 'min-h-[85px] 2xl:min-h-[100px] 3xl:min-h-[115px] 4xl:min-h-[130px]'
+      : 'min-h-[100px] 2xl:min-h-[120px] 3xl:min-h-[140px] 4xl:min-h-[160px]';
+    
     return cn(
-      'relative p-3 2xl:p-4 3xl:p-5 rounded-xl border border-border/50 transition-all duration-200 cursor-pointer',
-      'min-h-[100px] 2xl:min-h-[120px] 3xl:min-h-[140px] 4xl:min-h-[160px]',
+      'relative rounded-xl border border-border/50 transition-all duration-300 cursor-pointer',
+      paddingClasses,
+      heightClasses,
       'hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10',
       day.isOtherMonth && 'opacity-40',
       isToday && 'ring-2 ring-primary/50',
@@ -251,10 +275,33 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
   const currentMonth = MONTHS[currentDate.getMonth()];
   const currentYear = currentDate.getFullYear();
 
+  // Dynamic container classes based on sidebar states
+  const getContainerClasses = () => {
+    const baseClasses = 'w-full mx-auto transition-all duration-300';
+    const paddingClasses = bothSidebarsExpanded ? 'p-4 2xl:p-6' : 'p-6 2xl:p-8 3xl:p-10';
+    
+    let maxWidthClasses;
+    if (allExpanded) {
+      // All sidebars expanded - very constrained space
+      maxWidthClasses = 'max-w-4xl 2xl:max-w-5xl 3xl:max-w-6xl 4xl:max-w-7xl';
+    } else if (bothSidebarsExpanded) {
+      // Both main sidebars expanded - moderately constrained
+      maxWidthClasses = 'max-w-5xl 2xl:max-w-6xl 3xl:max-w-7xl 4xl:max-w-[1800px]';
+    } else {
+      // Normal or single sidebar - full space
+      maxWidthClasses = 'max-w-7xl 2xl:max-w-[1800px] 3xl:max-w-[2200px] 4xl:max-w-[2600px]';
+    }
+    
+    return `${baseClasses} ${maxWidthClasses} ${paddingClasses}`;
+  };
+
   return (
-    <div className={cn('w-full max-w-7xl 2xl:max-w-[1800px] 3xl:max-w-[2200px] 4xl:max-w-[2600px] mx-auto p-6 2xl:p-8 3xl:p-10', className)}>
+    <div className={cn(getContainerClasses(), className)}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className={cn(
+        "flex items-center justify-between transition-all duration-300",
+        bothSidebarsExpanded ? "mb-6" : "mb-8"
+      )}>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <motion.button
@@ -323,9 +370,15 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
       </div>
 
       {/* Calendar Grid */}
-      <div className="grid grid-cols-8 gap-3 2xl:gap-4 3xl:gap-5">
+      <div className={cn(
+        "grid grid-cols-8 transition-all duration-300",
+        bothSidebarsExpanded ? "gap-2 2xl:gap-3" : "gap-3 2xl:gap-4 3xl:gap-5"
+      )}>
         {/* Day Headers */}
-        <div className="col-span-7 grid grid-cols-7 gap-3 2xl:gap-4 3xl:gap-5 mb-4">
+        <div className={cn(
+          "col-span-7 grid grid-cols-7 mb-4 transition-all duration-300",
+          bothSidebarsExpanded ? "gap-2 2xl:gap-3" : "gap-3 2xl:gap-4 3xl:gap-5"
+        )}>
           {DAYS_OF_WEEK.map((day) => (
             <div key={day} className="text-center font-semibold text-muted-foreground py-2 text-sm 2xl:text-base 3xl:text-lg">
               {day}
@@ -342,7 +395,10 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
         {calendarData.weeks.map((week, weekIndex) => (
           <React.Fragment key={weekIndex}>
             {/* Week Days */}
-            <div className="col-span-7 grid grid-cols-7 gap-3 2xl:gap-4 3xl:gap-5">
+            <div className={cn(
+              "col-span-7 grid grid-cols-7 transition-all duration-300",
+              bothSidebarsExpanded ? "gap-2 2xl:gap-3" : "gap-3 2xl:gap-4 3xl:gap-5"
+            )}>
               {week.map((day, dayIndex) => (
                 <motion.div
                   key={`${weekIndex}-${dayIndex}`}
