@@ -34,6 +34,7 @@ import { initializeRuleTallyStore } from './store/useRuleTallyStore';
 import { CoachChat } from './components/CoachChat';
 import { NudgeToast } from './components/NudgeToast';
 import { TodoDrawer } from './components/TodoDrawer';
+import { MobileTodoPage } from './components/MobileTodoPage';
 import { useTodoStore } from './store/useTodoStore';
 
 function AppContent() {
@@ -105,6 +106,8 @@ function AppContent() {
         return <CoachView />;
       case 'settings':
         return <SettingsPage />;
+      case 'todos':
+        return <MobileTodoPage />;
       default:
         return <MinimalDashboard />;
     }
