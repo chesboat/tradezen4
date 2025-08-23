@@ -29,6 +29,9 @@ interface RuleTallyState {
   loadRules: (accountId?: string) => Promise<void>;
   loadLogs: (accountId?: string, startDate?: string, endDate?: string) => Promise<void>;
   
+  // Initialization
+  initializeStore: () => Promise<void>;
+  
   // Utility
   getWeeklyTallies: (ruleId: string, startDate: string) => { date: string; count: number }[];
   getMonthlyTallies: (ruleId: string, year: number, month: number) => { date: string; count: number }[];
@@ -378,11 +381,15 @@ export const useRuleTallyStore = create<RuleTallyState>()(
       loadRules: async (accountId) => {
         set({ isLoading: true });
         try {
+          console.log('Loading tally rules...', { accountId });
           const rules = await rulesService.getAll();
+          console.log('Loaded rules from Firebase:', rules.length, 'rules');
+          
           const filteredRules = accountId 
             ? rules.filter(rule => rule.accountId === accountId)
             : rules;
           
+          console.log('Filtered rules:', filteredRules.length, 'rules for account:', accountId);
           set({ rules: filteredRules });
         } catch (error) {
           console.error('Failed to load tally rules:', error);
@@ -465,9 +472,37 @@ export const useRuleTallyStore = create<RuleTallyState>()(
         
         return monthData;
       },
+
+      // Initialize store by loading all rules and recent logs
+      initializeStore: async () => {
+        try {
+          set({ isLoading: true });
+          
+          // Load all rules (no account filter for initialization)
+          await get().loadRules();
+          
+          // Load recent logs (last 30 days)
+          const thirtyDaysAgo = new Date();
+          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+          const startDate = thirtyDaysAgo.toISOString().split('T')[0];
+          
+          await get().loadLogs(undefined, startDate);
+          
+          console.log('Rule tally store initialized successfully');
+        } catch (error) {
+          console.error('Failed to initialize rule tally store:', error);
+        } finally {
+          set({ isLoading: false });
+        }
+      },
     }),
     {
       name: 'rule-tally-store',
     }
   )
 );
+
+// Initialize rule tally store when auth state changes
+export const initializeRuleTallyStore = async () => {
+  return useRuleTallyStore.getState().initializeStore();
+};

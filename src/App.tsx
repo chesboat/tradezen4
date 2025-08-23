@@ -29,6 +29,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { initializeTradeStore } from './store/useTradeStore';
 import { useUserProfileStore } from './store/useUserProfileStore';
 import { initializeQuickNoteStore } from './store/useQuickNoteStore';
+import { initializeRuleTallyStore } from './store/useRuleTallyStore';
 import { CoachChat } from './components/CoachChat';
 import { NudgeToast } from './components/NudgeToast';
 import { TodoDrawer } from './components/TodoDrawer';
@@ -53,6 +54,7 @@ function AppContent() {
           await initializeDefaultAccounts();
           await initializeDefaultQuests();
           await initializeTradeStore();
+          await initializeRuleTallyStore();
           await initializeProfile(currentUser.uid, currentUser.email || undefined);
           await initializeQuickNoteStore();
           console.log('App initialization completed successfully');
