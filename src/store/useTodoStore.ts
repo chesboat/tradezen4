@@ -41,7 +41,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
   isExpanded: localStorage.getItem(STORAGE_KEYS.TODO_DRAWER_EXPANDED, false),
   tasks: deserializeTasks(localStorage.getItem(STORAGE_KEYS.TODO_TASKS, [] as ImprovementTask[])),
   categories: [],
-  railWidth: 60,
+  railWidth: 400,
 
   initialize: async () => {
     try {

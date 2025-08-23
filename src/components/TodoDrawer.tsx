@@ -12,7 +12,7 @@ interface TodoDrawerProps {
 }
 
 const sidebarVariants = {
-  expanded: { width: 360, transition: { duration: 0.3, ease: [0.4, 0, 0.2, 1] } },
+  expanded: { width: 400, transition: { duration: 0.3, ease: [0.4, 0, 0.2, 1] } },
   collapsed: { width: 60, transition: { duration: 0.3, ease: [0.4, 0, 0.2, 1] } },
 };
 
@@ -31,7 +31,7 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
   const [newPriority, setNewPriority] = useState<'low' | 'med' | 'high' | ''>('');
   const [newCategory, setNewCategory] = useState<string>('');
   const [categoryFilter, setCategoryFilter] = useState<string | 'all'>('all');
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const [snoozeForId, setSnoozeForId] = useState<string | null>(null);
   const [completingTasks, setCompletingTasks] = useState<Set<string>>(new Set());
   const [schedulingTaskId, setSchedulingTaskId] = useState<string | null>(null);
@@ -112,7 +112,7 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
   };
 
   const rightOffset = Math.max(60, (activityExpanded ? 320 : 60));
-  const clampedWidth = Math.max(220, Math.min(420, isExpanded ? (forcedWidth ?? railWidth) : 60));
+  const clampedWidth = Math.max(280, Math.min(480, isExpanded ? (forcedWidth ?? railWidth) : 60));
 
   return (
     <motion.aside
@@ -175,13 +175,25 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
           <motion.div className="p-3 border-b border-border" variants={contentVariants} initial="collapsed" animate="expanded" exit="collapsed">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <input
+                <textarea
                   ref={inputRef}
                   value={newText}
                   onChange={(e) => setNewText(e.target.value)}
                   placeholder="Add a task to improve your trading..."
-                  className="flex-1 px-3 py-2 rounded-lg bg-muted text-sm outline-none focus:ring-2 ring-primary/40"
-                  onKeyDown={(e) => { if (e.key === 'Enter') handleAdd(); }}
+                  className="flex-1 px-3 py-2 rounded-lg bg-muted text-sm outline-none focus:ring-2 ring-primary/40 resize-none overflow-hidden min-h-[40px]"
+                  rows={1}
+                  onInput={(e) => {
+                    // Auto-resize textarea
+                    const target = e.target as HTMLTextAreaElement;
+                    target.style.height = 'auto';
+                    target.style.height = Math.min(target.scrollHeight, 120) + 'px';
+                  }}
+                  onKeyDown={(e) => { 
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleAdd();
+                    }
+                  }}
                 />
                 <button className="p-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90" onClick={handleAdd}>
                   <Plus className="w-4 h-4" />
@@ -300,7 +312,7 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                   useTodoStore.getState().reorder(ids);
                 }}
               >
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-3 min-h-[44px]">
                   <div className="flex items-center gap-2 mt-1">
                     <motion.button 
                       className="p-1 rounded-full hover:bg-accent relative" 
@@ -354,17 +366,24 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between">
-                      <input
-                        className="w-full bg-transparent text-sm text-card-foreground outline-none"
+                    <div className="flex items-start justify-between gap-2">
+                      <textarea
+                        className="flex-1 bg-transparent text-sm text-card-foreground outline-none min-w-0 leading-relaxed py-1 resize-none overflow-hidden"
                         defaultValue={task.text}
+                        rows={1}
+                        onInput={(e) => {
+                          // Auto-resize textarea
+                          const target = e.target as HTMLTextAreaElement;
+                          target.style.height = 'auto';
+                          target.style.height = target.scrollHeight + 'px';
+                        }}
                         onBlur={(e) => {
                           const text = e.target.value.trim();
                           if (text && text !== task.text) updateTask(task.id, { text });
                           else e.target.value = task.text;
                         }}
                       />
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 flex-shrink-0">
                         <button
                           className={`${task.pinned ? 'opacity-100 text-primary' : 'opacity-0 group-hover:opacity-100 text-muted-foreground'} transition-opacity p-1 rounded hover:bg-accent`}
                           onClick={() => togglePin(task.id)}
@@ -394,8 +413,8 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                         </button>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between mt-1 text-xs">
-                      <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-between mt-2 text-xs gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         {task.dueAt && (
                           <span className="inline-flex items-center gap-1 text-muted-foreground"><Clock className="w-3 h-3" /> {new Date(task.dueAt).toLocaleDateString()}</span>
                         )}
@@ -421,7 +440,7 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                           <span className="inline-flex items-center gap-1 text-muted-foreground"><Tag className="w-3 h-3" /> {task.tags.join(', ')}</span>
                         )}
                       </div>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 flex-shrink-0">
                         {/* Priority selector */}
                         <select
                           className="px-1.5 py-0.5 rounded text-[10px] bg-muted border border-border/30 outline-none appearance-none cursor-pointer hover:bg-accent transition-colors"
@@ -494,7 +513,7 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                   useTodoStore.getState().reorder(ids);
                 }}
               >
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-3 min-h-[44px]">
                   <div className="flex items-center gap-2 mt-1">
                     <motion.button 
                       className="p-1 rounded-full hover:bg-accent relative" 
@@ -548,17 +567,24 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between">
-                      <input
-                        className="w-full bg-transparent text-sm text-card-foreground outline-none"
+                    <div className="flex items-start justify-between gap-2">
+                      <textarea
+                        className="flex-1 bg-transparent text-sm text-card-foreground outline-none min-w-0 leading-relaxed py-1 resize-none overflow-hidden"
                         defaultValue={task.text}
+                        rows={1}
+                        onInput={(e) => {
+                          // Auto-resize textarea
+                          const target = e.target as HTMLTextAreaElement;
+                          target.style.height = 'auto';
+                          target.style.height = target.scrollHeight + 'px';
+                        }}
                         onBlur={(e) => {
                           const text = e.target.value.trim();
                           if (text && text !== task.text) updateTask(task.id, { text });
                           else e.target.value = task.text;
                         }}
                       />
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 flex-shrink-0">
                         <button
                           className={`${task.pinned ? 'opacity-100 text-primary' : 'opacity-0 group-hover:opacity-100 text-muted-foreground'} transition-opacity p-1 rounded hover:bg-accent`}
                           onClick={() => togglePin(task.id)}
@@ -588,8 +614,8 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                         </button>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between mt-1 text-xs">
-                      <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-between mt-2 text-xs gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         {task.dueAt && (
                           <span className="inline-flex items-center gap-1 text-muted-foreground"><Clock className="w-3 h-3" /> {new Date(task.dueAt).toLocaleDateString()}</span>
                         )}
@@ -615,7 +641,7 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                           <span className="inline-flex items-center gap-1 text-muted-foreground"><Tag className="w-3 h-3" /> {task.tags.join(', ')}</span>
                         )}
                       </div>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 flex-shrink-0">
                         {/* Priority selector */}
                         <select
                           className="px-1.5 py-0.5 rounded text-[10px] bg-muted border border-border/30 outline-none appearance-none cursor-pointer hover:bg-accent transition-colors"
