@@ -19,7 +19,8 @@ import {
   Tag,
   LogOut,
   Zap,
-  CheckSquare
+  CheckSquare,
+  CheckCircle2
 } from 'lucide-react';
 import { useNavigationStore } from '@/store/useNavigationStore';
 import { useQuickNoteModal } from '@/store/useQuickNoteStore';
