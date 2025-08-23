@@ -52,14 +52,14 @@ interface KPICardProps {
 const MinimalKPICard: React.FC<KPICardProps> = ({ title, value, change, changeType, icon: Icon }) => {
   return (
     <motion.div 
-      className="bg-card/50 backdrop-blur-sm rounded-2xl p-6 border border-border/50 hover:border-border transition-all duration-200"
+      className="bg-card/50 backdrop-blur-sm rounded-xl sm:rounded-2xl p-3 sm:p-6 border border-border/50 hover:border-border transition-all duration-200"
       whileHover={{ scale: 1.02, y: -2 }}
     >
-      <div className="flex items-center justify-between mb-3">
-        <Icon className="w-5 h-5 text-muted-foreground" />
+      <div className="flex items-center justify-between mb-2 sm:mb-3">
+        <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
         {change && (
           <span className={cn(
-            "text-xs font-medium px-2 py-1 rounded-full",
+            "text-xs font-medium px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full",
             changeType === 'positive' ? 'text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-500/10' :
             changeType === 'negative' ? 'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-500/10' :
             'text-muted-foreground bg-muted'
@@ -69,8 +69,8 @@ const MinimalKPICard: React.FC<KPICardProps> = ({ title, value, change, changeTy
         )}
       </div>
       <div className="space-y-1">
-        <div className="text-2xl font-bold text-foreground">{value}</div>
-        <div className="text-sm text-muted-foreground">{title}</div>
+        <div className="text-lg sm:text-2xl font-bold text-foreground">{value}</div>
+        <div className="text-xs sm:text-sm text-muted-foreground">{title}</div>
       </div>
     </motion.div>
   );
@@ -97,19 +97,19 @@ const TodaysFocusCard: React.FC = () => {
 
   return (
     <motion.div 
-      className="bg-gradient-to-br from-card to-card/80 backdrop-blur-sm rounded-3xl p-8 border border-border/50 shadow-lg"
+      className="bg-gradient-to-br from-card to-card/80 backdrop-blur-sm rounded-2xl sm:rounded-3xl p-4 sm:p-8 border border-border/50 shadow-lg"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
-            <Target className="w-5 h-5 text-primary" />
+      <div className="flex items-center justify-between mb-4 sm:mb-6">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-primary/10 flex items-center justify-center">
+            <Target className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-foreground">Today's Focus</h2>
-            <p className="text-sm text-muted-foreground">
+            <h2 className="text-lg sm:text-xl font-semibold text-foreground">Today's Focus</h2>
+            <p className="text-xs sm:text-sm text-muted-foreground">
               {new Date().toLocaleDateString('en-US', { 
                 weekday: 'long', 
                 month: 'short', 
@@ -121,41 +121,41 @@ const TodaysFocusCard: React.FC = () => {
       </div>
 
       {/* Habit Overview */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-medium text-foreground">Today's Habits</h3>
+      <div className="mb-6 sm:mb-8">
+        <div className="flex items-center justify-between mb-3 sm:mb-4">
+          <h3 className="text-base sm:text-lg font-medium text-foreground">Today's Habits</h3>
           <motion.button
             onClick={() => setCurrentView('habits')}
-            className="text-sm text-primary hover:text-primary/80 font-medium flex items-center gap-1"
+            className="text-xs sm:text-sm text-primary hover:text-primary/80 font-medium flex items-center gap-1"
             whileHover={{ x: 2 }}
           >
-            View All <ChevronRight className="w-4 h-4" />
+            View All <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
           </motion.button>
         </div>
         
         {/* Habit Stats Grid */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4 sm:mb-6">
           <motion.div
-            className="text-center p-4 rounded-2xl bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20"
+            className="text-center p-2 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20"
             whileHover={{ scale: 1.02 }}
           >
-            <div className="text-2xl font-bold text-primary mb-1">{totalTallies}</div>
+            <div className="text-lg sm:text-2xl font-bold text-primary mb-0.5 sm:mb-1">{totalTallies}</div>
             <div className="text-xs text-muted-foreground">Tallies Today</div>
           </motion.div>
           
           <motion.div
-            className="text-center p-4 rounded-2xl bg-gradient-to-br from-orange-500/5 to-orange-500/10 border border-orange-500/20"
+            className="text-center p-2 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-orange-500/5 to-orange-500/10 border border-orange-500/20"
             whileHover={{ scale: 1.02 }}
           >
-            <div className="text-2xl font-bold text-orange-500 mb-1">{activeStreaks}</div>
+            <div className="text-lg sm:text-2xl font-bold text-orange-500 mb-0.5 sm:mb-1">{activeStreaks}</div>
             <div className="text-xs text-muted-foreground">Active Streaks</div>
           </motion.div>
           
           <motion.div
-            className="text-center p-4 rounded-2xl bg-gradient-to-br from-green-500/5 to-green-500/10 border border-green-500/20"
+            className="text-center p-2 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-green-500/5 to-green-500/10 border border-green-500/20"
             whileHover={{ scale: 1.02 }}
           >
-            <div className="text-2xl font-bold text-green-500 mb-1">{completedHabits}</div>
+            <div className="text-lg sm:text-2xl font-bold text-green-500 mb-0.5 sm:mb-1">{completedHabits}</div>
             <div className="text-xs text-muted-foreground">Completed</div>
           </motion.div>
         </div>
@@ -628,7 +628,7 @@ export const MinimalDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-      <div className="max-w-7xl mx-auto p-6 space-y-8">
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6 sm:space-y-8">
         
         {/* Performance Overview */}
         <motion.section
@@ -636,17 +636,17 @@ export const MinimalDashboard: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold text-foreground">Performance Overview</h1>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground">Performance Overview</h1>
             
             {/* Time Period Filter */}
-            <div className="flex items-center gap-1 p-1 bg-muted/30 rounded-xl">
+            <div className="flex items-center gap-1 p-1 bg-muted/30 rounded-xl overflow-x-auto">
               {TIME_PERIODS.map((period) => (
                 <motion.button
                   key={period.value}
                   onClick={() => setSelectedPeriod(period.value)}
                   className={cn(
-                    "px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200",
+                    "px-2 sm:px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg transition-all duration-200 whitespace-nowrap",
                     selectedPeriod === period.value
                       ? "bg-primary text-primary-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
@@ -659,7 +659,7 @@ export const MinimalDashboard: React.FC = () => {
               ))}
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
             <MinimalKPICard
               title="Total P&L"
               value={formatCurrency(totalPnL)}
@@ -722,7 +722,7 @@ export const MinimalDashboard: React.FC = () => {
               transition={{ duration: 0.3 }}
               className="space-y-6"
             >
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                 <RecentActivity />
                 <GrowthCorner />
               </div>

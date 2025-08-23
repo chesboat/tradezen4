@@ -2,6 +2,7 @@ import React from 'react';
 import { PublicSharePage } from './components/PublicSharePage';
 import { SettingsPage } from './components/SettingsPage';
 import { Sidebar } from './components/Sidebar';
+import { MobileNavigation } from './components/MobileNavigation';
 import { ActivityLog } from './components/ActivityLog';
 
 import { MinimalDashboard } from './components/MinimalDashboard';
@@ -115,25 +116,39 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
-      {/* Sidebar */}
-      <Sidebar onAddTrade={tradeLoggerModal.openForNew} />
+      {/* Desktop Sidebar - Hidden on mobile */}
+      <div className="hidden lg:block">
+        <Sidebar onAddTrade={tradeLoggerModal.openForNew} />
+      </div>
+      
+      {/* Mobile Navigation - Only visible on mobile */}
+      <div className="lg:hidden">
+        <MobileNavigation onAddTrade={tradeLoggerModal.openForNew} />
+      </div>
       
       {/* Main Content */}
       <main 
         className={`transition-all duration-300 ${
-          sidebarExpanded ? 'ml-[280px]' : 'ml-20'
+          // Desktop margins
+          sidebarExpanded ? 'lg:ml-[280px]' : 'lg:ml-20'
+        } ${
+          // Mobile: full width with top/bottom padding for mobile nav
+          'pt-16 pb-20 lg:pt-0 lg:pb-0'
+        } ${
+          // Desktop right margins - responsive
+          activityLogExpanded && todoExpanded ? 'lg:mr-[390px]' :
+          activityLogExpanded ? 'lg:mr-[330px]' :
+          todoExpanded ? 'lg:mr-[130px]' : 'lg:mr-[70px]'
         }`}
-        style={{
-          marginRight: (activityLogExpanded ? 320 : 60) + (todoExpanded ? 0 : 60) + 10,
-        }}
       >
         {renderCurrentView()}
       </main>
       
-      {/* Activity Log */}
-      <ActivityLog />
-      {/* Improvement Tasks Drawer */}
-      <TodoDrawer />
+      {/* Desktop Activity Log & Todo - Hidden on mobile */}
+      <div className="hidden lg:block">
+        <ActivityLog />
+        <TodoDrawer />
+      </div>
       
       {/* Trade Logger Modal */}
       <TradeLoggerModal

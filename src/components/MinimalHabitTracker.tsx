@@ -1021,23 +1021,23 @@ export const MinimalHabitTracker: React.FC = () => {
   }).length;
 
   return (
-    <div className="space-y-8 p-6 2xl:p-8 3xl:p-10">
+    <div className="space-y-6 sm:space-y-8 p-4 sm:p-6 2xl:p-8 3xl:p-10">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Habit Tracker</h1>
-          <p className="text-muted-foreground">Build discipline through consistent daily actions</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Habit Tracker</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">Build discipline through consistent daily actions</p>
         </div>
         
-        <div className="flex items-center gap-6">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:gap-6">
           {/* Summary Stats */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center justify-center sm:justify-start gap-6 sm:gap-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-primary">{totalTallies}</div>
+              <div className="text-xl sm:text-2xl font-bold text-primary">{totalTallies}</div>
               <div className="text-xs text-muted-foreground">Today</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-orange-500">{activeStreaks}</div>
+              <div className="text-xl sm:text-2xl font-bold text-orange-500">{activeStreaks}</div>
               <div className="text-xs text-muted-foreground">Streaks</div>
             </div>
           </div>
@@ -1045,7 +1045,7 @@ export const MinimalHabitTracker: React.FC = () => {
           {/* Create Habit Button */}
           <motion.button
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-colors shadow-lg"
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-colors shadow-lg"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >

@@ -67,7 +67,13 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
   const { trades, deleteTrade, updateTrade } = useTradeStore();
   const { accounts, selectedAccountId } = useAccountFilterStore();
   
-  const [viewMode, setViewMode] = useState<ViewMode>('table');
+  // Default to cards on mobile, table on desktop
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth < 1024 ? 'cards' : 'table';
+    }
+    return 'table';
+  });
   const [currentPage, setCurrentPage] = useState(1);
   const [sortConfig, setSortConfig] = useState<SortConfig>({
     key: 'entryTime',
@@ -357,68 +363,70 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
   };
 
   return (
-    <div className="p-8 2xl:p-10 3xl:p-12 max-w-7xl 2xl:max-w-[1800px] 3xl:max-w-[2200px] 4xl:max-w-[2600px] mx-auto space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 2xl:p-10 3xl:p-12 max-w-7xl 2xl:max-w-[1800px] 3xl:max-w-[2200px] 4xl:max-w-[2600px] mx-auto space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Trades</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Trades</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">
             Manage and analyze your trading performance
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+          {/* Mobile: Hide view mode toggle on small screens, default to cards */}
           <button
             onClick={() => setViewMode(viewMode === 'table' ? 'cards' : 'table')}
-            className="flex items-center gap-2 px-3 py-2 bg-muted/50 hover:bg-muted/70 rounded-lg transition-colors"
+            className="hidden sm:flex items-center gap-2 px-3 py-2 bg-muted/50 hover:bg-muted/70 rounded-lg transition-colors"
           >
             {viewMode === 'table' ? <Grid className="w-4 h-4" /> : <List className="w-4 h-4" />}
             {viewMode === 'table' ? 'Cards' : 'Table'}
           </button>
           <button
             onClick={() => onOpenTradeModal && onOpenTradeModal({} as Trade)}
-            className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors"
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors"
           >
             <Plus className="w-4 h-4" />
             Add Trade
           </button>
           <button
             onClick={() => setShowImageImport(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-muted/50 hover:bg-muted/70 rounded-lg transition-colors"
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-muted/50 hover:bg-muted/70 rounded-lg transition-colors text-sm"
           >
-            Import from Screenshot
+            <span className="sm:hidden">Import</span>
+            <span className="hidden sm:inline">Import from Screenshot</span>
           </button>
         </div>
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-        <div className="bg-muted/30 rounded-lg p-4 text-center">
-          <div className="text-2xl font-bold text-foreground">{statistics.totalTrades}</div>
-          <div className="text-sm text-muted-foreground">Total Trades</div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-4">
+        <div className="bg-muted/30 rounded-lg p-3 sm:p-4 text-center">
+          <div className="text-lg sm:text-2xl font-bold text-foreground">{statistics.totalTrades}</div>
+          <div className="text-xs sm:text-sm text-muted-foreground">Total Trades</div>
         </div>
-        <div className="bg-muted/30 rounded-lg p-4 text-center">
-          <div className="text-2xl font-bold text-green-500">{statistics.winningTrades}</div>
-          <div className="text-sm text-muted-foreground">Winners</div>
+        <div className="bg-muted/30 rounded-lg p-3 sm:p-4 text-center">
+          <div className="text-lg sm:text-2xl font-bold text-green-500">{statistics.winningTrades}</div>
+          <div className="text-xs sm:text-sm text-muted-foreground">Winners</div>
         </div>
-        <div className="bg-muted/30 rounded-lg p-4 text-center">
-          <div className="text-2xl font-bold text-red-500">{statistics.losingTrades}</div>
-          <div className="text-sm text-muted-foreground">Losers</div>
+        <div className="bg-muted/30 rounded-lg p-3 sm:p-4 text-center">
+          <div className="text-lg sm:text-2xl font-bold text-red-500">{statistics.losingTrades}</div>
+          <div className="text-xs sm:text-sm text-muted-foreground">Losers</div>
         </div>
-        <div className="bg-muted/30 rounded-lg p-4 text-center">
-          <div className="text-2xl font-bold text-primary">{statistics.winRate.toFixed(1)}%</div>
-          <div className="text-sm text-muted-foreground">Win Rate</div>
+        <div className="bg-muted/30 rounded-lg p-3 sm:p-4 text-center">
+          <div className="text-lg sm:text-2xl font-bold text-primary">{statistics.winRate.toFixed(1)}%</div>
+          <div className="text-xs sm:text-sm text-muted-foreground">Win Rate</div>
         </div>
-        <div className="bg-muted/30 rounded-lg p-4 text-center">
-          <div className={cn('text-2xl font-bold', statistics.totalPnl >= 0 ? 'text-green-500' : 'text-red-500')}>
+        <div className="bg-muted/30 rounded-lg p-3 sm:p-4 text-center">
+          <div className={cn('text-lg sm:text-2xl font-bold', statistics.totalPnl >= 0 ? 'text-green-500' : 'text-red-500')}>
             {formatCurrency(statistics.totalPnl)}
           </div>
-          <div className="text-sm text-muted-foreground">Total P&L</div>
+          <div className="text-xs sm:text-sm text-muted-foreground">Total P&L</div>
         </div>
-        <div className="bg-muted/30 rounded-lg p-4 text-center">
-          <div className={cn('text-2xl font-bold', statistics.expectancy >= 0 ? 'text-green-500' : 'text-red-500')}>
+        <div className="bg-muted/30 rounded-lg p-3 sm:p-4 text-center">
+          <div className={cn('text-lg sm:text-2xl font-bold', statistics.expectancy >= 0 ? 'text-green-500' : 'text-red-500')}>
             {statistics.expectancy.toFixed(2)}
           </div>
-          <div className="text-sm text-muted-foreground">Expectancy</div>
+          <div className="text-xs sm:text-sm text-muted-foreground">Expectancy</div>
         </div>
       </div>
 

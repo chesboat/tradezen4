@@ -234,24 +234,25 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
     const isSelected = selectedDay?.date.toDateString() === day.date.toDateString();
     const isHovered = hoveredDay?.date.toDateString() === day.date.toDateString();
     
-    // Dynamic height and padding based on sidebar states
+    // Mobile-first responsive padding and height
     const paddingClasses = bothSidebarsExpanded 
-      ? 'p-2 2xl:p-3 3xl:p-4' 
-      : 'p-3 2xl:p-4 3xl:p-5';
+      ? 'p-1.5 sm:p-2 lg:p-2 2xl:p-3 3xl:p-4' 
+      : 'p-2 sm:p-2.5 lg:p-3 2xl:p-4 3xl:p-5';
     
     const heightClasses = allExpanded
-      ? 'min-h-[80px] 2xl:min-h-[90px] 3xl:min-h-[100px] 4xl:min-h-[110px]'
+      ? 'min-h-[60px] sm:min-h-[70px] lg:min-h-[80px] 2xl:min-h-[90px] 3xl:min-h-[100px] 4xl:min-h-[110px]'
       : bothSidebarsExpanded
-      ? 'min-h-[85px] 2xl:min-h-[100px] 3xl:min-h-[115px] 4xl:min-h-[130px]'
-      : 'min-h-[100px] 2xl:min-h-[120px] 3xl:min-h-[140px] 4xl:min-h-[160px]';
+      ? 'min-h-[65px] sm:min-h-[75px] lg:min-h-[85px] 2xl:min-h-[100px] 3xl:min-h-[115px] 4xl:min-h-[130px]'
+      : 'min-h-[70px] sm:min-h-[80px] lg:min-h-[100px] 2xl:min-h-[120px] 3xl:min-h-[140px] 4xl:min-h-[160px]';
     
     return cn(
-      'relative rounded-xl border border-border/50 transition-all duration-300 cursor-pointer',
+      'relative rounded-lg sm:rounded-xl border border-border/50 transition-all duration-300 cursor-pointer',
       paddingClasses,
       heightClasses,
       'hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10',
-      day.isOtherMonth && 'opacity-40',
-      isToday && 'ring-2 ring-primary/50',
+      // Mobile: Reduce opacity change for other month days
+      day.isOtherMonth && 'opacity-30 sm:opacity-40',
+      isToday && 'ring-1 sm:ring-2 ring-primary/50',
       isSelected && 'bg-primary/10 border-primary',
       isHovered && 'bg-accent/50',
       day.tradesCount > 0 && 'bg-muted/30',
@@ -275,21 +276,25 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
   const currentMonth = MONTHS[currentDate.getMonth()];
   const currentYear = currentDate.getFullYear();
 
-  // Dynamic container classes based on sidebar states
+  // Dynamic container classes based on sidebar states and screen size
   const getContainerClasses = () => {
     const baseClasses = 'w-full mx-auto transition-all duration-300';
-    const paddingClasses = bothSidebarsExpanded ? 'p-4 2xl:p-6' : 'p-6 2xl:p-8 3xl:p-10';
+    
+    // Mobile-first padding
+    const paddingClasses = bothSidebarsExpanded 
+      ? 'p-4 lg:p-4 2xl:p-6' 
+      : 'p-4 lg:p-6 2xl:p-8 3xl:p-10';
     
     let maxWidthClasses;
     if (allExpanded) {
       // All sidebars expanded - very constrained space
-      maxWidthClasses = 'max-w-4xl 2xl:max-w-5xl 3xl:max-w-6xl 4xl:max-w-7xl';
+      maxWidthClasses = 'max-w-full lg:max-w-4xl 2xl:max-w-5xl 3xl:max-w-6xl 4xl:max-w-7xl';
     } else if (bothSidebarsExpanded) {
       // Both main sidebars expanded - moderately constrained
-      maxWidthClasses = 'max-w-5xl 2xl:max-w-6xl 3xl:max-w-7xl 4xl:max-w-[1800px]';
+      maxWidthClasses = 'max-w-full lg:max-w-5xl 2xl:max-w-6xl 3xl:max-w-7xl 4xl:max-w-[1800px]';
     } else {
       // Normal or single sidebar - full space
-      maxWidthClasses = 'max-w-7xl 2xl:max-w-[1800px] 3xl:max-w-[2200px] 4xl:max-w-[2600px]';
+      maxWidthClasses = 'max-w-full lg:max-w-7xl 2xl:max-w-[1800px] 3xl:max-w-[2200px] 4xl:max-w-[2600px]';
     }
     
     return `${baseClasses} ${maxWidthClasses} ${paddingClasses}`;
@@ -299,95 +304,180 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
     <div className={cn(getContainerClasses(), className)}>
       {/* Header */}
       <div className={cn(
-        "flex items-center justify-between transition-all duration-300",
-        bothSidebarsExpanded ? "mb-6" : "mb-8"
+        "transition-all duration-300",
+        bothSidebarsExpanded ? "mb-4 lg:mb-6" : "mb-6 lg:mb-8"
       )}>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <motion.button
-              onClick={() => navigateMonth('prev')}
-              className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </motion.button>
+        {/* Mobile Header - Stacked layout */}
+        <div className="lg:hidden space-y-4">
+          {/* Top row: Navigation */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <motion.button
+                onClick={() => navigateMonth('prev')}
+                className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </motion.button>
+              
+              <h1 className="text-lg sm:text-xl font-bold text-foreground">
+                {currentMonth} {currentYear}
+              </h1>
+              
+              <motion.button
+                onClick={() => navigateMonth('next')}
+                className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <ChevronRight className="w-5 h-5" />
+              </motion.button>
+            </div>
             
-            <h1 className="text-2xl font-bold text-foreground">
-              {currentMonth} {currentYear}
-            </h1>
-            
             <motion.button
-              onClick={() => navigateMonth('next')}
-              className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              onClick={goToToday}
+              className="px-3 py-1.5 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors text-sm font-medium"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
             >
-              <ChevronRight className="w-5 h-5" />
+              TODAY
             </motion.button>
           </div>
           
-          <motion.button
-            onClick={goToToday}
-            className="px-4 py-2 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            TODAY
-          </motion.button>
+          {/* Bottom row: Stats and actions */}
+          <div className="flex items-center justify-between">
+            <div className="text-xs sm:text-sm text-muted-foreground">
+              <span className="font-semibold text-green-500">{formatCurrency(weeklyData.reduce((sum, week) => sum + week.totalPnl, 0))}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <motion.button
+                onClick={() => setIsShareModalOpen(true)}
+                className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Share2 className="w-4 h-4" />
+              </motion.button>
+              <motion.button
+                className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Eye className="w-4 h-4" />
+              </motion.button>
+              <motion.button
+                className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Settings className="w-4 h-4" />
+              </motion.button>
+            </div>
+          </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="text-sm text-muted-foreground">
-            Monthly stats: <span className="font-semibold text-green-500">{formatCurrency(weeklyData.reduce((sum, week) => sum + week.totalPnl, 0))}</span>
+        {/* Desktop Header - Original layout */}
+        <div className="hidden lg:flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <motion.button
+                onClick={() => navigateMonth('prev')}
+                className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </motion.button>
+              
+              <h1 className="text-2xl font-bold text-foreground">
+                {currentMonth} {currentYear}
+              </h1>
+              
+              <motion.button
+                onClick={() => navigateMonth('next')}
+                className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <ChevronRight className="w-5 h-5" />
+              </motion.button>
+            </div>
+            
+            <motion.button
+              onClick={goToToday}
+              className="px-4 py-2 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              TODAY
+            </motion.button>
           </div>
-          <div className="flex items-center gap-2">
-            <motion.button
-              onClick={() => setIsShareModalOpen(true)}
-              className="px-3 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all flex items-center gap-2"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Share2 className="w-4 h-4" />
-              Share Calendar
-            </motion.button>
-            <motion.button
-              className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Eye className="w-5 h-5" />
-            </motion.button>
-            <motion.button
-              className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Settings className="w-5 h-5" />
-            </motion.button>
+
+          <div className="flex items-center gap-4">
+            <div className="text-sm text-muted-foreground">
+              Monthly stats: <span className="font-semibold text-green-500">{formatCurrency(weeklyData.reduce((sum, week) => sum + week.totalPnl, 0))}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <motion.button
+                onClick={() => setIsShareModalOpen(true)}
+                className="px-3 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all flex items-center gap-2"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Share2 className="w-4 h-4" />
+                Share Calendar
+              </motion.button>
+              <motion.button
+                className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Eye className="w-5 h-5" />
+              </motion.button>
+              <motion.button
+                className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Settings className="w-5 h-5" />
+              </motion.button>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Calendar Grid */}
       <div className={cn(
-        "grid grid-cols-8 transition-all duration-300",
-        bothSidebarsExpanded ? "gap-2 2xl:gap-3" : "gap-3 2xl:gap-4 3xl:gap-5"
+        "grid transition-all duration-300",
+        // Mobile: Simple 7-column grid without weekly summary
+        "grid-cols-7 gap-1 sm:gap-2",
+        // Desktop: 8-column grid with weekly summary
+        "lg:grid-cols-8",
+        bothSidebarsExpanded ? "lg:gap-2 2xl:gap-3" : "lg:gap-3 2xl:gap-4 3xl:gap-5"
       )}>
         {/* Day Headers */}
         <div className={cn(
           "col-span-7 grid grid-cols-7 mb-4 transition-all duration-300",
-          bothSidebarsExpanded ? "gap-2 2xl:gap-3" : "gap-3 2xl:gap-4 3xl:gap-5"
+          "gap-1 sm:gap-2",
+          bothSidebarsExpanded ? "lg:gap-2 2xl:gap-3" : "lg:gap-3 2xl:gap-4 3xl:gap-5"
         )}>
-          {DAYS_OF_WEEK.map((day) => (
-            <div key={day} className="text-center font-semibold text-muted-foreground py-2 text-sm 2xl:text-base 3xl:text-lg">
-              {day}
+          {DAYS_OF_WEEK.map((day, index) => (
+            <div key={day} className="text-center font-semibold text-muted-foreground py-2">
+              {/* Mobile: Show abbreviated day names */}
+              <span className="text-xs sm:text-sm lg:hidden">
+                {day.slice(0, 1)}
+              </span>
+              {/* Desktop: Show full day names */}
+              <span className="hidden lg:block text-sm 2xl:text-base 3xl:text-lg">
+                {day}
+              </span>
             </div>
           ))}
         </div>
         
-        {/* Week Header */}
-        <div className="text-center font-semibold text-muted-foreground py-2 text-sm 2xl:text-base 3xl:text-lg">
+        {/* Week Header - Desktop only */}
+        <div className="hidden lg:block text-center font-semibold text-muted-foreground py-2 text-sm 2xl:text-base 3xl:text-lg">
           Week
         </div>
 
@@ -397,7 +487,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
             {/* Week Days */}
             <div className={cn(
               "col-span-7 grid grid-cols-7 transition-all duration-300",
-              bothSidebarsExpanded ? "gap-2 2xl:gap-3" : "gap-3 2xl:gap-4 3xl:gap-5"
+              "gap-1 sm:gap-2",
+              bothSidebarsExpanded ? "lg:gap-2 2xl:gap-3" : "lg:gap-3 2xl:gap-4 3xl:gap-5"
             )}>
               {week.map((day, dayIndex) => (
                 <motion.div
@@ -414,34 +505,60 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                     {/* Date */}
                     <div className="flex items-center justify-between">
                       <span className={cn(
-                        'text-sm 2xl:text-base 3xl:text-lg 4xl:text-xl font-medium',
+                        // Mobile: smaller text
+                        'text-sm sm:text-base lg:text-sm 2xl:text-base 3xl:text-lg 4xl:text-xl font-medium',
                         day.isOtherMonth ? 'text-muted-foreground' : 'text-foreground'
                       )}>
                         {day.date.getDate()}
                       </span>
-                      <div className="flex items-center gap-1 2xl:gap-1.5">
+                      <div className="flex items-center gap-0.5 sm:gap-1 2xl:gap-1.5">
                         {day.hasNews && (
-                          <CalendarIcon className="w-3 h-3 2xl:w-4 2xl:h-4 3xl:w-5 3xl:h-5 text-primary" />
+                          <CalendarIcon className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-3 lg:h-3 2xl:w-4 2xl:h-4 3xl:w-5 3xl:h-5 text-primary" />
                         )}
                         {day.hasReflection && (
-                          <BookOpen className="w-3 h-3 2xl:w-4 2xl:h-4 3xl:w-5 3xl:h-5 text-green-500" />
+                          <BookOpen className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-3 lg:h-3 2xl:w-4 2xl:h-4 3xl:w-5 3xl:h-5 text-green-500" />
                         )}
                       </div>
                     </div>
                     
-                    {/* P&L */}
-                    {formatPnL(day.pnl)}
-                    
-                    {/* Trade Count */}
-                    {day.tradesCount > 0 && (
-                      <div className="text-xs 2xl:text-sm 3xl:text-base text-muted-foreground">
-                        {day.tradesCount} trade{day.tradesCount > 1 ? 's' : ''}
+                    {/* P&L - Mobile optimized */}
+                    {day.pnl !== 0 && (
+                      <div className={cn(
+                        // Mobile: smaller, more compact
+                        'text-xs sm:text-sm lg:text-base 2xl:text-lg 3xl:text-xl 4xl:text-2xl font-bold',
+                        day.pnl > 0 ? 'text-green-500' : 'text-red-500'
+                      )}>
+                        {/* Mobile: Show abbreviated currency */}
+                        <span className="lg:hidden">
+                          {day.pnl > 0 ? '+' : ''}{Math.abs(day.pnl) >= 1000 ? `${(day.pnl/1000).toFixed(1)}k` : formatCurrency(day.pnl)}
+                        </span>
+                        {/* Desktop: Show full currency */}
+                        <span className="hidden lg:block">
+                          {formatCurrency(day.pnl)}
+                        </span>
                       </div>
                     )}
                     
-                    {/* Metrics */}
+                    {/* Trade Count - Mobile: Show dot indicator, Desktop: Show count */}
                     {day.tradesCount > 0 && (
-                      <div className="text-xs 2xl:text-sm 3xl:text-base text-muted-foreground space-y-0.5">
+                      <>
+                        {/* Mobile: Simple dot indicator */}
+                        <div className="lg:hidden flex justify-center">
+                          <div className={cn(
+                            "w-1.5 h-1.5 rounded-full",
+                            day.pnl > 0 ? 'bg-green-500' : day.pnl < 0 ? 'bg-red-500' : 'bg-muted-foreground'
+                          )} />
+                        </div>
+                        {/* Desktop: Trade count text */}
+                        <div className="hidden lg:block text-xs 2xl:text-sm 3xl:text-base text-muted-foreground">
+                          {day.tradesCount} trade{day.tradesCount > 1 ? 's' : ''}
+                        </div>
+                      </>
+                    )}
+                    
+                    {/* Metrics - Desktop only */}
+                    {day.tradesCount > 0 && (
+                      <div className="hidden lg:block text-xs 2xl:text-sm 3xl:text-base text-muted-foreground space-y-0.5">
                         <div>{day.avgRR.toFixed(1)}:1R, {day.winRate.toFixed(0)}%</div>
                       </div>
                     )}
@@ -450,9 +567,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
               ))}
             </div>
             
-            {/* Weekly Summary */}
+            {/* Weekly Summary - Desktop only */}
             <motion.div
-              className="bg-muted/30 border border-border/50 rounded-xl p-4 2xl:p-5 3xl:p-6 hover:bg-muted/50 transition-colors min-h-[100px] 2xl:min-h-[120px] 3xl:min-h-[140px] 4xl:min-h-[160px] flex items-center justify-center"
+              className="hidden lg:flex bg-muted/30 border border-border/50 rounded-xl p-4 2xl:p-5 3xl:p-6 hover:bg-muted/50 transition-colors min-h-[100px] 2xl:min-h-[120px] 3xl:min-h-[140px] 4xl:min-h-[160px] items-center justify-center"
               whileHover={{ scale: 1.01 }}
             >
               <div className="text-center space-y-2">
