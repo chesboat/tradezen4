@@ -108,7 +108,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({ onAddTrade }
   const [isTagManagerOpen, setIsTagManagerOpen] = useState(false);
   
   // Count open tasks for badge
-  const openTasksCount = tasks.filter(task => !task.done).length;
+  const openTasksCount = tasks.filter(task => task.status === 'open').length;
 
   const handleNavItemClick = (item: NavItem) => {
     setCurrentView(item.id as any);
