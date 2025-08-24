@@ -114,17 +114,18 @@ const generateAIInsightTemplate = async (
   const dayCharacteristics = analyzeTradingDay(context);
   
   // Weekend awareness (prefer weekend-oriented blocks when no trading expected)
-  const getLocalDayOfWeek = (dateStr?: string): number | null => {
+  const getLocalDayOfWeek = (dateStr?: string | Date): number | null => {
     try {
       if (!dateStr) return null;
-      const [y, m, d] = dateStr.split('-').map((n) => parseInt(n, 10));
-      const localDate = new Date(y, (m || 1) - 1, d || 1);
+      const localDate = typeof dateStr === 'string'
+        ? new Date(dateStr)
+        : dateStr;
       return localDate.getDay();
     } catch {
       return null;
     }
   };
-  const dayOfWeek = getLocalDayOfWeek(context.date);
+  const dayOfWeek = getLocalDayOfWeek((context as any).date || new Date());
   const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
 
   // Create detailed context prompt

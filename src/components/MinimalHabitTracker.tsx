@@ -967,7 +967,7 @@ export const MinimalHabitTracker: React.FC = () => {
     if (!selectedAccountId) return;
     
     try {
-      await addTally(ruleId, selectedAccountId, 1);
+      await addTally(ruleId, selectedAccountId);
       
       // Create floating reward animation
       const rect = (event.target as HTMLElement).getBoundingClientRect();

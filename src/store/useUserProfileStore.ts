@@ -404,7 +404,7 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
         joinedAt: profile.joinedAt instanceof Date ? profile.joinedAt.toISOString() : profile.joinedAt,
         preferences: profile.preferences,
         stats: profile.stats,
-        joinedAt: profile.joinedAt instanceof Date ? profile.joinedAt.toISOString() : profile.joinedAt,
+        // updatedAt last to avoid duplicate keys
         updatedAt: serverTimestamp(),
       }, { merge: true });
       console.log('Profile synced to Firestore');

@@ -187,11 +187,11 @@ export const SettingsPage: React.FC = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-2">Level</label>
-                  <div className="text-2xl font-bold text-primary">{profile?.level || 1}</div>
+                  <div className="text-2xl font-bold text-primary">{profile?.xp?.level || 1}</div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-2">Total XP</label>
-                  <div className="text-2xl font-bold text-green-500">{profile?.totalXP?.toLocaleString() || 0}</div>
+                  <div className="text-2xl font-bold text-green-500">{profile?.xp?.total?.toLocaleString() || 0}</div>
                 </div>
               </div>
             </div>

@@ -368,7 +368,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({ onAddTrade }
                       {profile?.displayName || getUserDisplayName()}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {profile ? `Level ${profile.level} • ${profile.totalXP.toLocaleString()} XP` : 'Level 1'}
+                      {profile?.xp ? `Level ${profile.xp.level} • ${profile.xp.total.toLocaleString()} XP` : 'Level 1'}
                     </p>
                   </div>
                 </div>

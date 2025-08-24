@@ -466,7 +466,7 @@ export const RuleTallyTracker: React.FC = () => {
         navigator.vibrate(50);
       }
       
-      await addTally(ruleId, selectedAccountId, 5);
+      await addTally(ruleId, selectedAccountId);
       
       // Create floating XP animation
       const rect = (event.target as HTMLElement).getBoundingClientRect();
