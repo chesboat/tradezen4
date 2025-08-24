@@ -12,20 +12,26 @@ import {
   Eye,
   Settings,
   BookOpen,
-  Share2
+  Share2,
+  FileText,
+  CheckCircle2,
+  Clock
 } from 'lucide-react';
 import { useTradeStore } from '@/store/useTradeStore';
 import { useAccountFilterStore, getAccountIdsForSelection } from '@/store/useAccountFilterStore';
 import { useQuickNoteStore } from '@/store/useQuickNoteStore';
 import { useDailyReflectionStore } from '@/store/useDailyReflectionStore';
+import { useWeeklyReviewStore } from '@/store/useWeeklyReviewStore';
 import { useSidebarStore } from '@/store/useSidebarStore';
 import { useActivityLogStore } from '@/store/useActivityLogStore';
 import { useTodoStore } from '@/store/useTodoStore';
-import { CalendarDay, WeeklySummary, MoodType } from '@/types';
+import { CalendarDay, WeeklySummary, MoodType, WeeklyReview } from '@/types';
 import { formatCurrency, formatDate, getMoodColor } from '@/lib/localStorageUtils';
 import { cn } from '@/lib/utils';
 import { DayDetailModal } from './DayDetailModal';
 import { CalendarShareModal } from './CalendarShareModal';
+import { WeeklyReviewModal } from './WeeklyReviewModal';
+import { WeeklyReviewViewModal } from './WeeklyReviewViewModal';
 
 const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = [
@@ -40,9 +46,14 @@ interface CalendarViewProps {
 export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
   const { selectedAccountId } = useAccountFilterStore();
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isWeeklyReviewOpen, setIsWeeklyReviewOpen] = useState(false);
+  const [weeklyReviewWeek, setWeeklyReviewWeek] = useState<string | undefined>(undefined);
+  const [selectedWeeklyReview, setSelectedWeeklyReview] = useState<WeeklyReview | null>(null);
+  const [isWeeklyReviewViewOpen, setIsWeeklyReviewViewOpen] = useState(false);
   const { trades } = useTradeStore();
   const { getNotesForDate } = useQuickNoteStore();
   const { reflections, getReflectionByDate } = useDailyReflectionStore();
+  const { getMondayOfWeek, isWeekReviewAvailable, getCurrentWeekReview, getReviewByWeek } = useWeeklyReviewStore();
   
   // Sidebar state detection for dynamic layout
   const { isExpanded: sidebarExpanded } = useSidebarStore();
@@ -56,6 +67,75 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState<CalendarDay | null>(null);
   const [hoveredDay, setHoveredDay] = useState<CalendarDay | null>(null);
+
+  const handleWeeklySummaryClick = (weekIndex: number, week: CalendarDay[]) => {
+    if (!selectedAccountId) return;
+
+    // Use the actual dates shown in this row to determine the week
+    const weekStartDate = week[0]?.date || new Date();
+    const mondayOfWeek = getMondayOfWeek(weekStartDate);
+    const review = getReviewByWeek(mondayOfWeek, selectedAccountId);
+    
+    // Debug: Uncomment to verify week calculations
+    // console.log('Week calculation debug:', {
+    //   weekStartDate: weekStartDate.toDateString(),
+    //   mondayOfWeek,
+    //   weekDates: week.map(day => day.date.toDateString())
+    // });
+    
+    if (review && review.isComplete) {
+      // Show completed review
+      setSelectedWeeklyReview(review);
+      setIsWeeklyReviewViewOpen(true);
+    } else if (review && !review.isComplete) {
+      // Edit draft review
+      setWeeklyReviewWeek(mondayOfWeek);
+      setIsWeeklyReviewOpen(true);
+    } else if (isWeekReviewAvailable(mondayOfWeek, selectedAccountId)) {
+      // Create new review for available week
+      setWeeklyReviewWeek(mondayOfWeek);
+      setIsWeeklyReviewOpen(true);
+    } else {
+      // Check if it's a recent past week (up to 4 weeks back)
+      const now = new Date();
+      const weekStart = new Date(mondayOfWeek);
+      const daysDiff = Math.floor((now.getTime() - weekStart.getTime()) / (1000 * 60 * 60 * 24));
+      
+      if (daysDiff > 0 && daysDiff <= 28) { // 4 weeks = 28 days
+        // Allow creating review for recent past weeks
+        setWeeklyReviewWeek(mondayOfWeek);
+        setIsWeeklyReviewOpen(true);
+      }
+      // For future weeks or very old weeks, do nothing
+    }
+  };
+
+  // Helper function to get review status for a week
+  const getWeekReviewStatus = (week: CalendarDay[]) => {
+    if (!selectedAccountId) return null;
+    
+    const weekStartDate = week[0]?.date || new Date();
+    const mondayOfWeek = getMondayOfWeek(weekStartDate);
+    const review = getReviewByWeek(mondayOfWeek, selectedAccountId);
+    
+    if (review && review.isComplete) {
+      return 'completed';
+    } else if (review && !review.isComplete) {
+      return 'available'; // Draft review exists
+    } else if (isWeekReviewAvailable(mondayOfWeek, selectedAccountId)) {
+      return 'available';
+    } else {
+      // Check if it's a recent past week that can be filled out
+      const now = new Date();
+      const weekStart = new Date(mondayOfWeek);
+      const daysDiff = Math.floor((now.getTime() - weekStart.getTime()) / (1000 * 60 * 60 * 24));
+      
+      if (daysDiff > 0 && daysDiff <= 28) { // 4 weeks = 28 days
+        return 'available';
+      }
+    }
+    return null;
+  };
 
   // Helper function to create calendar day data
   const createCalendarDay = useCallback((date: Date, isOtherMonth: boolean): CalendarDay => {
@@ -233,6 +313,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
     const isToday = new Date().toDateString() === day.date.toDateString();
     const isSelected = selectedDay?.date.toDateString() === day.date.toDateString();
     const isHovered = hoveredDay?.date.toDateString() === day.date.toDateString();
+    const isWeekend = day.date.getDay() === 0 || day.date.getDay() === 6; // Sunday or Saturday
     
     // Mobile-first responsive padding and height - make mobile tiles square
     const paddingClasses = bothSidebarsExpanded 
@@ -247,10 +328,15 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
       : 'aspect-square sm:aspect-auto sm:min-h-[80px] lg:min-h-[100px] 2xl:min-h-[120px] 3xl:min-h-[140px] 4xl:min-h-[160px]';
     
     return cn(
-      'relative rounded-lg sm:rounded-xl border border-border/50 transition-all duration-300 cursor-pointer',
+      'relative rounded-lg sm:rounded-xl transition-all duration-300 cursor-pointer',
       paddingClasses,
       heightClasses,
-      'hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10',
+      
+      // Weekend styling (subtle, muted appearance)
+      isWeekend && !day.isOtherMonth 
+        ? 'border border-dashed border-border/40 opacity-60 hover:opacity-75 hover:border-primary/30'
+        : 'border border-border/50 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10',
+      
       // Mobile: Reduce opacity change for other month days
       day.isOtherMonth && 'opacity-30 sm:opacity-40',
       isToday && 'ring-1 sm:ring-2 ring-primary/50',
@@ -352,6 +438,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
               <span className="font-semibold text-green-500">{formatCurrency(weeklyData.reduce((sum, week) => sum + week.totalPnl, 0))}</span>
             </div>
             <div className="flex items-center gap-1">
+              {/* Removed global weekly review button - now handled per week tile */}
+              
               <motion.button
                 onClick={() => setIsShareModalOpen(true)}
                 className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors"
@@ -380,69 +468,71 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
 
         {/* Desktop Header - Original layout */}
         <div className="hidden lg:flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <motion.button
-                onClick={() => navigateMonth('prev')}
-                className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </motion.button>
-              
-              <h1 className="text-2xl font-bold text-foreground">
-                {currentMonth} {currentYear}
-              </h1>
-              
-              <motion.button
-                onClick={() => navigateMonth('next')}
-                className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <ChevronRight className="w-5 h-5" />
-              </motion.button>
-            </div>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <motion.button
+              onClick={() => navigateMonth('prev')}
+              className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </motion.button>
+            
+            <h1 className="text-2xl font-bold text-foreground">
+              {currentMonth} {currentYear}
+            </h1>
             
             <motion.button
-              onClick={goToToday}
-              className="px-4 py-2 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              onClick={() => navigateMonth('next')}
+              className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
-              TODAY
+              <ChevronRight className="w-5 h-5" />
             </motion.button>
           </div>
+          
+          <motion.button
+            onClick={goToToday}
+            className="px-4 py-2 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            TODAY
+          </motion.button>
+        </div>
 
-          <div className="flex items-center gap-4">
-            <div className="text-sm text-muted-foreground">
-              Monthly stats: <span className="font-semibold text-green-500">{formatCurrency(weeklyData.reduce((sum, week) => sum + week.totalPnl, 0))}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <motion.button
-                onClick={() => setIsShareModalOpen(true)}
-                className="px-3 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all flex items-center gap-2"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Share2 className="w-4 h-4" />
-                Share Calendar
-              </motion.button>
-              <motion.button
-                className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Eye className="w-5 h-5" />
-              </motion.button>
-              <motion.button
-                className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Settings className="w-5 h-5" />
-              </motion.button>
+        <div className="flex items-center gap-4">
+          <div className="text-sm text-muted-foreground">
+            Monthly stats: <span className="font-semibold text-green-500">{formatCurrency(weeklyData.reduce((sum, week) => sum + week.totalPnl, 0))}</span>
+          </div>
+          <div className="flex items-center gap-2">
+              {/* Removed global weekly review button - now handled per week tile */}
+              
+            <motion.button
+              onClick={() => setIsShareModalOpen(true)}
+              className="px-3 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all flex items-center gap-2"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Share2 className="w-4 h-4" />
+              Share Calendar
+            </motion.button>
+            <motion.button
+              className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Eye className="w-5 h-5" />
+            </motion.button>
+            <motion.button
+              className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Settings className="w-5 h-5" />
+            </motion.button>
             </div>
           </div>
         </div>
@@ -469,16 +559,16 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
             const displayText = isSaturday ? 'Week' : day;
             
             return (
-              <div key={day} className="text-center font-semibold text-muted-foreground py-2">
+            <div key={day} className="text-center font-semibold text-muted-foreground py-2">
                 {/* Mobile: Show abbreviated day names, "Week" for Saturday */}
                 <span className="text-xs sm:text-sm lg:hidden">
                   {isSaturday ? 'Week' : day.slice(0, 1)}
                 </span>
                 {/* Desktop: Show full day names */}
                 <span className="hidden lg:block text-sm 2xl:text-base 3xl:text-lg">
-                  {day}
+              {day}
                 </span>
-              </div>
+            </div>
             );
           })}
         </div>
@@ -503,59 +593,126 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                 // On mobile, show weekly summary instead of Saturday
                 if (isSaturday) {
                   const weekSummary = weeklyData[weekIndex];
+                  const reviewStatus = getWeekReviewStatus(week);
+                  
                   return (
-                    <div key={`${weekIndex}-weekly-summary`} className="lg:hidden">
+                    <React.Fragment key={`${weekIndex}-${dayIndex}`}>
+                      {/* Mobile: Weekly Summary */}
+                      <div className="lg:hidden">
+                        <motion.div
+                          className={cn(
+                            'relative rounded-lg border border-border/50 transition-all duration-300 cursor-pointer aspect-square',
+                            'p-1.5 bg-muted/30 hover:bg-muted/50',
+                            reviewStatus === 'completed' && 'ring-1 ring-green-500/30 bg-green-500/5',
+                            reviewStatus === 'available' && 'ring-1 ring-blue-500/30 bg-blue-500/5'
+                          )}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => handleWeeklySummaryClick(weekIndex, week)}
+                        >
+                          {/* Review Status Indicator */}
+                          {reviewStatus && (
+                            <div className="absolute top-1 right-1">
+                              {reviewStatus === 'completed' ? (
+                                <CheckCircle2 className="w-3 h-3 text-green-600" />
+                              ) : (
+                                <Clock className="w-3 h-3 text-blue-600" />
+                              )}
+                            </div>
+                          )}
+                          
+                          <div className="h-full flex flex-col justify-center items-center text-center">
+                            <div className="text-xs font-medium text-muted-foreground mb-1">
+                              W{weekSummary?.weekNumber || weekIndex + 1}
+                            </div>
+                            {weekSummary && (
+                              <>
+                                <div className={cn(
+                                  'text-xs font-bold mb-0.5',
+                                  weekSummary.totalPnl > 0 ? 'text-green-500' : 
+                                  weekSummary.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
+                                )}>
+                                  {Math.abs(weekSummary.totalPnl) >= 1000 
+                                    ? `${weekSummary.totalPnl > 0 ? '+' : ''}${(weekSummary.totalPnl/1000).toFixed(1)}k`
+                                    : formatCurrency(weekSummary.totalPnl)
+                                  }
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {weekSummary.tradesCount}T
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </motion.div>
+                      </div>
+                      
+                      {/* Desktop: Saturday Tile */}
                       <motion.div
                         className={cn(
-                          'relative rounded-lg border border-border/50 transition-all duration-300 cursor-pointer aspect-square',
-                          'p-1.5 bg-muted/30 hover:bg-muted/50'
+                          getDayClassName(day),
+                          'hidden lg:block' // Show only on desktop
                         )}
+                        onClick={() => setSelectedDay(day)}
+                        onMouseEnter={() => setHoveredDay(day)}
+                        onMouseLeave={() => setHoveredDay(null)}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
+                        layout
                       >
-                        <div className="h-full flex flex-col justify-center items-center text-center">
-                          <div className="text-xs font-medium text-muted-foreground mb-1">
-                            W{weekSummary?.weekNumber || weekIndex + 1}
+                        <div className="space-y-1">
+                          {/* Date */}
+                          <div className="flex items-center justify-between">
+                            <span className={cn(
+                              // Mobile: much smaller text to prevent overflow
+                              'text-xs sm:text-base lg:text-sm 2xl:text-base 3xl:text-lg 4xl:text-xl font-medium',
+                              day.isOtherMonth ? 'text-muted-foreground' : 'text-foreground'
+                            )}>
+                              {day.date.getDate()}
+                            </span>
+                            <div className="flex items-center gap-0.5 sm:gap-1 2xl:gap-1.5">
+                              {day.hasNews && (
+                                <CalendarIcon className="w-2 h-2 sm:w-3 sm:h-3 lg:w-3 lg:h-3 2xl:w-4 2xl:h-4 3xl:w-5 3xl:h-5 text-primary" />
+                              )}
+                              {day.hasReflection && (
+                                <BookOpen className="w-2 h-2 sm:w-3 sm:h-3 lg:w-3 lg:h-3 2xl:w-4 2xl:h-4 3xl:w-5 3xl:h-5 text-green-500" />
+                              )}
+                            </div>
                           </div>
-                          {weekSummary && (
-                            <>
-                              <div className={cn(
-                                'text-xs font-bold mb-0.5',
-                                weekSummary.totalPnl > 0 ? 'text-green-500' : 
-                                weekSummary.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
-                              )}>
-                                {Math.abs(weekSummary.totalPnl) >= 1000 
-                                  ? `${weekSummary.totalPnl > 0 ? '+' : ''}${(weekSummary.totalPnl/1000).toFixed(1)}k`
-                                  : formatCurrency(weekSummary.totalPnl)
-                                }
-                              </div>
+                          
+                          {/* Weekend Content */}
+                          <div className="flex flex-col items-center justify-center h-full text-center space-y-1">
+                            <div className="text-xs 2xl:text-sm text-muted-foreground/70">
+                              Weekend
+                            </div>
+                            {day.quickNotesCount > 0 && (
                               <div className="text-xs text-muted-foreground">
-                                {weekSummary.tradesCount}T
+                                {day.quickNotesCount} note{day.quickNotesCount > 1 ? 's' : ''}
                               </div>
-                            </>
-                          )}
+                            )}
+                            {day.hasReflection && (
+                              <div className="text-xs text-green-600">
+                                Reflection
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </motion.div>
-                    </div>
+                    </React.Fragment>
                   );
                 }
                 
-                // Show Saturday normally on desktop, other days on all screens
+                // Show all other days (Sunday through Friday)
                 return (
-                  <motion.div
-                    key={`${weekIndex}-${dayIndex}`}
-                    className={cn(
-                      getDayClassName(day),
-                      // Hide Saturday on mobile (it's replaced by weekly summary)
-                      isSaturday && 'hidden lg:block'
-                    )}
-                    onClick={() => setSelectedDay(day)}
-                    onMouseEnter={() => setHoveredDay(day)}
-                    onMouseLeave={() => setHoveredDay(null)}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    layout
-                  >
+                <motion.div
+                  key={`${weekIndex}-${dayIndex}`}
+                  className={getDayClassName(day)}
+                  onClick={() => setSelectedDay(day)}
+                  onMouseEnter={() => setHoveredDay(day)}
+                  onMouseLeave={() => setHoveredDay(null)}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  layout
+                >
                   <div className="space-y-1">
                     {/* Date */}
                     <div className="flex items-center justify-between">
@@ -576,49 +733,70 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                       </div>
                     </div>
                     
-                    {/* P&L - Mobile optimized */}
-                    {day.pnl !== 0 && (
-                      <div className={cn(
-                        // Mobile: very small text to prevent overflow
-                        'text-xs sm:text-sm lg:text-base 2xl:text-lg 3xl:text-xl 4xl:text-2xl font-bold truncate',
-                        day.pnl > 0 ? 'text-green-500' : 'text-red-500'
-                      )}>
-                        {/* Mobile: Show very abbreviated currency */}
-                        <span className="lg:hidden">
-                          {Math.abs(day.pnl) >= 1000 
-                            ? `${day.pnl > 0 ? '+' : ''}${(day.pnl/1000).toFixed(0)}k`
-                            : `${day.pnl > 0 ? '+' : ''}${Math.round(day.pnl)}`
-                          }
-                        </span>
-                        {/* Desktop: Show full currency */}
-                        <span className="hidden lg:block">
-                          {formatCurrency(day.pnl)}
-                        </span>
+                    {/* Weekend Content */}
+                    {(isSaturday || day.date.getDay() === 0) ? (
+                      <div className="flex flex-col items-center justify-center h-full text-center space-y-1">
+                        <div className="text-xs 2xl:text-sm text-muted-foreground/70">
+                          Weekend
+                        </div>
+                        {day.quickNotesCount > 0 && (
+                      <div className="text-xs text-muted-foreground">
+                            {day.quickNotesCount} note{day.quickNotesCount > 1 ? 's' : ''}
+                          </div>
+                        )}
+                        {day.hasReflection && (
+                          <div className="text-xs text-green-600">
+                            Reflection
+                          </div>
+                        )}
                       </div>
-                    )}
-                    
-                    {/* Trade Count - Mobile: Show dot indicator, Desktop: Show count */}
-                    {day.tradesCount > 0 && (
+                    ) : (
                       <>
-                        {/* Mobile: Simple dot indicator */}
-                        <div className="lg:hidden flex justify-center mt-1">
+                        {/* P&L - Mobile optimized (weekdays only) */}
+                        {day.pnl !== 0 && (
                           <div className={cn(
-                            "w-1 h-1 rounded-full",
-                            day.pnl > 0 ? 'bg-green-500' : day.pnl < 0 ? 'bg-red-500' : 'bg-muted-foreground'
-                          )} />
-                        </div>
-                        {/* Desktop: Trade count text */}
-                        <div className="hidden lg:block text-xs 2xl:text-sm 3xl:text-base text-muted-foreground">
-                          {day.tradesCount} trade{day.tradesCount > 1 ? 's' : ''}
-                        </div>
-                      </>
-                    )}
-                    
-                    {/* Metrics - Desktop only */}
+                            // Mobile: very small text to prevent overflow
+                            'text-xs sm:text-sm lg:text-base 2xl:text-lg 3xl:text-xl 4xl:text-2xl font-bold truncate',
+                            day.pnl > 0 ? 'text-green-500' : 'text-red-500'
+                          )}>
+                            {/* Mobile: Show very abbreviated currency */}
+                            <span className="lg:hidden">
+                              {Math.abs(day.pnl) >= 1000 
+                                ? `${day.pnl > 0 ? '+' : ''}${(day.pnl/1000).toFixed(0)}k`
+                                : `${day.pnl > 0 ? '+' : ''}${Math.round(day.pnl)}`
+                              }
+                            </span>
+                            {/* Desktop: Show full currency */}
+                            <span className="hidden lg:block">
+                              {formatCurrency(day.pnl)}
+                            </span>
+                          </div>
+                        )}
+                        
+                        {/* Trade Count - Mobile: Show dot indicator, Desktop: Show count (weekdays only) */}
+                        {day.tradesCount > 0 && (
+                          <>
+                            {/* Mobile: Simple dot indicator */}
+                            <div className="lg:hidden flex justify-center mt-1">
+                              <div className={cn(
+                                "w-1 h-1 rounded-full",
+                                day.pnl > 0 ? 'bg-green-500' : day.pnl < 0 ? 'bg-red-500' : 'bg-muted-foreground'
+                              )} />
+                            </div>
+                            {/* Desktop: Trade count text */}
+                            <div className="hidden lg:block text-xs 2xl:text-sm 3xl:text-base text-muted-foreground">
+                              {day.tradesCount} trade{day.tradesCount > 1 ? 's' : ''}
+                            </div>
+                          </>
+                        )}
+                        
+                        {/* Metrics - Desktop only (weekdays only) */}
                     {day.tradesCount > 0 && (
-                      <div className="hidden lg:block text-xs 2xl:text-sm 3xl:text-base text-muted-foreground space-y-0.5">
+                          <div className="hidden lg:block text-xs 2xl:text-sm 3xl:text-base text-muted-foreground space-y-0.5">
                         <div>{day.avgRR.toFixed(1)}:1R, {day.winRate.toFixed(0)}%</div>
                       </div>
+                        )}
+                      </>
                     )}
                   </div>
                 </motion.div>
@@ -628,9 +806,25 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
             
             {/* Weekly Summary - Desktop only */}
             <motion.div
-              className="hidden lg:flex bg-muted/30 border border-border/50 rounded-xl p-4 2xl:p-5 3xl:p-6 hover:bg-muted/50 transition-colors min-h-[100px] 2xl:min-h-[120px] 3xl:min-h-[140px] 4xl:min-h-[160px] items-center justify-center"
+              className={cn(
+                "hidden lg:flex bg-muted/30 border border-border/50 rounded-xl p-4 2xl:p-5 3xl:p-6 hover:bg-muted/50 transition-colors min-h-[100px] 2xl:min-h-[120px] 3xl:min-h-[140px] 4xl:min-h-[160px] items-center justify-center cursor-pointer relative",
+                getWeekReviewStatus(week) === 'completed' && 'ring-1 ring-green-500/30 bg-green-500/5',
+                getWeekReviewStatus(week) === 'available' && 'ring-1 ring-blue-500/30 bg-blue-500/5'
+              )}
               whileHover={{ scale: 1.01 }}
+              onClick={() => handleWeeklySummaryClick(weekIndex, week)}
             >
+              {/* Review Status Indicator */}
+              {getWeekReviewStatus(week) && (
+                <div className="absolute top-3 right-3">
+                  {getWeekReviewStatus(week) === 'completed' ? (
+                    <CheckCircle2 className="w-4 h-4 text-green-600" />
+                  ) : (
+                    <Clock className="w-4 h-4 text-blue-600" />
+                  )}
+                </div>
+              )}
+              
               <div className="text-center space-y-2">
                 <div className="text-sm 2xl:text-base 3xl:text-lg font-medium text-muted-foreground">
                   Week {weeklyData[weekIndex]?.weekNumber}
@@ -665,6 +859,26 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
         currentDate={currentDate}
         calendarData={calendarData}
         weeklyData={weeklyData}
+      />
+
+      {/* Weekly Review Modal */}
+      <WeeklyReviewModal
+        isOpen={isWeeklyReviewOpen}
+        onClose={() => {
+          setIsWeeklyReviewOpen(false);
+          setWeeklyReviewWeek(undefined);
+        }}
+        weekOf={weeklyReviewWeek}
+      />
+
+      {/* Weekly Review View Modal */}
+      <WeeklyReviewViewModal
+        isOpen={isWeeklyReviewViewOpen}
+        onClose={() => {
+          setIsWeeklyReviewViewOpen(false);
+          setSelectedWeeklyReview(null);
+        }}
+        review={selectedWeeklyReview}
       />
     </div>
   );

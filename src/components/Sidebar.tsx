@@ -26,6 +26,10 @@ import { useSidebarStore } from '@/store/useSidebarStore';
 import { useNavigationStore } from '@/store/useNavigationStore';
 import { useQuickNoteModal } from '@/store/useQuickNoteStore';
 import { useUserProfileStore, getUserDisplayName, getFormattedLevel } from '@/store/useUserProfileStore';
+import { LevelBadge } from './xp/LevelBadge';
+import { ProgressRing } from './xp/ProgressRing';
+import { getLevelProgress } from '@/lib/xp/math';
+import { FEATURE_XP_PRESTIGE } from '@/lib/xp/constants';
 import { useQuestStore } from '@/store/useQuestStore';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
@@ -157,6 +161,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
   const { currentView, setCurrentView } = useNavigationStore();
   const { openModal: openQuickNote } = useQuickNoteModal();
   const { profile, refreshStats } = useUserProfileStore();
+  
+  // Debug logging for sidebar progress updates
+  React.useEffect(() => {
+    if (profile?.xp) {
+      console.log('📊 Sidebar Progress Update:', {
+        seasonXp: profile.xp.seasonXp,
+        level: profile.xp.level,
+        progressPct: getLevelProgress(profile.xp.seasonXp)
+      });
+    }
+  }, [profile?.xp?.seasonXp, profile?.xp?.level]);
   const { logout, currentUser } = useAuth();
   const [isTagManagerOpen, setIsTagManagerOpen] = useState(false);
 
@@ -397,24 +412,50 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
             exit="collapsed"
           >
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center overflow-hidden">
-                {profile?.avatar ? (
-                  <img 
-                    src={profile.avatar} 
-                    alt="Profile" 
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <User className="w-4 h-4 text-white" />
+              <div className="relative">
+                <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center overflow-hidden">
+                  {profile?.avatar ? (
+                    <img 
+                      src={profile.avatar} 
+                      alt="Profile" 
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <User className="w-4 h-4 text-white" />
+                  )}
+                </div>
+                {/* XP Progress Ring around avatar */}
+                {FEATURE_XP_PRESTIGE && profile?.xp && (
+                  <div className="absolute -inset-0.5">
+                    <ProgressRing 
+                      progressPct={getLevelProgress(profile.xp.seasonXp)}
+                      size="sm"
+                      thickness={2}
+                    />
+                  </div>
                 )}
               </div>
               <div className="flex-1">
                 <p className="text-sm font-medium text-card-foreground">
                   {profile?.displayName || getUserDisplayName()}
                 </p>
-                <p className="text-xs text-muted-foreground">
-                  {profile ? `Level ${profile.level} • ${profile.totalXP.toLocaleString()} XP` : getFormattedLevel()}
-                </p>
+                {FEATURE_XP_PRESTIGE && profile?.xp ? (
+                  <div className="space-y-1">
+                    <LevelBadge 
+                      level={profile.xp.level} 
+                      prestige={profile.xp.prestige}
+                      size="sm"
+                      showPrestigeText={false}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {profile.xp.seasonXp.toLocaleString()} Season XP
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    {profile ? `Level ${profile.xp?.level || 1} • ${profile.xp?.total?.toLocaleString() || '0'} XP` : getFormattedLevel()}
+                  </p>
+                )}
               </div>
             </div>
             
@@ -486,21 +527,37 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
           </Tooltip>
           
           
-          <Tooltip content={profile?.displayName || getUserDisplayName()} position="right" fullWidth>
+          <Tooltip content={
+            profile?.xp 
+              ? `${profile.displayName || getUserDisplayName()} - Level ${profile.xp.level}${profile.xp.prestige > 0 ? ` (${profile.xp.prestige} Prestige)` : ''}`
+              : (profile?.displayName || getUserDisplayName())
+          } position="right" fullWidth>
             <motion.button
               className="w-full flex items-center justify-center p-3 rounded-xl hover:bg-accent transition-colors"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <div className="w-5 h-5 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center overflow-hidden">
-                {profile?.avatar ? (
-                  <img 
-                    src={profile.avatar} 
-                    alt="Profile" 
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <User className="w-3 h-3 text-white" />
+                            <div className="relative">
+                <div className="w-5 h-5 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center overflow-hidden">
+                  {profile?.avatar ? (
+                    <img 
+                      src={profile.avatar} 
+                      alt="Profile"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <User className="w-3 h-3 text-white" />
+                  )}
+                </div>
+                {/* XP Progress Ring around avatar */}
+                {FEATURE_XP_PRESTIGE && profile?.xp && (
+                  <div className="absolute -inset-0.5">
+                    <ProgressRing 
+                      progressPct={getLevelProgress(profile.xp.seasonXp)}
+                      size="sm"
+                      thickness={1}
+                    />
+                  </div>
                 )}
               </div>
             </motion.button>

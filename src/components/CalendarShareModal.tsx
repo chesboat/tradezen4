@@ -40,14 +40,21 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
   const monthlyPnL = weeklyData.reduce((sum, week) => sum + week.totalPnl, 0);
   const totalTrades = weeklyData.reduce((sum, week) => sum + week.tradesCount, 0);
 
-  const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+  const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   // Replicate the exact styling functions from CalendarView
   const getDayClassName = (day: any) => {
     const isToday = new Date().toDateString() === day.date.toDateString();
+    const isWeekend = day.date.getDay() === 0 || day.date.getDay() === 6; // Sunday or Saturday
     
     return cn(
-      'relative p-3 rounded-xl border border-border/50 transition-all duration-200',
+      'relative p-3 rounded-xl transition-all duration-200',
+      
+      // Weekend styling (subtle, muted appearance)
+      isWeekend && !day.isOtherMonth 
+        ? 'border border-dashed border-border/40 opacity-60'
+        : 'border border-border/50',
+      
       day.isOtherMonth && 'opacity-40',
       isToday && 'ring-2 ring-primary/50',
       day.pnl > 0 && 'border-green-500/30 bg-green-50/10',
@@ -379,7 +386,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
                 {/* Simple Uniform Calendar Grid */}
                 <div className="space-y-1">
                   {/* Headers Row */}
-                  <div className="grid grid-cols-7 gap-1">
+                  <div className="grid grid-cols-8 gap-1">
                     {DAYS_OF_WEEK.map((day) => (
                       <div key={day} className="text-center font-semibold text-muted-foreground py-2">
                         {day}
@@ -392,44 +399,69 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
 
                   {/* Calendar Rows */}
                   {calendarData.weeks.map((week: any, weekIndex: number) => (
-                    <div key={weekIndex} className="grid grid-cols-7 gap-1">
-                      {/* Week Days */}
-                      {week.filter((day: any, dayIndex: number) => dayIndex !== 6).map((day: any, dayIndex: number) => (
-                        <div
-                          key={`${weekIndex}-${dayIndex}`}
-                          className={`${getDayClassName(day)} h-[90px] w-full`}
-                        >
-                          <div className="space-y-1">
-                            {/* Date */}
-                            <div className="flex items-center justify-between">
-                              <span className={cn(
-                                'text-sm font-medium',
-                                day.isOtherMonth ? 'text-muted-foreground' : 'text-foreground'
-                              )}>
-                                {day.date.getDate()}
-                              </span>
-                              <div className="flex items-center gap-1">
-                                {day.hasNews && (
-                                  <CalendarIcon className="w-3 h-3 text-primary" />
-                                )}
-                                {day.hasReflection && (
-                                  <BookOpen className="w-3 h-3 text-green-500" />
-                                )}
+                    <div key={weekIndex} className="grid grid-cols-8 gap-1">
+                      {/* Week Days - All 7 days including Saturday */}
+                      {week.map((day: any, dayIndex: number) => {
+                        const isWeekend = day.date.getDay() === 0 || day.date.getDay() === 6; // Sunday or Saturday
+                        
+                        return (
+                          <div
+                            key={`${weekIndex}-${dayIndex}`}
+                            className={`${getDayClassName(day)} h-[90px] w-full`}
+                          >
+                            <div className="space-y-1">
+                              {/* Date */}
+                              <div className="flex items-center justify-between">
+                                <span className={cn(
+                                  'text-sm font-medium',
+                                  day.isOtherMonth ? 'text-muted-foreground' : 'text-foreground'
+                                )}>
+                                  {day.date.getDate()}
+                                </span>
+                                <div className="flex items-center gap-1">
+                                  {day.hasNews && (
+                                    <CalendarIcon className="w-3 h-3 text-primary" />
+                                  )}
+                                  {day.hasReflection && (
+                                    <BookOpen className="w-3 h-3 text-green-500" />
+                                  )}
+                                </div>
                               </div>
+                              
+                              {/* Weekend Content */}
+                              {isWeekend ? (
+                                <div className="flex flex-col items-center justify-center text-center space-y-1">
+                                  <div className="text-xs text-muted-foreground/70">
+                                    Weekend
+                                  </div>
+                                  {day.quickNotesCount > 0 && (
+                                    <div className="text-xs text-muted-foreground">
+                                      {day.quickNotesCount} note{day.quickNotesCount > 1 ? 's' : ''}
+                                    </div>
+                                  )}
+                                  {day.hasReflection && (
+                                    <div className="text-xs text-green-600">
+                                      Reflection
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <>
+                                  {/* P&L (weekdays only) */}
+                                  {formatPnL(day.pnl)}
+                                  
+                                  {/* Trade Count (weekdays only) */}
+                                  {day.tradesCount > 0 && (
+                                    <div className="text-xs text-muted-foreground">
+                                      {day.tradesCount} trade{day.tradesCount > 1 ? 's' : ''}
+                                    </div>
+                                  )}
+                                </>
+                              )}
                             </div>
-                            
-                            {/* P&L */}
-                            {formatPnL(day.pnl)}
-                            
-                            {/* Trade Count */}
-                            {day.tradesCount > 0 && (
-                              <div className="text-xs text-muted-foreground">
-                                {day.tradesCount} trade{day.tradesCount > 1 ? 's' : ''}
-                              </div>
-                            )}
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
 
                       {/* Week Summary */}
                       <div className={cn(

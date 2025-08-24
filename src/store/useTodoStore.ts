@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { ImprovementTask } from '@/types';
 import { FirestoreService } from '@/lib/firestore';
 import { STORAGE_KEYS, localStorage, generateId } from '@/lib/localStorageUtils';
+import { useActivityLogStore } from './useActivityLogStore';
 
 const taskService = new FirestoreService<ImprovementTask>('tasks');
 
@@ -104,6 +105,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       dueAt: extras.dueAt,
       sourceReflectionId: extras.sourceReflectionId,
       completedAt: undefined,
+      url: extras.url,
     };
     try {
       const created = await taskService.create(base as any);
@@ -129,6 +131,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
         createdAt: nowIso,
         updatedAt: nowIso,
         accountId: base.accountId,
+        url: base.url,
       };
       set((state) => {
         const withOrder: ImprovementTask = { ...local, order: (state.tasks[0]?.order ?? 0) + 1 };
@@ -186,6 +189,25 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       await taskService.update(id, updates as any);
     } catch (err) {
       console.error('Failed to toggle task remotely (kept local change):', err);
+    }
+
+    // Award XP and log activity only when marking as done
+    if (!isDone) {
+      try {
+        const { awardXp, XpRewards } = await import('@/lib/xp/XpService');
+        await awardXp.todoComplete(id);
+        const addActivity = useActivityLogStore.getState().addActivity;
+        addActivity({
+          type: 'todo',
+          title: 'Task Completed',
+          description: current.text,
+          xpEarned: XpRewards.TODO_COMPLETE,
+          relatedId: id,
+          accountId: current.accountId,
+        });
+      } catch (e) {
+        console.error('Failed to award XP for task completion:', e);
+      }
     }
   },
 

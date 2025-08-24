@@ -3,7 +3,7 @@ export type TradeResult = 'win' | 'loss' | 'breakeven';
 export type MoodType = 'excellent' | 'good' | 'neutral' | 'poor' | 'terrible';
 export type QuestStatus = 'pending' | 'in_progress' | 'completed' | 'failed' | 'cancelled';
 export type WellnessActionType = 'breathwork' | 'meditation' | 'exercise' | 'gratitude' | 'break';
-export type ActivityType = 'trade' | 'note' | 'quest' | 'wellness' | 'xp' | 'reflection' | 'journal' | 'habit';
+export type ActivityType = 'trade' | 'note' | 'quest' | 'wellness' | 'xp' | 'reflection' | 'journal' | 'habit' | 'weekly_review' | 'todo';
 
 // Base interface for Firestore documents
 export interface FirestoreDocument {
@@ -65,7 +65,7 @@ export interface WellnessAction extends FirestoreDocument {
 
 export interface XPLog extends FirestoreDocument {
   amount: number;
-  source: 'trade' | 'quest' | 'wellness' | 'reflection' | 'streak';
+  source: 'trade' | 'quest' | 'wellness' | 'reflection' | 'streak' | 'todo';
   description: string;
   relatedId?: string; // ID of the related trade, quest, etc.
   accountId: string;
@@ -236,7 +236,10 @@ export interface TemplateBlock {
   order: number;
   isRequired: boolean;
   placeholder?: string;
+  category?: InsightBlockCategory; // Category for filtering by day type
 }
+
+export type InsightBlockCategory = 'trading' | 'general' | 'weekend';
 
 export interface InsightBlock extends FirestoreDocument {
   title: string;
@@ -250,6 +253,7 @@ export interface InsightBlock extends FirestoreDocument {
   templateBlockId?: string;
   isFavorite?: boolean;
   images?: string[]; // Array of image URLs for trade screenshots and charts
+  category?: InsightBlockCategory; // Category for filtering by day type
 }
 
 export interface FavoriteBlock extends FirestoreDocument {
@@ -295,6 +299,7 @@ export interface ImprovementTask extends FirestoreDocument {
   completedAt?: Date | string;
   pinned?: boolean;
   order?: number;
+  url?: string; // Optional URL for linking to resources
   accountId: string;
 }
 
@@ -327,4 +332,25 @@ export interface TallyStreak {
   currentStreak: number;
   longestStreak: number;
   lastTallyDate: string | null;
+}
+
+export interface WeeklyReview extends FirestoreDocument {
+  weekOf: string; // YYYY-MM-DD (Monday of the week)
+  tradingPerformance: string;
+  habitsReflection: string;
+  lessonsLearned: string;
+  nextWeekFocus: string;
+  keyWins: string;
+  areasToImprove: string;
+  isComplete: boolean;
+  completedAt?: Date;
+  xpEarned: number;
+  weeklyStats?: {
+    totalTrades: number;
+    winRate: number;
+    totalPnL: number;
+    habitsCompleted: number;
+    reflectionDays: number;
+  };
+  accountId: string;
 }

@@ -13,12 +13,19 @@ import {
   Flame,
   Brain,
   Calendar,
-  Plus
+  Plus,
+  Info
 } from 'lucide-react';
 import { useTradeStore } from '@/store/useTradeStore';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
 import { useRuleTallyStore } from '@/store/useRuleTallyStore';
 import { useUserProfileStore } from '@/store/useUserProfileStore';
+import { LevelBadge } from './xp/LevelBadge';
+import { ProgressRing } from './xp/ProgressRing';
+import { PrestigeModal } from './xp/PrestigeModal';
+import { XpSystemModal } from './xp/XpSystemModal';
+import { xpToNextLevel, getLevelProgress } from '@/lib/xp/math';
+import { FEATURE_XP_PRESTIGE } from '@/lib/xp/constants';
 import { useDailyReflectionStore } from '@/store/useDailyReflectionStore';
 import { useNavigationStore } from '@/store/useNavigationStore';
 import { formatCurrency } from '@/lib/localStorageUtils';
@@ -366,27 +373,35 @@ const GrowthCorner: React.FC = () => {
   const { trades } = useTradeStore();
   const { selectedAccountId } = useAccountFilterStore();
   const { getReflectionStreak } = useDailyReflectionStore();
-  const { profile, calculateTotalXP, calculateLevel } = useUserProfileStore();
+  const { profile } = useUserProfileStore();
   const { setCurrentView } = useNavigationStore();
+  const [showPrestigeModal, setShowPrestigeModal] = React.useState(false);
+  const [showXpModal, setShowXpModal] = React.useState(false);
   
   // Filter trades by account
   const accountTrades = selectedAccountId ? trades.filter(t => t.accountId === selectedAccountId) : trades;
   const { wins: winningTrades } = summarizeWinLossScratch(accountTrades);
   
-  // Use stored profile level for consistency with journal (Level 12)
-  const currentLevel = profile?.level || 1;
-  const totalXP = profile?.totalXP || 0;
-  const xpToNextLevel = profile?.xpToNextLevel || 100;
+  // Use new prestige system
+  const currentLevel = profile?.xp?.level || 1;
+  const prestige = profile?.xp?.prestige || 0;
+  const canPrestige = profile?.xp?.canPrestige || false;
+  const seasonXp = profile?.xp?.seasonXp || 0;
+  const totalXp = profile?.xp?.total || 0;
   
-  // Calculate XP progress percentage for current level
-  const XP_PER_LEVEL = [0, 100, 250, 450, 700, 1000, 1350, 1750, 2200, 2700, 3250, 3850, 4500, 5200, 5950, 6750, 7600, 8500, 9450, 10450, 11500, 12600, 13750, 14950, 16200, 17500, 18850, 20250, 21700, 23200];
-  const getXPForLevel = (level: number) => level < XP_PER_LEVEL.length ? XP_PER_LEVEL[level] : 23200 + ((level - 29) * 1000);
+  // Calculate XP progress for current level
+  const xpToNext = xpToNextLevel(seasonXp);
+  const progressPct = getLevelProgress(seasonXp);
   
-  const prevLevelXP = currentLevel > 1 ? getXPForLevel(currentLevel - 1) : 0;
-  const nextLevelXP = getXPForLevel(currentLevel);
-  const currentLevelXP = totalXP - prevLevelXP;
-  const xpForThisLevel = nextLevelXP - prevLevelXP;
-  const xpProgress = xpForThisLevel > 0 ? currentLevelXP / xpForThisLevel : 0;
+  // Debug logging for progress updates
+  React.useEffect(() => {
+    console.log('📊 GrowthCorner Progress Update:', {
+      seasonXp,
+      currentLevel,
+      progressPct,
+      xpToNext
+    });
+  }, [seasonXp, currentLevel, progressPct, xpToNext]);
   
   // Get reflection streak for the selected account
   const reflectionStreak = selectedAccountId ? getReflectionStreak(selectedAccountId) : 0;
@@ -415,23 +430,58 @@ const GrowthCorner: React.FC = () => {
         </motion.button>
       </div>
       
-      {/* Level Progress */}
+      {/* Level Progress with Prestige */}
       <div className="mb-6">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-foreground">Level {currentLevel} Trader</span>
-          <span className="text-xs text-muted-foreground">{Math.round(xpProgress * 100)}%</span>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            {FEATURE_XP_PRESTIGE ? (
+              <LevelBadge 
+                level={currentLevel} 
+                prestige={prestige}
+                size="sm"
+              />
+            ) : (
+              <span className="text-sm font-medium text-foreground">Level {currentLevel} Trader</span>
+            )}
+            
+            {FEATURE_XP_PRESTIGE && (
+              <motion.button
+                className="p-1 rounded-full hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors"
+                onClick={() => setShowXpModal(true)}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                title="Learn about XP & Prestige"
+              >
+                <Info className="w-3 h-3" />
+              </motion.button>
+            )}
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <ProgressRing 
+              progressPct={progressPct}
+              size="sm"
+              showPercentage={true}
+            />
+          </div>
         </div>
-        <div className="w-full bg-muted/30 rounded-full h-2">
-          <motion.div 
-            className="bg-gradient-to-r from-primary to-primary/80 h-2 rounded-full"
-            initial={{ width: 0 }}
-            animate={{ width: `${xpProgress * 100}%` }}
-            transition={{ duration: 1, delay: 0.5 }}
-          />
-        </div>
-        <p className="text-xs text-muted-foreground mt-1">
-          {totalXP.toLocaleString()} XP • {xpToNextLevel} XP to next level
+        
+        <p className="text-xs text-muted-foreground">
+          {seasonXp.toLocaleString()} Season XP • {xpToNext} XP to next level
         </p>
+        
+        {FEATURE_XP_PRESTIGE && canPrestige && (
+          <motion.button
+            className="mt-2 w-full py-2 px-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-xs font-medium rounded-lg shadow-lg"
+            onClick={() => setShowPrestigeModal(true)}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            ✨ Prestige Available ✨
+          </motion.button>
+        )}
+        
+
       </div>
 
       {/* Streaks & Activity */}
@@ -457,6 +507,20 @@ const GrowthCorner: React.FC = () => {
           <span className="text-sm font-medium text-foreground">View Active Quests</span>
         </motion.button>
       </div>
+      
+      {/* Modals */}
+      {FEATURE_XP_PRESTIGE && (
+        <>
+          <PrestigeModal
+            isOpen={showPrestigeModal}
+            onClose={() => setShowPrestigeModal(false)}
+          />
+          <XpSystemModal
+            isOpen={showXpModal}
+            onClose={() => setShowXpModal(false)}
+          />
+        </>
+      )}
     </motion.div>
   );
 };

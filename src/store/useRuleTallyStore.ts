@@ -17,7 +17,7 @@ interface RuleTallyState {
   getRulesByAccount: (accountId: string) => TallyRule[];
   
   // Tally logging
-  addTally: (ruleId: string, accountId: string, xpAmount?: number) => Promise<void>;
+  addTally: (ruleId: string, accountId: string) => Promise<void>;
   getTallyLog: (date: string, accountId: string) => TallyLog[];
   getTallyCountForRule: (ruleId: string, date: string) => number;
   
@@ -72,6 +72,12 @@ export const useRuleTallyStore = create<RuleTallyState>()(
             accountId: rule.accountId,
           });
 
+          // Award small XP for creating a habit (keep consistent with activity display)
+          try {
+            const { XpService } = await import('@/lib/xp/XpService');
+            await XpService.addXp(10, { source: 'habit', type: 'create_habit', habitId: rule.id });
+          } catch {}
+
           return createdRule;
         } catch (error) {
           console.error('Failed to create tally rule:', error);
@@ -100,6 +106,12 @@ export const useRuleTallyStore = create<RuleTallyState>()(
               relatedId: id,
               accountId: rule.accountId,
             });
+
+            // Award small XP for habit update to match activity display
+            try {
+              const { XpService } = await import('@/lib/xp/XpService');
+              await XpService.addXp(5, { source: 'habit', type: 'update_habit', habitId: id });
+            } catch {}
           }
         } catch (error) {
           console.error('Failed to update tally rule:', error);
@@ -138,7 +150,7 @@ export const useRuleTallyStore = create<RuleTallyState>()(
         return rules.filter((rule) => rule.accountId === accountId && rule.isActive);
       },
 
-      addTally: async (ruleId, accountId, xpAmount = 5) => {
+      addTally: async (ruleId, accountId) => {
         const today = new Date().toISOString().split('T')[0];
         const { logs } = get();
         
@@ -153,7 +165,8 @@ export const useRuleTallyStore = create<RuleTallyState>()(
             const updatedLog = {
               ...existingLog,
               tallyCount: existingLog.tallyCount + 1,
-              xpEarned: existingLog.xpEarned + xpAmount,
+              // xpEarned will be recomputed below after streak calc
+              xpEarned: existingLog.xpEarned,
               updatedAt: new Date(),
             };
             
@@ -171,7 +184,7 @@ export const useRuleTallyStore = create<RuleTallyState>()(
               date: today,
               ruleId,
               tallyCount: 1,
-              xpEarned: xpAmount,
+              xpEarned: 0,
               accountId,
               createdAt: new Date(),
               updatedAt: new Date(),
@@ -192,6 +205,22 @@ export const useRuleTallyStore = create<RuleTallyState>()(
             
             // Calculate streak for enhanced messaging
             const streak = get().calculateStreak(ruleId);
+
+            // Compute XP using centralized rewards (base + streak bonus)
+            const { XpRewards, awardXp } = await import('@/lib/xp/XpService');
+            const baseXp = XpRewards.HABIT_COMPLETE;
+            const streakBonus = XpRewards.HABIT_STREAK_BONUS * Math.min(streak.currentStreak, 30);
+            const totalXp = baseXp + streakBonus;
+            console.log('🏁 Habit XP compute:', { ruleId, baseXp, streakBonus, totalXp, streak: streak.currentStreak, tallyCount: currentTallyCount });
+
+            // Update today's log xpEarned to reflect computed value
+            set((state) => ({
+              logs: state.logs.map((log) =>
+                log.ruleId === ruleId && log.date === today && log.accountId === accountId
+                  ? { ...log, xpEarned: totalXp, updatedAt: new Date() }
+                  : log
+              ),
+            }));
             
             let title = 'Habit Completed! 🎯';
             let description = `${rule.emoji} ${rule.label}`;
@@ -216,10 +245,19 @@ export const useRuleTallyStore = create<RuleTallyState>()(
               type: 'habit',
               title,
               description,
-              xpEarned: xpAmount,
+              xpEarned: totalXp,
               relatedId: ruleId,
               accountId,
             });
+
+            // Award XP through new prestige system
+            try {
+              console.log('🎯 Calling awardXp.habitComplete...', { ruleId, streakDays: streak.currentStreak });
+              await awardXp.habitComplete(ruleId, streak.currentStreak);
+              console.log('✅ Habit XP awarded');
+            } catch (e) {
+              console.error('❌ Habit XP award failed:', e);
+            }
           }
 
           // Helper function for streak text (inline since it's not available in store)

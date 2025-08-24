@@ -697,25 +697,142 @@ export const useReflectionTemplateStore = create<ReflectionTemplateState>()(
       },
 
       autoPopulateFavorites: (date, accountId) => {
+        const getLocalDayOfWeek = (dateStr: string): number => {
+          try {
+            const [y, m, d] = dateStr.split('-').map((n) => parseInt(n, 10));
+            const localDate = new Date(y, (m || 1) - 1, d || 1);
+            return localDate.getDay();
+          } catch {
+            // Fallback to JS parsing if anything goes wrong
+            return new Date(dateStr).getDay();
+          }
+        };
         // Check if reflection already exists for this date
         const existingReflection = get().getReflectionByDate(date, accountId);
         if (existingReflection && existingReflection.insightBlocks.length > 0) {
-          return existingReflection;
+          // Filter existing blocks based on day type
+          const dayOfWeek = getLocalDayOfWeek(date);
+          const isWeekend = dayOfWeek === 0 || dayOfWeek === 6; // Sunday or Saturday
+          
+          const filteredBlocks = existingReflection.insightBlocks.filter(block => {
+            // If block has no category, keep it on weekdays only (legacy behavior)
+            if (!block.category) {
+              return !isWeekend;
+            }
+            
+            if (isWeekend) {
+              // On weekends, show only 'weekend' and 'general' categories
+              return block.category === 'weekend' || block.category === 'general';
+            } else {
+              // On weekdays, show 'trading' and 'general' categories
+              return block.category === 'trading' || block.category === 'general';
+            }
+          });
+          
+          // If filtering removed blocks, update the reflection
+          if (filteredBlocks.length !== existingReflection.insightBlocks.length) {
+            set((state) => ({
+              reflectionData: state.reflectionData.map((reflection) =>
+                reflection.id === existingReflection.id
+                  ? { ...reflection, insightBlocks: filteredBlocks, updatedAt: new Date() }
+                  : reflection
+              ),
+            }));
+            get().saveToStorage();
+          }
+
+          // If after filtering nothing remains, seed from weekend/weekday favorites
+          const allFavorites = get().getFavoriteBlocks(accountId);
+          const filteredFavorites = allFavorites.filter(fav => {
+            const t = get().getTemplateById(fav.templateId);
+            const tb = t?.blocks.find(b => b.id === fav.templateBlockId);
+            if (!tb || !tb.category) return !isWeekend; // legacy: weekdays only
+            return isWeekend
+              ? (tb.category === 'weekend' || tb.category === 'general')
+              : (tb.category === 'trading' || tb.category === 'general');
+          });
+
+          if (filteredBlocks.length === 0 && filteredFavorites.length > 0) {
+            filteredFavorites.forEach((favorite, index) => {
+              const t = get().getTemplateById(favorite.templateId);
+              const tb = t?.blocks.find(b => b.id === favorite.templateBlockId);
+              if (t && tb) {
+                get().addInsightBlock(existingReflection.id, {
+                  title: favorite.title,
+                  content: '',
+                  tags: [],
+                  emoji: favorite.emoji,
+                  xpEarned: 0,
+                  order: index + 1,
+                  isExpanded: index === 0,
+                  templateId: favorite.templateId,
+                  templateBlockId: favorite.templateBlockId,
+                  isFavorite: true,
+                  category: tb.category,
+                });
+              }
+            });
+            get().saveToStorage();
+            return get().getReflectionByDate(date, accountId)!;
+          }
+
+          return { ...existingReflection, insightBlocks: filteredBlocks };
         }
 
+        // Determine if this is a weekend day
+        const dayOfWeek = getLocalDayOfWeek(date);
+        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6; // Sunday or Saturday
+
         // Get user's favorite blocks
-        const favorites = get().getFavoriteBlocks(accountId);
+        let allFavorites = get().getFavoriteBlocks(accountId);
         
-        if (favorites.length === 0) {
-          // No favorites, just return empty reflection
+        // If it's weekend and user has no favorites yet, seed a sensible default set
+        if (isWeekend && allFavorites.length === 0) {
+          const defaultSeedPairs: Array<[string, string]> = [
+            ['week-planning', 'week-review'],
+            ['week-planning', 'next-week-focus'],
+            ['learning-development', 'study-session'],
+            ['personal-wellness', 'wellness-check'],
+          ];
+          defaultSeedPairs.forEach(([templateId, blockId]) => {
+            const tpl = get().getTemplateById(templateId as any);
+            const has = tpl?.blocks.find(b => b.id === blockId);
+            if (has) {
+              get().addFavoriteBlock(templateId as any, blockId as any, accountId);
+            }
+          });
+          allFavorites = get().getFavoriteBlocks(accountId);
+        }
+        
+        // Filter favorites based on day type
+        const filteredFavorites = allFavorites.filter(favorite => {
+          const template = get().getTemplateById(favorite.templateId);
+          const templateBlock = template?.blocks.find(b => b.id === favorite.templateBlockId);
+          
+          if (!templateBlock || !templateBlock.category) {
+            // If no category is specified, show on weekdays only (legacy behavior)
+            return !isWeekend;
+          }
+          
+          if (isWeekend) {
+            // On weekends, show only 'weekend' and 'general' categories
+            return templateBlock.category === 'weekend' || templateBlock.category === 'general';
+          } else {
+            // On weekdays, show 'trading' and 'general' categories
+            return templateBlock.category === 'trading' || templateBlock.category === 'general';
+          }
+        });
+        
+        if (filteredFavorites.length === 0) {
+          // No applicable favorites, just return empty reflection
           return get().createOrUpdateReflection(date, accountId);
         }
 
         // Create or get the reflection
         const reflection = get().createOrUpdateReflection(date, accountId);
 
-        // Add favorite blocks as insight blocks
-        favorites.forEach((favorite, index) => {
+        // Add filtered favorite blocks as insight blocks
+        filteredFavorites.forEach((favorite, index) => {
           const template = get().getTemplateById(favorite.templateId);
           const templateBlock = template?.blocks.find(b => b.id === favorite.templateBlockId);
           
@@ -731,6 +848,7 @@ export const useReflectionTemplateStore = create<ReflectionTemplateState>()(
               templateId: favorite.templateId,
               templateBlockId: favorite.templateBlockId,
               isFavorite: true,
+              category: templateBlock.category, // Include category in the insight block
             });
           }
         });

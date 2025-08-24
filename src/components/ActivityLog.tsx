@@ -13,7 +13,9 @@ import {
   Filter,
   MoreVertical,
   Edit,
-  Target
+  Target,
+  FileText,
+  CheckCircle2
 } from 'lucide-react';
 import { useActivityLogStore } from '@/store/useActivityLogStore';
 import { ActivityLogEntry, ActivityType } from '@/types';
@@ -32,6 +34,8 @@ const activityIcons: Record<ActivityType, React.ComponentType<{ className?: stri
   reflection: Activity,
   journal: Edit,
   habit: Target,
+  weekly_review: FileText,
+  todo: CheckCircle2,
 };
 
 const activityColors: Record<ActivityType, string> = {
@@ -43,6 +47,8 @@ const activityColors: Record<ActivityType, string> = {
   reflection: 'text-blue-500',
   journal: 'text-indigo-500',
   habit: 'text-emerald-500',
+  weekly_review: 'text-blue-600',
+  todo: 'text-emerald-600',
 };
 
 const sidebarVariants = {
@@ -227,6 +233,8 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ className }) => {
     { value: 'quest', label: 'Quests', icon: Trophy },
     { value: 'wellness', label: 'Wellness', icon: Heart },
     { value: 'xp', label: 'XP', icon: Zap },
+    { value: 'weekly_review', label: 'Reviews', icon: FileText },
+    { value: 'todo', label: 'Tasks', icon: CheckCircle2 },
   ];
 
   return (

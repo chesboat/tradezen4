@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, Circle, ChevronLeft, ChevronRight, Clock, Tag, MoreVertical, Plus, X, Pin, Calendar } from 'lucide-react';
+import { CheckCircle2, Circle, ChevronLeft, ChevronRight, Clock, Tag, MoreVertical, Plus, X, Pin, Calendar, ExternalLink, Link } from 'lucide-react';
 import { useTodoStore, initializeSampleTasks } from '@/store/useTodoStore';
 import { ImprovementTask } from '@/types';
 import { useActivityLogStore } from '@/store/useActivityLogStore';
@@ -30,11 +30,14 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
   const [newText, setNewText] = useState('');
   const [newPriority, setNewPriority] = useState<'low' | 'med' | 'high' | ''>('');
   const [newCategory, setNewCategory] = useState<string>('');
+  const [newUrl, setNewUrl] = useState<string>('');
   const [categoryFilter, setCategoryFilter] = useState<string | 'all'>('all');
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [snoozeForId, setSnoozeForId] = useState<string | null>(null);
   const [completingTasks, setCompletingTasks] = useState<Set<string>>(new Set());
   const [schedulingTaskId, setSchedulingTaskId] = useState<string | null>(null);
+  const [editingUrlId, setEditingUrlId] = useState<string | null>(null);
+  const [editingUrl, setEditingUrl] = useState<string>('');
 
   useEffect(() => {
     const init = async () => {
@@ -82,10 +85,12 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
     const extras: Partial<ImprovementTask> = {};
     if (newPriority) extras.priority = newPriority;
     if (newCategory) extras.category = newCategory;
+    if (newUrl.trim()) extras.url = newUrl.trim();
     await addTask(text, extras);
     setNewText('');
     setNewPriority('');
     setNewCategory('');
+    setNewUrl('');
   };
 
   const handleToggleDone = async (taskId: string) => {
@@ -113,6 +118,31 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
 
   const rightOffset = Math.max(60, (activityExpanded ? 320 : 60));
   const clampedWidth = Math.max(280, Math.min(480, isExpanded ? (forcedWidth ?? railWidth) : 60));
+
+  // Helper function to format URLs for display
+  const formatUrlForDisplay = (url: string): string => {
+    try {
+      const urlObj = new URL(url);
+      const hostname = urlObj.hostname.replace('www.', '');
+      const path = urlObj.pathname;
+      
+      if (hostname === 'youtube.com' || hostname === 'youtu.be') {
+        return 'YouTube';
+      } else if (hostname === 'github.com') {
+        return `GitHub${path.length > 1 ? ` • ${path.split('/')[1]}` : ''}`;
+      } else if (hostname === 'docs.google.com') {
+        return 'Google Docs';
+      } else if (hostname === 'notion.so') {
+        return 'Notion';
+      } else if (hostname === 'medium.com') {
+        return 'Medium';
+      } else {
+        return hostname;
+      }
+    } catch {
+      return url.length > 30 ? url.substring(0, 30) + '...' : url;
+    }
+  };
 
   return (
     <>
@@ -212,6 +242,19 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                 <button className="p-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90" onClick={handleAdd}>
                   <Plus className="w-4 h-4" />
                 </button>
+              </div>
+              {/* URL input field */}
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Link className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <input
+                    type="url"
+                    value={newUrl}
+                    onChange={(e) => setNewUrl(e.target.value)}
+                    placeholder="Add URL (optional)"
+                    className="w-full pl-10 pr-3 py-2 rounded-lg bg-muted text-sm outline-none focus:ring-2 ring-primary/40"
+                  />
+                </div>
               </div>
               {/* Priority and Category selectors for new tasks */}
               <div className="flex items-center gap-2">
@@ -422,6 +465,17 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                         >
                           <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
                         </button>
+                        <button
+                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-accent"
+                          onClick={() => {
+                            setEditingUrlId(task.id);
+                            setEditingUrl(task.url || '');
+                          }}
+                          aria-label="edit url"
+                          title="Add/Edit URL"
+                        >
+                          <Link className="w-3.5 h-3.5 text-muted-foreground" />
+                        </button>
                         <button className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-accent" onClick={() => deleteTask(task.id)} aria-label="delete" title="Delete">
                           <X className="w-3.5 h-3.5 text-muted-foreground" />
                         </button>
@@ -429,6 +483,18 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                     </div>
                     <div className="flex items-center justify-between mt-2 text-xs gap-2">
                       <div className="flex items-center gap-2 flex-wrap">
+                        {task.url && (
+                          <a
+                            href={task.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 border border-blue-500/20 hover:bg-blue-500/20 transition-colors text-[10px] font-medium"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            {formatUrlForDisplay(task.url)}
+                          </a>
+                        )}
                         {task.dueAt && (
                           <span className="inline-flex items-center gap-1 text-muted-foreground"><Clock className="w-3 h-3" /> {new Date(task.dueAt).toLocaleDateString()}</span>
                         )}
@@ -623,6 +689,17 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                         >
                           <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
                         </button>
+                        <button
+                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-accent"
+                          onClick={() => {
+                            setEditingUrlId(task.id);
+                            setEditingUrl(task.url || '');
+                          }}
+                          aria-label="edit url"
+                          title="Add/Edit URL"
+                        >
+                          <Link className="w-3.5 h-3.5 text-muted-foreground" />
+                        </button>
                         <button className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-accent" onClick={() => deleteTask(task.id)} aria-label="delete" title="Delete">
                           <X className="w-3.5 h-3.5 text-muted-foreground" />
                         </button>
@@ -630,6 +707,18 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                     </div>
                     <div className="flex items-center justify-between mt-2 text-xs gap-2">
                       <div className="flex items-center gap-2 flex-wrap">
+                        {task.url && (
+                          <a
+                            href={task.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 border border-blue-500/20 hover:bg-blue-500/20 transition-colors text-[10px] font-medium"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            {formatUrlForDisplay(task.url)}
+                          </a>
+                        )}
                         {task.dueAt && (
                           <span className="inline-flex items-center gap-1 text-muted-foreground"><Clock className="w-3 h-3" /> {new Date(task.dueAt).toLocaleDateString()}</span>
                         )}
@@ -783,6 +872,79 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                   <button
                     className="flex-1 px-4 py-2 border border-border rounded-lg hover:bg-accent transition-colors"
                     onClick={() => setSchedulingTaskId(null)}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* URL Edit Modal */}
+      <AnimatePresence>
+        {editingUrlId && (
+          <motion.div
+            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setEditingUrlId(null)}
+          >
+            <motion.div
+              className="bg-card border border-border rounded-xl p-6 shadow-xl max-w-md w-full mx-4"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Link className="w-5 h-5 text-primary" />
+                Add/Edit URL
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">URL</label>
+                  <input
+                    type="url"
+                    value={editingUrl}
+                    onChange={(e) => setEditingUrl(e.target.value)}
+                    placeholder="https://example.com"
+                    className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
+                    autoFocus
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Add a link to YouTube videos, articles, documentation, or any resource related to this task.
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                    onClick={() => {
+                      updateTask(editingUrlId, { url: editingUrl.trim() || undefined });
+                      setEditingUrlId(null);
+                      setEditingUrl('');
+                    }}
+                  >
+                    Save
+                  </button>
+                  <button
+                    className="flex-1 px-4 py-2 bg-muted text-muted-foreground rounded-lg hover:bg-accent transition-colors"
+                    onClick={() => {
+                      updateTask(editingUrlId, { url: undefined });
+                      setEditingUrlId(null);
+                      setEditingUrl('');
+                    }}
+                  >
+                    Remove URL
+                  </button>
+                  <button
+                    className="flex-1 px-4 py-2 border border-border rounded-lg hover:bg-accent transition-colors"
+                    onClick={() => {
+                      setEditingUrlId(null);
+                      setEditingUrl('');
+                    }}
                   >
                     Cancel
                   </button>

@@ -4,14 +4,29 @@ import { useQuestStore } from './useQuestStore';
 import { localStorage, STORAGE_KEYS } from '@/lib/localStorageUtils';
 import { db } from '@/lib/firebase';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { levelFromTotalXp, canPrestige, xpToNextLevel, getLevelProgress } from '@/lib/xp/math';
+
+export interface XpHistoryEntry {
+  type: 'gain' | 'levelup' | 'prestige';
+  delta?: number;
+  at: Date;
+  meta?: any;
+}
 
 export interface UserProfile {
   id: string;
   displayName: string;
   email?: string;
-  totalXP: number;
-  level: number;
-  xpToNextLevel: number;
+  xp: {
+    total: number;        // Lifetime XP (never resets)
+    seasonXp: number;     // Current season XP (resets on prestige)
+    level: number;        // Current display level (1-30)
+    prestige: number;     // Prestige count (0+)
+    canPrestige: boolean; // Can user prestige now?
+    lastLevelUpAt?: Date; // For debouncing level up effects
+    lastPrestigedAt?: Date; // When user last prestiged
+    history: XpHistoryEntry[]; // Recent XP history (max 200 entries)
+  };
   joinedAt: Date;
   avatar?: string;
   preferences: {
@@ -37,34 +52,23 @@ interface UserProfileState {
   initializeProfile: (userId: string, email?: string) => Promise<void>;
   updateProfile: (updates: Partial<UserProfile>) => void;
   updateDisplayName: (name: string) => void;
-  calculateTotalXP: () => number;
-  calculateLevel: (xp: number) => { level: number; xpToNextLevel: number };
+  addXP: (delta: number, meta?: any) => Promise<void>;
+  prestige: () => Promise<void>;
   refreshStats: () => void;
   saveToStorage: () => void;
   loadFromStorage: (userId: string) => UserProfile | null;
   syncToFirestore: () => Promise<void>;
   loadFromFirestore: (userId: string) => Promise<UserProfile | null>;
-  addXP?: (delta: number) => void;
+  
+  // Legacy methods for backward compatibility
+  calculateTotalXP: () => number;
+  calculateLevel: (xp: number) => { level: number; xpToNextLevel: number };
 }
 
-// XP required for each level (exponential growth)
-const XP_PER_LEVEL = [
-  0, 100, 250, 450, 700, 1000, 1350, 1750, 2200, 2700, 
-  3250, 3850, 4500, 5200, 5950, 6750, 7600, 8500, 9450, 10450,
-  11500, 12600, 13750, 14950, 16200, 17500, 18850, 20250, 21700, 23200,
-  // Continue pattern for higher levels
-];
-
-// Generate XP requirements for levels beyond predefined array
-const getXPForLevel = (level: number): number => {
-  if (level < XP_PER_LEVEL.length) {
-    return XP_PER_LEVEL[level];
-  }
-  // Formula for higher levels: base + (level * increment)
-  const baseXP = XP_PER_LEVEL[XP_PER_LEVEL.length - 1];
-  const additionalLevels = level - (XP_PER_LEVEL.length - 1);
-  return baseXP + (additionalLevels * 1000);
-};
+// Helper function to trim XP history to max 200 entries
+function trimXpHistory(history: XpHistoryEntry[]): XpHistoryEntry[] {
+  return history.slice(-200);
+}
 
 export const useUserProfileStore = create<UserProfileState>((set, get) => ({
   profile: null,
@@ -83,14 +87,19 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
       }
       
       if (!profile) {
-        // Create new profile
+        // Create new profile with prestige system
         profile = {
           id: userId,
           displayName: email?.split('@')[0] || 'Trader',
           email,
-          totalXP: 0,
-          level: 1,
-          xpToNextLevel: 100,
+          xp: {
+            total: 0,
+            seasonXp: 0,
+            level: 1,
+            prestige: 0,
+            canPrestige: false,
+            history: []
+          },
           joinedAt: new Date(),
           preferences: {
             theme: 'system',
@@ -111,7 +120,34 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
       set({ profile, isLoading: false });
       get().saveToStorage();
       
-      // Sync to Firestore
+      // Ensure xp/status doc exists and attach realtime subscription
+      try {
+        const { XpService } = await import('@/lib/xp/XpService');
+        const unsub = XpService.subscribe(({ total, seasonXp, level, prestige }) => {
+          const current = get().profile;
+          if (!current) return;
+          const updated: UserProfile = {
+            ...current,
+            xp: {
+              ...current.xp,
+              total,
+              seasonXp,
+              // Derive level locally until server-side is added
+              level: levelFromTotalXp(seasonXp).level,
+              prestige,
+              canPrestige: canPrestige(seasonXp),
+            },
+          };
+          set({ profile: updated });
+          get().saveToStorage();
+        });
+        // Optionally store unsub if needed later
+        (window as any).__xpUnsub = unsub;
+      } catch (e) {
+        console.warn('XP subscribe failed (will still use local xp):', e);
+      }
+
+      // Sync to Firestore (profile fields)
       await get().syncToFirestore();
       
       // Refresh stats and XP
@@ -135,48 +171,139 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
     get().updateProfile({ displayName: name });
   },
 
+  addXP: async (delta: number, meta?: any) => {
+    const { profile } = get();
+    if (!profile || !Number.isFinite(delta) || delta <= 0) return;
+
+    const oldLevel = profile.xp.level;
+    const newSeasonXp = Math.max(0, profile.xp.seasonXp + delta);
+    const newTotalXp = Math.max(0, profile.xp.total + delta);
+    
+    // Calculate new level from season XP
+    const { level: newLevel } = levelFromTotalXp(newSeasonXp);
+    const leveledUp = newLevel > oldLevel;
+    
+    // Create history entries
+    const now = new Date();
+    const newHistory = [...profile.xp.history];
+    
+    // Add gain entry
+    newHistory.push({
+      type: 'gain',
+      delta,
+      at: now,
+      meta
+    });
+    
+    // Add level up entry if applicable
+    if (leveledUp) {
+      newHistory.push({
+        type: 'levelup',
+        at: now,
+        meta: { fromLevel: oldLevel, toLevel: newLevel }
+      });
+    }
+    
+    // Update profile
+    const updatedProfile: UserProfile = {
+      ...profile,
+      xp: {
+        ...profile.xp,
+        total: newTotalXp,
+        seasonXp: newSeasonXp,
+        level: newLevel,
+        canPrestige: canPrestige(newSeasonXp),
+        lastLevelUpAt: leveledUp ? now : profile.xp.lastLevelUpAt,
+        history: trimXpHistory(newHistory)
+      }
+    };
+    
+    set({ profile: updatedProfile });
+    
+    // Debug logging
+    console.log('🎯 XP Updated:', {
+      delta,
+      oldXp: profile.xp.seasonXp,
+      newXp: newSeasonXp,
+      oldLevel: oldLevel,
+      newLevel: newLevel,
+      progressPct: getLevelProgress(newSeasonXp)
+    });
+    
+    get().saveToStorage();
+    
+    // Sync to Firestore in background
+    try {
+      await get().syncToFirestore();
+    } catch (error) {
+      console.error('Failed to sync XP to Firestore:', error);
+    }
+  },
+
+  prestige: async () => {
+    const { profile } = get();
+    if (!profile || !profile.xp.canPrestige) {
+      throw new Error('Cannot prestige: not eligible');
+    }
+
+    const now = new Date();
+    const newPrestige = profile.xp.prestige + 1;
+    
+    // Create prestige history entry
+    const newHistory = [...profile.xp.history];
+    newHistory.push({
+      type: 'prestige',
+      at: now,
+      meta: { 
+        fromLevel: profile.xp.level, 
+        prestige: newPrestige,
+        seasonXpReset: profile.xp.seasonXp
+      }
+    });
+    
+    // Reset season XP and level, increment prestige
+    const updatedProfile: UserProfile = {
+      ...profile,
+      xp: {
+        ...profile.xp,
+        seasonXp: 0,
+        level: 1,
+        prestige: newPrestige,
+        canPrestige: false,
+        lastPrestigedAt: now,
+        history: trimXpHistory(newHistory)
+      }
+    };
+    
+    set({ profile: updatedProfile });
+    get().saveToStorage();
+    
+    // Sync to Firestore
+    try {
+      await get().syncToFirestore();
+    } catch (error) {
+      console.error('Failed to sync prestige to Firestore:', error);
+      throw error;
+    }
+  },
+
+  // Legacy methods for backward compatibility
   calculateTotalXP: () => {
-    // Get XP from all activities
-    const activities = useActivityLogStore.getState().activities;
-    const totalActivityXP = activities.reduce((sum, activity) => sum + (activity.xpEarned || 0), 0);
-    
-    // Get XP from completed quests
-    const quests = useQuestStore.getState().quests;
-    const completedQuestXP = quests
-      .filter(quest => quest.status === 'completed')
-      .reduce((sum, quest) => sum + quest.xpReward, 0);
-    
-    return totalActivityXP + completedQuestXP;
+    const { profile } = get();
+    return profile?.xp.total || 0;
   },
 
   calculateLevel: (xp) => {
-    let level = 1;
-    let xpRequired = 0;
-    
-    // Find the highest level the user has reached
-    while (xp >= getXPForLevel(level)) {
-      level++;
-    }
-    
-    // Calculate XP needed for next level
-    const currentLevelXP = level > 1 ? getXPForLevel(level - 1) : 0;
-    const nextLevelXP = getXPForLevel(level);
-    const xpToNextLevel = nextLevelXP - xp;
-    
-    return { level: level, xpToNextLevel };
+    const { level } = levelFromTotalXp(xp);
+    const xpToNext = xpToNextLevel(xp);
+    return { level, xpToNextLevel: xpToNext };
   },
 
   refreshStats: () => {
     const { profile } = get();
     if (!profile) return;
 
-    // Use Firestore-stored totalXP as source of truth
-    const totalXP = profile.totalXP ?? 0;
-    
-    // Calculate level from stored XP
-    const { level, xpToNextLevel } = get().calculateLevel(totalXP);
-    
-    // Get activities for stats
+    // Get activities for stats only; do NOT touch xp/level fields here
     const activities = useActivityLogStore.getState().activities;
     const trades = activities.filter(a => a.type === 'trade');
     const quests = useQuestStore.getState().quests.filter(q => q.status === 'completed');
@@ -203,30 +330,33 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
       }
     }
 
-    const updatedProfile: UserProfile = {
-      ...profile,
-      totalXP, // keep stored XP
-      level,
-      xpToNextLevel,
-      stats: {
-        totalTrades: trades.length,
-        totalQuests: quests.length,
-        totalWellnessActivities: wellnessActivities.length,
-        totalReflections: reflections.length,
-        currentStreak,
-        longestStreak: Math.max(profile.stats.longestStreak, currentStreak),
+    set({
+      profile: {
+        ...profile,
+        stats: {
+          totalTrades: trades.length,
+          totalQuests: quests.length,
+          totalWellnessActivities: wellnessActivities.length,
+          totalReflections: reflections.length,
+          currentStreak,
+          longestStreak: Math.max(profile.stats.longestStreak, currentStreak),
+        },
       },
-    };
-
-    set({ profile: updatedProfile });
+    });
     get().saveToStorage();
-    // Don't overwrite Firestore XP here; only sync derived stats
+    // Sync derived stats only; xp fields remain untouched
     get().syncToFirestore().catch(() => {});
   },
 
   saveToStorage: () => {
     const { profile } = get();
     if (profile) {
+      console.log('💾 saveToStorage XP snapshot:', {
+        seasonXp: profile.xp?.seasonXp,
+        totalXp: profile.xp?.total,
+        level: profile.xp?.level,
+        prestige: profile.xp?.prestige,
+      });
       localStorage.setItem(`${STORAGE_KEYS.USER_PROFILE}_${profile.id}`, profile);
     }
   },
@@ -235,6 +365,12 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
     try {
       const stored = localStorage.getItem(`${STORAGE_KEYS.USER_PROFILE}_${userId}`, null as UserProfile | null);
       if (stored) {
+        console.log('📥 loadFromStorage XP snapshot:', {
+          seasonXp: stored.xp?.seasonXp,
+          totalXp: stored.xp?.total,
+          level: stored.xp?.level,
+          prestige: stored.xp?.prestige,
+        });
         const profile: UserProfile = {
           ...stored,
           joinedAt: stored.joinedAt instanceof Date ? stored.joinedAt : new Date(stored.joinedAt || new Date()),
@@ -253,9 +389,21 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
     if (!profile) return;
 
     try {
+      console.log('🔐 syncToFirestore writing XP:', {
+        seasonXp: profile.xp?.seasonXp,
+        totalXp: profile.xp?.total,
+        level: profile.xp?.level,
+        prestige: profile.xp?.prestige,
+      });
       const profileDoc = doc(db, 'userProfiles', profile.id);
+      // Avoid writing legacy fields; write xp in xp/status listener path instead
       await setDoc(profileDoc, {
-        ...profile,
+        id: profile.id,
+        displayName: profile.displayName,
+        email: profile.email,
+        joinedAt: profile.joinedAt instanceof Date ? profile.joinedAt.toISOString() : profile.joinedAt,
+        preferences: profile.preferences,
+        stats: profile.stats,
         joinedAt: profile.joinedAt instanceof Date ? profile.joinedAt.toISOString() : profile.joinedAt,
         updatedAt: serverTimestamp(),
       }, { merge: true });
@@ -272,6 +420,12 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
       
       if (docSnap.exists()) {
         const data = docSnap.data();
+        console.log('🧲 loadFromFirestore read XP:', {
+          seasonXp: (data as any)?.xp?.seasonXp,
+          totalXp: (data as any)?.xp?.total,
+          level: (data as any)?.xp?.level,
+          prestige: (data as any)?.xp?.prestige,
+        });
         const profile: UserProfile = {
           ...data,
           joinedAt: data.joinedAt ? new Date(data.joinedAt) : new Date(),
@@ -286,17 +440,7 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
     return null;
   },
 
-  // Increment total XP in a controlled way and sync
-  addXP: (delta: number) => {
-    const { profile } = get();
-    if (!profile || !Number.isFinite(delta)) return;
-    const newTotal = Math.max(0, (profile.totalXP || 0) + delta);
-    const { level, xpToNextLevel } = get().calculateLevel(newTotal);
-    const updated: UserProfile = { ...profile, totalXP: newTotal, level, xpToNextLevel };
-    set({ profile: updated });
-    get().saveToStorage();
-    get().syncToFirestore().catch(console.error);
-  }
+  // Legacy addXP removed to avoid shadowing new prestige XP method
 }));
 
 // Helper function to get user's display name
@@ -308,20 +452,16 @@ export const getUserDisplayName = (): string => {
 // Helper function to get formatted level display
 export const getFormattedLevel = (): string => {
   const profile = useUserProfileStore.getState().profile;
-  if (!profile) return 'Level 1 • 0 XP';
+  if (!profile?.xp) return 'Level 1 • 0 XP';
   
-  return `Level ${profile.level} • ${profile.totalXP.toLocaleString()} XP`;
+  return `Level ${profile.xp.level} • ${profile.xp.seasonXp.toLocaleString()} Season XP`;
 };
 
 // Helper function to get XP progress percentage
 export const getXPProgressPercentage = (): number => {
   const profile = useUserProfileStore.getState().profile;
-  if (!profile) return 0;
+  if (!profile?.xp) return 0;
   
-  const currentLevelXP = profile.level > 1 ? getXPForLevel(profile.level - 1) : 0;
-  const nextLevelXP = getXPForLevel(profile.level);
-  const progressXP = profile.totalXP - currentLevelXP;
-  const requiredXP = nextLevelXP - currentLevelXP;
-  
-  return Math.min((progressXP / requiredXP) * 100, 100);
+  const { progressPct } = levelFromTotalXp(profile.xp.seasonXp);
+  return progressPct;
 };

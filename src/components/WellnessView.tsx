@@ -331,7 +331,7 @@ export const WellnessView: React.FC = () => {
     }
   };
 
-  const completeActivity = (activityId: WellnessActionType) => {
+  const completeActivity = async (activityId: WellnessActionType) => {
     const activity = wellnessActivities.find(a => a.id === activityId);
     if (!activity) return;
 
@@ -343,6 +343,14 @@ export const WellnessView: React.FC = () => {
       xpEarned: activity.xpReward,
       accountId: selectedAccountId || 'default',
     });
+
+    // Award XP in the prestige system
+    try {
+      const { awardXp } = await import('@/lib/xp/XpService');
+      await awardXp.wellnessActivity(activity.id);
+    } catch (e) {
+      console.error('Failed to award wellness XP:', e);
+    }
 
     // Add wellness activity completion to mood timeline
     const today = new Date().toISOString().split('T')[0];
@@ -396,7 +404,7 @@ export const WellnessView: React.FC = () => {
     setBreathingSession(prev => ({ ...prev, isActive: false }));
   };
 
-  const handleMoodChange = (newMood: MoodType) => {
+  const handleMoodChange = async (newMood: MoodType) => {
     const oldMood = currentMood;
     setCurrentMood(newMood);
     
@@ -411,6 +419,11 @@ export const WellnessView: React.FC = () => {
       xpEarned: 5, // Small XP reward for mood tracking
       accountId: selectedAccountId || 'default',
     });
+    // Award small XP for mood update
+    try {
+      const { XpService } = await import('@/lib/xp/XpService');
+      await XpService.addXp(5, { source: 'wellness', type: 'mood_update', from: oldMood, to: newMood });
+    } catch {}
 
     // Add to mood timeline
     const today = new Date().toISOString().split('T')[0];

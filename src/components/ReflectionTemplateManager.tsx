@@ -203,7 +203,9 @@ export const ReflectionTemplateManager: React.FC<ReflectionTemplateManagerProps>
     // Check for existing reflection first
     const existing = getReflectionByDate(date, selectedAccountId);
     if (existing) {
-      setCurrentReflection(existing);
+      // Ensure weekend/weekday filtering is applied even for existing reflections
+      const filtered = autoPopulateFavorites(date, selectedAccountId);
+      setCurrentReflection(filtered);
       setIsInitializing(false);
       return;
     }
@@ -306,6 +308,7 @@ export const ReflectionTemplateManager: React.FC<ReflectionTemplateManagerProps>
       templateId: template?.id,
       templateBlockId: blockTemplate?.id,
       isFavorite,
+      category: blockTemplate?.category, // Include category from template
     };
 
     const addedBlock = addInsightBlock(reflection.id, newBlock);
@@ -549,6 +552,19 @@ export const ReflectionTemplateManager: React.FC<ReflectionTemplateManagerProps>
         accountId: selectedAccountId,
       });
 
+      // Award XP through prestige system using computed amount
+      try {
+        const { XpService } = await import('@/lib/xp/XpService');
+        await XpService.addXp(totalXP + bonusXP, {
+          source: 'reflection',
+          type: 'daily_reflection',
+          date,
+          completionScore
+        });
+      } catch (e) {
+        console.error('Failed to award reflection XP:', e);
+      }
+
       // Lightweight visual feedback
       alert(`Reflection completed! +${totalXP + bonusXP} XP awarded.`);
     } catch (e) {
@@ -651,38 +667,82 @@ export const ReflectionTemplateManager: React.FC<ReflectionTemplateManagerProps>
                     </motion.button>
 
                     {/* Built-in Template Blocks */}
-                    {builtInTemplates.map((template) => (
-                      <div key={template.id} className="space-y-1">
-                        <div className="px-3 py-2 bg-muted/30 rounded-lg">
-                          <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                            <span>{template.emoji}</span>
-                            <span>{template.name}</span>
+                    {builtInTemplates.map((template) => {
+                      // Filter blocks based on day type (use local date parsing)
+                      const getLocalDayOfWeek = (dateStr: string): number => {
+                        try {
+                          const [y, m, d] = dateStr.split('-').map((n) => parseInt(n, 10));
+                          const localDate = new Date(y, (m || 1) - 1, d || 1);
+                          return localDate.getDay();
+                        } catch {
+                          return new Date(dateStr).getDay();
+                        }
+                      };
+                      const dayOfWeek = getLocalDayOfWeek(date);
+                      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6; // Sunday or Saturday
+                      
+                      const filteredBlocks = template.blocks.filter(block => {
+                        // If block has no category, show on weekdays only (legacy behavior)
+                        if (!block.category) {
+                          return !isWeekend;
+                        }
+                        
+                        if (isWeekend) {
+                          // On weekends, show only 'weekend' and 'general' categories
+                          return block.category === 'weekend' || block.category === 'general';
+                        } else {
+                          // On weekdays, show 'trading' and 'general' categories
+                          return block.category === 'trading' || block.category === 'general';
+                        }
+                      });
+                      
+                      // Don't render template if no blocks are available for this day type
+                      if (filteredBlocks.length === 0) return null;
+                      
+                      return (
+                        <div key={template.id} className="space-y-1">
+                          <div className="px-3 py-2 bg-muted/30 rounded-lg">
+                            <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                              <span>{template.emoji}</span>
+                              <span>{template.name}</span>
+                              {isWeekend && (
+                                <span className="text-xs bg-blue-500/20 text-blue-600 px-2 py-0.5 rounded-full">
+                                  Weekend
+                                </span>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                        {template.blocks.map((block) => {
-                          const isBlockFavorite = selectedAccountId && isFavoriteBlock(template.id, block.id, selectedAccountId);
-                          
-                          return (
-                            <div key={block.id} className="flex items-center gap-1">
-                              <motion.button
-                                onClick={() => {
-                                  handleAddInsightBlock(template, block);
-                                  setShowTemplateSelector(false);
-                                }}
-                                className="flex-1 text-left px-4 py-2 hover:bg-muted rounded-lg transition-colors"
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                              >
-                                <div className="flex items-center gap-2">
-                                  <span className="text-lg">{block.emoji}</span>
-                                  <div className="flex-1">
-                                    <div className="font-medium text-sm">{block.title}</div>
-                                    <div className="text-xs text-muted-foreground line-clamp-1">
-                                      {block.prompt}
+                          {filteredBlocks.map((block) => {
+                            const isBlockFavorite = selectedAccountId && isFavoriteBlock(template.id, block.id, selectedAccountId);
+                            
+                            return (
+                              <div key={block.id} className="flex items-center gap-1">
+                                <motion.button
+                                  onClick={() => {
+                                    handleAddInsightBlock(template, block);
+                                    setShowTemplateSelector(false);
+                                  }}
+                                  className="flex-1 text-left px-4 py-2 hover:bg-muted rounded-lg transition-colors"
+                                  whileHover={{ scale: 1.02 }}
+                                  whileTap={{ scale: 0.98 }}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-lg">{block.emoji}</span>
+                                    <div className="flex-1">
+                                      <div className="font-medium text-sm">{block.title}</div>
+                                      <div className="text-xs text-muted-foreground line-clamp-1">
+                                        {block.prompt}
+                                      </div>
+                                      {block.category && (
+                                        <div className="text-xs text-muted-foreground/70 mt-0.5">
+                                          {block.category === 'weekend' && '🏖️ Weekend'} 
+                                          {block.category === 'trading' && '📈 Trading'} 
+                                          {block.category === 'general' && '💭 General'}
+                                        </div>
+                                      )}
                                     </div>
                                   </div>
-                                </div>
-                              </motion.button>
+                                </motion.button>
                               
                               {selectedAccountId && (
                                 <motion.button
@@ -717,7 +777,8 @@ export const ReflectionTemplateManager: React.FC<ReflectionTemplateManagerProps>
                           );
                         })}
                       </div>
-                    ))}
+                    );
+                    })}
 
                     {/* Custom Template Blocks */}
                     {customTemplates.map((template) => (

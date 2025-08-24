@@ -113,6 +113,20 @@ const generateAIInsightTemplate = async (
   // Determine trading day characteristics
   const dayCharacteristics = analyzeTradingDay(context);
   
+  // Weekend awareness (prefer weekend-oriented blocks when no trading expected)
+  const getLocalDayOfWeek = (dateStr?: string): number | null => {
+    try {
+      if (!dateStr) return null;
+      const [y, m, d] = dateStr.split('-').map((n) => parseInt(n, 10));
+      const localDate = new Date(y, (m || 1) - 1, d || 1);
+      return localDate.getDay();
+    } catch {
+      return null;
+    }
+  };
+  const dayOfWeek = getLocalDayOfWeek(context.date);
+  const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
   // Create detailed context prompt
   const userPrompt = `
 ACTUAL TRADING DAY DATA:
@@ -142,6 +156,8 @@ ${tradeCount > 0 ?
   `Since ${tradeCount} trades were executed, focus on trade analysis, execution quality, and decision-making patterns.` :
   'Since no trades were taken, focus on market observation, patience, and opportunity assessment.'
 }
+
+${isWeekend ? 'IMPORTANT: Today is a weekend (no live trading expected). Prefer weekend-oriented reflection blocks: week planning, learning & development, wellness, market preparation. Avoid trade execution analysis blocks.' : ''}
 
 Do NOT generate generic templates. Reference the actual trades, P&L, and context above.
 

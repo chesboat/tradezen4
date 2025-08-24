@@ -27,6 +27,8 @@ import { initializeDefaultQuests } from './store/useQuestStore';
 import { useTheme } from './hooks/useTheme';
 import { useTradeLoggerModal } from './hooks/useTradeLoggerModal';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { LevelUpToast } from './components/xp/LevelUpToast';
+import { useXpRewards } from './hooks/useXpRewards';
 import { initializeTradeStore } from './store/useTradeStore';
 import { useUserProfileStore } from './store/useUserProfileStore';
 import { initializeQuickNoteStore } from './store/useQuickNoteStore';
@@ -46,6 +48,7 @@ function AppContent() {
   const { currentUser } = useAuth();
   const { initializeProfile } = useUserProfileStore();
   const { isExpanded: todoExpanded, railWidth } = useTodoStore();
+  const { showLevelUpToast, levelUpData, closeLevelUpToast } = useXpRewards();
 
   // Initialize data when user is authenticated
   React.useEffect(() => {
@@ -139,9 +142,9 @@ function AppContent() {
           'pt-16 pb-20 lg:pt-0 lg:pb-0'
         } ${
           // Desktop right margins - responsive
-          activityLogExpanded && todoExpanded ? 'lg:mr-[390px]' :
-          activityLogExpanded ? 'lg:mr-[330px]' :
-          todoExpanded ? 'lg:mr-[130px]' : 'lg:mr-[70px]'
+          activityLogExpanded && todoExpanded ? 'lg:mr-[480px]' :
+          activityLogExpanded ? 'lg:mr-[380px]' :
+          todoExpanded ? 'lg:mr-[460px]' : 'lg:mr-[120px]'
         }`}
       >
         {renderCurrentView()}
@@ -165,6 +168,13 @@ function AppContent() {
 
       {/* Global Nudge Toast */}
       <NudgeToast />
+      
+      {/* Level Up Toast */}
+      <LevelUpToast
+        isVisible={showLevelUpToast}
+        level={levelUpData?.level || 1}
+        onClose={closeLevelUpToast}
+      />
     </div>
   );
 }

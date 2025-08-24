@@ -415,6 +415,37 @@ export const TradeLoggerModal: React.FC<TradeLoggerModalProps> = ({
             accountId: leaderId,
         });
 
+        // Award XP through new prestige system
+        try {
+          const { awardXp } = await import('@/lib/xp/XpService');
+          const pnl = Math.abs(tradeData.pnl || 0);
+          
+          console.log('🎯 About to award XP for trade:', {
+            result: formData.result,
+            pnl,
+            isBigWin: pnl > 500,
+            awardXpExists: !!awardXp
+          });
+          
+          if (formData.result === 'win') {
+            // Check for big win (>$500 or >2R)
+            const isBigWin = pnl > 500; // Could also check R-multiple
+            if (isBigWin) {
+              await awardXp.bigWin(pnl);
+            } else {
+              await awardXp.tradeWin(pnl);
+            }
+          } else if (formData.result === 'loss') {
+            await awardXp.tradeLoss(pnl);
+          } else if (formData.result === 'breakeven') {
+            await awardXp.tradeScratch(pnl);
+          }
+          
+          console.log('✅ XP award completed');
+        } catch (xpError) {
+          console.error('❌ Failed to award XP:', xpError);
+        }
+
         // Check and update quest progress for all relevant quests
         if (selectedAccountId) {
           const allActiveQuests = quests.filter(q => 

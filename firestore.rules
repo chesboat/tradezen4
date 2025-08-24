@@ -86,6 +86,11 @@ service cloud.firestore {
       allow read, write: if isOwner(userId);
     }
 
+    // XP subcollection under user profiles (atomic increments, status doc)
+    match /userProfiles/{userId}/xp/{docId} {
+      allow read, write: if isOwner(userId);
+    }
+
     // Default deny all other access
     match /{document=**} {
       allow read, write: if false;

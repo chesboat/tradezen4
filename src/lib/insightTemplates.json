@@ -15,7 +15,8 @@
           "emoji": "💰",
           "order": 1,
           "isRequired": true,
-          "placeholder": "What made this trade stand out? Walk through your thought process from setup identification to exit..."
+          "placeholder": "What made this trade stand out? Walk through your thought process from setup identification to exit...",
+          "category": "trading"
         },
         {
           "id": "success-factors",
@@ -24,7 +25,8 @@
           "emoji": "🎯",
           "order": 2,
           "isRequired": true,
-          "placeholder": "Was it your patience, technical analysis, risk management, or emotional control? Be specific..."
+          "placeholder": "Was it your patience, technical analysis, risk management, or emotional control? Be specific...",
+          "category": "trading"
         },
         {
           "id": "replication-strategy",
@@ -33,7 +35,8 @@
           "emoji": "🔄",
           "order": 3,
           "isRequired": true,
-          "placeholder": "What rules or criteria can you extract from this success to repeat it consistently?"
+          "placeholder": "What rules or criteria can you extract from this success to repeat it consistently?",
+          "category": "trading"
         },
         {
           "id": "scaling-approach",
@@ -42,7 +45,8 @@
           "emoji": "📈",
           "order": 4,
           "isRequired": false,
-          "placeholder": "How might you scale this strategy while maintaining the same risk profile?"
+          "placeholder": "How might you scale this strategy while maintaining the same risk profile?",
+          "category": "trading"
         }
       ]
     },
@@ -61,7 +65,8 @@
           "emoji": "📉",
           "order": 1,
           "isRequired": true,
-          "placeholder": "Describe the setup, your reasoning, and how the trade played out..."
+          "placeholder": "Describe the setup, your reasoning, and how the trade played out...",
+          "category": "trading"
         },
         {
           "id": "failure-points",
@@ -70,7 +75,8 @@
           "emoji": "⚠️",
           "order": 2,
           "isRequired": true,
-          "placeholder": "Was it poor entry timing, lack of patience, ignoring signals, or something else?"
+          "placeholder": "Was it poor entry timing, lack of patience, ignoring signals, or something else?",
+          "category": "trading"
         },
         {
           "id": "lessons-extracted",
@@ -79,7 +85,8 @@
           "emoji": "💡",
           "order": 3,
           "isRequired": true,
-          "placeholder": "What knowledge or skill can you develop to avoid this mistake in the future?"
+          "placeholder": "What knowledge or skill can you develop to avoid this mistake in the future?",
+          "category": "general"
         },
         {
           "id": "prevention-strategy",
@@ -88,7 +95,8 @@
           "emoji": "🛡️",
           "order": 4,
           "isRequired": true,
-          "placeholder": "Create specific, actionable rules you can follow to prevent this from happening again..."
+          "placeholder": "Create specific, actionable rules you can follow to prevent this from happening again...",
+          "category": "general"
         }
       ]
     },
@@ -107,7 +115,8 @@
           "emoji": "🎭",
           "order": 1,
           "isRequired": true,
-          "placeholder": "Describe your emotional state, stress level, confidence, and overall mental clarity..."
+          "placeholder": "Describe your emotional state, stress level, confidence, and overall mental clarity...",
+          "category": "general"
         },
         {
           "id": "stress-triggers",
@@ -116,7 +125,8 @@
           "emoji": "⚡",
           "order": 2,
           "isRequired": true,
-          "placeholder": "Identify specific moments, trades, or thoughts that triggered negative emotions..."
+          "placeholder": "Identify specific moments, trades, or thoughts that triggered negative emotions...",
+          "category": "general"
         },
         {
           "id": "positive-reframes",
@@ -125,7 +135,8 @@
           "emoji": "🔄",
           "order": 3,
           "isRequired": true,
-          "placeholder": "Reframe setbacks as learning opportunities and find the silver lining in difficult moments..."
+          "placeholder": "Reframe setbacks as learning opportunities and find the silver lining in difficult moments...",
+          "category": "general"
         },
         {
           "id": "mental-prep",
@@ -134,7 +145,158 @@
           "emoji": "🚀",
           "order": 4,
           "isRequired": false,
-          "placeholder": "Set your mental intention and attitude for tomorrow's trading session..."
+          "placeholder": "Set your mental intention and attitude for tomorrow's trading session...",
+          "category": "general"
+        }
+      ]
+    },
+    {
+      "id": "week-planning",
+      "name": "Week Planning & Preparation",
+      "description": "Plan and prepare for the upcoming trading week",
+      "emoji": "📋",
+      "category": "planning",
+      "isDefault": true,
+      "blocks": [
+        {
+          "id": "week-review",
+          "title": "Week in Review",
+          "prompt": "How did this past trading week go overall?",
+          "emoji": "📊",
+          "order": 1,
+          "isRequired": true,
+          "placeholder": "Reflect on your performance, key wins, challenges, and overall progress this week...",
+          "category": "weekend"
+        },
+        {
+          "id": "lessons-to-carry",
+          "title": "Key Lessons to Carry Forward",
+          "prompt": "What are the most important insights from this week?",
+          "emoji": "💡",
+          "order": 2,
+          "isRequired": true,
+          "placeholder": "Identify the top 2-3 lessons or patterns you want to remember for next week...",
+          "category": "weekend"
+        },
+        {
+          "id": "next-week-focus",
+          "title": "Next Week's Focus Areas",
+          "prompt": "What specific areas will you focus on improving next week?",
+          "emoji": "🎯",
+          "order": 3,
+          "isRequired": true,
+          "placeholder": "Set 1-3 specific goals or areas of improvement for the upcoming week...",
+          "category": "weekend"
+        },
+        {
+          "id": "market-preparation",
+          "title": "Market Research & Preparation",
+          "prompt": "What market conditions or events should you prepare for?",
+          "emoji": "🔍",
+          "order": 4,
+          "isRequired": false,
+          "placeholder": "Note any upcoming economic events, earnings, or market conditions to watch...",
+          "category": "weekend"
+        }
+      ]
+    },
+    {
+      "id": "learning-development",
+      "name": "Learning & Development",
+      "description": "Focus on skill building and education during downtime",
+      "emoji": "📚",
+      "category": "learning",
+      "isDefault": true,
+      "blocks": [
+        {
+          "id": "study-session",
+          "title": "What I Studied Today",
+          "prompt": "What trading concepts or skills did you work on?",
+          "emoji": "📖",
+          "order": 1,
+          "isRequired": true,
+          "placeholder": "Describe any books, courses, videos, or practice you engaged in today...",
+          "category": "weekend"
+        },
+        {
+          "id": "new-insights",
+          "title": "New Insights Gained",
+          "prompt": "What new understanding or 'aha moments' did you have?",
+          "emoji": "💭",
+          "order": 2,
+          "isRequired": true,
+          "placeholder": "Capture any new concepts, strategies, or perspectives you discovered...",
+          "category": "weekend"
+        },
+        {
+          "id": "skill-practice",
+          "title": "Skills to Practice",
+          "prompt": "What specific skills will you practice this week?",
+          "emoji": "🎯",
+          "order": 3,
+          "isRequired": true,
+          "placeholder": "Identify concrete skills or techniques you want to work on in live trading...",
+          "category": "weekend"
+        },
+        {
+          "id": "learning-goals",
+          "title": "Learning Goals",
+          "prompt": "What do you want to learn or improve next?",
+          "emoji": "🚀",
+          "order": 4,
+          "isRequired": false,
+          "placeholder": "Set learning objectives for the coming week or month...",
+          "category": "weekend"
+        }
+      ]
+    },
+    {
+      "id": "personal-wellness",
+      "name": "Personal Wellness & Balance",
+      "description": "Focus on personal well-being and life balance",
+      "emoji": "🌱",
+      "category": "wellness",
+      "isDefault": true,
+      "blocks": [
+        {
+          "id": "wellness-check",
+          "title": "Wellness Check-in",
+          "prompt": "How are you feeling physically and mentally?",
+          "emoji": "💚",
+          "order": 1,
+          "isRequired": true,
+          "placeholder": "Reflect on your energy levels, stress, sleep, exercise, and overall well-being...",
+          "category": "weekend"
+        },
+        {
+          "id": "life-balance",
+          "title": "Life Balance Reflection",
+          "prompt": "How well are you balancing trading with other life priorities?",
+          "emoji": "⚖️",
+          "order": 2,
+          "isRequired": true,
+          "placeholder": "Consider your relationships, hobbies, health, and personal time...",
+          "category": "weekend"
+        },
+        {
+          "id": "gratitude-wins",
+          "title": "Gratitude & Personal Wins",
+          "prompt": "What are you grateful for and what personal wins did you have?",
+          "emoji": "🙏",
+          "order": 3,
+          "isRequired": true,
+          "placeholder": "Celebrate non-trading achievements and express gratitude for positive aspects of your life...",
+          "category": "weekend"
+        },
+        {
+          "id": "self-care-plan",
+          "title": "Self-Care Planning",
+          "prompt": "How will you take care of yourself this week?",
+          "emoji": "🛁",
+          "order": 4,
+          "isRequired": false,
+          "placeholder": "Plan activities, habits, or practices that support your well-being...",
+          "category": "weekend"
         }
       ]
     }
