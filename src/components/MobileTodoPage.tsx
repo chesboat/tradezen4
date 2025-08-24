@@ -12,7 +12,9 @@ import {
   Pin,
   Trash2,
   Edit,
-  CalendarDays
+  CalendarDays,
+  ExternalLink,
+  Link
 } from 'lucide-react';
 import { useTodoStore } from '@/store/useTodoStore';
 import { ImprovementTask } from '@/types';
@@ -25,12 +27,15 @@ export const MobileTodoPage: React.FC = () => {
   const [newTaskText, setNewTaskText] = useState('');
   const [newPriority, setNewPriority] = useState<'low' | 'med' | 'high' | ''>('');
   const [newCategory, setNewCategory] = useState('');
+  const [newUrl, setNewUrl] = useState('');
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [filter, setFilter] = useState<'today' | 'all' | 'open' | 'done' | 'snoozed'>('today');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [activeTaskMenu, setActiveTaskMenu] = useState<string | null>(null);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [schedulingTaskId, setSchedulingTaskId] = useState<string | null>(null);
+  const [editingUrlId, setEditingUrlId] = useState<string | null>(null);
+  const [editingUrl, setEditingUrl] = useState<string>('');
 
   const filteredTasks = useMemo(() => {
     const today = new Date();
@@ -76,10 +81,12 @@ export const MobileTodoPage: React.FC = () => {
       await addTask(newTaskText.trim(), {
         priority: newPriority || undefined,
         category: newCategory || undefined,
+        url: newUrl.trim() || undefined,
       });
       setNewTaskText('');
       setNewPriority('');
       setNewCategory('');
+      setNewUrl('');
       setIsAddingTask(false);
     }
   };
@@ -115,6 +122,31 @@ export const MobileTodoPage: React.FC = () => {
       setSchedulingTaskId(null);
     }
     setIsCalendarOpen(false);
+  };
+
+  // Helper function to format URLs for display (same as desktop)
+  const formatUrlForDisplay = (url: string): string => {
+    try {
+      const urlObj = new URL(url);
+      const hostname = urlObj.hostname.replace('www.', '');
+      const path = urlObj.pathname;
+      
+      if (hostname === 'youtube.com' || hostname === 'youtu.be') {
+        return 'YouTube';
+      } else if (hostname === 'github.com') {
+        return `GitHub${path.length > 1 ? ` • ${path.split('/')[1]}` : ''}`;
+      } else if (hostname === 'docs.google.com') {
+        return 'Google Docs';
+      } else if (hostname === 'notion.so') {
+        return 'Notion';
+      } else if (hostname === 'medium.com') {
+        return 'Medium';
+      } else {
+        return hostname;
+      }
+    } catch {
+      return url.length > 30 ? url.substring(0, 30) + '...' : url;
+    }
   };
 
   // Close menu when clicking outside
@@ -203,6 +235,18 @@ export const MobileTodoPage: React.FC = () => {
                   autoFocus
                 />
                 
+                {/* URL input field */}
+                <div className="relative">
+                  <Link className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <input
+                    type="url"
+                    value={newUrl}
+                    onChange={(e) => setNewUrl(e.target.value)}
+                    placeholder="Add URL (optional)"
+                    className="w-full pl-10 pr-3 py-2 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+                
                 {/* Priority and Category selectors */}
                 <div className="flex gap-2">
                   <CustomSelect
@@ -253,6 +297,7 @@ export const MobileTodoPage: React.FC = () => {
                       setNewTaskText('');
                       setNewPriority('');
                       setNewCategory('');
+                      setNewUrl('');
                     }}
                     whileTap={{ scale: 0.98 }}
                   >
@@ -321,6 +366,18 @@ export const MobileTodoPage: React.FC = () => {
 
                   {/* Task Meta */}
                   <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
+                    {task.url && (
+                      <a
+                        href={task.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-blue-500/10 text-blue-600 border border-blue-500/20 hover:bg-blue-500/20 transition-colors text-xs font-medium"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        {formatUrlForDisplay(task.url)}
+                      </a>
+                    )}
                     {task.category && (
                       <div className="flex items-center gap-1">
                         <span>
@@ -393,6 +450,17 @@ export const MobileTodoPage: React.FC = () => {
                           >
                             <Pin className="w-3 h-3" />
                             {task.pinned ? 'Unpin' : 'Pin'}
+                          </button>
+                          <button
+                            className="w-full px-3 py-2 text-left text-sm hover:bg-accent flex items-center gap-2"
+                            onClick={() => {
+                              setEditingUrlId(task.id);
+                              setEditingUrl(task.url || '');
+                              setActiveTaskMenu(null);
+                            }}
+                          >
+                            <Link className="w-3 h-3" />
+                            {task.url ? 'Edit URL' : 'Add URL'}
                           </button>
                           <button
                             className="w-full px-3 py-2 text-left text-sm hover:bg-accent flex items-center gap-2"
@@ -470,6 +538,79 @@ export const MobileTodoPage: React.FC = () => {
         onSelectDate={handleCalendarDateSelect}
         title="Schedule Task"
       />
+
+      {/* URL Edit Modal */}
+      <AnimatePresence>
+        {editingUrlId && (
+          <motion.div
+            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setEditingUrlId(null)}
+          >
+            <motion.div
+              className="bg-card border border-border rounded-xl p-6 shadow-xl max-w-md w-full"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Link className="w-5 h-5 text-primary" />
+                Add/Edit URL
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">URL</label>
+                  <input
+                    type="url"
+                    value={editingUrl}
+                    onChange={(e) => setEditingUrl(e.target.value)}
+                    placeholder="https://example.com"
+                    className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                    autoFocus
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Add a link to YouTube videos, articles, documentation, or any resource related to this task.
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
+                    onClick={() => {
+                      updateTask(editingUrlId, { url: editingUrl.trim() || undefined });
+                      setEditingUrlId(null);
+                      setEditingUrl('');
+                    }}
+                  >
+                    Save
+                  </button>
+                  <button
+                    className="flex-1 px-4 py-2 bg-muted text-muted-foreground rounded-lg hover:bg-accent transition-colors font-medium"
+                    onClick={() => {
+                      updateTask(editingUrlId, { url: undefined });
+                      setEditingUrlId(null);
+                      setEditingUrl('');
+                    }}
+                  >
+                    Remove URL
+                  </button>
+                </div>
+                <button
+                  className="w-full px-4 py-2 border border-border rounded-lg hover:bg-accent transition-colors font-medium"
+                  onClick={() => {
+                    setEditingUrlId(null);
+                    setEditingUrl('');
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
