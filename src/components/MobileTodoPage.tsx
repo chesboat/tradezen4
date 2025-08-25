@@ -52,7 +52,7 @@ export const MobileTodoPage: React.FC = () => {
           // Show tasks scheduled for today, overdue tasks, or unscheduled open tasks
           if (t.status !== 'open') return false;
           if (!t.scheduledFor) return true; // Unscheduled open tasks show in Today
-          const scheduledDate = new Date(t.scheduledFor);
+          const scheduledDate = new Date(t.scheduledFor as any);
           return scheduledDate < tomorrow; // Today or overdue
         }
         return t.status === filter;
@@ -71,7 +71,7 @@ export const MobileTodoPage: React.FC = () => {
     return tasks.filter(t => {
       if (t.status !== 'open') return false;
       if (!t.scheduledFor) return true;
-      const scheduledDate = new Date(t.scheduledFor);
+      const scheduledDate = new Date(t.scheduledFor as any);
       return scheduledDate < tomorrow;
     }).length;
   }, [tasks]);

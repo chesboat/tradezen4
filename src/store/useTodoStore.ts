@@ -28,13 +28,31 @@ interface TodoState {
   scheduleTask: (id: string, scheduledFor?: Date) => Promise<void>;
 }
 
+// Coerce a Firestore Timestamp | Date | ISO string | number into ISO string
+function normalizeDateLike(value: any | undefined): string | undefined {
+  if (!value) return undefined;
+  try {
+    if (value instanceof Date) return value.toISOString();
+    if (typeof value === 'string') return new Date(value).toISOString();
+    if (typeof value === 'number') return new Date(value).toISOString();
+    if (value && typeof value.toDate === 'function') {
+      const d = value.toDate();
+      return d instanceof Date ? d.toISOString() : undefined;
+    }
+  } catch (_e) {
+    return undefined;
+  }
+  return undefined;
+}
+
 function deserializeTasks(raw: any[]): ImprovementTask[] {
   return (raw || []).map((t) => ({
     ...t,
-    createdAt: t.createdAt,
-    updatedAt: t.updatedAt,
-    dueAt: t.dueAt ?? undefined,
-    completedAt: t.completedAt ?? undefined,
+    createdAt: normalizeDateLike(t.createdAt) || t.createdAt,
+    updatedAt: normalizeDateLike(t.updatedAt) || t.updatedAt,
+    dueAt: normalizeDateLike(t.dueAt),
+    scheduledFor: normalizeDateLike(t.scheduledFor),
+    completedAt: normalizeDateLike(t.completedAt),
   }));
 }
 
@@ -51,8 +69,10 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       const normalized = tasks
         .map((t) => ({
           ...t,
-          createdAt: t.createdAt,
-          updatedAt: t.updatedAt,
+          createdAt: normalizeDateLike(t.createdAt) || t.createdAt,
+          updatedAt: normalizeDateLike(t.updatedAt) || t.updatedAt,
+          dueAt: normalizeDateLike((t as any).dueAt),
+          scheduledFor: normalizeDateLike((t as any).scheduledFor),
         }))
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       // Extract known categories for filtering UI
@@ -102,7 +122,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       tags: [],
       category: extras.category,
       accountId: (extras.accountId as string) || 'default',
-      dueAt: extras.dueAt,
+      dueAt: normalizeDateLike(extras.dueAt),
       sourceReflectionId: extras.sourceReflectionId,
       completedAt: undefined,
       url: extras.url,
@@ -243,7 +263,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
   },
 
   scheduleTask: async (id, scheduledFor) => {
-    await get().updateTask(id, { scheduledFor });
+    await get().updateTask(id, { scheduledFor: normalizeDateLike(scheduledFor) });
   },
 }));
 
