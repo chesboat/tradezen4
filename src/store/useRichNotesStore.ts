@@ -101,15 +101,11 @@ export const useRichNotesStore = create<RichNotesState>((set, get) => ({
       const { addActivity } = useActivityLogStore.getState();
       addActivity({
         type: 'rich_note',
-        description: `Created rich note: ${note.title}`,
-        metadata: { 
-          noteId: note.id, 
-          category: note.category,
-          wordCount: note.wordCount 
-        },
+        title: `Created rich note`,
+        description: note.title,
         accountId: note.accountId,
         xpEarned: 15,
-      });
+      } as any);
 
       return note;
     } catch (error) {
@@ -160,15 +156,11 @@ export const useRichNotesStore = create<RichNotesState>((set, get) => ({
         const { addActivity } = useActivityLogStore.getState();
         addActivity({
           type: 'rich_note',
-          description: `Updated rich note: ${updatedNote.title}`,
-          metadata: { 
-            noteId: id, 
-            category: updatedNote.category,
-            wordCount: updatedNote.wordCount 
-          },
+          title: `Updated rich note`,
+          description: updatedNote.title,
           accountId: updatedNote.accountId,
           xpEarned: 5,
-        });
+        } as any);
       }
     } catch (error) {
       console.error('Failed to update rich note:', error);
@@ -190,13 +182,10 @@ export const useRichNotesStore = create<RichNotesState>((set, get) => ({
       const { addActivity } = useActivityLogStore.getState();
       addActivity({
         type: 'rich_note',
-        description: `Deleted rich note: ${note.title}`,
-        metadata: { 
-          noteId: id, 
-          category: note.category 
-        },
+        title: `Deleted rich note`,
+        description: note.title,
         accountId: note.accountId,
-      });
+      } as any);
     } catch (error) {
       console.error('Failed to delete rich note:', error);
       throw error;
@@ -217,11 +206,11 @@ export const useRichNotesStore = create<RichNotesState>((set, get) => ({
       const { addActivity } = useActivityLogStore.getState();
       addActivity({
         type: 'rich_note',
-        description: `Favorited note: ${note.title}`,
-        metadata: { noteId: id },
+        title: `Favorited note`,
+        description: note.title,
         accountId: note.accountId,
         xpEarned: 2,
-      });
+      } as any);
     }
   },
 
@@ -254,11 +243,11 @@ export const useRichNotesStore = create<RichNotesState>((set, get) => ({
       const { addActivity } = useActivityLogStore.getState();
       addActivity({
         type: 'rich_note',
-        description: `Linked notes together`,
-        metadata: { noteId, linkedNoteId },
+        title: `Linked notes`,
+        description: `${note.title}`,
         accountId: note.accountId,
         xpEarned: 3,
-      });
+      } as any);
     }
   },
 
@@ -302,14 +291,10 @@ export const useRichNotesStore = create<RichNotesState>((set, get) => ({
       const { addActivity } = useActivityLogStore.getState();
       addActivity({
         type: 'rich_note',
-        description: `Renamed folder "${oldName}" to "${newName}"`,
-        metadata: { 
-          oldFolderName: oldName, 
-          newFolderName: newName,
-          notesCount: notesToUpdate.length 
-        },
+        title: `Renamed folder`,
+        description: `${oldName} → ${newName} (${notesToUpdate.length} notes)`,
         accountId: notesToUpdate[0].accountId,
-      });
+      } as any);
     } catch (error) {
       console.error('Failed to rename folder:', error);
       throw error;
@@ -343,13 +328,10 @@ export const useRichNotesStore = create<RichNotesState>((set, get) => ({
       const { addActivity } = useActivityLogStore.getState();
       addActivity({
         type: 'rich_note',
-        description: `Deleted folder "${folderName}" (${notesToUpdate.length} notes moved to root)`,
-        metadata: { 
-          folderName,
-          notesCount: notesToUpdate.length 
-        },
+        title: `Deleted folder`,
+        description: `${folderName} (${notesToUpdate.length} notes moved)`,
         accountId: notesToUpdate[0].accountId,
-      });
+      } as any);
     } catch (error) {
       console.error('Failed to delete folder:', error);
       throw error;
