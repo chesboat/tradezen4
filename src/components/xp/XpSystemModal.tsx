@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Trophy, Crown, Zap, Target, Calendar, BookOpen, TrendingUp, Award } from 'lucide-react';
+import { X, Trophy, Crown, Zap, Target, Calendar, BookOpen, TrendingUp, Award, FileEdit } from 'lucide-react';
 import { LevelBadge } from './LevelBadge';
 import { PrestigeIcon } from './PrestigeIcon';
 import { ProgressRing } from './ProgressRing';
@@ -148,6 +148,36 @@ export const XpSystemModal: React.FC<XpSystemModalProps> = ({
             <div className="flex justify-between">
               <span>Task Completed</span>
               <span className="font-medium text-blue-600">{XpRewards.TODO_COMPLETE} XP</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Rich Notes Section */}
+        <div className="bg-muted/30 rounded-xl p-4">
+          <h4 className="font-semibold mb-3 flex items-center gap-2">
+            <FileEdit className="w-4 h-4 text-violet-500" />
+            Rich Notes & Study
+          </h4>
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="flex justify-between">
+              <span>Create Rich Note</span>
+              <span className="font-medium text-violet-600">{XpRewards.RICH_NOTE_CREATE} XP</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Update Note</span>
+              <span className="font-medium text-violet-600">{XpRewards.RICH_NOTE_UPDATE} XP</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Organize Notes</span>
+              <span className="font-medium text-violet-600">{XpRewards.RICH_NOTE_ORGANIZE} XP</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Link Notes</span>
+              <span className="font-medium text-violet-600">{XpRewards.RICH_NOTE_LINK} XP</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Favorite Note</span>
+              <span className="font-medium text-violet-600">{XpRewards.RICH_NOTE_FAVORITE} XP</span>
             </div>
           </div>
         </div>

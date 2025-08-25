@@ -140,6 +140,13 @@ export const XpRewards = {
   // Productivity
   TODO_COMPLETE: 15,       // NEW - task completion
   
+  // Rich Notes (Study & Research)
+  RICH_NOTE_CREATE: 15,    // Creating a rich note
+  RICH_NOTE_UPDATE: 5,     // Updating existing note
+  RICH_NOTE_FAVORITE: 2,   // Favoriting a note
+  RICH_NOTE_LINK: 3,       // Linking notes together
+  RICH_NOTE_ORGANIZE: 8,   // Adding tags/folders
+  
   // Streak Bonuses (Compound Growth)
   TRADING_STREAK: 15,      // +5 per consecutive trading day
   REFLECTION_STREAK: 10,   // per consecutive reflection day
@@ -182,6 +189,13 @@ export const awardXp = {
   
   // Productivity
   todoComplete: (taskId: string) => XpService.addXp(XpRewards.TODO_COMPLETE, { source: 'todo', taskId }),
+  
+  // Rich Notes
+  richNoteCreate: (noteId: string, wordCount: number) => XpService.addXp(XpRewards.RICH_NOTE_CREATE, { source: 'rich_note', action: 'create', noteId, wordCount }),
+  richNoteUpdate: (noteId: string, wordCount: number) => XpService.addXp(XpRewards.RICH_NOTE_UPDATE, { source: 'rich_note', action: 'update', noteId, wordCount }),
+  richNoteFavorite: (noteId: string) => XpService.addXp(XpRewards.RICH_NOTE_FAVORITE, { source: 'rich_note', action: 'favorite', noteId }),
+  richNoteLink: (noteId: string, linkedNoteId: string) => XpService.addXp(XpRewards.RICH_NOTE_LINK, { source: 'rich_note', action: 'link', noteId, linkedNoteId }),
+  richNoteOrganize: (noteId: string, action: 'tag' | 'folder') => XpService.addXp(XpRewards.RICH_NOTE_ORGANIZE, { source: 'rich_note', action: 'organize', noteId, organizationType: action }),
   
   // Streaks
   tradingStreak: (days: number) => XpService.addXp(XpRewards.TRADING_STREAK * days, { source: 'streak', type: 'trading', days }),

@@ -15,7 +15,8 @@ import {
   Edit,
   Target,
   FileText,
-  CheckCircle2
+  CheckCircle2,
+  FileEdit
 } from 'lucide-react';
 import { useActivityLogStore } from '@/store/useActivityLogStore';
 import { ActivityLogEntry, ActivityType } from '@/types';
@@ -36,6 +37,7 @@ const activityIcons: Record<ActivityType, React.ComponentType<{ className?: stri
   habit: Target,
   weekly_review: FileText,
   todo: CheckCircle2,
+  rich_note: FileEdit,
 };
 
 const activityColors: Record<ActivityType, string> = {
@@ -49,6 +51,7 @@ const activityColors: Record<ActivityType, string> = {
   habit: 'text-emerald-500',
   weekly_review: 'text-blue-600',
   todo: 'text-emerald-600',
+  rich_note: 'text-violet-500',
 };
 
 const sidebarVariants = {
@@ -230,6 +233,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ className }) => {
     { value: 'all', label: 'All', icon: Activity },
     { value: 'trade', label: 'Trades', icon: TrendingUp },
     { value: 'note', label: 'Notes', icon: BookOpen },
+    { value: 'rich_note', label: 'Rich Notes', icon: FileEdit },
     { value: 'quest', label: 'Quests', icon: Trophy },
     { value: 'wellness', label: 'Wellness', icon: Heart },
     { value: 'xp', label: 'XP', icon: Zap },

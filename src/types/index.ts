@@ -3,7 +3,7 @@ export type TradeResult = 'win' | 'loss' | 'breakeven';
 export type MoodType = 'excellent' | 'good' | 'neutral' | 'poor' | 'terrible';
 export type QuestStatus = 'pending' | 'in_progress' | 'completed' | 'failed' | 'cancelled';
 export type WellnessActionType = 'breathwork' | 'meditation' | 'exercise' | 'gratitude' | 'break';
-export type ActivityType = 'trade' | 'note' | 'quest' | 'wellness' | 'xp' | 'reflection' | 'journal' | 'habit' | 'weekly_review' | 'todo';
+export type ActivityType = 'trade' | 'note' | 'quest' | 'wellness' | 'xp' | 'reflection' | 'journal' | 'habit' | 'weekly_review' | 'todo' | 'rich_note';
 
 // Base interface for Firestore documents
 export interface FirestoreDocument {
@@ -38,6 +38,22 @@ export interface QuickNote extends FirestoreDocument {
   attachedToTradeId?: string;
   accountId: string;
   images?: string[];
+}
+
+export interface RichNote extends FirestoreDocument {
+  title: string;
+  content: string; // HTML from TipTap
+  contentJSON: any; // TipTap JSON for editing
+  category: 'study' | 'trading' | 'personal' | 'research' | 'meeting' | 'ideas';
+  tags: string[];
+  isFavorite: boolean;
+  folder?: string;
+  linkedNotes?: string[]; // IDs of related notes
+  attachments?: string[]; // Image URLs
+  wordCount: number;
+  readingTime: number; // estimated minutes
+  lastViewedAt?: string;
+  accountId: string;
 }
 
 export interface Quest extends FirestoreDocument {

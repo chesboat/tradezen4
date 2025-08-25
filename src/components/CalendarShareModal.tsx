@@ -52,8 +52,8 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
       
       // Weekend styling (subtle, muted appearance)
       isWeekend && !day.isOtherMonth 
-        ? 'border border-dashed border-border/40 opacity-60'
-        : 'border border-border/50',
+        ? 'border border-dashed border-border/40 bg-muted/20 opacity-60'
+        : 'border border-border/50 bg-card',
       
       day.isOtherMonth && 'opacity-40',
       isToday && 'ring-2 ring-primary/50',
@@ -407,9 +407,9 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
                         return (
                           <div
                             key={`${weekIndex}-${dayIndex}`}
-                            className={`${getDayClassName(day)} h-[90px] w-full`}
+                            className={`${getDayClassName(day)} aspect-[6/5] w-full`}
                           >
-                            <div className="space-y-1">
+                            <div className="flex flex-col h-full space-y-1">
                               {/* Date */}
                               <div className="flex items-center justify-between">
                                 <span className={cn(
@@ -430,7 +430,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
                               
                               {/* Weekend Content */}
                               {isWeekend ? (
-                                <div className="flex flex-col items-center justify-center text-center space-y-1">
+                                <div className="flex flex-col items-center justify-center flex-1 text-center space-y-0.5">
                                   <div className="text-xs text-muted-foreground/70">
                                     Weekend
                                   </div>
@@ -465,11 +465,11 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
 
                       {/* Week Summary */}
                       <div className={cn(
-                        'relative p-3 rounded-xl border border-border/50 transition-all duration-200 cursor-pointer bg-card h-[90px] w-full',
+                        'relative p-3 rounded-xl border border-border/50 transition-all duration-200 cursor-pointer bg-card aspect-[6/5] w-full',
                         weeklyData[weekIndex]?.totalPnl > 0 && 'border-green-500/30 bg-green-50/10',
                         weeklyData[weekIndex]?.totalPnl < 0 && 'border-red-500/30 bg-red-50/10',
                       )}>
-                        <div className="text-center space-y-1">
+                        <div className="flex flex-col items-center justify-center h-full text-center space-y-1">
                           <div className="text-xs font-medium text-muted-foreground">
                             Week {weeklyData[weekIndex]?.weekNumber}
                           </div>

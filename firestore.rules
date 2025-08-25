@@ -27,6 +27,11 @@ service cloud.firestore {
       allow read, write: if isOwner(userId);
     }
     
+    // Rich notes collection under each user
+    match /users/{userId}/richNotes/{noteId} {
+      allow read, write: if isOwner(userId);
+    }
+
     // Journal entries collection under each user
     match /users/{userId}/journalEntries/{entryId} {
       allow read, write: if isOwner(userId);

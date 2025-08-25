@@ -320,22 +320,22 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
       ? 'p-1 sm:p-2 lg:p-2 2xl:p-3 3xl:p-4' 
       : 'p-1.5 sm:p-2.5 lg:p-3 2xl:p-4 3xl:p-5';
     
-    // Mobile: Use aspect-square for perfect squares, desktop: use min-height
+    // Mobile: Use aspect-square, desktop: use aspect-[6/5] for slightly wider than tall tiles with comfortable height
     const heightClasses = allExpanded
-      ? 'aspect-square sm:aspect-auto sm:min-h-[70px] lg:min-h-[80px] 2xl:min-h-[90px] 3xl:min-h-[100px] 4xl:min-h-[110px]'
+      ? 'aspect-square sm:aspect-[6/5] lg:aspect-[6/5] 2xl:aspect-[6/5] 3xl:aspect-[6/5] 4xl:aspect-[6/5]'
       : bothSidebarsExpanded
-      ? 'aspect-square sm:aspect-auto sm:min-h-[75px] lg:min-h-[85px] 2xl:min-h-[100px] 3xl:min-h-[115px] 4xl:min-h-[130px]'
-      : 'aspect-square sm:aspect-auto sm:min-h-[80px] lg:min-h-[100px] 2xl:min-h-[120px] 3xl:min-h-[140px] 4xl:min-h-[160px]';
+      ? 'aspect-square sm:aspect-[6/5] lg:aspect-[6/5] 2xl:aspect-[6/5] 3xl:aspect-[6/5] 4xl:aspect-[6/5]'
+      : 'aspect-square sm:aspect-[6/5] lg:aspect-[6/5] 2xl:aspect-[6/5] 3xl:aspect-[6/5] 4xl:aspect-[6/5]';
     
     return cn(
-      'relative rounded-lg sm:rounded-xl transition-all duration-300 cursor-pointer',
+      'relative overflow-hidden rounded-lg sm:rounded-xl transition-all duration-300 cursor-pointer',
       paddingClasses,
       heightClasses,
       
       // Weekend styling (subtle, muted appearance)
       isWeekend && !day.isOtherMonth 
-        ? 'border border-dashed border-border/40 opacity-60 hover:opacity-75 hover:border-primary/30'
-        : 'border border-border/50 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10',
+        ? 'border border-dashed border-border/40 bg-muted/20 opacity-60 hover:opacity-75 hover:border-primary/30 hover:bg-muted/30'
+        : 'border border-border/50 bg-card hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10',
       
       // Mobile: Reduce opacity change for other month days
       day.isOtherMonth && 'opacity-30 sm:opacity-40',
@@ -367,24 +367,28 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
   const getContainerClasses = () => {
     const baseClasses = 'w-full mx-auto transition-all duration-300';
     
-    // Mobile-first padding
+    // Mobile-first padding - reduced for larger tiles
     const paddingClasses = bothSidebarsExpanded 
-      ? 'p-4 lg:p-4 2xl:p-6' 
-      : 'p-4 lg:p-6 2xl:p-8 3xl:p-10';
+      ? 'p-2 lg:p-3 2xl:p-4' 
+      : 'p-3 lg:p-4 2xl:p-6 3xl:p-8';
+
+    // Prevent overlap with collapsed todo drawer on desktop by reserving minimal right padding
+    // When the todo drawer is expanded, layout already shifts; when collapsed, add minimal padding
+    const rightPadClasses = todoExpanded ? '' : 'lg:pr-8 2xl:pr-10';
     
     let maxWidthClasses;
     if (allExpanded) {
-      // All sidebars expanded - very constrained space
-      maxWidthClasses = 'max-w-full lg:max-w-4xl 2xl:max-w-5xl 3xl:max-w-6xl 4xl:max-w-7xl';
-    } else if (bothSidebarsExpanded) {
-      // Both main sidebars expanded - moderately constrained
+      // All sidebars expanded - increased max widths for larger tiles
       maxWidthClasses = 'max-w-full lg:max-w-5xl 2xl:max-w-6xl 3xl:max-w-7xl 4xl:max-w-[1800px]';
+    } else if (bothSidebarsExpanded) {
+      // Both main sidebars expanded - increased max widths
+      maxWidthClasses = 'max-w-full lg:max-w-6xl 2xl:max-w-7xl 3xl:max-w-[1800px] 4xl:max-w-[2200px]';
     } else {
-      // Normal or single sidebar - full space
-      maxWidthClasses = 'max-w-full lg:max-w-7xl 2xl:max-w-[1800px] 3xl:max-w-[2200px] 4xl:max-w-[2600px]';
+      // Normal or single sidebar - significantly increased for larger tiles
+      maxWidthClasses = 'max-w-full lg:max-w-[1800px] 2xl:max-w-[2200px] 3xl:max-w-[2600px] 4xl:max-w-[3000px]';
     }
     
-    return `${baseClasses} ${maxWidthClasses} ${paddingClasses}`;
+    return `${baseClasses} ${maxWidthClasses} ${paddingClasses} ${rightPadClasses}`;
   };
 
   return (
@@ -545,13 +549,13 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
         "grid-cols-7 gap-1 sm:gap-2",
         // Desktop: 8-column grid with weekly summary
         "lg:grid-cols-8",
-        bothSidebarsExpanded ? "lg:gap-2 2xl:gap-3" : "lg:gap-3 2xl:gap-4 3xl:gap-5"
+        bothSidebarsExpanded ? "lg:gap-2 2xl:gap-2.5" : "lg:gap-2.5 2xl:gap-3 3xl:gap-3.5"
       )}>
         {/* Day Headers */}
         <div className={cn(
-          "col-span-7 grid grid-cols-7 mb-4 transition-all duration-300",
+          "col-span-8 grid grid-cols-8 mb-4 transition-all duration-300",
           "gap-1 sm:gap-2",
-          bothSidebarsExpanded ? "lg:gap-2 2xl:gap-3" : "lg:gap-3 2xl:gap-4 3xl:gap-5"
+          bothSidebarsExpanded ? "lg:gap-2 2xl:gap-2.5" : "lg:gap-2.5 2xl:gap-3 3xl:gap-3.5"
         )}>
           {DAYS_OF_WEEK.map((day, index) => {
             // On mobile, replace Saturday (index 6) with "Week"
@@ -571,11 +575,11 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
             </div>
             );
           })}
-        </div>
         
-        {/* Week Header - Desktop only */}
-        <div className="hidden lg:block text-center font-semibold text-muted-foreground py-2 text-sm 2xl:text-base 3xl:text-lg">
+          {/* Week Header - Desktop only (8th column) */}
+          <div className="hidden lg:block text-center font-semibold text-muted-foreground py-2 text-sm 2xl:text-base 3xl:text-lg">
           Week
+          </div>
         </div>
 
         {/* Calendar Weeks */}
@@ -583,9 +587,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
           <React.Fragment key={weekIndex}>
             {/* Week Days */}
             <div className={cn(
-              "col-span-7 grid grid-cols-7 transition-all duration-300",
+              "col-span-8 grid grid-cols-8 transition-all duration-300",
               "gap-1 sm:gap-2",
-              bothSidebarsExpanded ? "lg:gap-2 2xl:gap-3" : "lg:gap-3 2xl:gap-4 3xl:gap-5"
+              bothSidebarsExpanded ? "lg:gap-2 2xl:gap-2.5" : "lg:gap-2.5 2xl:gap-3 3xl:gap-3.5"
             )}>
               {week.map((day, dayIndex) => {
                 const isSaturday = dayIndex === 6;
@@ -659,7 +663,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                         whileTap={{ scale: 0.98 }}
                         layout
                       >
-                        <div className="space-y-1">
+                        <div className="flex flex-col h-full space-y-1">
                           {/* Date */}
                           <div className="flex items-center justify-between">
                             <span className={cn(
@@ -680,20 +684,22 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                           </div>
                           
                           {/* Weekend Content */}
-                          <div className="flex flex-col items-center justify-center h-full text-center space-y-1">
-                            <div className="text-xs 2xl:text-sm text-muted-foreground/70">
-                              Weekend
+                          <div className="flex flex-col items-center justify-center flex-1 text-center">
+                            <div className="flex flex-col items-center space-y-0.5">
+                              <div className="text-xs 2xl:text-sm text-muted-foreground/70">
+                                Weekend
+                              </div>
+                              {day.quickNotesCount > 0 && (
+                                <div className="text-xs text-muted-foreground">
+                                  {day.quickNotesCount} note{day.quickNotesCount > 1 ? 's' : ''}
+                                </div>
+                              )}
+                              {day.hasReflection && (
+                                <div className="text-xs text-green-600">
+                                  Reflection
+                                </div>
+                              )}
                             </div>
-                            {day.quickNotesCount > 0 && (
-                              <div className="text-xs text-muted-foreground">
-                                {day.quickNotesCount} note{day.quickNotesCount > 1 ? 's' : ''}
-                              </div>
-                            )}
-                            {day.hasReflection && (
-                              <div className="text-xs text-green-600">
-                                Reflection
-                              </div>
-                            )}
                           </div>
                         </div>
                       </motion.div>
@@ -713,7 +719,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                   whileTap={{ scale: 0.98 }}
                   layout
                 >
-                  <div className="space-y-1">
+                  <div className="flex flex-col h-full space-y-1">
                     {/* Date */}
                     <div className="flex items-center justify-between">
                       <span className={cn(
@@ -735,20 +741,22 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                     
                     {/* Weekend Content */}
                     {(isSaturday || day.date.getDay() === 0) ? (
-                      <div className="flex flex-col items-center justify-center h-full text-center space-y-1">
-                        <div className="text-xs 2xl:text-sm text-muted-foreground/70">
-                          Weekend
+                      <div className="flex flex-col items-center justify-center flex-1 text-center">
+                        <div className="flex flex-col items-center space-y-0.5">
+                          <div className="text-xs 2xl:text-sm text-muted-foreground/70">
+                            Weekend
+                          </div>
+                          {day.quickNotesCount > 0 && (
+                            <div className="text-xs text-muted-foreground">
+                              {day.quickNotesCount} note{day.quickNotesCount > 1 ? 's' : ''}
+                            </div>
+                          )}
+                          {day.hasReflection && (
+                            <div className="text-xs text-green-600">
+                              Reflection
+                            </div>
+                          )}
                         </div>
-                        {day.quickNotesCount > 0 && (
-                      <div className="text-xs text-muted-foreground">
-                            {day.quickNotesCount} note{day.quickNotesCount > 1 ? 's' : ''}
-                          </div>
-                        )}
-                        {day.hasReflection && (
-                          <div className="text-xs text-green-600">
-                            Reflection
-                          </div>
-                        )}
                       </div>
                     ) : (
                       <>
@@ -756,7 +764,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                         {day.pnl !== 0 && (
                           <div className={cn(
                             // Mobile: very small text to prevent overflow
-                            'text-xs sm:text-sm lg:text-base 2xl:text-lg 3xl:text-xl 4xl:text-2xl font-bold truncate',
+                            'text-xs sm:text-sm lg:text-sm 2xl:text-base 3xl:text-lg 4xl:text-xl font-bold truncate',
                             day.pnl > 0 ? 'text-green-500' : 'text-red-500'
                           )}>
                             {/* Mobile: Show very abbreviated currency */}
@@ -784,7 +792,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                               )} />
                             </div>
                             {/* Desktop: Trade count text */}
-                            <div className="hidden lg:block text-xs 2xl:text-sm 3xl:text-base text-muted-foreground">
+                            <div className="hidden lg:block text-[11px] 2xl:text-xs 3xl:text-sm text-muted-foreground">
                               {day.tradesCount} trade{day.tradesCount > 1 ? 's' : ''}
                             </div>
                           </>
@@ -792,7 +800,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                         
                         {/* Metrics - Desktop only (weekdays only) */}
                     {day.tradesCount > 0 && (
-                          <div className="hidden lg:block text-xs 2xl:text-sm 3xl:text-base text-muted-foreground space-y-0.5">
+                          <div className="hidden lg:block text-[11px] 2xl:text-xs 3xl:text-sm text-muted-foreground space-y-0.5">
                         <div>{day.avgRR.toFixed(1)}:1R, {day.winRate.toFixed(0)}%</div>
                       </div>
                         )}
@@ -802,45 +810,48 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                 </motion.div>
                 );
               })}
-            </div>
             
-            {/* Weekly Summary - Desktop only */}
+              {/* Weekly Summary - Desktop only (8th column) */}
             <motion.div
-              className={cn(
-                "hidden lg:flex bg-muted/30 border border-border/50 rounded-xl p-4 2xl:p-5 3xl:p-6 hover:bg-muted/50 transition-colors min-h-[100px] 2xl:min-h-[120px] 3xl:min-h-[140px] 4xl:min-h-[160px] items-center justify-center cursor-pointer relative",
-                getWeekReviewStatus(week) === 'completed' && 'ring-1 ring-green-500/30 bg-green-500/5',
-                getWeekReviewStatus(week) === 'available' && 'ring-1 ring-blue-500/30 bg-blue-500/5'
-              )}
+                className={cn(
+                  "hidden lg:flex overflow-hidden bg-muted/30 border border-border/50 rounded-lg sm:rounded-xl hover:bg-muted/50 transition-all duration-300 aspect-[6/5] items-center justify-center cursor-pointer relative",
+                  bothSidebarsExpanded 
+                    ? 'p-1 sm:p-2 lg:p-2 2xl:p-3 3xl:p-4' 
+                    : 'p-1.5 sm:p-2.5 lg:p-3 2xl:p-4 3xl:p-5',
+                  getWeekReviewStatus(week) === 'completed' && 'ring-1 ring-green-500/30 bg-green-500/5',
+                  getWeekReviewStatus(week) === 'available' && 'ring-1 ring-blue-500/30 bg-blue-500/5'
+                )}
               whileHover={{ scale: 1.01 }}
-              onClick={() => handleWeeklySummaryClick(weekIndex, week)}
-            >
-              {/* Review Status Indicator */}
-              {getWeekReviewStatus(week) && (
-                <div className="absolute top-3 right-3">
-                  {getWeekReviewStatus(week) === 'completed' ? (
-                    <CheckCircle2 className="w-4 h-4 text-green-600" />
-                  ) : (
-                    <Clock className="w-4 h-4 text-blue-600" />
-                  )}
-                </div>
-              )}
-              
+                onClick={() => handleWeeklySummaryClick(weekIndex, week)}
+              >
+                {/* Review Status Indicator */}
+                {getWeekReviewStatus(week) && (
+                  <div className="absolute top-3 right-3">
+                    {getWeekReviewStatus(week) === 'completed' ? (
+                      <CheckCircle2 className="w-4 h-4 text-green-600" />
+                    ) : (
+                      <Clock className="w-4 h-4 text-blue-600" />
+                    )}
+                  </div>
+                )}
+                
               <div className="text-center space-y-2">
-                <div className="text-sm 2xl:text-base 3xl:text-lg font-medium text-muted-foreground">
+                  <div className="text-sm 2xl:text-base 3xl:text-lg font-medium text-muted-foreground">
                   Week {weeklyData[weekIndex]?.weekNumber}
                 </div>
                 <div className={cn(
-                  'text-lg 2xl:text-xl 3xl:text-2xl 4xl:text-3xl font-bold',
+                    'text-lg 2xl:text-xl 3xl:text-2xl 4xl:text-3xl font-bold',
                   weeklyData[weekIndex]?.totalPnl > 0 ? 'text-green-500' : 
                   weeklyData[weekIndex]?.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
                 )}>
                   {formatCurrency(weeklyData[weekIndex]?.totalPnl || 0)}
                 </div>
-                <div className="text-xs 2xl:text-sm 3xl:text-base text-muted-foreground">
+                  <div className="text-xs 2xl:text-sm 3xl:text-base text-muted-foreground">
                   {weeklyData[weekIndex]?.activeDays || 0} days
                 </div>
               </div>
             </motion.div>
+            </div>
           </React.Fragment>
         ))}
       </div>
