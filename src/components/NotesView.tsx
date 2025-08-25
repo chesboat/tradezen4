@@ -278,7 +278,7 @@ export const NotesView: React.FC = () => {
   const handleEditNote = (note: UnifiedNote) => {
     if (note.type === 'quick') {
       const quickNote = quickNotes.find(n => n.id === note.id);
-      if (quickNote) setEditingNote(quickNote);
+      if (quickNote) setEditingNote(quickNote.id);
     } else {
       setEditingRichNoteId(note.id);
       setIsRichNoteEditorOpen(true);
