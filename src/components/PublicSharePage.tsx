@@ -153,7 +153,8 @@ const loadShareImages = async (shareId: string): Promise<{ [blockId: string]: st
       shareId,
       blockCount: Object.keys(imagesByBlock).length,
       totalImages: Object.values(imagesByBlock).reduce((sum, images) => sum + images.length, 0),
-      imagesByBlock
+      imagesByBlock,
+      sampleUrls: Object.values(imagesByBlock).flat().slice(0, 3)
     });
     
     return imagesByBlock;
@@ -194,6 +195,8 @@ const resolveInlineStorageLinksInHtml = async (html: string): Promise<string> =>
   
   await Promise.all(imgEls.map(async (img) => {
     const src = img.getAttribute('src') || '';
+    console.log('🖼️ Processing image in HTML:', { src, needsResolution: /\/o\?name=/.test(src) && !/alt=media/.test(src) });
+    
     if (/\/o\?name=/.test(src) && !/alt=media/.test(src)) {
       try {
         const u = new URL(src);
@@ -209,6 +212,7 @@ const resolveInlineStorageLinksInHtml = async (html: string): Promise<string> =>
             // Create a public download URL using the REST API format
             const encodedPath = encodeURIComponent(storagePath);
             const publicUrl = `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/${encodedPath}?alt=media`;
+            console.log('🖼️ Converted URL:', { original: src, converted: publicUrl });
             img.setAttribute('src', publicUrl);
           }
         }
