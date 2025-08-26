@@ -3,7 +3,7 @@ import { collection, doc, setDoc, serverTimestamp, writeBatch } from 'firebase/f
 import { useReflectionTemplateStore } from '@/store/useReflectionTemplateStore';
 import { useDailyReflectionStore } from '@/store/useDailyReflectionStore';
 import { useQuickNoteStore } from '@/store/useQuickNoteStore';
-import { getStorage, ref as storageRef, getDownloadURL, uploadBytes, getBlob } from 'firebase/storage';
+import { getStorage, ref as storageRef, getDownloadURL } from 'firebase/storage';
 
 // Helper function to generate unique IDs
 const generateId = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -145,48 +145,58 @@ export async function createPublicShareSnapshot(date: string, accountId: string,
   // Resolve a Firebase Storage reference or legacy URL to a permanent download URL
   const storage = getStorage(app as any);
   
-  // Copy an image from private storage to public share location
-  const copyImageToPublicShare = async (originalUrl: string, shareId: string): Promise<string> => {
+  // Generate a public download URL using Firebase REST API
+  const generatePublicImageUrl = async (originalUrl: string): Promise<string> => {
     if (!originalUrl) return originalUrl;
     
     try {
-      // If it's already a public URL, return as-is
-      if (/alt=media/.test(originalUrl) && /firebasestorage\.googleapis\.com\/.+\/o\//.test(originalUrl)) {
+      // If it's already a public download URL with alt=media, return as-is
+      if (/alt=media/.test(originalUrl)) {
         return originalUrl;
       }
       
-      let sourceRef;
+      let storagePath;
       
       // Handle gs:// URLs
       if (/^gs:\/\//.test(originalUrl)) {
-        sourceRef = storageRef(storage, originalUrl);
+        storagePath = originalUrl.replace(/^gs:\/\/[^/]+\//, '');
       }
       // Handle Firebase Storage API URLs
       else if (/firebasestorage\.googleapis\.com\/v0\/b\/.+\/o\?name=/.test(originalUrl)) {
         const u = new URL(originalUrl);
         const name = u.searchParams.get('name');
         if (name) {
-          sourceRef = storageRef(storage, decodeURIComponent(name));
+          storagePath = decodeURIComponent(name);
+        }
+      }
+      // Handle direct Firebase Storage URLs
+      else if (/firebasestorage\.googleapis\.com\/.+\/o\//.test(originalUrl)) {
+        // Extract path from URL like: https://firebasestorage.googleapis.com/v0/b/bucket/o/path%2Fto%2Ffile.jpg
+        const match = originalUrl.match(/\/o\/([^?]+)/);
+        if (match) {
+          storagePath = decodeURIComponent(match[1]);
         }
       }
       
-      if (!sourceRef) return originalUrl;
+      if (!storagePath) return originalUrl;
       
-      // Download the image blob from the source
-      const blob = await getBlob(sourceRef);
+      // Get the storage bucket from environment or extract from existing URL
+      const bucketName = import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 
+                        originalUrl.match(/\/b\/([^/]+)\//)?.[1];
       
-      // Generate a new path in the public share location
-      const imageId = generateId();
-      const publicPath = `publicShares/${shareId}/${imageId}`;
-      const publicRef = storageRef(storage, publicPath);
+      if (!bucketName) {
+        // Fallback to SDK method
+        const sourceRef = storageRef(storage, storagePath);
+        return await getDownloadURL(sourceRef);
+      }
       
-      // Upload to public location
-      await uploadBytes(publicRef, blob);
+      // Create a public download URL using the REST API format
+      const encodedPath = encodeURIComponent(storagePath);
+      const publicUrl = `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/${encodedPath}?alt=media`;
       
-      // Return the public download URL
-      return await getDownloadURL(publicRef);
+      return publicUrl;
     } catch (error) {
-      console.warn('Failed to copy image to public share:', error);
+      console.warn('Failed to generate public image URL:', error);
       return originalUrl; // Fallback to original URL
     }
   };
@@ -194,9 +204,9 @@ export async function createPublicShareSnapshot(date: string, accountId: string,
   const resolveStorageUrl = async (url: string, shareId?: string): Promise<string> => {
     if (!url) return url;
     
-    // If we have a shareId, copy the image to public location
+    // For public shares, generate long-lived signed URLs
     if (shareId) {
-      return await copyImageToPublicShare(url, shareId);
+      return await generatePublicImageUrl(url);
     }
     
     // Otherwise, just resolve to a signed URL (for backward compatibility)

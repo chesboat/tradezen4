@@ -10,8 +10,10 @@ service firebase.storage {
     
     // Allow authenticated users to read/write files in general quickNotes folder
     // (for backward compatibility with existing uploads)
+    // Also allow public read access for shared content
     match /quickNotes/{allPaths=**} {
-      allow read, write: if request.auth != null;
+      allow read: if true; // Public read for sharing
+      allow write: if request.auth != null; // Only authenticated users can upload
     }
     
     // Allow public read access to files that have been explicitly shared
