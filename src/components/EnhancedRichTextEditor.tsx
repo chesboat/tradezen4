@@ -82,10 +82,16 @@ export const EnhancedRichTextEditor: React.FC<EnhancedRichTextEditorProps> = ({
       },
       handlePaste: (view, event, slice) => {
         // Intercept paste events to handle images properly
+        console.log('🔧 EnhancedRichTextEditor: Paste event detected', { 
+          clipboardData: !!event.clipboardData,
+          itemCount: event.clipboardData?.items?.length || 0
+        });
+        
         const items = Array.from(event.clipboardData?.items || []);
         const imageItem = items.find(item => item.type.startsWith('image/'));
         
         if (imageItem) {
+          console.log('🔧 EnhancedRichTextEditor: Image found in paste, intercepting', { type: imageItem.type });
           event.preventDefault();
           const file = imageItem.getAsFile();
           if (file) {
@@ -94,6 +100,7 @@ export const EnhancedRichTextEditor: React.FC<EnhancedRichTextEditorProps> = ({
           return true; // Prevent default paste behavior
         }
         
+        console.log('🔧 EnhancedRichTextEditor: No image in paste, allowing default behavior');
         return false; // Allow default paste behavior for non-images
       },
     },
@@ -129,12 +136,14 @@ export const EnhancedRichTextEditor: React.FC<EnhancedRichTextEditorProps> = ({
   const handleImageUpload = async (file: File) => {
     if (!editor) return;
     
+    console.log('🔧 EnhancedRichTextEditor: Starting image upload', { fileName: file.name, fileSize: file.size });
     setIsUploadingImage(true);
     try {
       const imageUrl = await uploadImage(file);
+      console.log('🔧 EnhancedRichTextEditor: Image uploaded successfully', { imageUrl });
       editor.chain().focus().insertContent({ type: 'customImage', attrs: { src: imageUrl } }).run();
     } catch (error) {
-      console.error('Failed to upload image:', error);
+      console.error('🚨 EnhancedRichTextEditor: Failed to upload image:', error);
     } finally {
       setIsUploadingImage(false);
     }
@@ -155,9 +164,15 @@ export const EnhancedRichTextEditor: React.FC<EnhancedRichTextEditorProps> = ({
     e.stopPropagation();
     if (!e.dataTransfer || !editor) return;
 
+    console.log('🔧 EnhancedRichTextEditor: Drop event detected', {
+      fileCount: e.dataTransfer.files?.length || 0,
+      hasDataTransfer: !!e.dataTransfer
+    });
+
     const files = Array.from(e.dataTransfer.files || []);
     const image = files.find((f) => f.type && f.type.startsWith('image/'));
     if (image) {
+      console.log('🔧 EnhancedRichTextEditor: Image file dropped', { fileName: image.name, type: image.type });
       await handleImageUpload(image);
       setIsDragOver(false);
       dragCounter.current = 0;
@@ -167,6 +182,7 @@ export const EnhancedRichTextEditor: React.FC<EnhancedRichTextEditorProps> = ({
     // Optional: if a URL is dropped, try to insert as image
     const uri = e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('text/plain');
     if (uri && /^https?:\/\//.test(uri)) {
+      console.log('🔧 EnhancedRichTextEditor: URL dropped as image', { uri });
       editor.chain().focus().insertContent({ type: 'customImage', attrs: { src: uri } }).run();
     }
     setIsDragOver(false);
