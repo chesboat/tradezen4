@@ -32,6 +32,7 @@ import { DayDetailModal } from './DayDetailModal';
 import { CalendarShareModal } from './CalendarShareModal';
 import { WeeklyReviewModal } from './WeeklyReviewModal';
 import { WeeklyReviewViewModal } from './WeeklyReviewViewModal';
+import { Tooltip } from './ui/Tooltip';
 
 const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = [
@@ -349,6 +350,63 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
     );
   };
 
+  // Helper function to generate tooltip content for compact day tiles
+  const getDayTooltipContent = (day: CalendarDay) => {
+    const parts: string[] = [];
+    
+    // Date
+    parts.push(`${day.date.toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      month: 'short', 
+      day: 'numeric' 
+    })}`);
+    
+    // P&L
+    if (day.pnl !== 0) {
+      parts.push(`P&L: ${formatCurrency(day.pnl)}`);
+    }
+    
+    // Trades
+    if (day.tradesCount > 0) {
+      parts.push(`${day.tradesCount} trade${day.tradesCount > 1 ? 's' : ''}`);
+      parts.push(`Win Rate: ${day.winRate.toFixed(1)}%`);
+      parts.push(`Avg R:R: ${day.avgRR.toFixed(2)}:1`);
+    }
+    
+    // Notes and reflections
+    if (day.quickNotesCount > 0) {
+      parts.push(`${day.quickNotesCount} note${day.quickNotesCount > 1 ? 's' : ''}`);
+    }
+    
+    if (day.hasReflection) {
+      parts.push('Has reflection');
+    }
+    
+    // Mood
+    if (day.tradesCount > 0) {
+      parts.push(`Mood: ${day.mood}`);
+    }
+    
+    return parts.join(' • ');
+  };
+
+  // Helper function to generate tooltip content for compact weekly tiles
+  const getWeeklyTooltipContent = (weekSummary: WeeklySummary) => {
+    const parts: string[] = [];
+    
+    parts.push(`Week ${weekSummary.weekNumber}`);
+    parts.push(`P&L: ${formatCurrency(weekSummary.totalPnl)}`);
+    parts.push(`${weekSummary.tradesCount} total trades`);
+    parts.push(`${weekSummary.activeDays} active days`);
+    
+    if (weekSummary.tradesCount > 0) {
+      parts.push(`Win Rate: ${weekSummary.winRate.toFixed(1)}%`);
+      parts.push(`Avg R:R: ${weekSummary.avgRR.toFixed(2)}:1`);
+    }
+    
+    return parts.join(' • ');
+  };
+
   const formatPnL = (pnl: number, isCompact: boolean = false) => {
     if (pnl === 0) return null;
     
@@ -624,51 +682,57 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                     <React.Fragment key={`${weekIndex}-${dayIndex}`}>
                       {/* Mobile: Weekly Summary */}
                       <div className="lg:hidden">
-                        <motion.div
-                          className={cn(
-                            'relative rounded-lg border border-border/50 transition-all duration-300 cursor-pointer aspect-square',
-                            'p-1.5 bg-muted/30 hover:bg-muted/50',
-                            reviewStatus === 'completed' && 'ring-1 ring-green-500/30 bg-green-500/5',
-                            reviewStatus === 'available' && 'ring-1 ring-blue-500/30 bg-blue-500/5'
-                          )}
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={() => handleWeeklySummaryClick(weekIndex, week)}
+                        <Tooltip 
+                          content={weekSummary ? getWeeklyTooltipContent(weekSummary) : `Week ${weekIndex + 1}`}
+                          position="top"
+                          fullWidth
                         >
-                          {/* Review Status Indicator */}
-                          {reviewStatus && (
-                            <div className="absolute top-1 right-1">
-                              {reviewStatus === 'completed' ? (
-                                <CheckCircle2 className="w-3 h-3 text-green-600" />
-                              ) : (
-                                <Clock className="w-3 h-3 text-blue-600" />
+                          <motion.div
+                            className={cn(
+                              'relative rounded-lg border border-border/50 transition-all duration-300 cursor-pointer aspect-square',
+                              'p-1.5 bg-muted/30 hover:bg-muted/50',
+                              reviewStatus === 'completed' && 'ring-1 ring-green-500/30 bg-green-500/5',
+                              reviewStatus === 'available' && 'ring-1 ring-blue-500/30 bg-blue-500/5'
+                            )}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => handleWeeklySummaryClick(weekIndex, week)}
+                          >
+                            {/* Review Status Indicator */}
+                            {reviewStatus && (
+                              <div className="absolute top-1 right-1">
+                                {reviewStatus === 'completed' ? (
+                                  <CheckCircle2 className="w-3 h-3 text-green-600" />
+                                ) : (
+                                  <Clock className="w-3 h-3 text-blue-600" />
+                                )}
+                              </div>
+                            )}
+                            
+                            <div className="h-full flex flex-col justify-center items-center text-center">
+                              <div className="text-xs font-medium text-muted-foreground mb-1">
+                                W{weekSummary?.weekNumber || weekIndex + 1}
+                              </div>
+                              {weekSummary && (
+                                <>
+                                  <div className={cn(
+                                    'text-xs font-bold mb-0.5',
+                                    weekSummary.totalPnl > 0 ? 'text-green-500' : 
+                                    weekSummary.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
+                                  )}>
+                                    {Math.abs(weekSummary.totalPnl) >= 1000 
+                                      ? `${weekSummary.totalPnl > 0 ? '+' : ''}${(weekSummary.totalPnl/1000).toFixed(1)}k`
+                                      : formatCurrency(weekSummary.totalPnl)
+                                    }
+                                  </div>
+                                  <div className="text-xs text-muted-foreground">
+                                    {weekSummary.tradesCount}T
+                                  </div>
+                                </>
                               )}
                             </div>
-                          )}
-                          
-                          <div className="h-full flex flex-col justify-center items-center text-center">
-                            <div className="text-xs font-medium text-muted-foreground mb-1">
-                              W{weekSummary?.weekNumber || weekIndex + 1}
-                            </div>
-                            {weekSummary && (
-                              <>
-                                <div className={cn(
-                                  'text-xs font-bold mb-0.5',
-                                  weekSummary.totalPnl > 0 ? 'text-green-500' : 
-                                  weekSummary.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
-                                )}>
-                                  {Math.abs(weekSummary.totalPnl) >= 1000 
-                                    ? `${weekSummary.totalPnl > 0 ? '+' : ''}${(weekSummary.totalPnl/1000).toFixed(1)}k`
-                                    : formatCurrency(weekSummary.totalPnl)
-                                  }
-                                </div>
-                                <div className="text-xs text-muted-foreground">
-                                  {weekSummary.tradesCount}T
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        </motion.div>
+                          </motion.div>
+                        </Tooltip>
                       </div>
                       
                       {/* Desktop: Saturday Tile */}
@@ -782,15 +846,21 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                     ) : (
                       <>
                         {bothSidebarsExpanded ? (
-                          // Ultra-compact mode for weekdays when both sidebars expanded
-                          <div className="flex flex-col items-center justify-center flex-1 space-y-0.5">
-                            {day.pnl !== 0 && formatPnL(day.pnl, true)}
-                            {day.tradesCount > 0 && (
-                              <div className="text-[10px] text-muted-foreground">
-                                {day.tradesCount}T
-                              </div>
-                            )}
-                          </div>
+                          // Ultra-compact mode for weekdays when both sidebars expanded - with tooltip
+                          <Tooltip 
+                            content={getDayTooltipContent(day)}
+                            position="top"
+                            fullWidth
+                          >
+                            <div className="flex flex-col items-center justify-center flex-1 space-y-0.5">
+                              {day.pnl !== 0 && formatPnL(day.pnl, true)}
+                              {day.tradesCount > 0 && (
+                                <div className="text-[10px] text-muted-foreground">
+                                  {day.tradesCount}T
+                                </div>
+                              )}
+                            </div>
+                          </Tooltip>
                         ) : (
                           <>
                             {/* P&L - Mobile optimized (weekdays only) */}
@@ -872,25 +942,31 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                 
               <div className="text-center space-y-1">
                 {bothSidebarsExpanded ? (
-                  // Ultra-compact weekly summary
-                  <>
-                    <div className="text-xs font-medium text-muted-foreground">
-                      W{weeklyData[weekIndex]?.weekNumber}
+                  // Ultra-compact weekly summary - with tooltip
+                  <Tooltip 
+                    content={weeklyData[weekIndex] ? getWeeklyTooltipContent(weeklyData[weekIndex]) : `Week ${weekIndex + 1}`}
+                    position="top"
+                    fullWidth
+                  >
+                    <div>
+                      <div className="text-xs font-medium text-muted-foreground">
+                        W{weeklyData[weekIndex]?.weekNumber}
+                      </div>
+                      <div className={cn(
+                        'text-sm font-bold',
+                        weeklyData[weekIndex]?.totalPnl > 0 ? 'text-green-500' : 
+                        weeklyData[weekIndex]?.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
+                      )}>
+                        {weeklyData[weekIndex]?.totalPnl && Math.abs(weeklyData[weekIndex].totalPnl) >= 1000 
+                          ? `${weeklyData[weekIndex].totalPnl > 0 ? '+' : ''}${(weeklyData[weekIndex].totalPnl / 1000).toFixed(1)}k`
+                          : formatCurrency(weeklyData[weekIndex]?.totalPnl || 0)
+                        }
+                      </div>
+                      <div className="text-[10px] text-muted-foreground">
+                        {weeklyData[weekIndex]?.activeDays || 0}d
+                      </div>
                     </div>
-                    <div className={cn(
-                      'text-sm font-bold',
-                      weeklyData[weekIndex]?.totalPnl > 0 ? 'text-green-500' : 
-                      weeklyData[weekIndex]?.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
-                    )}>
-                      {weeklyData[weekIndex]?.totalPnl && Math.abs(weeklyData[weekIndex].totalPnl) >= 1000 
-                        ? `${weeklyData[weekIndex].totalPnl > 0 ? '+' : ''}${(weeklyData[weekIndex].totalPnl / 1000).toFixed(1)}k`
-                        : formatCurrency(weeklyData[weekIndex]?.totalPnl || 0)
-                      }
-                    </div>
-                    <div className="text-[10px] text-muted-foreground">
-                      {weeklyData[weekIndex]?.activeDays || 0}d
-                    </div>
-                  </>
+                  </Tooltip>
                 ) : (
                   // Normal weekly summary
                   <>

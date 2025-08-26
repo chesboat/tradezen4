@@ -3,7 +3,7 @@ import { collection, doc, setDoc, serverTimestamp, writeBatch } from 'firebase/f
 import { useReflectionTemplateStore } from '@/store/useReflectionTemplateStore';
 import { useDailyReflectionStore } from '@/store/useDailyReflectionStore';
 import { useQuickNoteStore } from '@/store/useQuickNoteStore';
-import { getStorage, ref as storageRef, getDownloadURL } from 'firebase/storage';
+import { getStorage, ref as storageRef, getDownloadURL, uploadBytes, getBlob } from 'firebase/storage';
 
 // Helper function to generate unique IDs
 const generateId = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -19,6 +19,10 @@ export type PublicShareOptions = {
 };
 
 export async function createPublicShareSnapshot(date: string, accountId: string, options: PublicShareOptions) {
+  
+  // Generate shareId early so we can use it for image copying
+  const shareId = generateId();
+  
   const rStore = useReflectionTemplateStore.getState();
   const dStore = useDailyReflectionStore.getState();
   const qStore = useQuickNoteStore.getState();
@@ -140,8 +144,62 @@ export async function createPublicShareSnapshot(date: string, accountId: string,
 
   // Resolve a Firebase Storage reference or legacy URL to a permanent download URL
   const storage = getStorage(app as any);
-  const resolveStorageUrl = async (url: string): Promise<string> => {
+  
+  // Copy an image from private storage to public share location
+  const copyImageToPublicShare = async (originalUrl: string, shareId: string): Promise<string> => {
+    if (!originalUrl) return originalUrl;
+    
+    try {
+      // If it's already a public URL, return as-is
+      if (/alt=media/.test(originalUrl) && /firebasestorage\.googleapis\.com\/.+\/o\//.test(originalUrl)) {
+        return originalUrl;
+      }
+      
+      let sourceRef;
+      
+      // Handle gs:// URLs
+      if (/^gs:\/\//.test(originalUrl)) {
+        sourceRef = storageRef(storage, originalUrl);
+      }
+      // Handle Firebase Storage API URLs
+      else if (/firebasestorage\.googleapis\.com\/v0\/b\/.+\/o\?name=/.test(originalUrl)) {
+        const u = new URL(originalUrl);
+        const name = u.searchParams.get('name');
+        if (name) {
+          sourceRef = storageRef(storage, decodeURIComponent(name));
+        }
+      }
+      
+      if (!sourceRef) return originalUrl;
+      
+      // Download the image blob from the source
+      const blob = await getBlob(sourceRef);
+      
+      // Generate a new path in the public share location
+      const imageId = generateId();
+      const publicPath = `publicShares/${shareId}/${imageId}`;
+      const publicRef = storageRef(storage, publicPath);
+      
+      // Upload to public location
+      await uploadBytes(publicRef, blob);
+      
+      // Return the public download URL
+      return await getDownloadURL(publicRef);
+    } catch (error) {
+      console.warn('Failed to copy image to public share:', error);
+      return originalUrl; // Fallback to original URL
+    }
+  };
+
+  const resolveStorageUrl = async (url: string, shareId?: string): Promise<string> => {
     if (!url) return url;
+    
+    // If we have a shareId, copy the image to public location
+    if (shareId) {
+      return await copyImageToPublicShare(url, shareId);
+    }
+    
+    // Otherwise, just resolve to a signed URL (for backward compatibility)
     // Already a public download URL with token
     if (/alt=media/.test(url) && /firebasestorage\.googleapis\.com\/.+\/o\//.test(url)) return url;
     // gs:// bucket path
@@ -163,7 +221,7 @@ export async function createPublicShareSnapshot(date: string, accountId: string,
   };
 
   // Replace any inline <img src> that points to Storage with download URLs
-  const replaceInlineStorageUrls = async (html: string): Promise<string> => {
+  const replaceInlineStorageUrls = async (html: string, shareId: string): Promise<string> => {
     if (!html) return html;
     try {
       const docEl = document.implementation.createHTMLDocument('tmp');
@@ -171,7 +229,7 @@ export async function createPublicShareSnapshot(date: string, accountId: string,
       const imgs = Array.from(docEl.body.querySelectorAll('img')) as HTMLImageElement[];
       await Promise.all(imgs.map(async (img) => {
         const src = img.getAttribute('src') || '';
-        const resolved = await resolveStorageUrl(src);
+        const resolved = await resolveStorageUrl(src, shareId);
         if (resolved && resolved !== src) img.setAttribute('src', resolved);
       }));
       return docEl.body.innerHTML;
@@ -189,8 +247,8 @@ export async function createPublicShareSnapshot(date: string, accountId: string,
     const galleryImagesRaw: string[] = options.includeImages ? ((b as any).images || []) : [];
     const inlineImagesRaw: string[] = options.includeImages ? extractImageUrlsFromHtml((b as any).content) : [];
     // Resolve all potential Storage URLs to downloadable URLs to avoid auth requirements on public page
-    const galleryImages = await Promise.all(galleryImagesRaw.map(resolveStorageUrl));
-    const inlineImages = await Promise.all(inlineImagesRaw.map(resolveStorageUrl));
+    const galleryImages = await Promise.all(galleryImagesRaw.map(url => resolveStorageUrl(url, shareId)));
+    const inlineImages = await Promise.all(inlineImagesRaw.map(url => resolveStorageUrl(url, shareId)));
     const images = Array.from(new Set([...(galleryImages || []), ...(inlineImages || [])]));
     const blockId = generateId();
     
@@ -210,7 +268,7 @@ export async function createPublicShareSnapshot(date: string, accountId: string,
     }
     // Replace inline storage URLs inside the HTML content so public page doesn't need to resolve them
     const replacedContent = options.includeImages 
-      ? await replaceInlineStorageUrls((b.content || ''))
+      ? await replaceInlineStorageUrls((b.content || ''), shareId)
       : (b.content || '');
     // Queue full block content to be written in a separate collection
     blocksToWrite.push({
@@ -325,8 +383,7 @@ export async function createPublicShareSnapshot(date: string, accountId: string,
   const batch = writeBatch(db);
   
   const col = collection(db, 'publicShares');
-  const ref = doc(col);
-  const shareId = ref.id;
+  const ref = doc(col, shareId); // Use the pre-generated shareId
   
   // Add main document to batch
   batch.set(ref, prune(payload));
