@@ -165,7 +165,16 @@ export const useQuickNoteStore = create<QuickNoteState>((set, get) => ({
     const path = `quickNotes/${id}`;
     const storageRef = ref(storage, path);
     await uploadBytes(storageRef, file);
-    return await getDownloadURL(storageRef);
+    
+    // Get the bucket name for creating a public download URL
+    const bucket = storageBucket || `${projectId}.appspot.com`;
+    
+    // Create a public download URL using the REST API format to avoid CORS issues
+    const encodedPath = encodeURIComponent(path);
+    const publicUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodedPath}?alt=media`;
+    
+    console.log('🔧 uploadImage: Created public URL', { path, bucket, publicUrl });
+    return publicUrl;
   },
 
   addInlineNote: async (content, accountId) => {
