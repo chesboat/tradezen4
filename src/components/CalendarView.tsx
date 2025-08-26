@@ -257,7 +257,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
   // Calculate weekly summaries
   const weeklyData = useMemo(() => {
     return calendarData.weeks.map((week, index) => {
-      const weekDays = week.filter(day => !day.isOtherMonth && day.tradesCount > 0);
+      // Only include days visible in the current month to avoid leaking next/prev month totals
+      const weekDays = week.filter(day => !day.isOtherMonth);
       const totalPnl = weekDays.reduce((sum, day) => sum + day.pnl, 0);
       const totalXP = weekDays.reduce((sum, day) => sum + day.xpEarned, 0);
       const totalTrades = weekDays.reduce((sum, day) => sum + day.tradesCount, 0);
@@ -291,7 +292,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
         tradesCount: totalTrades,
         winRate: avgWinRate,
         avgRR,
-        activeDays: weekDays.length,
+        activeDays: weekDays.filter(d => d.tradesCount > 0).length,
         weekNumber: index + 1,
       };
     });
@@ -317,15 +318,15 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
     
     // Mobile-first responsive padding and height - make mobile tiles square
     const paddingClasses = bothSidebarsExpanded 
-      ? 'p-1 sm:p-2 lg:p-2 2xl:p-3 3xl:p-4' 
+      ? 'p-1.5 sm:p-2 lg:p-2.5 2xl:p-3 3xl:p-4' 
       : 'p-1.5 sm:p-2.5 lg:p-3 2xl:p-4 3xl:p-5';
     
-    // Mobile: Use aspect-square, desktop: use aspect-[6/5] for slightly wider than tall tiles with comfortable height
+    // Mobile: Use aspect-square, desktop: use aspect-[7/6] for slightly taller tiles to prevent text cutoff
     const heightClasses = allExpanded
-      ? 'aspect-square sm:aspect-[6/5] lg:aspect-[6/5] 2xl:aspect-[6/5] 3xl:aspect-[6/5] 4xl:aspect-[6/5]'
+      ? 'aspect-square sm:aspect-[7/6] lg:aspect-[7/6] 2xl:aspect-[7/6] 3xl:aspect-[7/6] 4xl:aspect-[7/6]'
       : bothSidebarsExpanded
-      ? 'aspect-square sm:aspect-[6/5] lg:aspect-[6/5] 2xl:aspect-[6/5] 3xl:aspect-[6/5] 4xl:aspect-[6/5]'
-      : 'aspect-square sm:aspect-[6/5] lg:aspect-[6/5] 2xl:aspect-[6/5] 3xl:aspect-[6/5] 4xl:aspect-[6/5]';
+      ? 'aspect-square sm:aspect-[7/6] lg:aspect-[7/6] 2xl:aspect-[7/6] 3xl:aspect-[7/6] 4xl:aspect-[7/6]'
+      : 'aspect-square sm:aspect-[7/6] lg:aspect-[7/6] 2xl:aspect-[7/6] 3xl:aspect-[7/6] 4xl:aspect-[7/6]';
     
     return cn(
       'relative overflow-hidden rounded-lg sm:rounded-xl transition-all duration-300 cursor-pointer',
@@ -348,11 +349,31 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
     );
   };
 
-  const formatPnL = (pnl: number) => {
+  const formatPnL = (pnl: number, isCompact: boolean = false) => {
     if (pnl === 0) return null;
+    
+    if (isCompact) {
+      // Ultra-compact mode: just show +/- and abbreviated amount
+      const sign = pnl > 0 ? '+' : '';
+      const abbreviated = Math.abs(pnl) >= 1000 
+        ? `${sign}${(pnl / 1000).toFixed(1)}k`
+        : `${sign}${pnl.toFixed(0)}`;
+      
+      return (
+        <div className={cn(
+          'text-xs font-bold truncate',
+          pnl > 0 ? 'text-green-500' : 'text-red-500'
+        )}>
+          {abbreviated}
+        </div>
+      );
+    }
+    
     return (
       <div className={cn(
-        'text-base 2xl:text-lg 3xl:text-xl 4xl:text-2xl font-bold',
+        bothSidebarsExpanded 
+          ? 'text-sm lg:text-base 2xl:text-lg 3xl:text-xl font-bold'
+          : 'text-base 2xl:text-lg 3xl:text-xl 4xl:text-2xl font-bold',
         pnl > 0 ? 'text-green-500' : 'text-red-500'
       )}>
         {formatCurrency(pnl)}
@@ -747,7 +768,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                             Weekend
                           </div>
                           {day.quickNotesCount > 0 && (
-                            <div className="text-xs text-muted-foreground">
+                      <div className="text-xs text-muted-foreground">
                               {day.quickNotesCount} note{day.quickNotesCount > 1 ? 's' : ''}
                             </div>
                           )}
@@ -760,49 +781,63 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                       </div>
                     ) : (
                       <>
-                        {/* P&L - Mobile optimized (weekdays only) */}
-                        {day.pnl !== 0 && (
-                          <div className={cn(
-                            // Mobile: very small text to prevent overflow
-                            'text-xs sm:text-sm lg:text-sm 2xl:text-base 3xl:text-lg 4xl:text-xl font-bold truncate',
-                            day.pnl > 0 ? 'text-green-500' : 'text-red-500'
-                          )}>
-                            {/* Mobile: Show very abbreviated currency */}
-                            <span className="lg:hidden">
-                              {Math.abs(day.pnl) >= 1000 
-                                ? `${day.pnl > 0 ? '+' : ''}${(day.pnl/1000).toFixed(0)}k`
-                                : `${day.pnl > 0 ? '+' : ''}${Math.round(day.pnl)}`
-                              }
-                            </span>
-                            {/* Desktop: Show full currency */}
-                            <span className="hidden lg:block">
-                              {formatCurrency(day.pnl)}
-                            </span>
+                        {bothSidebarsExpanded ? (
+                          // Ultra-compact mode for weekdays when both sidebars expanded
+                          <div className="flex flex-col items-center justify-center flex-1 space-y-0.5">
+                            {day.pnl !== 0 && formatPnL(day.pnl, true)}
+                            {day.tradesCount > 0 && (
+                              <div className="text-[10px] text-muted-foreground">
+                                {day.tradesCount}T
+                              </div>
+                            )}
                           </div>
-                        )}
-                        
-                        {/* Trade Count - Mobile: Show dot indicator, Desktop: Show count (weekdays only) */}
-                        {day.tradesCount > 0 && (
+                        ) : (
                           <>
-                            {/* Mobile: Simple dot indicator */}
-                            <div className="lg:hidden flex justify-center mt-1">
+                            {/* P&L - Mobile optimized (weekdays only) */}
+                            {day.pnl !== 0 && (
                               <div className={cn(
-                                "w-1 h-1 rounded-full",
-                                day.pnl > 0 ? 'bg-green-500' : day.pnl < 0 ? 'bg-red-500' : 'bg-muted-foreground'
-                              )} />
-                            </div>
-                            {/* Desktop: Trade count text */}
-                            <div className="hidden lg:block text-[11px] 2xl:text-xs 3xl:text-sm text-muted-foreground">
-                              {day.tradesCount} trade{day.tradesCount > 1 ? 's' : ''}
-                            </div>
-                          </>
-                        )}
-                        
-                        {/* Metrics - Desktop only (weekdays only) */}
+                                // Mobile: very small text to prevent overflow, responsive to sidebar state
+                                'text-xs sm:text-sm lg:text-sm 2xl:text-base 3xl:text-lg 4xl:text-xl font-bold truncate',
+                                day.pnl > 0 ? 'text-green-500' : 'text-red-500'
+                              )}>
+                                {/* Mobile: Show very abbreviated currency */}
+                                <span className="lg:hidden">
+                                  {Math.abs(day.pnl) >= 1000 
+                                    ? `${day.pnl > 0 ? '+' : ''}${(day.pnl/1000).toFixed(0)}k`
+                                    : `${day.pnl > 0 ? '+' : ''}${Math.round(day.pnl)}`
+                                  }
+                                </span>
+                                {/* Desktop: Show full currency */}
+                                <span className="hidden lg:block">
+                                  {formatCurrency(day.pnl)}
+                                </span>
+                              </div>
+                            )}
+                            
+                            {/* Trade Count - Mobile: Show dot indicator, Desktop: Show count (weekdays only) */}
+                            {day.tradesCount > 0 && (
+                              <>
+                                {/* Mobile: Simple dot indicator */}
+                                <div className="lg:hidden flex justify-center mt-1">
+                                  <div className={cn(
+                                    "w-1 h-1 rounded-full",
+                                    day.pnl > 0 ? 'bg-green-500' : day.pnl < 0 ? 'bg-red-500' : 'bg-muted-foreground'
+                                  )} />
+                                </div>
+                                {/* Desktop: Trade count text */}
+                                <div className="hidden lg:block text-[11px] 2xl:text-xs 3xl:text-sm text-muted-foreground">
+                                  {day.tradesCount} trade{day.tradesCount > 1 ? 's' : ''}
+                                </div>
+                              </>
+                            )}
+                            
+                            {/* Metrics - Desktop only (weekdays only) */}
                     {day.tradesCount > 0 && (
-                          <div className="hidden lg:block text-[11px] 2xl:text-xs 3xl:text-sm text-muted-foreground space-y-0.5">
+                              <div className="hidden lg:block text-[11px] 2xl:text-xs 3xl:text-sm text-muted-foreground space-y-0.5">
                         <div>{day.avgRR.toFixed(1)}:1R, {day.winRate.toFixed(0)}%</div>
                       </div>
+                            )}
+                          </>
                         )}
                       </>
                     )}
@@ -814,9 +849,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
               {/* Weekly Summary - Desktop only (8th column) */}
             <motion.div
                 className={cn(
-                  "hidden lg:flex overflow-hidden bg-muted/30 border border-border/50 rounded-lg sm:rounded-xl hover:bg-muted/50 transition-all duration-300 aspect-[6/5] items-center justify-center cursor-pointer relative",
+                  "hidden lg:flex overflow-hidden bg-muted/30 border border-border/50 rounded-lg sm:rounded-xl hover:bg-muted/50 transition-all duration-300 aspect-[7/6] items-center justify-center cursor-pointer relative",
                   bothSidebarsExpanded 
-                    ? 'p-1 sm:p-2 lg:p-2 2xl:p-3 3xl:p-4' 
+                    ? 'p-1.5 sm:p-2 lg:p-2.5 2xl:p-3 3xl:p-4' 
                     : 'p-1.5 sm:p-2.5 lg:p-3 2xl:p-4 3xl:p-5',
                   getWeekReviewStatus(week) === 'completed' && 'ring-1 ring-green-500/30 bg-green-500/5',
                   getWeekReviewStatus(week) === 'available' && 'ring-1 ring-blue-500/30 bg-blue-500/5'
@@ -835,20 +870,45 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                   </div>
                 )}
                 
-              <div className="text-center space-y-2">
-                  <div className="text-sm 2xl:text-base 3xl:text-lg font-medium text-muted-foreground">
+              <div className="text-center space-y-1">
+                {bothSidebarsExpanded ? (
+                  // Ultra-compact weekly summary
+                  <>
+                    <div className="text-xs font-medium text-muted-foreground">
+                      W{weeklyData[weekIndex]?.weekNumber}
+                    </div>
+                    <div className={cn(
+                      'text-sm font-bold',
+                      weeklyData[weekIndex]?.totalPnl > 0 ? 'text-green-500' : 
+                      weeklyData[weekIndex]?.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
+                    )}>
+                      {weeklyData[weekIndex]?.totalPnl && Math.abs(weeklyData[weekIndex].totalPnl) >= 1000 
+                        ? `${weeklyData[weekIndex].totalPnl > 0 ? '+' : ''}${(weeklyData[weekIndex].totalPnl / 1000).toFixed(1)}k`
+                        : formatCurrency(weeklyData[weekIndex]?.totalPnl || 0)
+                      }
+                    </div>
+                    <div className="text-[10px] text-muted-foreground">
+                      {weeklyData[weekIndex]?.activeDays || 0}d
+                    </div>
+                  </>
+                ) : (
+                  // Normal weekly summary
+                  <>
+                    <div className="text-sm 2xl:text-base 3xl:text-lg font-medium text-muted-foreground">
                   Week {weeklyData[weekIndex]?.weekNumber}
                 </div>
                 <div className={cn(
-                    'text-lg 2xl:text-xl 3xl:text-2xl 4xl:text-3xl font-bold',
+                      'text-lg 2xl:text-xl 3xl:text-2xl 4xl:text-3xl font-bold',
                   weeklyData[weekIndex]?.totalPnl > 0 ? 'text-green-500' : 
                   weeklyData[weekIndex]?.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
                 )}>
                   {formatCurrency(weeklyData[weekIndex]?.totalPnl || 0)}
                 </div>
-                  <div className="text-xs 2xl:text-sm 3xl:text-base text-muted-foreground">
+                    <div className="text-xs 2xl:text-sm 3xl:text-base text-muted-foreground">
                   {weeklyData[weekIndex]?.activeDays || 0} days
                 </div>
+                  </>
+                )}
               </div>
             </motion.div>
             </div>

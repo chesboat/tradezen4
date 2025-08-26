@@ -36,7 +36,7 @@ export const useXpRewards = () => {
     showLevelUpToast,
     levelUpData,
     closeLevelUpToast,
-    canPrestige: profile?.xp?.canPrestige || false,
+    canPrestige: profile?.xp?.canPrestige ?? false,
     currentLevel: profile?.xp?.level || 1,
     prestige: profile?.xp?.prestige || 0
   };

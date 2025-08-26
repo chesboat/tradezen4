@@ -382,10 +382,10 @@ const GrowthCorner: React.FC = () => {
   const accountTrades = selectedAccountId ? trades.filter(t => t.accountId === selectedAccountId) : trades;
   const { wins: winningTrades } = summarizeWinLossScratch(accountTrades);
   
-  // Use new prestige system
+  // Use new prestige system with defensive null checks
   const currentLevel = profile?.xp?.level || 1;
   const prestige = profile?.xp?.prestige || 0;
-  const canPrestige = profile?.xp?.canPrestige || false;
+  const canPrestige = profile?.xp?.canPrestige ?? false;
   const seasonXp = profile?.xp?.seasonXp || 0;
   const totalXp = profile?.xp?.total || 0;
   

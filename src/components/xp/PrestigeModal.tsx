@@ -18,7 +18,7 @@ export const PrestigeModal: React.FC<PrestigeModalProps> = ({
   const { profile, prestige } = useUserProfileStore();
   const [isLoading, setIsLoading] = useState(false);
 
-  if (!profile?.xp.canPrestige) {
+  if (!profile?.xp?.canPrestige) {
     return null;
   }
 

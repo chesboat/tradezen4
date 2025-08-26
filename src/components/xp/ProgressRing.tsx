@@ -35,7 +35,12 @@ export const ProgressRing: React.FC<ProgressRingProps> = ({
       <svg
         width={config.diameter}
         height={config.diameter}
+        viewBox={`0 0 ${config.diameter} ${config.diameter}`}
         className="transform -rotate-90"
+        style={{ 
+          display: 'block',
+          shapeRendering: 'geometricPrecision'
+        }}
       >
         {/* Background circle */}
         <circle
@@ -46,6 +51,7 @@ export const ProgressRing: React.FC<ProgressRingProps> = ({
           strokeWidth={thickness}
           fill="none"
           className="text-muted/30"
+          style={{ vectorEffect: 'non-scaling-stroke' }}
         />
         
         {/* Progress circle */}
@@ -60,6 +66,7 @@ export const ProgressRing: React.FC<ProgressRingProps> = ({
           className="text-primary"
           style={{
             strokeDasharray: circumference,
+            vectorEffect: 'non-scaling-stroke'
           }}
           initial={{ strokeDashoffset: circumference }}
           animate={{ strokeDashoffset }}

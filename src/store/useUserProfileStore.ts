@@ -426,9 +426,27 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
           level: (data as any)?.xp?.level,
           prestige: (data as any)?.xp?.prestige,
         });
+        
+        // Ensure XP object is properly initialized
+        const rawXp = (data as any)?.xp || {};
+        const seasonXp = rawXp.seasonXp || 0;
+        const totalXp = rawXp.total || 0;
+        const prestige = rawXp.prestige || 0;
+        const level = rawXp.level || levelFromTotalXp(seasonXp).level;
+        
         const profile: UserProfile = {
           ...data,
           joinedAt: data.joinedAt ? new Date(data.joinedAt) : new Date(),
+          xp: {
+            total: totalXp,
+            seasonXp: seasonXp,
+            level: level,
+            prestige: prestige,
+            canPrestige: canPrestige(seasonXp),
+            history: rawXp.history || [],
+            lastLevelUpAt: rawXp.lastLevelUpAt ? new Date(rawXp.lastLevelUpAt) : undefined,
+            lastPrestigedAt: rawXp.lastPrestigedAt ? new Date(rawXp.lastPrestigedAt) : undefined,
+          }
         } as UserProfile;
         
         set({ profile });

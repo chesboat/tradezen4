@@ -407,7 +407,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
                         return (
                           <div
                             key={`${weekIndex}-${dayIndex}`}
-                            className={`${getDayClassName(day)} aspect-[6/5] w-full`}
+                            className={`${getDayClassName(day)} aspect-[7/6] w-full`}
                           >
                             <div className="flex flex-col h-full space-y-1">
                               {/* Date */}
@@ -465,7 +465,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
 
                       {/* Week Summary */}
                       <div className={cn(
-                        'relative p-3 rounded-xl border border-border/50 transition-all duration-200 cursor-pointer bg-card aspect-[6/5] w-full',
+                        'relative p-3 rounded-xl border border-border/50 transition-all duration-200 cursor-pointer bg-card aspect-[7/6] w-full',
                         weeklyData[weekIndex]?.totalPnl > 0 && 'border-green-500/30 bg-green-50/10',
                         weeklyData[weekIndex]?.totalPnl < 0 && 'border-red-500/30 bg-red-50/10',
                       )}>
