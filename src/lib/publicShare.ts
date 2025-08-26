@@ -142,6 +142,58 @@ export async function createPublicShareSnapshot(date: string, accountId: string,
     return urls;
   };
 
+  // Check if a URL is a blob URL that needs to be filtered out
+  const isBlobUrl = (url: string): boolean => {
+    return url.startsWith('blob:');
+  };
+
+  // Filter out blob URLs from arrays and log warnings
+  const filterBlobUrls = (urls: string[], context: string): string[] => {
+    const filtered = urls.filter(url => {
+      if (isBlobUrl(url)) {
+        console.warn(`🚨 Blob URL detected in ${context}:`, url);
+        return false;
+      }
+      return true;
+    });
+    
+    if (filtered.length !== urls.length) {
+      console.warn(`🚨 Filtered out ${urls.length - filtered.length} blob URLs from ${context}`);
+    }
+    
+    return filtered;
+  };
+
+  // Remove blob URLs from HTML content
+  const removeBlobUrlsFromHtml = (html: string): string => {
+    if (!html || typeof html !== 'string') return html;
+    
+    try {
+      const docEl = document.implementation.createHTMLDocument('tmp');
+      docEl.body.innerHTML = html;
+      const imgElements = docEl.body.querySelectorAll('img');
+      
+      let removedCount = 0;
+      imgElements.forEach((img) => {
+        const src = img.getAttribute('src');
+        if (src && isBlobUrl(src)) {
+          console.warn(`🚨 Removing blob URL from HTML:`, src);
+          img.remove();
+          removedCount++;
+        }
+      });
+      
+      if (removedCount > 0) {
+        console.warn(`🚨 Removed ${removedCount} blob URL images from HTML content`);
+      }
+      
+      return docEl.body.innerHTML;
+    } catch (e) {
+      console.error('Error processing HTML for blob URL removal:', e);
+      return html;
+    }
+  };
+
   // Resolve a Firebase Storage reference or legacy URL to a permanent download URL
   const storage = getStorage(app as any);
   
@@ -267,9 +319,14 @@ export async function createPublicShareSnapshot(date: string, accountId: string,
   const insightBlocks = await Promise.all((reflection?.insightBlocks || []).map(async (b) => {
     const galleryImagesRaw: string[] = options.includeImages ? ((b as any).images || []) : [];
     const inlineImagesRaw: string[] = options.includeImages ? extractImageUrlsFromHtml((b as any).content) : [];
+    
+    // Filter out blob URLs before processing
+    const filteredGalleryImages = filterBlobUrls(galleryImagesRaw, `gallery images for block "${b.title}"`);
+    const filteredInlineImages = filterBlobUrls(inlineImagesRaw, `inline images for block "${b.title}"`);
+    
     // Resolve all potential Storage URLs to downloadable URLs to avoid auth requirements on public page
-    const galleryImages = await Promise.all(galleryImagesRaw.map(url => resolveStorageUrl(url, shareId)));
-    const inlineImages = await Promise.all(inlineImagesRaw.map(url => resolveStorageUrl(url, shareId)));
+    const galleryImages = await Promise.all(filteredGalleryImages.map(url => resolveStorageUrl(url, shareId)));
+    const inlineImages = await Promise.all(filteredInlineImages.map(url => resolveStorageUrl(url, shareId)));
     const images = Array.from(new Set([...(galleryImages || []), ...(inlineImages || [])]));
     const blockId = generateId();
     
@@ -282,7 +339,10 @@ export async function createPublicShareSnapshot(date: string, accountId: string,
       galleryCount: galleryImages.length,
       inlineCount: inlineImages.length,
       galleryImagesRaw,
+      filteredGalleryImages,
       galleryImages,
+      inlineImagesRaw,
+      filteredInlineImages,
       sampleProcessedImage: images[0]
     });
     
@@ -290,10 +350,11 @@ export async function createPublicShareSnapshot(date: string, accountId: string,
     if (images.length > 0) {
       imageCollections.push({ blockId, images });
     }
-    // Replace inline storage URLs inside the HTML content so public page doesn't need to resolve them
+    // Clean blob URLs from HTML content and replace inline storage URLs
+    const cleanedContent = removeBlobUrlsFromHtml(b.content || '');
     const replacedContent = options.includeImages 
-      ? await replaceInlineStorageUrls((b.content || ''), shareId)
-      : (b.content || '');
+      ? await replaceInlineStorageUrls(cleanedContent, shareId)
+      : cleanedContent;
     // Queue full block content to be written in a separate collection
     blocksToWrite.push({
       blockId,

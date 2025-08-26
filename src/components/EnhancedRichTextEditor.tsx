@@ -80,6 +80,22 @@ export const EnhancedRichTextEditor: React.FC<EnhancedRichTextEditorProps> = ({
         // Light mode: prose (black text), Dark mode: invert
         class: 'prose dark:prose-invert max-w-none focus:outline-none min-h-[120px] p-3',
       },
+      handlePaste: (view, event, slice) => {
+        // Intercept paste events to handle images properly
+        const items = Array.from(event.clipboardData?.items || []);
+        const imageItem = items.find(item => item.type.startsWith('image/'));
+        
+        if (imageItem) {
+          event.preventDefault();
+          const file = imageItem.getAsFile();
+          if (file) {
+            handleImageUpload(file);
+          }
+          return true; // Prevent default paste behavior
+        }
+        
+        return false; // Allow default paste behavior for non-images
+      },
     },
     onFocus: () => setShowToolbar(true),
     onBlur: ({ event }) => {
