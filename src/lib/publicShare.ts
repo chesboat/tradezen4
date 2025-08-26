@@ -184,16 +184,27 @@ export async function createPublicShareSnapshot(date: string, accountId: string,
       const bucketName = import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 
                         originalUrl.match(/\/b\/([^/]+)\//)?.[1];
       
+      console.log('🔧 generatePublicImageUrl:', { 
+        originalUrl, 
+        storagePath, 
+        bucketName, 
+        envBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET 
+      });
+      
       if (!bucketName) {
+        console.warn('⚠️ No bucket name found, falling back to SDK method');
         // Fallback to SDK method
         const sourceRef = storageRef(storage, storagePath);
-        return await getDownloadURL(sourceRef);
+        const sdkUrl = await getDownloadURL(sourceRef);
+        console.log('🔧 SDK fallback URL:', sdkUrl);
+        return sdkUrl;
       }
       
       // Create a public download URL using the REST API format
       const encodedPath = encodeURIComponent(storagePath);
       const publicUrl = `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/${encodedPath}?alt=media`;
       
+      console.log('🔧 Generated public URL:', { originalUrl, publicUrl });
       return publicUrl;
     } catch (error) {
       console.warn('Failed to generate public image URL:', error);
@@ -269,7 +280,10 @@ export async function createPublicShareSnapshot(date: string, accountId: string,
       includeImages: options.includeImages,
       blockId,
       galleryCount: galleryImages.length,
-      inlineCount: inlineImages.length
+      inlineCount: inlineImages.length,
+      galleryImagesRaw,
+      galleryImages,
+      sampleProcessedImage: images[0]
     });
     
     // Store images separately if they exist
