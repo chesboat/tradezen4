@@ -184,13 +184,14 @@ const loadShareBlocks = async (shareId: string): Promise<{ [blockId: string]: an
   }
 };
 
-// Resolve any Firebase Storage JSON API image URLs in HTML to signed download URLs
+// Resolve any Firebase Storage JSON API image URLs in HTML to public download URLs
 const resolveInlineStorageLinksInHtml = async (html: string): Promise<string> => {
   if (!html || typeof html !== 'string' || html.indexOf('/o?name=') === -1) return html;
-  const storage = getStorage(app as any);
+  
   const docEl = document.implementation.createHTMLDocument('tmp');
   docEl.body.innerHTML = html;
   const imgEls = Array.from(docEl.body.querySelectorAll('img')) as HTMLImageElement[];
+  
   await Promise.all(imgEls.map(async (img) => {
     const src = img.getAttribute('src') || '';
     if (/\/o\?name=/.test(src) && !/alt=media/.test(src)) {
@@ -198,9 +199,18 @@ const resolveInlineStorageLinksInHtml = async (html: string): Promise<string> =>
         const u = new URL(src);
         const pathParam = u.searchParams.get('name');
         if (pathParam) {
-          const storageRef = ref(storage, decodeURIComponent(pathParam));
-          const dl = await getDownloadURL(storageRef);
-          img.setAttribute('src', dl);
+          const storagePath = decodeURIComponent(pathParam);
+          
+          // Get the storage bucket from the URL or environment
+          const bucketName = import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 
+                            src.match(/\/b\/([^/]+)\//)?.[1];
+          
+          if (bucketName) {
+            // Create a public download URL using the REST API format
+            const encodedPath = encodeURIComponent(storagePath);
+            const publicUrl = `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/${encodedPath}?alt=media`;
+            img.setAttribute('src', publicUrl);
+          }
         }
       } catch {
         // ignore
