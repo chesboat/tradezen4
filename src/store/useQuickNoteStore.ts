@@ -129,43 +129,50 @@ export const useQuickNoteStore = create<QuickNoteState>((set, get) => ({
 
   // Upload an image Blob/File and return a URL
   uploadImage: async (file: Blob | File): Promise<string> => {
-    // Temporarily use Cloudinary to bypass CORS issues
-    console.log('🔧 uploadImage: Using Cloudinary to bypass CORS issues');
+    console.log('🔧 uploadImage: Trying multiple Cloudinary configurations');
     
-    // Use a demo Cloudinary account for now
-    const cloudName = 'demo'; // Cloudinary's demo account
-    const uploadPreset = 'ml_default'; // Default unsigned preset
+    // Try multiple Cloudinary configurations
+    const configs = [
+      { cloudName: 'demo', preset: 'ml_default' },
+      { cloudName: 'dqzrmo9xz', preset: 'ml_default' },
+      { cloudName: 'demo', preset: 'unsigned_preset' },
+    ];
     
-    const form = new FormData();
-    form.append('file', file);
-    form.append('upload_preset', uploadPreset);
-    form.append('folder', 'tradezen4_quickNotes');
-    
-    try {
-      const resp = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-        method: 'POST',
-        body: form
-      });
-      
-      if (!resp.ok) {
-        const txt = await resp.text();
-        console.error('🚨 Cloudinary upload failed:', resp.status, txt);
-        throw new Error(`Cloudinary upload failed: ${resp.status} ${txt}`);
+    for (const config of configs) {
+      try {
+        console.log(`🔧 Trying Cloudinary config: ${config.cloudName}/${config.preset}`);
+        
+        const form = new FormData();
+        form.append('file', file);
+        form.append('upload_preset', config.preset);
+        form.append('folder', 'tradezen4_quickNotes');
+        
+        const resp = await fetch(`https://api.cloudinary.com/v1_1/${config.cloudName}/image/upload`, {
+          method: 'POST',
+          body: form
+        });
+        
+        if (resp.ok) {
+          const json = await resp.json();
+          if (json.secure_url) {
+            console.log('🔧 uploadImage: Cloudinary upload successful', { 
+              config: `${config.cloudName}/${config.preset}`,
+              originalSize: file.size, 
+              cloudinaryUrl: json.secure_url 
+            });
+            return json.secure_url as string;
+          }
+        } else {
+          const txt = await resp.text();
+          console.warn(`🚨 Config ${config.cloudName}/${config.preset} failed:`, resp.status, txt);
+        }
+      } catch (error) {
+        console.warn(`🚨 Config ${config.cloudName}/${config.preset} error:`, error);
       }
-      
-      const json = await resp.json();
-      if (!json.secure_url) throw new Error('Cloudinary response missing secure_url');
-      
-      console.log('🔧 uploadImage: Cloudinary upload successful', { 
-        originalSize: file.size, 
-        cloudinaryUrl: json.secure_url 
-      });
-      
-      return json.secure_url as string;
-    } catch (error) {
-      console.error('🚨 Cloudinary upload error:', error);
-      throw error;
     }
+    
+    // If all Cloudinary configs fail, throw an error
+    throw new Error('All Cloudinary configurations failed. Please set up your own Cloudinary account.');
     
     // Keep Firebase Storage code as fallback (commented out due to CORS)
     /*
