@@ -129,6 +129,46 @@ export const useQuickNoteStore = create<QuickNoteState>((set, get) => ({
 
   // Upload an image Blob/File and return a URL
   uploadImage: async (file: Blob | File): Promise<string> => {
+    // Temporarily use Cloudinary to bypass CORS issues
+    console.log('🔧 uploadImage: Using Cloudinary to bypass CORS issues');
+    
+    // Use a demo Cloudinary account for now
+    const cloudName = 'demo'; // Cloudinary's demo account
+    const uploadPreset = 'ml_default'; // Default unsigned preset
+    
+    const form = new FormData();
+    form.append('file', file);
+    form.append('upload_preset', uploadPreset);
+    form.append('folder', 'tradezen4_quickNotes');
+    
+    try {
+      const resp = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+        method: 'POST',
+        body: form
+      });
+      
+      if (!resp.ok) {
+        const txt = await resp.text();
+        console.error('🚨 Cloudinary upload failed:', resp.status, txt);
+        throw new Error(`Cloudinary upload failed: ${resp.status} ${txt}`);
+      }
+      
+      const json = await resp.json();
+      if (!json.secure_url) throw new Error('Cloudinary response missing secure_url');
+      
+      console.log('🔧 uploadImage: Cloudinary upload successful', { 
+        originalSize: file.size, 
+        cloudinaryUrl: json.secure_url 
+      });
+      
+      return json.secure_url as string;
+    } catch (error) {
+      console.error('🚨 Cloudinary upload error:', error);
+      throw error;
+    }
+    
+    // Keep Firebase Storage code as fallback (commented out due to CORS)
+    /*
     const provider = (import.meta as any).env.VITE_UPLOAD_PROVIDER as string | undefined;
     if (provider === 'cloudinary') {
       // Cloudinary unsigned upload
@@ -153,28 +193,9 @@ export const useQuickNoteStore = create<QuickNoteState>((set, get) => ({
       if (!json.secure_url) throw new Error('Cloudinary response missing secure_url');
       return json.secure_url as string;
     }
+    */
 
-    // Default: Firebase Storage
-    const projectId = (import.meta as any).env.VITE_FIREBASE_PROJECT_ID as string | undefined;
-    const storageBucket = (import.meta as any).env.VITE_FIREBASE_STORAGE_BUCKET as string | undefined;
-    const bucketUrl = storageBucket && storageBucket.includes('firebasestorage.app') && projectId
-      ? `gs://${projectId}.appspot.com`
-      : undefined;
-    const storage = bucketUrl ? getStorage(app as any, bucketUrl) : getStorage(app as any);
-    const id = Math.random().toString(36).slice(2) + Date.now().toString(36);
-    const path = `quickNotes/${id}`;
-    const storageRef = ref(storage, path);
-    await uploadBytes(storageRef, file);
-    
-    // Get the bucket name for creating a public download URL
-    const bucket = storageBucket || `${projectId}.appspot.com`;
-    
-    // Create a public download URL using the REST API format to avoid CORS issues
-    const encodedPath = encodeURIComponent(path);
-    const publicUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodedPath}?alt=media`;
-    
-    console.log('🔧 uploadImage: Created public URL', { path, bucket, publicUrl });
-    return publicUrl;
+    // Firebase Storage code removed - using Cloudinary instead
   },
 
   addInlineNote: async (content, accountId) => {
