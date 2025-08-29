@@ -3,9 +3,12 @@ import { useCallback, useEffect, useState } from 'react';
 export function useScrollShadows<T extends HTMLElement>() {
   const [hasTop, setHasTop] = useState(false);
   const [hasBottom, setHasBottom] = useState(false);
+  const [hasOverflow, setHasOverflow] = useState(false);
 
   const update = useCallback((el: HTMLElement) => {
     const { scrollTop, scrollHeight, clientHeight } = el;
+    const overflow = scrollHeight > clientHeight + 1;
+    setHasOverflow(overflow);
     setHasTop(scrollTop > 0);
     setHasBottom(scrollTop + clientHeight < scrollHeight - 1);
   }, []);
@@ -15,6 +18,19 @@ export function useScrollShadows<T extends HTMLElement>() {
     const onScroll = () => update(el);
     update(el);
     el.addEventListener('scroll', onScroll, { passive: true });
+
+    // Observe size/content changes to recompute overflow state
+    let ro: ResizeObserver | undefined;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(() => update(el));
+      ro.observe(el);
+    } else {
+      // Fallback to window resize
+      const onResize = () => update(el);
+      window.addEventListener('resize', onResize);
+      // Store cleanup on element for closure
+      (el as any).__tz_onResize = onResize;
+    }
 
     // One-time scroll nudge to hint scrollability
     try {
@@ -33,10 +49,15 @@ export function useScrollShadows<T extends HTMLElement>() {
       // ignore storage errors
     }
 
-    return () => el.removeEventListener('scroll', onScroll);
+    return () => {
+      el.removeEventListener('scroll', onScroll);
+      if (ro) ro.disconnect();
+      const onResize = (el as any).__tz_onResize as (() => void) | undefined;
+      if (onResize) window.removeEventListener('resize', onResize);
+    };
   }, [update]);
 
-  return { attach, hasTop, hasBottom };
+  return { attach, hasTop, hasBottom, hasOverflow };
 }
 
 

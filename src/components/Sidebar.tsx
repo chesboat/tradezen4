@@ -337,7 +337,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
         className={cn(
           "flex-1 scrollable scroll-hint", 
           navScroll.hasTop && 'has-top',
-          navScroll.hasBottom && 'has-bottom'
+          navScroll.hasBottom && 'has-bottom',
+          !navScroll.hasOverflow && 'no-overflow'
         )}
         style={{
           scrollbarWidth: 'thin',

@@ -276,6 +276,8 @@
   }
   .scroll-hint.has-top::before { opacity: 1; }
   .scroll-hint.has-bottom::after { opacity: 1; }
+  .scroll-hint.no-overflow::before,
+  .scroll-hint.no-overflow::after { opacity: 0 !important; }
   
   /* Subtle overlay scrollbar styling */
   .scrollable { 

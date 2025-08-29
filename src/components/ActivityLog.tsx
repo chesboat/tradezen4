@@ -386,7 +386,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ className }) => {
 
 const ScrollableSectionWithShadows: React.FC<{ refObj?: React.RefObject<HTMLDivElement>; padding?: string; children: React.ReactNode }>
   = ({ refObj, padding = 'p-0', children }) => {
-  const { attach, hasTop, hasBottom } = useScrollShadows<HTMLDivElement>();
+  const { attach, hasTop, hasBottom, hasOverflow } = useScrollShadows<HTMLDivElement>();
   return (
     <div
       ref={(el) => {
@@ -397,7 +397,7 @@ const ScrollableSectionWithShadows: React.FC<{ refObj?: React.RefObject<HTMLDivE
         }
         attach(el);
       }}
-      className={`h-full ${padding} space-y-2 scrollable scroll-hint ${hasTop ? 'has-top' : ''} ${hasBottom ? 'has-bottom' : ''}`}
+      className={`h-full ${padding} space-y-2 scrollable scroll-hint ${hasTop ? 'has-top' : ''} ${hasBottom ? 'has-bottom' : ''} ${!hasOverflow ? 'no-overflow' : ''}`}
     >
       {children}
     </div>
