@@ -30,12 +30,18 @@ export const JournalView: React.FC = () => {
     }
   }, [accounts, selectedAccountId, reflectionData]);
   return (
-    <ErrorBoundary>
+    <ErrorBoundary label="JournalView Root">
       <div className="h-full flex flex-col">
-        <DebugJournalBanner />
-        <SmartTagFilterBar />
+        <ErrorBoundary label="DebugBanner">
+          <DebugJournalBanner />
+        </ErrorBoundary>
+        <ErrorBoundary label="SmartTagFilterBar">
+          <SmartTagFilterBar />
+        </ErrorBoundary>
         <div className="flex-1 overflow-auto">
-          <JournalTimeline />
+          <ErrorBoundary label="JournalTimeline">
+            <JournalTimeline />
+          </ErrorBoundary>
         </div>
       </div>
     </ErrorBoundary>
