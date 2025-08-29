@@ -3,6 +3,8 @@ import { useReflectionTemplateStore } from '@/store/useReflectionTemplateStore';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
 import { JournalTimeline } from './JournalTimeline';
 import { SmartTagFilterBar } from './SmartTagFilterBar';
+import { ErrorBoundary } from './ui/ErrorBoundary';
+import { DebugJournalBanner } from './DebugJournalBanner';
 
 export const JournalView: React.FC = () => {
   const accounts = useAccountFilterStore((s) => s.accounts);
@@ -28,11 +30,14 @@ export const JournalView: React.FC = () => {
     }
   }, [accounts, selectedAccountId, reflectionData]);
   return (
-    <div className="h-full flex flex-col">
-      <SmartTagFilterBar />
-      <div className="flex-1 overflow-auto">
-        <JournalTimeline />
+    <ErrorBoundary>
+      <div className="h-full flex flex-col">
+        <DebugJournalBanner />
+        <SmartTagFilterBar />
+        <div className="flex-1 overflow-auto">
+          <JournalTimeline />
+        </div>
       </div>
-    </div>
+    </ErrorBoundary>
   );
 }; 
