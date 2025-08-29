@@ -578,32 +578,32 @@ export const ReflectionTemplateManager: React.FC<ReflectionTemplateManagerProps>
   const isCompletedToday = currentReflection?.completionScore && currentReflection.totalXP > 0;
 
   return (
-    <div className={cn("space-y-6", className)}>
+    <div className={cn("space-y-6 overflow-x-hidden max-w-full w-full", className)}>
       {/* Header with stats and controls */}
-      <div className="flex items-center justify-between p-4 bg-gradient-to-r from-primary/5 to-secondary/5 rounded-xl border border-border/50">
-        <div className="flex items-center gap-4">
+      <div className="flex items-center justify-between p-4 bg-gradient-to-r from-primary/5 to-secondary/5 rounded-xl border border-border/50 overflow-x-hidden">
+        <div className="flex items-center gap-4 min-w-0">
           <div className="flex items-center gap-2">
             <Target className="w-5 h-5 text-primary" />
             <h3 className="text-lg font-semibold">Insight Blocks</h3>
           </div>
           
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <span>{sortedBlocks.length} blocks</span>
-            <span>{totalWordCount} words</span>
+          <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm text-muted-foreground min-w-0">
+            <span className="truncate">{sortedBlocks.length} blocks</span>
+            <span className="truncate">{totalWordCount} words</span>
             <div className="flex items-center gap-1">
-              <div className="w-16 bg-muted rounded-full h-2">
+              <div className="w-14 sm:w-16 bg-muted rounded-full h-2">
                 <div 
                   className="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all duration-500"
                   style={{ width: `${completionScore}%` }}
                 />
               </div>
-              <span>{completionScore}%</span>
+              <span className="whitespace-nowrap">{completionScore}%</span>
             </div>
 
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           {/* AI Generate Button */}
           <motion.button
             onClick={handleGenerateAITemplate}
@@ -640,7 +640,7 @@ export const ReflectionTemplateManager: React.FC<ReflectionTemplateManagerProps>
                   initial={{ opacity: 0, y: -10, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                  className="absolute top-full right-0 mt-2 w-72 bg-popover text-popover-foreground border border-border rounded-xl shadow-xl z-[70] max-h-80 overflow-y-auto custom-scrollbar"
+                  className="absolute top-full right-0 mt-2 w-72 max-w-[90vw] bg-popover text-popover-foreground border border-border rounded-xl shadow-xl z-[70] max-h-80 overflow-y-auto custom-scrollbar"
                 >
                   <div className="p-3 border-b border-border">
                     <h4 className="font-semibold text-sm">Choose Template Block</h4>
