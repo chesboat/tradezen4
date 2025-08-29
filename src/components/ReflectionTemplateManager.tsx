@@ -191,10 +191,35 @@ export const ReflectionTemplateManager: React.FC<ReflectionTemplateManagerProps>
   // Local state
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
   const [showFavoritesManager, setShowFavoritesManager] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, right: 16 });
+  const dropdownTriggerRef = useRef<HTMLButtonElement>(null);
   const [completionScore, setCompletionScore] = useState(0);
   const [totalWordCount, setTotalWordCount] = useState(0);
   const [isInitializing, setIsInitializing] = useState(true);
   const [currentReflection, setCurrentReflection] = useState<any>(null);
+
+  // Calculate dropdown position when it opens
+  useEffect(() => {
+    if (showTemplateSelector && dropdownTriggerRef.current) {
+      const rect = dropdownTriggerRef.current.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const dropdownWidth = 288; // w-72 = 18rem = 288px
+      
+      // Calculate right position to keep dropdown in viewport
+      let rightPos = viewportWidth - rect.right;
+      if (rightPos < 16) rightPos = 16; // Minimum 16px from right edge
+      if (rect.right - dropdownWidth < 16) {
+        // If dropdown would go off left side, align to left edge with padding
+        rightPos = viewportWidth - rect.left - dropdownWidth;
+        if (rightPos < 16) rightPos = 16;
+      }
+      
+      setDropdownPosition({
+        top: rect.bottom + 8,
+        right: rightPos
+      });
+    }
+  }, [showTemplateSelector]);
 
   // Initialize reflection data
   useEffect(() => {
@@ -650,6 +675,7 @@ export const ReflectionTemplateManager: React.FC<ReflectionTemplateManagerProps>
           {/* Add Block Button */}
           <div className="relative">
             <motion.button
+              ref={dropdownTriggerRef}
               onClick={() => setShowTemplateSelector(!showTemplateSelector)}
               className="flex items-center gap-2 px-3 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
               whileHover={{ scale: 1.05 }}
@@ -667,7 +693,11 @@ export const ReflectionTemplateManager: React.FC<ReflectionTemplateManagerProps>
                   initial={{ opacity: 0, y: -10, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                  className="absolute top-full right-0 mt-2 w-72 max-w-[92vw] bg-popover text-popover-foreground border border-border rounded-xl shadow-xl z-[70] max-h-80 overflow-y-auto custom-scrollbar"
+                  className="fixed w-72 max-w-[calc(100vw-2rem)] bg-popover text-popover-foreground border border-border rounded-xl shadow-xl z-[9999] max-h-80 overflow-y-auto custom-scrollbar"
+                  style={{
+                    top: `${dropdownPosition.top}px`,
+                    right: `${dropdownPosition.right}px`
+                  }}
                 >
                   <div className="p-3 border-b border-border">
                     <h4 className="font-semibold text-sm">Choose Template Block</h4>
