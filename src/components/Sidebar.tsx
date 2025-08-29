@@ -335,8 +335,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
       <nav 
         ref={navScroll.attach as any}
         className={cn(
-          "flex-1 p-4 scrollable scroll-hint", 
-          isExpanded ? 'space-y-2' : 'space-y-3',
+          "flex-1 scrollable scroll-hint", 
           navScroll.hasTop && 'has-top',
           navScroll.hasBottom && 'has-bottom'
         )}
@@ -345,11 +344,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
           scrollbarColor: 'hsl(var(--border)) transparent'
         }}
       >
-        {navItems.map((item) => (
-          <div key={item.id} className={cn(!isExpanded && 'flex justify-center')}> 
-            <NavItem item={item} isExpanded={isExpanded} />
-          </div>
-        ))}
+        <div className={cn('p-4', isExpanded ? 'space-y-2' : 'space-y-3')}>
+          {navItems.map((item) => (
+            <div key={item.id} className={cn(!isExpanded && 'flex justify-center')}> 
+              <NavItem item={item} isExpanded={isExpanded} />
+            </div>
+          ))}
+        </div>
       </nav>
 
       {/* Quick Actions */}

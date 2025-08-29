@@ -325,8 +325,9 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ className }) => {
       {/* Activity Feed - Only when expanded */}
       {isExpanded && (
         <div className="flex-1 overflow-hidden">
-          <ScrollableSectionWithShadows refObj={scrollContainerRef} padding="p-4">
-            <AnimatePresence mode="popLayout">
+          <ScrollableSectionWithShadows refObj={scrollContainerRef} padding="p-0">
+            <div className="p-4 space-y-2">
+              <AnimatePresence mode="popLayout">
               {filteredActivities.map((activity) => (
                 <motion.div
                   key={activity.id}
@@ -338,7 +339,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ className }) => {
                   <ActivityItem activity={activity} isExpanded={isExpanded} />
                 </motion.div>
               ))}
-            </AnimatePresence>
+              </AnimatePresence>
 
             {isLoadingMore && (
               <div className="flex items-center justify-center py-4">
@@ -355,6 +356,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ className }) => {
                 </p>
               </div>
             )}
+            </div>
           </ScrollableSectionWithShadows>
         </div>
       )}
@@ -362,7 +364,8 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ className }) => {
       {/* Collapsed State - Only when collapsed */}
       {!isExpanded && (
         <div className="flex-1 overflow-hidden">
-          <ScrollableSectionWithShadows padding="p-2">
+          <ScrollableSectionWithShadows padding="p-0">
+            <div className="p-2 space-y-2">
             {filteredActivities.slice(0, 10).map((activity) => (
               <ActivityItem key={activity.id} activity={activity} isExpanded={false} />
             ))}
@@ -373,6 +376,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ className }) => {
                 <p className="text-xs text-muted-foreground">No activity</p>
               </div>
             )}
+            </div>
           </ScrollableSectionWithShadows>
         </div>
       )}

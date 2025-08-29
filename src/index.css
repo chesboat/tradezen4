@@ -285,10 +285,13 @@
     /* Hide native scrollbars for a cleaner sidebar */
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none; /* IE 10+ */
+    /* Hint correct palette for overlay scrollbars */
+    color-scheme: light;
   }
   .scrollable::-webkit-scrollbar { width: 0; height: 0; }
   .scrollable::-webkit-scrollbar-track { background: transparent; }
   .scrollable::-webkit-scrollbar-thumb { background: transparent; }
+  .dark .scrollable { color-scheme: dark; }
   
   .bg-grid {
     background-image: 
