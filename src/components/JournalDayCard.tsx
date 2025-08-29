@@ -73,13 +73,15 @@ export const JournalDayCard: React.FC<JournalDayCardProps> = ({
       r.date === date && r.accountId === selectedAccountId
     );
   }, [reflections, date, selectedAccountId]);
-  // Get mood timeline and cleanup duplicates
-  const moodTimeline = useMemo(() => {
-    // Clean up duplicates first
+  // Clean up duplicates when data changes (not during render)
+  useEffect(() => {
     cleanupDuplicateMoodEntries(date);
-    // Then get the cleaned timeline
+  }, [date, reflections]);
+
+  // Get mood timeline (pure computation only)
+  const moodTimeline = useMemo(() => {
     return getMoodTimeline(date);
-  }, [date, reflections, trades, notes]); // Removed function references from dependencies
+  }, [date, reflections]);
 
   // Component state
 
