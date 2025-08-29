@@ -13,12 +13,8 @@ export const JournalView: React.FC = () => {
 
   // Ensure reflections are loaded on mount to avoid blank mobile page
   React.useEffect(() => {
-    // Run only once on mount to avoid infinite loops
-    const loadedOnce = (window as any).__JOURNAL_REMOTE_LOADED__;
-    if (loadedOnce) return;
-    (window as any).__JOURNAL_REMOTE_LOADED__ = true;
-    console.log('[DEBUG] JournalView Mount (once)', {
-      accountsCount: accounts?.length ?? 0,
+    console.log('[DEBUG] JournalView Mount', {
+      accounts,
       selectedAccountId,
       reflectionDataCount: reflectionData?.length || 0,
     });
@@ -32,7 +28,7 @@ export const JournalView: React.FC = () => {
     } catch (e) {
       console.error('[DEBUG] Error loading remote:', e);
     }
-  }, []);
+  }, [accounts, selectedAccountId, reflectionData]);
   return (
     <ErrorBoundary label="JournalView Root">
       <div className="h-full flex flex-col">
