@@ -572,39 +572,38 @@ export const ReflectionTemplateManager: React.FC<ReflectionTemplateManagerProps>
     }
   };
 
-  const sortedBlocks = (currentReflection?.insightBlocks || [])
-    .slice()
-    .sort((a, b) => (a.order || 0) - (b.order || 0));
+  const sortedBlocks = currentReflection?.insightBlocks
+    .sort((a, b) => a.order - b.order) || [];
 
   const isCompletedToday = currentReflection?.completionScore && currentReflection.totalXP > 0;
 
   return (
     <div className={cn("space-y-6", className)}>
       {/* Header with stats and controls */}
-      <div className="flex items-center justify-between p-3 sm:p-4 bg-gradient-to-r from-primary/5 to-secondary/5 rounded-xl border border-border/50">
+      <div className="flex items-center justify-between p-4 bg-gradient-to-r from-primary/5 to-secondary/5 rounded-xl border border-border/50">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <Target className="w-5 h-5 text-primary" />
-            <h3 className="text-base sm:text-lg font-semibold">Insight Blocks</h3>
+            <h3 className="text-lg font-semibold">Insight Blocks</h3>
           </div>
           
-          <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
-            <span className="whitespace-nowrap">{sortedBlocks.length} blocks</span>
-            <span className="whitespace-nowrap">{totalWordCount} words</span>
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <span>{sortedBlocks.length} blocks</span>
+            <span>{totalWordCount} words</span>
             <div className="flex items-center gap-1">
-              <div className="w-12 sm:w-16 bg-muted rounded-full h-2">
+              <div className="w-16 bg-muted rounded-full h-2">
                 <div 
                   className="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all duration-500"
                   style={{ width: `${completionScore}%` }}
                 />
               </div>
-              <span className="whitespace-nowrap">{completionScore}%</span>
+              <span>{completionScore}%</span>
             </div>
 
           </div>
         </div>
 
-        <div className="hidden sm:flex items-center gap-2">
+        <div className="flex items-center gap-2">
           {/* AI Generate Button */}
           <motion.button
             onClick={handleGenerateAITemplate}

@@ -24,8 +24,6 @@ interface ReflectionHubProps {
 
 export const ReflectionHub: React.FC<ReflectionHubProps> = ({ date, className }) => {
   const { selectedAccountId } = useAccountFilterStore();
-  const accounts = useAccountFilterStore((s) => s.accounts);
-  const effectiveAccountId = selectedAccountId || accounts[0]?.id || null;
   const { reflectionData } = useReflectionTemplateStore();
   const { getReflectionByDate, upsertReflectionForSelection } = useDailyReflectionStore();
   
@@ -37,15 +35,15 @@ export const ReflectionHub: React.FC<ReflectionHubProps> = ({ date, className })
   
   // Check if user has any reflection data for this date
   const hasReflectionData = reflectionData.some(
-    r => r.date === date && (!!effectiveAccountId ? r.accountId === effectiveAccountId : true) && r.insightBlocks.length > 0
+    r => r.date === date && r.accountId === selectedAccountId && r.insightBlocks.length > 0
   );
 
   // Load existing general thoughts
   React.useEffect(() => {
-    if (!effectiveAccountId) return;
-    const existing = getReflectionByDate(date, effectiveAccountId);
+    if (!selectedAccountId) return;
+    const existing = getReflectionByDate(date, selectedAccountId);
     setGeneralThoughts(existing?.reflection || '');
-  }, [date, effectiveAccountId, getReflectionByDate]);
+  }, [date, selectedAccountId, getReflectionByDate]);
 
   // Debounced save for general thoughts (persist both plain text and rich JSON placeholder when added)
   const saveThoughts = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -54,9 +52,9 @@ export const ReflectionHub: React.FC<ReflectionHubProps> = ({ date, className })
     if (saveThoughts.current) clearTimeout(saveThoughts.current);
     setIsSavingThoughts(true);
     saveThoughts.current = setTimeout(async () => {
-      if (!effectiveAccountId) return;
+      if (!selectedAccountId) return;
       try {
-        await upsertReflectionForSelection(date, { reflection: value }, effectiveAccountId);
+        await upsertReflectionForSelection(date, { reflection: value }, selectedAccountId);
         setLastSavedAt(new Date());
       } finally {
         setIsSavingThoughts(false);
@@ -67,19 +65,19 @@ export const ReflectionHub: React.FC<ReflectionHubProps> = ({ date, className })
   return (
     <div className={cn("space-y-6", className)}>
       {/* Insight Blocks Header */}
-      <div className="flex items-center justify-between p-3 sm:p-4 bg-gradient-to-r from-primary/5 to-secondary/5 rounded-xl border border-border/50">
+      <div className="flex items-center justify-between p-4 bg-gradient-to-r from-primary/5 to-secondary/5 rounded-xl border border-border/50">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-primary/10 rounded-lg">
             <Layers className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-2">
+            <h2 className="text-xl font-semibold flex items-center gap-2">
               Insight Blocks
               <span className="px-2 py-0.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full text-xs font-bold">
                 2.0
               </span>
             </h2>
-            <p className="text-xs sm:text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Multi-block reflection system with AI suggestions
             </p>
           </div>
@@ -88,7 +86,7 @@ export const ReflectionHub: React.FC<ReflectionHubProps> = ({ date, className })
         {/* Template Editor Button */}
         <motion.button
           onClick={() => setShowTemplateEditor(true)}
-          className="hidden sm:flex items-center gap-2 px-3 py-2 bg-secondary text-secondary-foreground rounded-lg font-medium hover:bg-secondary/90 transition-colors"
+          className="flex items-center gap-2 px-3 py-2 bg-secondary text-secondary-foreground rounded-lg font-medium hover:bg-secondary/90 transition-colors"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
@@ -161,25 +159,25 @@ export const ReflectionHub: React.FC<ReflectionHubProps> = ({ date, className })
           </div>
         </div>
         <TipTapEditor
-          initialJSON={effectiveAccountId ? getReflectionByDate(date, effectiveAccountId)?.reflectionRich : undefined}
+          initialJSON={selectedAccountId ? getReflectionByDate(date, selectedAccountId)?.reflectionRich : undefined}
           onUpdateJSON={(json, plain) => {
             handleThoughtsChange(plain);
             // Save rich JSON as well
-            if (effectiveAccountId) {
-              upsertReflectionForSelection(date, { reflectionRich: json }, effectiveAccountId);
+            if (selectedAccountId) {
+              upsertReflectionForSelection(date, { reflectionRich: json }, selectedAccountId);
             }
           }}
           placeholder="Write anything that's on your mind today… Use / for commands, **bold**, *italic*, and checklists."
           onConvertSelectionToInsight={(text) => {
-            if (!effectiveAccountId) return;
-            const existing = getReflectionByDate(date, effectiveAccountId);
+            if (!selectedAccountId) return;
+            const existing = getReflectionByDate(date, selectedAccountId);
             if (!existing) return;
             // Create an Insight Block with selected text
             // Defer to the template store
             // Import store lazily to avoid circular imports
             import('@/store/useReflectionTemplateStore').then(({ useReflectionTemplateStore }) => {
               const { addInsightBlock, createOrUpdateReflection } = useReflectionTemplateStore.getState() as any;
-              const safeReflection = createOrUpdateReflection(date, effectiveAccountId!, { insightBlocks: (existing as any).insightBlocks || [] });
+              const safeReflection = createOrUpdateReflection(date, selectedAccountId!, { insightBlocks: (existing as any).insightBlocks || [] });
               addInsightBlock(safeReflection.id, {
                 title: 'Insight',
                 content: text,
@@ -202,7 +200,7 @@ export const ReflectionHub: React.FC<ReflectionHubProps> = ({ date, className })
                 maxProgress: 1,
                 xpReward: 25,
                 dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
-                accountId: effectiveAccountId || 'all',
+                accountId: selectedAccountId || 'all',
               }).then(q => pinQuest(q.id));
             });
           }}
