@@ -12,6 +12,9 @@ import { localStorage, STORAGE_KEYS, generateId } from '@/lib/localStorageUtils'
 import { FirestoreService } from '@/lib/firestore';
 import insightTemplatesData from '@/lib/insightTemplates.json';
 
+// Track which (date|accountId) keys we have already reconciled to avoid repeated work
+const reconciledKeys = new Set<string>();
+
 interface ReflectionTemplateState {
   // Template management
   customTemplates: CustomTemplate[];
@@ -88,6 +91,7 @@ interface ReflectionTemplateState {
   _safeSync?: (reflection?: ReflectionTemplateData) => Promise<void>;
   _loadRemote?: () => Promise<void>;
   subscribeRemote?: () => () => void;
+  _reconcileDuplicates?: (docs: ReflectionTemplateData[]) => Promise<void>;
 }
 
 export const useReflectionTemplateStore = create<ReflectionTemplateState>()(
@@ -142,6 +146,51 @@ export const useReflectionTemplateStore = create<ReflectionTemplateState>()(
           console.warn('[reflections] failed to load remote (likely unauthenticated):', e);
         }
       },
+      _reconcileDuplicates: async (docs) => {
+        try {
+          // @ts-ignore
+          const svc: FirestoreService<ReflectionTemplateData> = (get() as any)._reflectionService;
+          // Group by (date|accountId)
+          const groups = new Map<string, ReflectionTemplateData[]>();
+          for (const r of docs) {
+            const key = `${r.date}|${r.accountId}`;
+            const arr = groups.get(key) || [];
+            arr.push(r);
+            groups.set(key, arr);
+          }
+          for (const [key, group] of groups.entries()) {
+            if (group.length <= 1) continue;
+            if (reconciledKeys.has(key)) continue;
+            reconciledKeys.add(key);
+            // Pick latest updatedAt as winner
+            const winner = group.reduce((latest, cur) => (
+              new Date(cur.updatedAt).getTime() > new Date(latest.updatedAt).getTime() ? cur : latest
+            ));
+            const derivedId = `${winner.date}_${winner.accountId}`;
+            // Ensure winner exists at derivedId with cleaned dates
+            const toWrite: any = {
+              ...winner,
+              id: derivedId,
+              createdAt: (winner.createdAt as any)?.toISOString?.() || winner.createdAt,
+              updatedAt: (winner.updatedAt as any)?.toISOString?.() || winner.updatedAt,
+              insightBlocks: (winner.insightBlocks || []).map((b: any) => ({
+                ...b,
+                createdAt: (b.createdAt as any)?.toISOString?.() || b.createdAt,
+                updatedAt: (b.updatedAt as any)?.toISOString?.() || b.updatedAt,
+              })),
+            };
+            await svc.setWithId(derivedId, toWrite);
+            // Delete all other docs for this key (including winner if id differs)
+            for (const doc of group) {
+              if (doc.id !== derivedId) {
+                try { await svc.delete(doc.id); } catch {}
+              }
+            }
+          }
+        } catch (e) {
+          console.warn('[reflections] reconcile duplicates failed:', e);
+        }
+      },
       subscribeRemote: () => {
         try {
           // @ts-ignore
@@ -171,6 +220,8 @@ export const useReflectionTemplateStore = create<ReflectionTemplateState>()(
               return { reflectionData: Array.from(byDateAccount.values()) };
             });
             get().saveToStorage();
+            // Kick off async duplicate reconciliation (do not block UI)
+            (get()._reconcileDuplicates as any)?.(parsed);
           });
           return unsubscribe;
         } catch (e) {
