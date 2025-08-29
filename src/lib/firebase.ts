@@ -22,7 +22,6 @@ export const auth = getAuth(app);
 // Use auto-detected long polling to improve reliability on iOS Safari/mobile networks
 export const db = initializeFirestore(app, {
   experimentalAutoDetectLongPolling: true,
-  useFetchStreams: false,
 });
 
 // Enable Firestore offline persistence (with multi-tab support when possible)
