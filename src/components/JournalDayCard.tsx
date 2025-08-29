@@ -307,7 +307,7 @@ export const JournalDayCard: React.FC<JournalDayCardProps> = ({
             {/* Date and Day */}
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-lg">
+                <h3 className="font-semibold text-base sm:text-lg">
                   {formatDate(dateObj)}
                 </h3>
                 {isToday && (
@@ -319,19 +319,19 @@ export const JournalDayCard: React.FC<JournalDayCardProps> = ({
                   <BookOpen className="w-4 h-4 text-green-500" />
                 )}
               </div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 {dateObj.toLocaleDateString('en-US', { weekday: 'long' })}
               </p>
             </div>
           </div>
           
           {/* Summary Stats */}
-          <div className="flex items-center gap-6 text-sm">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs sm:text-sm">
             {/* P&L */}
             <div className="flex items-center gap-1">
               <DollarSign className="w-4 h-4 text-muted-foreground" />
               <span className={cn(
-                "font-medium",
+                "font-semibold whitespace-nowrap text-sm sm:text-base",
                 stats.pnl > 0 ? "text-green-500" : stats.pnl < 0 ? "text-red-500" : "text-muted-foreground"
               )}>
                 {formatCurrency(stats.pnl)}
@@ -339,7 +339,7 @@ export const JournalDayCard: React.FC<JournalDayCardProps> = ({
             </div>
             
             {/* Trades */}
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 whitespace-nowrap">
               <TrendingUp className="w-4 h-4 text-muted-foreground" />
               <span className="text-muted-foreground">
                 {stats.trades} trades
@@ -348,7 +348,7 @@ export const JournalDayCard: React.FC<JournalDayCardProps> = ({
             
             {/* Win Rate */}
             {stats.trades > 0 && (
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 whitespace-nowrap">
                 <Target className="w-4 h-4 text-muted-foreground" />
                 <span className="text-muted-foreground">
                   {stats.winRate.toFixed(0)}%
@@ -357,18 +357,18 @@ export const JournalDayCard: React.FC<JournalDayCardProps> = ({
             )}
             
             {/* Notes */}
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 whitespace-nowrap">
               <MessageSquare className="w-4 h-4 text-muted-foreground" />
-                                <span className="text-muted-foreground">
-                    {dayNotes.length} notes
-                  </span>
+              <span className="text-muted-foreground">
+                  {dayNotes.length} notes
+                </span>
             </div>
             
             {/* Mood */}
             {getMoodTrendDisplay() && (
               <div className="flex items-center gap-1">
                 <Smile className="w-4 h-4 text-muted-foreground" />
-                <span className="text-lg">{getMoodTrendDisplay()}</span>
+                <span className="text-base sm:text-lg">{getMoodTrendDisplay()}</span>
               </div>
             )}
           </div>
@@ -525,14 +525,14 @@ export const JournalDayCard: React.FC<JournalDayCardProps> = ({
             <div className="px-4 pb-4 space-y-6">
               {/* Stats Detail */}
               {stats.trades > 0 && (
-                <div className="grid grid-cols-4 gap-4 p-4 bg-muted/30 rounded-xl">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 bg-muted/30 rounded-xl">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-foreground">{stats.trades}</div>
+                    <div className="text-xl sm:text-2xl font-bold text-foreground">{stats.trades}</div>
                     <div className="text-xs text-muted-foreground">Trades</div>
                   </div>
                   <div className="text-center">
                     <div className={cn(
-                      "text-2xl font-bold",
+                      "text-xl sm:text-2xl font-bold",
                       stats.pnl > 0 ? "text-green-500" : stats.pnl < 0 ? "text-red-500" : "text-muted-foreground"
                     )}>
                       {formatCurrency(stats.pnl)}
@@ -556,7 +556,7 @@ export const JournalDayCard: React.FC<JournalDayCardProps> = ({
                     })()}
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-foreground">{stats.avgRR.toFixed(1)}:1</div>
+                    <div className="text-xl sm:text-2xl font-bold text-foreground">{stats.avgRR.toFixed(1)}:1</div>
                     <div className="text-xs text-muted-foreground">Avg R:R</div>
                   </div>
                 </div>
