@@ -709,14 +709,14 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                               </div>
                             )}
                             
-                            <div className="h-full flex flex-col justify-center items-center text-center">
-                              <div className="text-xs font-medium text-muted-foreground mb-1 truncate">
+                            <div className="h-full flex flex-col justify-center items-center text-center space-y-0.5 pb-0.5">
+                              <div className="text-xs font-medium text-muted-foreground truncate">
                                 W{weekSummary?.weekNumber || weekIndex + 1}
                               </div>
                               {weekSummary && (
                                 <>
                                   <div className={cn(
-                                    'text-xs font-bold mb-0.5 leading-none truncate whitespace-nowrap',
+                                    'text-xs font-bold leading-none truncate whitespace-nowrap',
                                     weekSummary.totalPnl > 0 ? 'text-green-500' : 
                                     weekSummary.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
                                   )}>
@@ -725,7 +725,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                                       : `${weekSummary.totalPnl > 0 ? '+' : ''}${Math.round(weekSummary.totalPnl)}`
                                     }
                                   </div>
-                                  <div className="text-xs text-muted-foreground">
+                                  <div className="text-xs leading-tight text-muted-foreground">
                                     {weekSummary.tradesCount}T
                                   </div>
                                 </>
