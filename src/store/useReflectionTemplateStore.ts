@@ -158,9 +158,17 @@ export const useReflectionTemplateStore = create<ReflectionTemplateState>()(
               })),
             }));
             set((state) => {
-              const byId = new Map<string, any>();
-              [...state.reflectionData, ...parsed].forEach((r) => byId.set(r.id, r));
-              return { reflectionData: Array.from(byId.values()) };
+              const byDateAccount = new Map<string, ReflectionTemplateData>();
+              const all = [...state.reflectionData, ...parsed];
+              for (const r of all) {
+                const key = `${r.date}|${r.accountId}`;
+                const existing = byDateAccount.get(key);
+                if (!existing) { byDateAccount.set(key, r); continue; }
+                const existingTs = new Date(existing.updatedAt).getTime();
+                const currentTs = new Date(r.updatedAt).getTime();
+                if (currentTs >= existingTs) byDateAccount.set(key, r);
+              }
+              return { reflectionData: Array.from(byDateAccount.values()) };
             });
             get().saveToStorage();
           });
@@ -312,9 +320,13 @@ export const useReflectionTemplateStore = create<ReflectionTemplateState>()(
       // Reflection data management
       getReflectionByDate: (date, accountId) => {
         const { reflectionData } = get();
-        return reflectionData.find(
+        const candidates = reflectionData.filter(
           (reflection) => reflection.date === date && reflection.accountId === accountId
         );
+        if (candidates.length <= 1) return candidates[0];
+        return candidates.reduce((latest, cur) => (
+          new Date(cur.updatedAt).getTime() > new Date(latest.updatedAt).getTime() ? cur : latest
+        ));
       },
 
       createOrUpdateReflection: (date, accountId, updates = {}) => {
@@ -930,11 +942,19 @@ export const useReflectionTemplateStore = create<ReflectionTemplateState>()(
                 updatedAt: new Date(block.updatedAt),
               })),
             }));
-            // Merge with any in-memory data (e.g., preloaded from server) by id to avoid overwrites
+            // Merge by (date, accountId), keep the most recent
             set((state) => {
-              const byId = new Map<string, any>();
-              [...parsedReflectionData, ...state.reflectionData].forEach((r) => byId.set(r.id, r));
-              return { reflectionData: Array.from(byId.values()) };
+              const byDateAccount = new Map<string, ReflectionTemplateData>();
+              const all = [...parsedReflectionData, ...state.reflectionData];
+              for (const r of all) {
+                const key = `${r.date}|${r.accountId}`;
+                const existing = byDateAccount.get(key);
+                if (!existing) { byDateAccount.set(key, r); continue; }
+                const existingTs = new Date(existing.updatedAt).getTime();
+                const currentTs = new Date(r.updatedAt).getTime();
+                if (currentTs >= existingTs) byDateAccount.set(key, r);
+              }
+              return { reflectionData: Array.from(byDateAccount.values()) };
             });
           }
 
