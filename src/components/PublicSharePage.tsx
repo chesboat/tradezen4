@@ -2917,11 +2917,11 @@ export const PublicSharePage: React.FC = () => {
                                       whileHover={{ scale: 1.01 }}
                                       title="Sign up to view weekly details"
                                     >
-                                      <div className="text-center space-y-0.5 sm:space-y-1 lg:space-y-2 pb-0.5">
+                                      <div className="text-center space-y-0 sm:space-y-1 lg:space-y-2 pb-1">
                                         <div className="text-[8px] sm:text-[10px] lg:text-sm 2xl:text-base 3xl:text-lg 4xl:text-xl font-medium text-muted-foreground truncate">
                                           W{weekIndex + 1}
                                         </div>
-                                        <div className={`text-[8px] sm:text-xs lg:text-lg 2xl:text-xl 3xl:text-2xl 4xl:text-3xl font-bold leading-tight truncate whitespace-nowrap ${
+                                        <div className={`text-[8px] sm:text-xs lg:text-lg 2xl:text-xl 3xl:text-2xl 4xl:text-3xl font-bold leading-none truncate whitespace-nowrap ${
                                           weekTotalPnl > 0 ? 'text-green-500' : 
                                           weekTotalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
                                         }`}>
@@ -2930,7 +2930,7 @@ export const PublicSharePage: React.FC = () => {
                                             weekTotalPnl !== 0 ? `${weekTotalPnl > 0 ? '+' : ''}${Math.round(weekTotalPnl)}` : '$0'
                                           }
                                         </div>
-                                        <div className="text-[10px] lg:text-xs 2xl:text-sm 3xl:text-base 4xl:text-lg text-muted-foreground leading-tight">
+                                        <div className="text-[10px] lg:text-xs 2xl:text-sm 3xl:text-base 4xl:text-lg text-muted-foreground leading-none">
                                           {weekActiveDays}d
                                         </div>
                                       </div>
