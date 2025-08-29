@@ -35,16 +35,8 @@ export const JournalTimeline: React.FC<JournalTimelineProps> = ({ className }) =
     selectedTagFilter
   } = useDailyReflectionStore();
 
-  // Helper: get local YYYY-MM-DD without UTC shift
-  const toLocalDateString = (date: Date) => {
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
-  };
-
   // Component state
-  const [selectedDate, setSelectedDate] = useState(toLocalDateString(new Date()));
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [daysToShow, setDaysToShow] = useState(30);
   const [showOnlyReflected, setShowOnlyReflected] = useState(false);
 
@@ -61,7 +53,7 @@ export const JournalTimeline: React.FC<JournalTimelineProps> = ({ className }) =
     for (let i = 0; i < daysToShow; i++) {
       const d = new Date(today);
       d.setDate(today.getDate() - i);
-      const dateStr = toLocalDateString(d);
+      const dateStr = d.toISOString().split('T')[0];
       
       // Get day's trades
       const dayTrades = trades.filter(trade => {
@@ -153,12 +145,12 @@ export const JournalTimeline: React.FC<JournalTimelineProps> = ({ className }) =
     } else {
       date.setDate(date.getDate() + 1);
     }
-    setSelectedDate(toLocalDateString(date));
+    setSelectedDate(date.toISOString().split('T')[0]);
   };
 
   const jumpToToday = () => {
     const today = new Date();
-    setSelectedDate(toLocalDateString(today));
+    setSelectedDate(today.toISOString().split('T')[0]);
   };
 
   return (
@@ -300,7 +292,7 @@ export const JournalTimeline: React.FC<JournalTimelineProps> = ({ className }) =
                 stats={entry.stats}
                 hasReflection={entry.hasReflection}
                 quickNotesCount={entry.quickNotesCount}
-                isToday={entry.date === toLocalDateString(new Date())}
+                isToday={entry.date === new Date().toISOString().split('T')[0]}
                 isExpanded={entry.date === selectedDate}
                 onToggleExpanded={() => setSelectedDate(entry.date)}
               />
