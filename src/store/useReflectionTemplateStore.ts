@@ -92,6 +92,7 @@ interface ReflectionTemplateState {
   _loadRemote?: () => Promise<void>;
   subscribeRemote?: () => () => void;
   _reconcileDuplicates?: (docs: ReflectionTemplateData[]) => Promise<void>;
+  unifyDateAccount?: (date: string, accountId: string) => Promise<void>;
 }
 
 export const useReflectionTemplateStore = create<ReflectionTemplateState>()(
@@ -227,6 +228,46 @@ export const useReflectionTemplateStore = create<ReflectionTemplateState>()(
         } catch (e) {
           console.warn('[reflections] failed to subscribe (likely unauthenticated):', e);
           return () => {};
+        }
+      },
+      unifyDateAccount: async (date, accountId) => {
+        try {
+          const { reflectionData } = get();
+          // @ts-ignore
+          const svc: FirestoreService<ReflectionTemplateData> = (get() as any)._reflectionService;
+          const candidates = reflectionData.filter(r => r.date === date && r.accountId === accountId);
+          if (candidates.length === 0) return;
+          const winner = candidates.reduce((latest, cur) => (
+            new Date(cur.updatedAt).getTime() > new Date(latest.updatedAt).getTime() ? cur : latest
+          ));
+          const derivedId = `${date}_${accountId}`;
+          const toWrite: any = {
+            ...winner,
+            id: derivedId,
+            createdAt: (winner.createdAt as any)?.toISOString?.() || winner.createdAt,
+            updatedAt: (winner.updatedAt as any)?.toISOString?.() || winner.updatedAt,
+            insightBlocks: (winner.insightBlocks || []).map((b: any) => ({
+              ...b,
+              createdAt: (b.createdAt as any)?.toISOString?.() || b.createdAt,
+              updatedAt: (b.updatedAt as any)?.toISOString?.() || b.updatedAt,
+            })),
+          };
+          await svc.setWithId(derivedId, toWrite);
+          // Delete strays locally and remotely
+          for (const r of candidates) {
+            if (r.id !== derivedId) {
+              try { await svc.delete(r.id); } catch {}
+            }
+          }
+          // Update local store to single winner
+          set((state) => ({
+            reflectionData: state.reflectionData
+              .filter(r => !(r.date === date && r.accountId === accountId))
+              .concat([{ ...winner, id: derivedId } as any])
+          }));
+          get().saveToStorage();
+        } catch (e) {
+          console.warn('unifyDateAccount failed:', e);
         }
       },
       customTemplates: [],

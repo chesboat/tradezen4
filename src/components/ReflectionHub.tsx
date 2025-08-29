@@ -24,7 +24,7 @@ interface ReflectionHubProps {
 
 export const ReflectionHub: React.FC<ReflectionHubProps> = ({ date, className }) => {
   const { selectedAccountId } = useAccountFilterStore();
-  const { reflectionData } = useReflectionTemplateStore();
+  const { reflectionData, unifyDateAccount } = useReflectionTemplateStore();
   const { getReflectionByDate, upsertReflectionForSelection } = useDailyReflectionStore();
   
   const [showTemplateEditor, setShowTemplateEditor] = useState(false);
@@ -84,6 +84,16 @@ export const ReflectionHub: React.FC<ReflectionHubProps> = ({ date, className })
         </div>
 
         {/* Template Editor Button */}
+        <div className="flex items-center gap-2">
+        {typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debug') === '1' && (
+          <button
+            onClick={async () => {
+              if (!selectedAccountId) return;
+              try { await (unifyDateAccount as any)?.(date, selectedAccountId); } catch {}
+            }}
+            className="px-3 py-2 text-xs rounded border bg-amber-50 text-amber-900 hover:bg-amber-100"
+          >Unify this day</button>
+        )}
         <motion.button
           onClick={() => setShowTemplateEditor(true)}
           className="flex items-center gap-2 px-3 py-2 bg-secondary text-secondary-foreground rounded-lg font-medium hover:bg-secondary/90 transition-colors"
@@ -93,6 +103,7 @@ export const ReflectionHub: React.FC<ReflectionHubProps> = ({ date, className })
           <Settings className="w-4 h-4" />
           Templates
         </motion.button>
+        </div>
       </div>
 
       {/* Welcome Notice for new users */}
