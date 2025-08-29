@@ -40,6 +40,8 @@ interface ReflectionTemplateManagerProps {
   date: string; // YYYY-MM-DD format
   className?: string;
   onEditTemplate?: (template: CustomTemplate) => void;
+  showTemplateButton?: boolean;
+  debugUnifyButton?: () => void;
 }
 
 interface RichTextEditorProps {
@@ -155,6 +157,8 @@ export const ReflectionTemplateManager: React.FC<ReflectionTemplateManagerProps>
   date,
   className,
   onEditTemplate,
+  showTemplateButton = false,
+  debugUnifyButton,
 }) => {
   const { selectedAccountId } = useAccountFilterStore();
   const { trades } = useTradeStore();
@@ -604,6 +608,29 @@ export const ReflectionTemplateManager: React.FC<ReflectionTemplateManagerProps>
         </div>
 
         <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+          {/* Debug Unify Button */}
+          {debugUnifyButton && (
+            <button
+              onClick={debugUnifyButton}
+              className="px-2 py-2 text-xs rounded border bg-amber-50 text-amber-900 hover:bg-amber-100 shrink-0"
+            >
+              Unify
+            </button>
+          )}
+
+          {/* Template Editor Button */}
+          {showTemplateButton && onEditTemplate && (
+            <motion.button
+              onClick={() => onEditTemplate({} as CustomTemplate)}
+              className="flex items-center gap-2 px-3 py-2 bg-secondary text-secondary-foreground rounded-lg font-medium hover:bg-secondary/90 transition-colors"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Settings className="w-4 h-4" />
+              <span className="hidden sm:inline">Templates</span>
+            </motion.button>
+          )}
+
           {/* AI Generate Button */}
           <motion.button
             onClick={handleGenerateAITemplate}
@@ -617,7 +644,7 @@ export const ReflectionTemplateManager: React.FC<ReflectionTemplateManagerProps>
             ) : (
               <Sparkles className="w-4 h-4" />
             )}
-            <span className="hidden sm:inline">🪄 Generate Insights</span>
+            <span className="hidden sm:inline">🪄 Generate</span>
           </motion.button>
 
           {/* Add Block Button */}

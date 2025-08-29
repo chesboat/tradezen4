@@ -63,78 +63,36 @@ export const ReflectionHub: React.FC<ReflectionHubProps> = ({ date, className })
   };
 
   return (
-    <div className={cn("space-y-6", className)}>
-      {/* Insight Blocks Header */}
-      <div className="flex items-center justify-between p-4 bg-gradient-to-r from-primary/5 to-secondary/5 rounded-xl border border-border/50">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-primary/10 rounded-lg">
-            <Layers className="w-5 h-5 text-primary" />
-          </div>
-          <div>
-            <h2 className="text-xl font-semibold flex items-center gap-2">
-              Insight Blocks
-              <span className="px-2 py-0.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full text-xs font-bold">
-                2.0
-              </span>
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              Multi-block reflection system with AI suggestions
-            </p>
-          </div>
-        </div>
-
-        {/* Template Editor Button */}
-        <div className="flex items-center gap-2">
-        {typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debug') === '1' && (
-          <button
-            onClick={async () => {
-              if (!selectedAccountId) return;
-              try { await (unifyDateAccount as any)?.(date, selectedAccountId); } catch {}
-            }}
-            className="px-3 py-2 text-xs rounded border bg-amber-50 text-amber-900 hover:bg-amber-100"
-          >Unify this day</button>
-        )}
-        <motion.button
-          onClick={() => setShowTemplateEditor(true)}
-          className="flex items-center gap-2 px-3 py-2 bg-secondary text-secondary-foreground rounded-lg font-medium hover:bg-secondary/90 transition-colors"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <Settings className="w-4 h-4" />
-          Templates
-        </motion.button>
-        </div>
-      </div>
-
+    <div className={cn("space-y-4 sm:space-y-6", className)}>
       {/* Welcome Notice for new users */}
       {!hasReflectionData && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="p-4 bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-xl"
+          className="p-3 sm:p-4 bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-xl overflow-x-hidden"
         >
           <div className="flex items-start gap-3">
-            <div className="p-2 bg-blue-500/10 rounded-lg mt-0.5">
+            <div className="p-2 bg-blue-500/10 rounded-lg mt-0.5 shrink-0">
               <Sparkles className="w-4 h-4 text-blue-500" />
             </div>
-            <div className="flex-1">
-              <h4 className="font-semibold text-blue-700 dark:text-blue-300 mb-1">
+            <div className="flex-1 min-w-0">
+              <h4 className="font-semibold text-blue-700 dark:text-blue-300 mb-1 text-sm sm:text-base">
                 Welcome to Insight Blocks 2.0!
               </h4>
-              <p className="text-sm text-blue-600 dark:text-blue-400 mb-3">
+              <p className="text-xs sm:text-sm text-blue-600 dark:text-blue-400 mb-3">
                 Experience a powerful and flexible reflection system designed for serious traders.
                 Build your daily insights with multiple blocks, AI suggestions, and rich formatting.
               </p>
-              <div className="flex items-center gap-3 text-xs text-blue-500">
-                <div className="flex items-center gap-1">
+              <div className="flex items-center gap-3 text-xs text-blue-500 flex-wrap">
+                <div className="flex items-center gap-1 whitespace-nowrap">
                   <Star className="w-3 h-3" />
                   <span>AI-powered insights</span>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 whitespace-nowrap">
                   <Layers className="w-3 h-3" />
                   <span>Multiple blocks per day</span>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 whitespace-nowrap">
                   <Zap className="w-3 h-3" />
                   <span>Rich text editing</span>
                 </div>
@@ -151,21 +109,26 @@ export const ReflectionHub: React.FC<ReflectionHubProps> = ({ date, className })
           setEditingTemplate(template || null);
           setShowTemplateEditor(true);
         }}
+        showTemplateButton={true}
+        debugUnifyButton={typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debug') === '1' ? () => {
+          if (!selectedAccountId) return;
+          try { (unifyDateAccount as any)?.(date, selectedAccountId); } catch {}
+        } : undefined}
       />
 
       {/* General Thoughts (TipTap editor) */}
-      <div className="space-y-3 p-4 bg-gradient-to-br from-card to-muted/20 rounded-xl border border-border">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-secondary/20 rounded-lg">
+      <div className="space-y-3 p-3 sm:p-4 bg-gradient-to-br from-card to-muted/20 rounded-xl border border-border overflow-x-hidden">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="p-2 bg-secondary/20 rounded-lg shrink-0">
               <Layers className="w-4 h-4 text-secondary-foreground" />
             </div>
-            <div>
-              <h3 className="text-sm font-semibold">General Thoughts</h3>
-              <p className="text-xs text-muted-foreground">Free-form notes to supplement your insight blocks</p>
+            <div className="min-w-0">
+              <h3 className="text-sm font-semibold truncate">General Thoughts</h3>
+              <p className="text-xs text-muted-foreground truncate">Free-form notes to supplement your insight blocks</p>
             </div>
           </div>
-          <div className="text-xs text-muted-foreground">
+          <div className="text-xs text-muted-foreground shrink-0">
             {isSavingThoughts ? 'Saving…' : lastSavedAt ? `Saved ${lastSavedAt.toLocaleTimeString()}` : ''}
           </div>
         </div>
