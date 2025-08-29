@@ -8,6 +8,7 @@ import {
   where,
   deleteDoc,
   updateDoc,
+  onSnapshot,
   DocumentData,
   QueryConstraint
 } from 'firebase/firestore';
@@ -127,5 +128,14 @@ export class FirestoreService<T extends FirestoreDocument> {
     const q = query(this.getCollection(), ...constraints);
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }) as T);
+  }
+
+  listenAll(onChange: (docs: T[]) => void): () => void {
+    const col = this.getCollection();
+    const unsubscribe = onSnapshot(col, (snapshot) => {
+      const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as T));
+      onChange(docs);
+    });
+    return unsubscribe;
   }
 }

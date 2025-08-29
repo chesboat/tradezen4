@@ -87,6 +87,7 @@ interface ReflectionTemplateState {
   _reflectionService?: any;
   _safeSync?: (reflection?: ReflectionTemplateData) => Promise<void>;
   _loadRemote?: () => Promise<void>;
+  subscribeRemote?: () => () => void;
 }
 
 export const useReflectionTemplateStore = create<ReflectionTemplateState>()(
@@ -139,6 +140,34 @@ export const useReflectionTemplateStore = create<ReflectionTemplateState>()(
           get().saveToStorage();
         } catch (e) {
           console.warn('[reflections] failed to load remote (likely unauthenticated):', e);
+        }
+      },
+      subscribeRemote: () => {
+        try {
+          // @ts-ignore
+          const svc: FirestoreService<ReflectionTemplateData> = (get() as any)._reflectionService;
+          const unsubscribe = svc.listenAll((docs) => {
+            const parsed = docs.map((r: any) => ({
+              ...r,
+              createdAt: new Date(r.createdAt),
+              updatedAt: new Date(r.updatedAt),
+              insightBlocks: (r.insightBlocks || []).map((b: any) => ({
+                ...b,
+                createdAt: new Date(b.createdAt),
+                updatedAt: new Date(b.updatedAt),
+              })),
+            }));
+            set((state) => {
+              const byId = new Map<string, any>();
+              [...state.reflectionData, ...parsed].forEach((r) => byId.set(r.id, r));
+              return { reflectionData: Array.from(byId.values()) };
+            });
+            get().saveToStorage();
+          });
+          return unsubscribe;
+        } catch (e) {
+          console.warn('[reflections] failed to subscribe (likely unauthenticated):', e);
+          return () => {};
         }
       },
       customTemplates: [],
@@ -303,8 +332,9 @@ export const useReflectionTemplateStore = create<ReflectionTemplateState>()(
           reflection = { ...reflection, ...updates, updatedAt: new Date() };
         } else {
           // Create new reflection
+          const deterministicId = `${date}_${accountId}`;
           reflection = {
-            id: generateId(),
+            id: deterministicId,
             date,
             accountId,
             insightBlocks: [],
@@ -916,9 +946,7 @@ export const useReflectionTemplateStore = create<ReflectionTemplateState>()(
             }));
             set({ favoriteBlocks: parsedFavoriteBlocks });
           }
-          // Kick off best-effort remote fetch to merge any existing cloud data
-          // @ts-ignore
-          get()._loadRemote?.();
+          // Remote subscription will be established via AuthContext when authenticated
         } catch (error) {
           console.error('Failed to load reflection template data from storage:', error);
         }

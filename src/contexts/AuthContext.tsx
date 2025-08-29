@@ -10,6 +10,8 @@ import {
   OAuthProvider
 } from 'firebase/auth';
 import { auth } from '../lib/firebase';
+import { useRef } from 'react';
+import { useReflectionTemplateStore } from '@/store/useReflectionTemplateStore';
 
 import { UserCredential } from 'firebase/auth';
 
@@ -36,11 +38,29 @@ export function useAuth() {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const reflectionsUnsubRef = useRef<null | (() => void)>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
       setLoading(false);
+      // Manage reflections subscription based on auth state
+      try {
+        // Clean up any prior subscription
+        if (reflectionsUnsubRef.current) {
+          reflectionsUnsubRef.current();
+          reflectionsUnsubRef.current = null;
+        }
+
+        if (user) {
+          const subscribeRemote = useReflectionTemplateStore.getState().subscribeRemote;
+          if (subscribeRemote) {
+            reflectionsUnsubRef.current = subscribeRemote();
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to (un)subscribe reflections:', e);
+      }
     });
 
     return unsubscribe;

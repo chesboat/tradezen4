@@ -36,6 +36,11 @@ service cloud.firestore {
     match /users/{userId}/journalEntries/{entryId} {
       allow read, write: if isOwner(userId);
     }
+
+    // Reflections collection under each user (Insight Blocks 2.0)
+    match /users/{userId}/reflections/{reflectionId} {
+      allow read, write: if isOwner(userId);
+    }
     
     // Quests collection under each user
     match /users/{userId}/quests/{questId} {
