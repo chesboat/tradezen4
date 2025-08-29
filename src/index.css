@@ -249,6 +249,49 @@
     text-wrap: balance;
   }
   
+  /* Scroll affordance: gradient fades for scrollable containers */
+  .scroll-hint { position: relative; }
+  .scroll-hint::before,
+  .scroll-hint::after {
+    content: "";
+    position: sticky;
+    left: 0;
+    right: 0;
+    height: 16px;
+    pointer-events: none;
+    z-index: 1;
+    display: block;
+  }
+  .scroll-hint::before {
+    top: 0;
+    background: linear-gradient(to bottom, hsl(var(--card)) 0%, transparent 100%);
+    opacity: 0;
+    transition: opacity 180ms ease;
+  }
+  .scroll-hint::after {
+    bottom: 0;
+    background: linear-gradient(to top, hsl(var(--card)) 0%, transparent 100%);
+    opacity: 0;
+    transition: opacity 180ms ease;
+  }
+  .scroll-hint.has-top::before { opacity: 1; }
+  .scroll-hint.has-bottom::after { opacity: 1; }
+  
+  /* Subtle overlay scrollbar styling */
+  .scrollable { 
+    overflow-y: auto; 
+    -webkit-overflow-scrolling: touch; 
+    scrollbar-gutter: stable both-edges; 
+  }
+  .scrollable::-webkit-scrollbar { width: 6px; }
+  .scrollable::-webkit-scrollbar-track { background: transparent; }
+  .scrollable::-webkit-scrollbar-thumb { 
+    background: hsl(var(--muted-foreground) / 0.2); 
+    border-radius: 9999px; 
+  }
+  .scrollable:hover::-webkit-scrollbar-thumb,
+  .scrollable:active::-webkit-scrollbar-thumb { background: hsl(var(--muted-foreground) / 0.35); }
+  
   .bg-grid {
     background-image: 
       linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),

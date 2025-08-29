@@ -21,6 +21,7 @@ import {
 import { useActivityLogStore } from '@/store/useActivityLogStore';
 import { ActivityLogEntry, ActivityType } from '@/types';
 import { formatRelativeTime, getMoodEmoji } from '@/lib/localStorageUtils';
+import { useScrollShadows } from '@/hooks/useScrollShadows';
 
 interface ActivityLogProps {
   className?: string;
@@ -324,10 +325,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ className }) => {
       {/* Activity Feed - Only when expanded */}
       {isExpanded && (
         <div className="flex-1 overflow-hidden">
-          <div 
-            ref={scrollContainerRef}
-            className="h-full overflow-y-auto p-4 space-y-2"
-          >
+          <ScrollableSectionWithShadows refObj={scrollContainerRef} padding="p-4">
             <AnimatePresence mode="popLayout">
               {filteredActivities.map((activity) => (
                 <motion.div
@@ -357,14 +355,14 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ className }) => {
                 </p>
               </div>
             )}
-          </div>
+          </ScrollableSectionWithShadows>
         </div>
       )}
 
       {/* Collapsed State - Only when collapsed */}
       {!isExpanded && (
         <div className="flex-1 overflow-hidden">
-          <div className="h-full overflow-y-auto p-2 space-y-2">
+          <ScrollableSectionWithShadows padding="p-2">
             {filteredActivities.slice(0, 10).map((activity) => (
               <ActivityItem key={activity.id} activity={activity} isExpanded={false} />
             ))}
@@ -375,9 +373,29 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ className }) => {
                 <p className="text-xs text-muted-foreground">No activity</p>
               </div>
             )}
-          </div>
+          </ScrollableSectionWithShadows>
         </div>
       )}
     </motion.aside>
   );
 }; 
+
+const ScrollableSectionWithShadows: React.FC<{ refObj?: React.RefObject<HTMLDivElement>; padding?: string; children: React.ReactNode }>
+  = ({ refObj, padding = 'p-0', children }) => {
+  const { attach, hasTop, hasBottom } = useScrollShadows<HTMLDivElement>();
+  return (
+    <div
+      ref={(el) => {
+        if (refObj) {
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          refObj.current = el;
+        }
+        attach(el);
+      }}
+      className={`h-full ${padding} space-y-2 scrollable scroll-hint ${hasTop ? 'has-top' : ''} ${hasBottom ? 'has-bottom' : ''}`}
+    >
+      {children}
+    </div>
+  );
+};

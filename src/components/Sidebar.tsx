@@ -39,6 +39,7 @@ import { Tooltip } from './ui/Tooltip';
 import { ThemeToggle } from './ThemeToggle';
 import { TagManager } from './TagManager';
 import toast from 'react-hot-toast';
+import { useScrollShadows } from '@/hooks/useScrollShadows';
 
 interface SidebarProps {
   className?: string;
@@ -161,6 +162,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
   const { currentView, setCurrentView } = useNavigationStore();
   const { openModal: openQuickNote } = useQuickNoteModal();
   const { profile, refreshStats } = useUserProfileStore();
+  const navScroll = useScrollShadows<HTMLDivElement>();
   
   // Debug logging for sidebar progress updates
   React.useEffect(() => {
@@ -331,9 +333,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
 
       {/* Navigation */}
       <nav 
+        ref={navScroll.attach as any}
         className={cn(
-          "flex-1 overflow-y-auto p-4", 
-          isExpanded ? 'space-y-2' : 'space-y-3'
+          "flex-1 p-4 scrollable scroll-hint", 
+          isExpanded ? 'space-y-2' : 'space-y-3',
+          navScroll.hasTop && 'has-top',
+          navScroll.hasBottom && 'has-bottom'
         )}
         style={{
           scrollbarWidth: 'thin',
