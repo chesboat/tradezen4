@@ -55,6 +55,15 @@ export const JournalTimeline: React.FC<JournalTimelineProps> = ({ className }) =
 
   // Generate timeline entries  
   const timelineEntries = useMemo(() => {
+    console.log('[DEBUG] JournalTimeline generating entries', {
+      tradesCount: trades.length,
+      notesCount: notes.length,
+      reflectionsCount: reflections.length,
+      selectedAccountId,
+      selectedTagFilter,
+      showOnlyReflected
+    });
+    
     const entries: any[] = [];
     const today = new Date();
     
