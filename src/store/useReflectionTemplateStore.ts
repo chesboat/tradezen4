@@ -832,6 +832,11 @@ export const useReflectionTemplateStore = create<ReflectionTemplateState>()(
               ),
             }));
             get().saveToStorage();
+            // Sync updated reflection remotely
+            const updatedRef = get().reflectionData.find(r => r.id === existingReflection.id);
+            if (updatedRef && get()._safeSync) {
+              get()._safeSync!(updatedRef);
+            }
           }
 
           // If after filtering nothing remains, seed from weekend/weekday favorites
@@ -866,7 +871,9 @@ export const useReflectionTemplateStore = create<ReflectionTemplateState>()(
               }
             });
             get().saveToStorage();
-            return get().getReflectionByDate(date, accountId)!;
+            const updated = get().getReflectionByDate(date, accountId)!;
+            if (get()._safeSync) { get()._safeSync!(updated); }
+            return updated;
           }
 
           return { ...existingReflection, insightBlocks: filteredBlocks };
@@ -946,7 +953,9 @@ export const useReflectionTemplateStore = create<ReflectionTemplateState>()(
           }
         });
 
-        return get().getReflectionByDate(date, accountId)!;
+        const synced = get().getReflectionByDate(date, accountId)!;
+        if (get()._safeSync) { get()._safeSync!(synced); }
+        return synced;
       },
 
       // Built-in templates
