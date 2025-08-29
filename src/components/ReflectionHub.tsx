@@ -25,7 +25,7 @@ interface ReflectionHubProps {
 export const ReflectionHub: React.FC<ReflectionHubProps> = ({ date, className }) => {
   const { selectedAccountId } = useAccountFilterStore();
   const accounts = useAccountFilterStore((s) => s.accounts);
-  const effectiveAccountId = selectedAccountId || accounts[0]?.id || null;
+  const effectiveAccountId = selectedAccountId || accounts[0]?.id || 'all';
   const { reflectionData } = useReflectionTemplateStore();
   const { getReflectionByDate, upsertReflectionForSelection } = useDailyReflectionStore();
   

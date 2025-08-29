@@ -191,6 +191,14 @@ export const ReflectionTemplateManager: React.FC<ReflectionTemplateManagerProps>
   const [totalWordCount, setTotalWordCount] = useState(0);
   const [isInitializing, setIsInitializing] = useState(true);
   const [currentReflection, setCurrentReflection] = useState<any>(null);
+  // Safety: if no reflections are hydrated yet, try a best-effort remote pull
+  useEffect(() => {
+    if ((reflectionData?.length || 0) === 0) {
+      try {
+        (useReflectionTemplateStore.getState()._loadRemote as any)?.();
+      } catch {}
+    }
+  }, [reflectionData?.length]);
 
   // Initialize reflection data
   useEffect(() => {
@@ -223,7 +231,9 @@ export const ReflectionTemplateManager: React.FC<ReflectionTemplateManagerProps>
       const newReflection = autoPopulateFavorites(date, selectedAccountId);
       setCurrentReflection(newReflection);
       setIsInitializing(false);
-    }, 150); // Slightly longer delay for smoother transition
+      // Push to Firestore as soon as we seed so other devices see it
+      try { (useReflectionTemplateStore.getState()._safeSync as any)?.(newReflection); } catch {}
+    }, 150);
 
     return () => clearTimeout(timer);
   }, [date, selectedAccountId, getReflectionByDate, autoPopulateFavorites, reflectionData]);
