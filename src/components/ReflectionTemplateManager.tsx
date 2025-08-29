@@ -202,17 +202,21 @@ export const ReflectionTemplateManager: React.FC<ReflectionTemplateManagerProps>
 
   // Initialize reflection data
   useEffect(() => {
-    if (!selectedAccountId) {
+    const accounts = useAccountFilterStore.getState().accounts || [];
+    const activeAccountId = selectedAccountId || accounts[0]?.id;
+
+    // If no account context is available yet, avoid blank by not seeding and just stop initializing
+    if (!activeAccountId && reflectionData.length === 0) {
       setCurrentReflection(null);
       setIsInitializing(false);
       return;
     }
 
     // Check for existing reflection first
-    const existing = getReflectionByDate(date, selectedAccountId);
+    const existing = activeAccountId ? getReflectionByDate(date, activeAccountId) : undefined;
     if (existing) {
       // Ensure weekend/weekday filtering is applied even for existing reflections
-      const filtered = autoPopulateFavorites(date, selectedAccountId);
+      const filtered = activeAccountId ? autoPopulateFavorites(date, activeAccountId) : existing;
       setCurrentReflection(filtered);
       setIsInitializing(false);
       return;
@@ -228,11 +232,15 @@ export const ReflectionTemplateManager: React.FC<ReflectionTemplateManagerProps>
 
     // For new days, show loading briefly then auto-populate with favorites
     const timer = setTimeout(() => {
-      const newReflection = autoPopulateFavorites(date, selectedAccountId);
-      setCurrentReflection(newReflection);
-      setIsInitializing(false);
-      // Push to Firestore as soon as we seed so other devices see it
-      try { (useReflectionTemplateStore.getState()._safeSync as any)?.(newReflection); } catch {}
+      if (activeAccountId) {
+        const newReflection = autoPopulateFavorites(date, activeAccountId);
+        setCurrentReflection(newReflection);
+        setIsInitializing(false);
+        try { (useReflectionTemplateStore.getState()._safeSync as any)?.(newReflection); } catch {}
+      } else {
+        setCurrentReflection(null);
+        setIsInitializing(false);
+      }
     }, 150);
 
     return () => clearTimeout(timer);
