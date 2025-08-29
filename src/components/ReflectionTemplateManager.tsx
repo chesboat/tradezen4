@@ -210,14 +210,6 @@ export const ReflectionTemplateManager: React.FC<ReflectionTemplateManagerProps>
       return;
     }
 
-    // Fallback: locate any reflection for this date irrespective of accountId (cross-device/account)
-    const anyForDate = reflectionData.find(r => r.date === date);
-    if (anyForDate) {
-      setCurrentReflection(anyForDate);
-      setIsInitializing(false);
-      return;
-    }
-
     // For new days, show loading briefly then auto-populate with favorites
     const timer = setTimeout(() => {
       const newReflection = autoPopulateFavorites(date, selectedAccountId);
@@ -226,18 +218,14 @@ export const ReflectionTemplateManager: React.FC<ReflectionTemplateManagerProps>
     }, 150); // Slightly longer delay for smoother transition
 
     return () => clearTimeout(timer);
-  }, [date, selectedAccountId, getReflectionByDate, autoPopulateFavorites, reflectionData]);
+  }, [date, selectedAccountId, getReflectionByDate, autoPopulateFavorites]);
 
   // Update currentReflection when store data changes
   useEffect(() => {
-    if (!isInitializing) {
-      const updated = selectedAccountId ? getReflectionByDate(date, selectedAccountId) : undefined;
+    if (selectedAccountId && !isInitializing) {
+      const updated = getReflectionByDate(date, selectedAccountId);
       if (updated) {
         setCurrentReflection(updated);
-      } else {
-        // Fallback to any reflection for the date to surface data created under another account
-        const anyForDate = reflectionData.find(r => r.date === date);
-        if (anyForDate) setCurrentReflection(anyForDate);
       }
     }
   }, [reflectionData, date, selectedAccountId, getReflectionByDate, isInitializing]);
