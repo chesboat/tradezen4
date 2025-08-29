@@ -86,7 +86,16 @@ export const initializeDefaultAccounts = async () => {
   try {
     // Load all accounts from Firestore
     const fetched = await accountService.getAll();
-    useAccountFilterStore.setState({ accounts: fetched });
+    // Sort deterministically by createdAt ascending, fallback to name/id to ensure stability across devices
+    const sorted = [...fetched].sort((a: any, b: any) => {
+      const aTs = a?.createdAt ? new Date(a.createdAt).getTime() : Number.MAX_SAFE_INTEGER;
+      const bTs = b?.createdAt ? new Date(b.createdAt).getTime() : Number.MAX_SAFE_INTEGER;
+      if (aTs !== bTs) return aTs - bTs;
+      const an = (a?.name || '').localeCompare?.(b?.name || '') || 0;
+      if (an !== 0) return an;
+      return String(a?.id || '').localeCompare(String(b?.id || ''));
+    });
+    useAccountFilterStore.setState({ accounts: sorted });
     console.log('Loaded accounts:', fetched);
 
     const state = useAccountFilterStore.getState();
