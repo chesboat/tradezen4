@@ -632,7 +632,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
       )}>
         {/* Day Headers */}
         <div className={cn(
-          "col-span-8 grid grid-cols-8 mb-4 transition-all duration-300",
+          "col-span-7 grid grid-cols-7 lg:col-span-8 lg:grid-cols-8 mb-4 transition-all duration-300",
           "gap-1 sm:gap-2",
           bothSidebarsExpanded ? "lg:gap-2 2xl:gap-2.5" : "lg:gap-2.5 2xl:gap-3 3xl:gap-3.5"
         )}>
@@ -666,7 +666,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
           <React.Fragment key={weekIndex}>
             {/* Week Days */}
             <div className={cn(
-              "col-span-8 grid grid-cols-8 transition-all duration-300",
+              "col-span-7 grid grid-cols-7 lg:col-span-8 lg:grid-cols-8 transition-all duration-300",
               "gap-1 sm:gap-2",
               bothSidebarsExpanded ? "lg:gap-2 2xl:gap-2.5" : "lg:gap-2.5 2xl:gap-3 3xl:gap-3.5"
             )}>
@@ -689,7 +689,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                         >
                           <motion.div
                             className={cn(
-                              'relative rounded-lg border border-border/50 transition-all duration-300 cursor-pointer aspect-square',
+                              'relative overflow-hidden rounded-lg border border-border/50 transition-all duration-300 cursor-pointer aspect-square',
                               'p-1.5 bg-muted/30 hover:bg-muted/50',
                               reviewStatus === 'completed' && 'ring-1 ring-green-500/30 bg-green-500/5',
                               reviewStatus === 'available' && 'ring-1 ring-blue-500/30 bg-blue-500/5'
@@ -710,19 +710,19 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                             )}
                             
                             <div className="h-full flex flex-col justify-center items-center text-center">
-                              <div className="text-xs font-medium text-muted-foreground mb-1">
+                              <div className="text-xs font-medium text-muted-foreground mb-1 truncate">
                                 W{weekSummary?.weekNumber || weekIndex + 1}
                               </div>
                               {weekSummary && (
                                 <>
                                   <div className={cn(
-                                    'text-xs font-bold mb-0.5',
+                                    'text-xs font-bold mb-0.5 leading-none truncate whitespace-nowrap',
                                     weekSummary.totalPnl > 0 ? 'text-green-500' : 
                                     weekSummary.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
                                   )}>
                                     {Math.abs(weekSummary.totalPnl) >= 1000 
                                       ? `${weekSummary.totalPnl > 0 ? '+' : ''}${(weekSummary.totalPnl/1000).toFixed(1)}k`
-                                      : formatCurrency(weekSummary.totalPnl)
+                                      : `${weekSummary.totalPnl > 0 ? '+' : ''}${Math.round(weekSummary.totalPnl)}`
                                     }
                                   </div>
                                   <div className="text-xs text-muted-foreground">
