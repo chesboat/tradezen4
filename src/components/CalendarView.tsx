@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChevronLeft, 
@@ -68,6 +68,15 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState<CalendarDay | null>(null);
   const [hoveredDay, setHoveredDay] = useState<CalendarDay | null>(null);
+
+  // Viewport-aware compactness: only use compact content when both sidebars are expanded AND viewport is narrow
+  const [viewportWidth, setViewportWidth] = useState<number>(typeof window !== 'undefined' ? window.innerWidth : 1920);
+  useEffect(() => {
+    const onResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+  const compactMode = bothSidebarsExpanded && viewportWidth < 1400; // avoid tiny text on wide screens
 
   const handleWeeklySummaryClick = (weekIndex: number, week: CalendarDay[]) => {
     if (!selectedAccountId) return;
@@ -429,7 +438,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
     
     return (
       <div className={cn(
-        bothSidebarsExpanded 
+        compactMode 
           ? 'text-sm lg:text-base 2xl:text-lg 3xl:text-xl font-bold'
           : 'text-base 2xl:text-lg 3xl:text-xl 4xl:text-2xl font-bold',
         pnl > 0 ? 'text-green-500' : 'text-red-500'
@@ -845,7 +854,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                       </div>
                     ) : (
                       <>
-                        {bothSidebarsExpanded ? (
+                        {compactMode ? (
                           // Ultra-compact mode for weekdays when both sidebars expanded - with tooltip
                           <Tooltip 
                             content={getDayTooltipContent(day)}
@@ -920,7 +929,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
             <motion.div
                 className={cn(
                   "hidden lg:flex overflow-hidden bg-muted/30 border border-border/50 rounded-lg sm:rounded-xl hover:bg-muted/50 transition-all duration-300 aspect-[7/6] items-center justify-center cursor-pointer relative",
-                  bothSidebarsExpanded 
+                  compactMode 
                     ? 'p-1.5 sm:p-2 lg:p-2.5 2xl:p-3 3xl:p-4' 
                     : 'p-1.5 sm:p-2.5 lg:p-3 2xl:p-4 3xl:p-5',
                   getWeekReviewStatus(week) === 'completed' && 'ring-1 ring-green-500/30 bg-green-500/5',
@@ -941,7 +950,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                 )}
                 
               <div className="text-center space-y-1">
-                {bothSidebarsExpanded ? (
+                {compactMode ? (
                   // Ultra-compact weekly summary - with tooltip
                   <Tooltip 
                     content={weeklyData[weekIndex] ? getWeeklyTooltipContent(weeklyData[weekIndex]) : `Week ${weekIndex + 1}`}
