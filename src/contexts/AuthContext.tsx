@@ -38,18 +38,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
       setLoading(false);
-      // On login, force-load remote reflection data to unify source of truth across devices
-      if (user) {
-        try {
-          const { useReflectionTemplateStore } = await import('@/store/useReflectionTemplateStore');
-          useReflectionTemplateStore.getState()._loadRemote?.();
-        } catch {
-          // ignore
-        }
-      }
     });
 
     return unsubscribe;
