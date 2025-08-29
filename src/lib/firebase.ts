@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, enableIndexedDbPersistence, enableMultiTabIndexedDbPersistence } from 'firebase/firestore';
+import { initializeFirestore, enableIndexedDbPersistence, enableMultiTabIndexedDbPersistence } from 'firebase/firestore';
 import { getAnalytics, isSupported as analyticsIsSupported } from 'firebase/analytics';
 
 // Your Firebase configuration object
@@ -19,7 +19,11 @@ const app = initializeApp(firebaseConfig);
 
 // Get Auth and Firestore instances
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+// Use auto-detected long polling to improve reliability on iOS Safari/mobile networks
+export const db = initializeFirestore(app, {
+  experimentalAutoDetectLongPolling: true,
+  useFetchStreams: false,
+});
 
 // Enable Firestore offline persistence (with multi-tab support when possible)
 if (typeof window !== 'undefined') {
