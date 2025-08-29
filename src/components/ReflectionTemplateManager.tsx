@@ -580,14 +580,14 @@ export const ReflectionTemplateManager: React.FC<ReflectionTemplateManagerProps>
   return (
     <div className={cn("space-y-6 overflow-x-hidden max-w-full w-full", className)}>
       {/* Header with stats and controls */}
-      <div className="flex items-center justify-between p-4 bg-gradient-to-r from-primary/5 to-secondary/5 rounded-xl border border-border/50 overflow-x-hidden">
-        <div className="flex items-center gap-4 min-w-0">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 bg-gradient-to-r from-primary/5 to-secondary/5 rounded-xl border border-border/50 overflow-x-hidden">
+        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
           <div className="flex items-center gap-2">
             <Target className="w-5 h-5 text-primary" />
             <h3 className="text-lg font-semibold">Insight Blocks</h3>
           </div>
           
-          <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm text-muted-foreground min-w-0">
+          <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm text-muted-foreground min-w-0 flex-wrap">
             <span className="truncate">{sortedBlocks.length} blocks</span>
             <span className="truncate">{totalWordCount} words</span>
             <div className="flex items-center gap-1">
@@ -603,7 +603,7 @@ export const ReflectionTemplateManager: React.FC<ReflectionTemplateManagerProps>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
           {/* AI Generate Button */}
           <motion.button
             onClick={handleGenerateAITemplate}
@@ -617,7 +617,7 @@ export const ReflectionTemplateManager: React.FC<ReflectionTemplateManagerProps>
             ) : (
               <Sparkles className="w-4 h-4" />
             )}
-            🪄 Generate Insights
+            <span className="hidden sm:inline">🪄 Generate Insights</span>
           </motion.button>
 
           {/* Add Block Button */}
@@ -629,7 +629,7 @@ export const ReflectionTemplateManager: React.FC<ReflectionTemplateManagerProps>
               whileTap={{ scale: 0.95 }}
             >
               <Plus className="w-4 h-4" />
-              Add Block
+              <span className="hidden sm:inline">Add Block</span>
               <ChevronDown className={cn("w-4 h-4 transition-transform", showTemplateSelector && "rotate-180")} />
             </motion.button>
 
@@ -640,7 +640,7 @@ export const ReflectionTemplateManager: React.FC<ReflectionTemplateManagerProps>
                   initial={{ opacity: 0, y: -10, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                  className="absolute top-full right-0 mt-2 w-72 max-w-[90vw] bg-popover text-popover-foreground border border-border rounded-xl shadow-xl z-[70] max-h-80 overflow-y-auto custom-scrollbar"
+                  className="absolute top-full right-0 mt-2 w-72 max-w-[92vw] bg-popover text-popover-foreground border border-border rounded-xl shadow-xl z-[70] max-h-80 overflow-y-auto custom-scrollbar"
                 >
                   <div className="p-3 border-b border-border">
                     <h4 className="font-semibold text-sm">Choose Template Block</h4>
