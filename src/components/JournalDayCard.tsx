@@ -282,7 +282,7 @@ export const JournalDayCard: React.FC<JournalDayCardProps> = ({
   return (
     <motion.div
       className={cn(
-        "bg-card border rounded-2xl shadow-sm hover:shadow-md transition-all duration-200",
+        "bg-card border rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden max-w-full w-full",
         isToday && "ring-2 ring-primary/50",
         hasReflection && "border-green-500/30 bg-green-50/5",
         isExpanded && "shadow-lg"
@@ -294,8 +294,8 @@ export const JournalDayCard: React.FC<JournalDayCardProps> = ({
         className="p-4 cursor-pointer"
         onClick={onToggleExpanded}
       >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between gap-3 overflow-x-hidden">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
             {/* Expand/Collapse Button */}
             <motion.div
               animate={{ rotate: isExpanded ? 90 : 0 }}
@@ -305,9 +305,9 @@ export const JournalDayCard: React.FC<JournalDayCardProps> = ({
             </motion.div>
             
             {/* Date and Day */}
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-lg">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 min-w-0">
+                <h3 className="font-semibold text-base sm:text-lg truncate">
                   {formatDate(dateObj)}
                 </h3>
                 {isToday && (
@@ -319,19 +319,19 @@ export const JournalDayCard: React.FC<JournalDayCardProps> = ({
                   <BookOpen className="w-4 h-4 text-green-500" />
                 )}
               </div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs sm:text-sm text-muted-foreground truncate">
                 {dateObj.toLocaleDateString('en-US', { weekday: 'long' })}
               </p>
             </div>
           </div>
           
           {/* Summary Stats */}
-          <div className="flex items-center gap-6 text-sm">
+          <div className="flex items-center gap-3 sm:gap-6 text-xs sm:text-sm whitespace-nowrap">
             {/* P&L */}
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 min-w-0">
               <DollarSign className="w-4 h-4 text-muted-foreground" />
               <span className={cn(
-                "font-medium",
+                "font-medium truncate",
                 stats.pnl > 0 ? "text-green-500" : stats.pnl < 0 ? "text-red-500" : "text-muted-foreground"
               )}>
                 {formatCurrency(stats.pnl)}
@@ -339,36 +339,34 @@ export const JournalDayCard: React.FC<JournalDayCardProps> = ({
             </div>
             
             {/* Trades */}
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 min-w-0">
               <TrendingUp className="w-4 h-4 text-muted-foreground" />
-              <span className="text-muted-foreground">
+              <span className="text-muted-foreground truncate">
                 {stats.trades} trades
               </span>
             </div>
             
             {/* Win Rate */}
             {stats.trades > 0 && (
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 min-w-0">
                 <Target className="w-4 h-4 text-muted-foreground" />
-                <span className="text-muted-foreground">
+                <span className="text-muted-foreground truncate">
                   {stats.winRate.toFixed(0)}%
                 </span>
               </div>
             )}
             
             {/* Notes */}
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 min-w-0">
               <MessageSquare className="w-4 h-4 text-muted-foreground" />
-                                <span className="text-muted-foreground">
-                    {dayNotes.length} notes
-                  </span>
+              <span className="text-muted-foreground truncate">{dayNotes.length} notes</span>
             </div>
             
             {/* Mood */}
             {getMoodTrendDisplay() && (
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 min-w-0">
                 <Smile className="w-4 h-4 text-muted-foreground" />
-                <span className="text-lg">{getMoodTrendDisplay()}</span>
+                <span className="text-base sm:text-lg truncate">{getMoodTrendDisplay()}</span>
               </div>
             )}
           </div>

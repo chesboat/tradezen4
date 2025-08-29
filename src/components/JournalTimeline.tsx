@@ -154,7 +154,7 @@ export const JournalTimeline: React.FC<JournalTimelineProps> = ({ className }) =
   };
 
   return (
-    <div className={cn("p-6 min-h-screen bg-gradient-to-br from-background to-muted/30", className)}>
+    <div className={cn("p-4 sm:p-6 min-h-screen bg-gradient-to-br from-background to-muted/30 overflow-x-hidden max-w-full w-full", className)}>
       {/* Header */}
       <div className="mb-8">
         <motion.div
@@ -208,7 +208,7 @@ export const JournalTimeline: React.FC<JournalTimelineProps> = ({ className }) =
       </div>
 
       {/* Controls */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 overflow-x-hidden">
         <div className="flex items-center gap-4">
           {/* Date Navigation */}
           <div className="flex items-center gap-2">
@@ -276,7 +276,7 @@ export const JournalTimeline: React.FC<JournalTimelineProps> = ({ className }) =
       </div>
 
       {/* Timeline */}
-      <div className="space-y-4">
+      <div className="space-y-4 overflow-x-hidden max-w-full">
         <AnimatePresence mode="popLayout">
           {timelineEntries.map((entry, index) => (
             <motion.div
