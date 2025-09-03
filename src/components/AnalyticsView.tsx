@@ -84,7 +84,10 @@ export const AnalyticsView: React.FC = () => {
 
   // Filter trades by account and period
   const filteredTrades = useMemo(() => {
-    let filtered = trades.filter(trade => !selectedAccountId || trade.accountId === selectedAccountId);
+    let filtered = trades.filter(trade => {
+      if (!selectedAccountId) return trade.accountId !== 'all' && !String(trade.accountId).startsWith('group:');
+      return trade.accountId === selectedAccountId;
+    });
     
     if (selectedPeriod.days > 0) {
       const cutoffDate = new Date();

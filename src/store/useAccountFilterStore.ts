@@ -131,6 +131,16 @@ export const useAccountFilterActions = () => useAccountFilterStore((state) => ({
   removeAccount: state.removeAccount,
 }));
 
+// Pseudo account helpers
+export const isPseudoAccountId = (accountId: string | null | undefined): boolean => {
+  if (!accountId) return false;
+  return accountId === 'all' || String(accountId).startsWith('group:');
+};
+
+export const filterRealAccounts = <T extends { accountId: string }>(items: T[]): T[] => {
+  return items.filter((it) => !isPseudoAccountId(it.accountId));
+};
+
 // Helper: resolve which account IDs are in scope for a given selection
 export const getAccountIdsForSelection = (selectedId: string | null): string[] => {
   const { accounts } = useAccountFilterStore.getState();

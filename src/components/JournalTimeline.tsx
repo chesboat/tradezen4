@@ -63,7 +63,8 @@ export const JournalTimeline: React.FC<JournalTimelineProps> = ({ className }) =
         const dayStart = new Date(dateStr + 'T00:00:00');
         const dayEnd = new Date(dateStr + 'T23:59:59.999');
         
-        return tradeDate >= dayStart && tradeDate <= dayEnd &&
+        const realAccount = trade.accountId !== 'all' && !String(trade.accountId).startsWith('group:');
+        return realAccount && tradeDate >= dayStart && tradeDate <= dayEnd &&
                (!selectedAccountId || trade.accountId === selectedAccountId);
       });
       
@@ -74,7 +75,8 @@ export const JournalTimeline: React.FC<JournalTimelineProps> = ({ className }) =
         dayStart.setHours(0, 0, 0, 0);
         const dayEnd = new Date(d);
         dayEnd.setHours(23, 59, 59, 999);
-        return noteDate >= dayStart && noteDate <= dayEnd &&
+        const realAccountNote = note.accountId !== 'all' && !String(note.accountId).startsWith('group:');
+        return realAccountNote && noteDate >= dayStart && noteDate <= dayEnd &&
                (!selectedAccountId || note.accountId === selectedAccountId);
       });
       

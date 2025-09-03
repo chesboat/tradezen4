@@ -114,7 +114,7 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
   // Filter and sort trades
   const filteredTrades = useMemo(() => {
     let filtered = (() => {
-      if (!selectedAccountId || selectedAccountId === 'all') return trades;
+      if (!selectedAccountId || selectedAccountId === 'all') return trades.filter(t => t.accountId !== 'all' && !t.accountId.startsWith('group:'));
       const ids = getAccountIdsForSelection(selectedAccountId);
       return trades.filter(t => ids.includes(t.accountId));
     })();

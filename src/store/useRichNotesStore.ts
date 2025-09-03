@@ -70,7 +70,7 @@ export const useRichNotesStore = create<RichNotesState>((set, get) => ({
       let notes: RichNote[] = [] as any;
       if (!accountId) {
         // All accounts: fetch all and order by updatedAt
-        notes = await service.getAll();
+        notes = (await service.getAll()).filter(n => n.accountId !== 'all' && !(String(n.accountId || '').startsWith('group:')));
         notes.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
       } else {
         notes = await service.query([
