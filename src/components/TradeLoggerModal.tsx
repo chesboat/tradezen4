@@ -15,7 +15,8 @@ import {
   Calendar,
   Calculator,
   Tag as TagIcon,
-  Camera
+  Camera,
+  FileDown
 } from 'lucide-react';
 import { useTradeActions } from '@/store/useTradeStore';
 import { useAccountFilterStore, getAccountIdsForSelection } from '@/store/useAccountFilterStore';
@@ -28,6 +29,7 @@ import { useTradeStore } from '@/store/useTradeStore';
 import { useQuickNoteStore } from '@/store/useQuickNoteStore';
 import { TagInput } from '@/components/TagPill';
 import TradeImageImport from '@/components/TradeImageImport';
+import TradeCSVImport from '@/components/TradeCSVImport';
 import { Trade, TradeDirection, MoodType, TradeResult } from '@/types';
 import { formatCurrency, localStorage, STORAGE_KEYS, getRecentSymbols, addRecentSymbol, getMostRecentSymbol } from '@/lib/localStorageUtils';
 import { cn } from '@/lib/utils';
@@ -111,6 +113,7 @@ export const TradeLoggerModal: React.FC<TradeLoggerModalProps> = ({
   const [recentSymbols, setRecentSymbols] = useState<string[]>(getRecentSymbols());
   const [lockoutRemaining, setLockoutRemaining] = useState<string | null>(null);
   const [showImageImport, setShowImageImport] = useState(false);
+  const [showCsvImport, setShowCsvImport] = useState(false);
   const { allTags } = useQuickNoteStore();
   
   const symbolInputRef = useRef<HTMLInputElement>(null);
@@ -627,7 +630,7 @@ export const TradeLoggerModal: React.FC<TradeLoggerModalProps> = ({
               </div>
             )}
 
-            {/* Screenshot Import CTA */}
+            {/* Import CTAs */}
             {!editingTrade && (
               <div className="mx-4 mt-3 mb-0">
                 <motion.button
@@ -640,11 +643,29 @@ export const TradeLoggerModal: React.FC<TradeLoggerModalProps> = ({
                     <Camera className="w-4 h-4" />
                   </div>
                   <div className="flex-1 text-left">
-                    <div className="font-semibold text-sm">Import from Screenshot</div>
-                    <div className="text-xs text-blue-600/70 dark:text-blue-400/70">Bulk import multiple trades instantly</div>
+                    <div className="font-semibold text-sm">Import Topstep Screenshot</div>
+                    <div className="text-xs text-blue-600/70 dark:text-blue-400/70">ProjectX trade table screenshots only</div>
                   </div>
                   <div className="text-xs bg-blue-500/15 px-2.5 py-1 rounded-full font-medium">
                     Try it
+                  </div>
+                </motion.button>
+                <div className="mt-2" />
+                <motion.button
+                  onClick={() => setShowCsvImport(true)}
+                  className="w-full flex items-center justify-center gap-3 p-3 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 hover:from-emerald-100 hover:to-teal-100 dark:hover:from-emerald-900/40 dark:hover:to-teal-900/40 border border-emerald-200/50 dark:border-emerald-700/30 text-emerald-700 dark:text-emerald-300 transition-all duration-200 group"
+                  whileHover={{ scale: 1.005, y: -1 }}
+                  whileTap={{ scale: 0.995 }}
+                >
+                  <div className="p-2 rounded-xl bg-emerald-500/10 group-hover:bg-emerald-500/20 transition-colors">
+                    <FileDown className="w-4 h-4" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <div className="font-semibold text-sm">Import TradingView CSV</div>
+                    <div className="text-xs text-emerald-600/70 dark:text-emerald-400/70">Orders → ⋯ → Export → CSV</div>
+                  </div>
+                  <div className="text-xs bg-emerald-500/15 px-2.5 py-1 rounded-full font-medium">
+                    New
                   </div>
                 </motion.button>
               </div>
@@ -1204,10 +1225,16 @@ export const TradeLoggerModal: React.FC<TradeLoggerModalProps> = ({
         </>
       )}
 
-      {/* Screenshot Import Modal */}
+      {/* Import Modals */}
       <TradeImageImport 
+        key="image-import"
         isOpen={showImageImport} 
         onClose={() => setShowImageImport(false)} 
+      />
+      <TradeCSVImport
+        key="csv-import"
+        isOpen={showCsvImport}
+        onClose={() => setShowCsvImport(false)}
       />
     </AnimatePresence>
   );

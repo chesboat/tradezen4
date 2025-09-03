@@ -73,10 +73,10 @@ export const CommandBar: React.FC = () => {
     },
     {
       id: 'trade:import-screenshot',
-      title: 'Import from Screenshot',
-      hint: 'Parse a trade table image',
+      title: 'Import Topstep Screenshot',
+      hint: 'ProjectX trade table screenshots only',
       action: () => { setOpen(false); setImportOpen(true); },
-      keywords: ['import', 'screenshot', 'image', 'ocr']
+      keywords: ['import', 'screenshot', 'image', 'ocr', 'topstep', 'projectx']
     },
     {
       id: 'note:new',

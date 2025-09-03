@@ -19,6 +19,22 @@ type ParsedTrade = {
   commissions?: number;
 };
 
+// TradingView Orders table row (post-OCR extraction schema)
+type TradingViewOrder = {
+  symbol: string;
+  side: 'Buy' | 'Sell';
+  type: 'Market' | 'Limit' | 'Stop' | 'Stop Loss' | 'Take Profit' | string;
+  qty?: number;
+  limitPrice?: number;
+  stopPrice?: number;
+  takeProfit?: number;
+  stopLoss?: number;
+  avgFillPrice?: number;
+  status?: 'Filled' | 'Cancelled' | 'Working' | string;
+  updateTime?: string; // ISO or time-only
+  orderId?: string | number;
+};
+
 interface TradeImageImportProps {
   isOpen: boolean;
   onClose: () => void;
@@ -81,17 +97,17 @@ export const TradeImageImport: React.FC<TradeImageImportProps> = ({ isOpen, onCl
 
       const openai = new OpenAI({ apiKey, dangerouslyAllowBrowser: true });
 
-      const systemPrompt = `You are a precise data extraction engine. Extract trade rows from the provided screenshot of a trade table.
+      const systemPrompt = `You are a precise data extraction engine for trading tables.
 Return ONLY valid JSON with the schema:
 {
-  "date": string?,                 // ISO date if a session date is visible (e.g., 2025-08-07)
-  "timezoneOffsetMinutes": number?, // If a timezone is shown, provide minutes offset from UTC (e.g., -300 for ET)
+  "date": string?,                 // ISO date if visible (e.g., 2025-08-07)
+  "timezoneOffsetMinutes": number?,
   "trades": [
     {
       "symbol": string,
       "direction": "long"|"short",
       "quantity": number?,
-      "entryTime": string?,   // Prefer full ISO (e.g., 2025-08-07T12:46:32-05:00). If only a time is visible, return just the time string (e.g., 12:46:32 pm)
+      "entryTime": string?,
       "exitTime": string?,
       "entryPrice": number?,
       "exitPrice": number?,
@@ -103,7 +119,7 @@ Return ONLY valid JSON with the schema:
 }
 Rules:\n- Use data exactly as shown in the screenshot.\n- Numbers should be plain (no $ or commas).\n- Direction should be long or short.\n- If a cell is blank or ambiguous, omit that field.`;
 
-      const userText = `Extract the trades visible in this screenshot. The columns often include ID, Symbol, Size/Quantity, Entry Time, Exit Time, Entry Price, Exit Price, P&L, Commissions, Fees, Direction. Only return JSON.`;
+      const userText = `Extract trades visible in this screenshot. The columns often include: Symbol, Side/Direction, Quantity, Entry Time, Exit Time, Entry Price, Exit Price, P&L, Fees/Commissions. Only return JSON.`;
 
       const completion = await openai.chat.completions.create({
         model: 'gpt-5-mini',
@@ -165,7 +181,16 @@ Rules:\n- Use data exactly as shown in the screenshot.\n- Numbers should be plai
         console.warn('Unparsable AI response:', raw);
         throw new Error('AI returned non‑JSON output. Please try again.');
       }
-      const { date, timezoneOffsetMinutes, trades } = json as { date?: string; timezoneOffsetMinutes?: number; trades: ParsedTrade[] };
+      console.log('[Image Import] OCR JSON:', json);
+      const { date, timezoneOffsetMinutes } = json as { date?: string; timezoneOffsetMinutes?: number };
+      let trades = (json as any).trades as ParsedTrade[] | undefined;
+      if (!trades) {
+        const candidates = Object.values(json).filter(v => Array.isArray(v)) as any[];
+        const isTradeLike = (arr: any[]): boolean => Array.isArray(arr) && arr.some(r => r && typeof r === 'object' && (
+          'entryPrice' in r || 'exitPrice' in r || 'entryTime' in r || 'exitTime' in r
+        ));
+        trades = candidates.find(isTradeLike) as any;
+      }
       // If a session date was detected, keep as base for time-only cells
       let baseDate: Date | null = null;
       if (date) {
@@ -267,17 +292,130 @@ Rules:\n- Use data exactly as shown in the screenshot.\n- Numbers should be plai
         return undefined;
       };
 
+      // Helper: compute filled price for an order
+      const toNumber = (v: any): number | undefined => (typeof v === 'number' ? v : (v != null && v !== '' ? Number(String(v).replace(/[^\d.\-]/g, '')) : undefined));
+      const getOrderFilledPrice = (o: TradingViewOrder): number | undefined => (
+        toNumber((o as any).avgFillPrice) ?? toNumber(o.limitPrice) ?? toNumber(o.stopPrice) ?? toNumber(o.takeProfit) ?? toNumber(o.stopLoss)
+      );
+
+      // Convert TradingView filled orders into trades
+      const groupOrdersToTrades = (list: TradingViewOrder[], base: Date | null): ParsedTrade[] => {
+        const normalize = (s?: string) => String(s || '').trim().toLowerCase();
+        const isFilled = (s?: string) => /fill/.test(normalize(s));
+        const isCancelled = (s?: string) => /cancel/.test(normalize(s));
+        const filled = (list || []).filter(o => isFilled(o.status) && !isCancelled(o.status));
+        const withTs = filled.map(o => ({
+          ...o,
+          __ts: toDate(o.updateTime, base),
+          __price: getOrderFilledPrice(o)
+        })).sort((a, b) => {
+          const at = a.__ts ? a.__ts.getTime() : 0;
+          const bt = b.__ts ? b.__ts.getTime() : 0;
+          return at - bt;
+        });
+
+        type OpenPos = { symbol: string; direction: 'long'|'short'; price: number; quantity: number; time?: Date };
+        const open: OpenPos[] = [];
+        const result: ParsedTrade[] = [];
+
+        const typeOf = (t?: string) => {
+          const x = normalize(t);
+          if (/(stop\s*loss|stop-loss|sl)/.test(x)) return 'stop loss';
+          if (/(take\s*profit|take-profit|tp)/.test(x)) return 'take profit';
+          if (/market/.test(x)) return 'market';
+          if (/limit/.test(x)) return 'limit';
+          if (/stop/.test(x)) return 'stop';
+          return x;
+        };
+
+        for (const o of withTs) {
+          const type = typeOf(o.type);
+          const side = normalize(o.side);
+          const qty = typeof o.qty === 'number' ? o.qty : (o.qty ? Number(String(o.qty).replace(/[,]/g, '')) : 1);
+          const price = typeof o.__price === 'number' ? o.__price : undefined;
+          const time = o.__ts;
+          if (!o.symbol || !qty || !price) {
+            continue;
+          }
+
+          const isEntry = type === 'market' || type === 'limit' || type === 'stop';
+          const isExit = type === 'stop loss' || type === 'take profit';
+
+          if (isEntry) {
+            const direction: 'long'|'short' = side === 'buy' ? 'long' : 'short';
+            open.push({ symbol: o.symbol, direction, price, quantity: qty, time });
+            continue;
+          }
+
+          if (isExit) {
+            const closingDirection: 'long'|'short' = side === 'sell' ? 'long' : 'short';
+            // find earliest matching open position
+            let posIndex = open.findIndex(p => p.symbol === o.symbol && p.direction === closingDirection && p.quantity > 0);
+            if (posIndex === -1) {
+              continue;
+            }
+            let remaining = qty;
+            while (remaining > 0 && posIndex !== -1) {
+              const pos = open[posIndex];
+              const takeQty = Math.min(remaining, pos.quantity);
+              const entryTime = pos.time;
+              const exitTime = time;
+              const entryPrice = pos.price;
+              const exitPrice = price;
+              const direction = pos.direction;
+              const pnl = direction === 'long'
+                ? (exitPrice - entryPrice) * takeQty
+                : (entryPrice - exitPrice) * takeQty;
+
+              // Sanity: for stop-loss exits, ensure price moved against the position. If not, still save but it's a clue of mismatch.
+              // Future: we could re-match to a better candidate if available.
+
+              result.push({
+                symbol: o.symbol,
+                direction,
+                quantity: takeQty,
+                entryTime: entryTime ? entryTime.toISOString() : undefined,
+                exitTime: exitTime ? exitTime.toISOString() : undefined,
+                entryPrice,
+                exitPrice,
+                pnl,
+              });
+
+              pos.quantity -= takeQty;
+              remaining -= takeQty;
+              if (pos.quantity <= 0) {
+                open.splice(posIndex, 1);
+              }
+              posIndex = open.findIndex(p => p.symbol === o.symbol && p.direction === closingDirection && p.quantity > 0);
+            }
+            continue;
+          }
+        }
+        return result;
+      };
+
       const normalized = (Array.isArray(trades) ? trades : []).map(t => {
-        const entry = toDate((t as any).entryTime as any, baseDate);
-        const exit = toDate((t as any).exitTime as any, baseDate);
-        return {
-          ...t,
-          entryTime: entry ? entry.toISOString() : (t as any).entryTime,
-          exitTime: exit ? exit.toISOString() : (t as any).exitTime,
-        } as ParsedTrade;
-      });
+          const entry = toDate((t as any).entryTime as any, baseDate);
+          const exit = toDate((t as any).exitTime as any, baseDate);
+          const entryPrice = typeof (t as any).entryPrice === 'number' ? (t as any).entryPrice : undefined;
+          const exitPrice = typeof (t as any).exitPrice === 'number' ? (t as any).exitPrice : undefined;
+          let pnl = (t as any).pnl as number | undefined;
+          if (pnl === undefined && entryPrice !== undefined && exitPrice !== undefined && (t as any).direction) {
+            pnl = (t as any).direction === 'long' ? (exitPrice - entryPrice) * (Number((t as any).quantity || 1)) : (entryPrice - exitPrice) * (Number((t as any).quantity || 1));
+          }
+          return {
+            ...t,
+            entryTime: entry ? entry.toISOString() : (t as any).entryTime,
+            exitTime: exit ? exit.toISOString() : (t as any).exitTime,
+            pnl,
+          } as ParsedTrade;
+        });
+
       setParsedBaseDate(baseDate);
       setParsedTrades(normalized);
+      if (!normalized || normalized.length === 0) {
+        setParseError('No trades recognized. Try cropping to the table area and re-upload.');
+      }
     } catch (err: any) {
       console.error('Image parsing failed:', err);
       setParseError(err?.message || 'Failed to parse screenshot');
@@ -351,8 +489,8 @@ Rules:\n- Use data exactly as shown in the screenshot.\n- Numbers should be plai
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-4 border-b border-border">
-              <h3 className="text-lg font-semibold text-card-foreground">Import Trades from Screenshot (GPT‑5)</h3>
-              <p className="text-xs text-muted-foreground">Upload a screenshot of a trade table. We’ll OCR and parse it into structured trades you can import.</p>
+              <h3 className="text-lg font-semibold text-card-foreground">Import Topstep Screenshot (ProjectX)</h3>
+              <p className="text-xs text-muted-foreground">Supports ProjectX/Topstep trade table screenshots. For TradingView, use Import TradingView CSV.</p>
             </div>
 
             <div className="p-4 space-y-4">
@@ -418,6 +556,8 @@ Rules:\n- Use data exactly as shown in the screenshot.\n- Numbers should be plai
                         {parseError}
                       </div>
                     )}
+
+                    
 
                     <div className="max-h-72 overflow-auto border border-border rounded-lg">
                       <table className="w-full text-sm">

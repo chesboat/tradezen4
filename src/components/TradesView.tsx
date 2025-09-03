@@ -393,7 +393,7 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
             className="flex items-center justify-center gap-2 px-4 py-2 bg-muted/50 hover:bg-muted/70 rounded-lg transition-colors text-sm"
           >
             <span className="sm:hidden">Import</span>
-            <span className="hidden sm:inline">Import from Screenshot</span>
+            <span className="hidden sm:inline">Import Topstep Screenshot</span>
           </button>
         </div>
       </div>
