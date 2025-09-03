@@ -56,13 +56,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { url } = await createUploadURL({
       access: 'public',
       addRandomSuffix: true,
-      contentType: 'image/*',
+      allowedContentTypes: ['image/*'],
+      maximumSize: 50_000_000, // 50MB to accommodate large screenshots
     });
 
     return res.status(200).json({ uploadURL: url });
   } catch (e: any) {
     console.error('createUploadURL failed:', e);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    const message = typeof e?.message === 'string' ? e.message : 'Internal Server Error';
+    return res.status(500).json({ error: message });
   }
 }
 
