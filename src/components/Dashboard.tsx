@@ -288,8 +288,7 @@ export const Dashboard: React.FC = () => {
 
   // Calculate real KPIs (respect group selection)
   const filteredTrades = React.useMemo(() => {
-    if (!selectedAccountId) return trades.filter(t => t.accountId !== 'all' && !String(t.accountId).startsWith('group:'));
-    const ids = getAccountIdsForSelection(selectedAccountId);
+    const ids = getAccountIdsForSelection(selectedAccountId || null);
     return trades.filter(trade => ids.includes(trade.accountId));
   }, [trades, selectedAccountId]);
   const today = new Date();

@@ -116,7 +116,7 @@ export const NotesView: React.FC = () => {
 
   // Load rich notes when account changes
   useEffect(() => {
-    // null selectedAccountId means All Accounts
+    // null selectedAccountId means All Accounts; store filters out deleted/inactive
     loadRichNotes(selectedAccountId || null);
   }, [selectedAccountId, loadRichNotes]);
 

@@ -13,7 +13,7 @@ import { useTradeStore } from '@/store/useTradeStore';
 import { useQuickNoteStore } from '@/store/useQuickNoteStore';
 import { useDailyReflectionStore } from '@/store/useDailyReflectionStore';
 import { summarizeWinLossScratch } from '@/lib/utils';
-import { useAccountFilterStore } from '@/store/useAccountFilterStore';
+import { useAccountFilterStore, getAccountIdsForSelection } from '@/store/useAccountFilterStore';
 
 import { formatDate } from '@/lib/localStorageUtils';
 import { cn } from '@/lib/utils';
@@ -63,9 +63,8 @@ export const JournalTimeline: React.FC<JournalTimelineProps> = ({ className }) =
         const dayStart = new Date(dateStr + 'T00:00:00');
         const dayEnd = new Date(dateStr + 'T23:59:59.999');
         
-        const realAccount = trade.accountId !== 'all' && !String(trade.accountId).startsWith('group:');
-        return realAccount && tradeDate >= dayStart && tradeDate <= dayEnd &&
-               (!selectedAccountId || trade.accountId === selectedAccountId);
+        const ids = getAccountIdsForSelection(selectedAccountId || null);
+        return tradeDate >= dayStart && tradeDate <= dayEnd && ids.includes(trade.accountId);
       });
       
       // Get day's notes
@@ -75,9 +74,8 @@ export const JournalTimeline: React.FC<JournalTimelineProps> = ({ className }) =
         dayStart.setHours(0, 0, 0, 0);
         const dayEnd = new Date(d);
         dayEnd.setHours(23, 59, 59, 999);
-        const realAccountNote = note.accountId !== 'all' && !String(note.accountId).startsWith('group:');
-        return realAccountNote && noteDate >= dayStart && noteDate <= dayEnd &&
-               (!selectedAccountId || note.accountId === selectedAccountId);
+        const ids = getAccountIdsForSelection(selectedAccountId || null);
+        return noteDate >= dayStart && noteDate <= dayEnd && ids.includes(note.accountId);
       });
       
       // Calculate stats (exclude scratches and tiny fee negatives)
@@ -90,9 +88,8 @@ export const JournalTimeline: React.FC<JournalTimelineProps> = ({ className }) =
         : 0;
       
       // Check if reflection exists
-      const hasReflection = reflections.find(r => 
-        r.date === dateStr && (!selectedAccountId || r.accountId === selectedAccountId)
-      ) !== undefined;
+      const ids = getAccountIdsForSelection(selectedAccountId || null);
+      const hasReflection = reflections.find(r => r.date === dateStr && ids.includes(r.accountId)) !== undefined;
       
       entries.push({
         date: dateStr,

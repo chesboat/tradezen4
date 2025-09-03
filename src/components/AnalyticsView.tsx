@@ -24,7 +24,7 @@ import {
   MinusCircle
 } from 'lucide-react';
 import { useTradeStore } from '@/store/useTradeStore';
-import { useAccountFilterStore } from '@/store/useAccountFilterStore';
+import { useAccountFilterStore, getAccountIdsForSelection } from '@/store/useAccountFilterStore';
 import { summarizeWinLossScratch, classifyTradeResult } from '@/lib/utils';
 import { computeEdgeScore } from '@/lib/edgeScore';
 import { Trade, TradeResult, MoodType } from '@/types';
@@ -84,10 +84,8 @@ export const AnalyticsView: React.FC = () => {
 
   // Filter trades by account and period
   const filteredTrades = useMemo(() => {
-    let filtered = trades.filter(trade => {
-      if (!selectedAccountId) return trade.accountId !== 'all' && !String(trade.accountId).startsWith('group:');
-      return trade.accountId === selectedAccountId;
-    });
+    const ids = getAccountIdsForSelection(selectedAccountId || null);
+    let filtered = trades.filter(trade => ids.includes(trade.accountId));
     
     if (selectedPeriod.days > 0) {
       const cutoffDate = new Date();

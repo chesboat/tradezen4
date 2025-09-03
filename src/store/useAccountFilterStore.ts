@@ -144,14 +144,19 @@ export const filterRealAccounts = <T extends { accountId: string }>(items: T[]):
 // Helper: resolve which account IDs are in scope for a given selection
 export const getAccountIdsForSelection = (selectedId: string | null): string[] => {
   const { accounts } = useAccountFilterStore.getState();
-  if (!selectedId) return accounts.map((a) => a.id);
+  if (!selectedId) return accounts.filter(a => a.isActive !== false).map((a) => a.id);
   if (selectedId.startsWith('group:')) {
     const leaderId = selectedId.split(':')[1];
     const leader = accounts.find((a) => a.id === leaderId);
-    const linked = leader?.linkedAccountIds || [];
-    return [leaderId, ...linked];
+    const linked = (leader?.linkedAccountIds || []).filter(id => {
+      const acc = accounts.find(a => a.id === id);
+      return acc && acc.isActive !== false;
+    });
+    const includeLeader = leader && leader.isActive !== false ? [leaderId] : [];
+    return [...includeLeader, ...linked];
   }
-  return [selectedId];
+  const single = accounts.find(a => a.id === selectedId);
+  return single && single.isActive !== false ? [selectedId] : [];
 };
 
 // Get the full group (leader first) for any account selection (single or group)
