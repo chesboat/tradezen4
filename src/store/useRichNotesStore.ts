@@ -15,7 +15,7 @@ interface RichNotesState {
   showFavoritesOnly: boolean;
   
   // Actions
-  loadNotes: (accountId: string) => Promise<void>;
+  loadNotes: (accountId: string | null) => Promise<void>;
   createNote: (noteData: Omit<RichNote, 'id' | 'createdAt' | 'updatedAt' | 'wordCount' | 'readingTime'>) => Promise<RichNote>;
   updateNote: (id: string, updates: Partial<RichNote>) => Promise<void>;
   deleteNote: (id: string) => Promise<void>;
@@ -64,13 +64,20 @@ export const useRichNotesStore = create<RichNotesState>((set, get) => ({
   selectedFolder: null,
   showFavoritesOnly: false,
 
-  loadNotes: async (accountId: string) => {
+  loadNotes: async (accountId: string | null) => {
     set({ isLoading: true });
     try {
-      const notes = await service.query([
-        where('accountId', '==', accountId),
-        orderBy('updatedAt', 'desc'),
-      ]);
+      let notes: RichNote[] = [] as any;
+      if (!accountId) {
+        // All accounts: fetch all and order by updatedAt
+        notes = await service.getAll();
+        notes.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+      } else {
+        notes = await service.query([
+          where('accountId', '==', accountId),
+          orderBy('updatedAt', 'desc'),
+        ]);
+      }
       set({ notes, isLoading: false });
     } catch (error) {
       console.error('Failed to load rich notes:', error);

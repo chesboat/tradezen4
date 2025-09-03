@@ -116,9 +116,8 @@ export const NotesView: React.FC = () => {
 
   // Load rich notes when account changes
   useEffect(() => {
-    if (selectedAccountId) {
-      loadRichNotes(selectedAccountId);
-    }
+    // null selectedAccountId means All Accounts
+    loadRichNotes(selectedAccountId || null);
   }, [selectedAccountId, loadRichNotes]);
 
   // Close dropdowns when clicking outside
