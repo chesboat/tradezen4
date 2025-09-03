@@ -103,7 +103,7 @@ export const AccountFilter: React.FC<AccountFilterProps> = ({ className }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleAccountSelect = (accountId: string) => {
+  const handleAccountSelect = (accountId: string | null) => {
     setSelectedAccount(accountId);
     setIsOpen(false);
   };
@@ -243,7 +243,7 @@ export const AccountFilter: React.FC<AccountFilterProps> = ({ className }) => {
                   className={`w-full flex items-center gap-3 px-3 py-2.5 hover:bg-accent transition-colors group ${
                     selectedAccountId === null ? 'bg-accent' : ''
                   }`}
-                  onClick={() => handleAccountSelect(null as unknown as string)}
+                  onClick={() => handleAccountSelect(null)}
                   whileHover={{ x: 2 }}
                   whileTap={{ scale: 0.98 }}
                 >

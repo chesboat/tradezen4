@@ -38,7 +38,19 @@ export const useTradeStore = create<TradeState>((set, get) => ({
         entryTime: new Date(trade.entryTime),
         exitTime: trade.exitTime ? new Date(trade.exitTime) : undefined,
       }));
-      set({ trades: formattedTrades.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()) });
+      // Exclude trades belonging to deleted/inactive accounts
+      let filtered = formattedTrades;
+      try {
+        const mod = await import('./useAccountFilterStore');
+        const { accounts } = mod.useAccountFilterStore.getState();
+        if (accounts && accounts.length > 0) {
+          const validIds = new Set(accounts.filter(a => a.isActive !== false).map(a => a.id));
+          filtered = formattedTrades.filter(t => validIds.has(t.accountId));
+        }
+      } catch (_e) {
+        // If account store is not ready yet, fall back to unfiltered
+      }
+      set({ trades: filtered.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()) });
     } catch (error) {
       console.error('Failed to initialize trades:', error);
       set({ trades: [] });
