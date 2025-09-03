@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { FirestoreService } from '@/lib/firestore';
+import { formatLocalDate } from '@/lib/utils';
 import { useActivityLogStore } from './useActivityLogStore';
 import type { TallyRule, TallyLog, TallyStreak } from '@/types';
 
@@ -17,7 +18,7 @@ interface RuleTallyState {
   getRulesByAccount: (accountId: string) => TallyRule[];
   
   // Tally logging
-  addTally: (ruleId: string, accountId: string) => Promise<void>;
+  addTally: (ruleId: string, accountId: string, dateOverride?: string) => Promise<void>;
   getTallyLog: (date: string, accountId: string) => TallyLog[];
   getTallyCountForRule: (ruleId: string, date: string) => number;
   
@@ -150,13 +151,33 @@ export const useRuleTallyStore = create<RuleTallyState>()(
         return rules.filter((rule) => rule.accountId === accountId && rule.isActive);
       },
 
-      addTally: async (ruleId, accountId) => {
-        const today = new Date().toISOString().split('T')[0];
+      addTally: async (ruleId, accountId, dateOverride) => {
+        const today = formatLocalDate(new Date());
+        const targetDate = dateOverride || today;
         const { logs } = get();
         
-        // Find existing log for today
+        // Validate rule exists
+        const rule = get().rules.find(r => r.id === ruleId);
+        if (!rule) {
+          throw new Error('Habit rule not found');
+        }
+
+        // Guard: future dates not allowed
+        if (new Date(targetDate) > new Date(today)) {
+          throw new Error('Cannot add tally for a future date');
+        }
+
+        // Guard: respect habit schedule (if provided)
+        if (rule.schedule?.days && rule.schedule.days.length > 0) {
+          const dayOfWeek = new Date(targetDate).getDay();
+          if (!rule.schedule.days.includes(dayOfWeek)) {
+            throw new Error('Selected date is not in habit schedule');
+          }
+        }
+
+        // Find existing log for target date
         const existingLog = logs.find(
-          (log) => log.ruleId === ruleId && log.date === today && log.accountId === accountId
+          (log) => log.ruleId === ruleId && log.date === targetDate && log.accountId === accountId
         );
 
         try {
@@ -181,7 +202,7 @@ export const useRuleTallyStore = create<RuleTallyState>()(
             // Create new log
             const newLog: TallyLog = {
               id: crypto.randomUUID(),
-              date: today,
+              date: targetDate,
               ruleId,
               tallyCount: 1,
               xpEarned: 0,
@@ -198,7 +219,6 @@ export const useRuleTallyStore = create<RuleTallyState>()(
           }
 
           // Log XP activity with enhanced messaging
-          const rule = get().rules.find(r => r.id === ruleId);
           if (rule) {
             const { addActivity } = useActivityLogStore.getState();
             const currentTallyCount = existingLog ? existingLog.tallyCount + 1 : 1;
@@ -207,16 +227,17 @@ export const useRuleTallyStore = create<RuleTallyState>()(
             const streak = get().calculateStreak(ruleId);
 
             // Compute XP using centralized rewards (base + streak bonus)
-            const { XpRewards, awardXp } = await import('@/lib/xp/XpService');
+            const { XpRewards, awardXp, XpService } = await import('@/lib/xp/XpService');
             const baseXp = XpRewards.HABIT_COMPLETE;
-            const streakBonus = XpRewards.HABIT_STREAK_BONUS * Math.min(streak.currentStreak, 30);
+            const isRetro = targetDate < today;
+            const streakBonus = isRetro ? 0 : XpRewards.HABIT_STREAK_BONUS * Math.min(streak.currentStreak, 30);
             const totalXp = baseXp + streakBonus;
-            console.log('🏁 Habit XP compute:', { ruleId, baseXp, streakBonus, totalXp, streak: streak.currentStreak, tallyCount: currentTallyCount });
+            console.log('🏁 Habit XP compute:', { ruleId, baseXp, streakBonus, totalXp, streak: streak.currentStreak, tallyCount: currentTallyCount, targetDate, isRetro });
 
             // Update today's log xpEarned to reflect computed value
             set((state) => ({
               logs: state.logs.map((log) =>
-                log.ruleId === ruleId && log.date === today && log.accountId === accountId
+                log.ruleId === ruleId && log.date === targetDate && log.accountId === accountId
                   ? { ...log, xpEarned: totalXp, updatedAt: new Date() }
                   : log
               ),
@@ -252,9 +273,15 @@ export const useRuleTallyStore = create<RuleTallyState>()(
 
             // Award XP through new prestige system
             try {
-              console.log('🎯 Calling awardXp.habitComplete...', { ruleId, streakDays: streak.currentStreak });
-              await awardXp.habitComplete(ruleId, streak.currentStreak);
-              console.log('✅ Habit XP awarded');
+              if (isRetro) {
+                // For retro tallies, award base XP (no streak bonus) with metadata
+                await XpService.addXp(baseXp, { source: 'habit', type: 'retro', habitId: ruleId, date: targetDate });
+                console.log('✅ Retro Habit XP awarded (base only)');
+              } else {
+                console.log('🎯 Calling awardXp.habitComplete...', { ruleId, streakDays: streak.currentStreak });
+                await awardXp.habitComplete(ruleId, streak.currentStreak);
+                console.log('✅ Habit XP awarded');
+              }
             } catch (e) {
               console.error('❌ Habit XP award failed:', e);
             }

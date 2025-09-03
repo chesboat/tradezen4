@@ -5,6 +5,7 @@ import { FirestoreService } from '@/lib/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import app from '@/lib/firebase';
 import { useQuickNoteModalStore } from './useQuickNoteModalStore';
+import { uploadJournalImage } from '@/lib/uploadJournalImage';
 
 const quickNoteService = new FirestoreService<QuickNote>('quickNotes');
 
@@ -127,82 +128,11 @@ export const useQuickNoteStore = create<QuickNoteState>((set, get) => ({
     }
   },
 
-  // Upload an image Blob/File and return a URL
+  // Upload an image Blob/File to Vercel Blob and return the permanent HTTPS URL
   uploadImage: async (file: Blob | File): Promise<string> => {
-    console.log('🔧 uploadImage: Trying multiple Cloudinary configurations');
-    
-    // Try multiple Cloudinary configurations
-    const configs = [
-      { cloudName: 'demo', preset: 'ml_default' },
-      { cloudName: 'dqzrmo9xz', preset: 'ml_default' },
-      { cloudName: 'demo', preset: 'unsigned_preset' },
-    ];
-    
-    for (const config of configs) {
-      try {
-        console.log(`🔧 Trying Cloudinary config: ${config.cloudName}/${config.preset}`);
-        
-        const form = new FormData();
-        form.append('file', file);
-        form.append('upload_preset', config.preset);
-        form.append('folder', 'tradezen4_quickNotes');
-        
-        const resp = await fetch(`https://api.cloudinary.com/v1_1/${config.cloudName}/image/upload`, {
-          method: 'POST',
-          body: form
-        });
-        
-        if (resp.ok) {
-          const json = await resp.json();
-          if (json.secure_url) {
-            console.log('🔧 uploadImage: Cloudinary upload successful', { 
-              config: `${config.cloudName}/${config.preset}`,
-              originalSize: file.size, 
-              cloudinaryUrl: json.secure_url 
-            });
-            return json.secure_url as string;
-          }
-        } else {
-          const txt = await resp.text();
-          console.warn(`🚨 Config ${config.cloudName}/${config.preset} failed:`, resp.status, txt);
-        }
-      } catch (error) {
-        console.warn(`🚨 Config ${config.cloudName}/${config.preset} error:`, error);
-      }
-    }
-    
-    // If all Cloudinary configs fail, throw an error
-    throw new Error('All Cloudinary configurations failed. Please set up your own Cloudinary account.');
-    
-    // Keep Firebase Storage code as fallback (commented out due to CORS)
-    /*
-    const provider = (import.meta as any).env.VITE_UPLOAD_PROVIDER as string | undefined;
-    if (provider === 'cloudinary') {
-      // Cloudinary unsigned upload
-      const cloudName = (import.meta as any).env.VITE_CLOUDINARY_CLOUD_NAME as string | undefined;
-      const uploadPreset = (import.meta as any).env.VITE_CLOUDINARY_UPLOAD_PRESET as string | undefined;
-      if (!cloudName || !uploadPreset) {
-        throw new Error('Cloudinary is not configured. Set VITE_CLOUDINARY_CLOUD_NAME and VITE_CLOUDINARY_UPLOAD_PRESET');
-      }
-      const form = new FormData();
-      form.append('file', file);
-      form.append('upload_preset', uploadPreset);
-      form.append('folder', 'quickNotes');
-      const resp = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-        method: 'POST',
-        body: form
-      });
-      if (!resp.ok) {
-        const txt = await resp.text();
-        throw new Error(`Cloudinary upload failed: ${resp.status} ${txt}`);
-      }
-      const json = await resp.json();
-      if (!json.secure_url) throw new Error('Cloudinary response missing secure_url');
-      return json.secure_url as string;
-    }
-    */
-
-    // Firebase Storage code removed - using Cloudinary instead
+    const asFile = file instanceof File ? file : new File([file], 'pasted-image.png', { type: 'image/png' });
+    const url = await uploadJournalImage(asFile);
+    return url;
   },
 
   addInlineNote: async (content, accountId) => {

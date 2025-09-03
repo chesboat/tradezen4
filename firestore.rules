@@ -15,11 +15,19 @@ service cloud.firestore {
     // User data structure
     match /users/{userId} {
       allow read, write: if isOwner(userId);
-    }
-    
-    // Trades collection under each user
-    match /users/{userId}/trades/{tradeId} {
-      allow read, write: if isOwner(userId);
+      
+      // Discipline mode day docs and nested trades
+      match /days/{date} {
+        allow read, write: if isOwner(userId);
+        match /trades/{tradeId} {
+          allow read, write: if isOwner(userId);
+        }
+      }
+      
+      // Legacy top-level trades under user (kept for backward compatibility)
+      match /trades/{tradeId} {
+        allow read, write: if isOwner(userId);
+      }
     }
     
     // Quick notes collection under each user

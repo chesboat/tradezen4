@@ -98,6 +98,35 @@ This project is configured for deployment on Vercel with Firebase integration.
    - `VITE_OPENAI_API_KEY` (optional)
 5. Deploy!
 
+### Discipline Mode (Bullet Counter)
+
+Optional, OFF by default. When enabled: morning max‑trades check‑in, 1‑tap “+ Trade” that decrements bullets, a visible “Trades Left” pill, end‑of‑day honesty prompt, and an override path (requires typed reason ≥30 chars). Every filled trade burns 1 bullet.
+
+Data model (Firestore):
+- `users/{uid}`: `email`, `timezone` (default `America/New_York`), `xp:number`, `streak:number`, `settings.disciplineMode { enabled:boolean, defaultMax?:number }`, timestamps
+- `users/{uid}/days/{YYYY-MM-DD}`: `maxTrades`, `usedTrades`, `status: "open"|"completed"|"skipped"|"broken"`, `respectedLimit?`, `lateLogging`, `checkInAt?`, `eodCompletedAt?`, `overrideReason?`, timestamps
+- `users/{uid}/days/{YYYY-MM-DD}/trades/{autoId}`: `{ placeholder:true }`
+
+Rules (owner‑only): see `firestore.rules` days/trades subtree.
+
+Client ops (transactions only):
+- `setDisciplineMode({ uid, enabled, defaultMax? })`
+- `checkInDay({ uid, tz, maxTrades })`
+- `quickLogTrade({ uid, tz })` → throws `{ code:"MAX_REACHED" }` when capped
+- `overrideDay({ uid, tz, reason })` → sets day `broken`, `streak=0`, `xp-=5`
+- `submitEOD({ uid, tz, actualCount, respected })` → late logging `xp-=2`; if respected and not broken: `status=completed`, `respectedLimit=true`, `streak+=1`, `xp+=10`
+
+UI entry points:
+- Settings: `DisciplineModeToggle`
+- Dashboard OFF: minimal `+ Trade` and `EODPromptOff`
+- Dashboard ON: `CheckInCard`, `TradesLeftWidget`, `QuickLogButton` (L or Ctrl+Shift+T), `OverrideModal`, `EndOfDayModalOn`
+- Weekly: `WeeklyReviewCard` color‑codes ON days (green/yellow/red) and shows neutral gray for OFF days
+
+Enable flow:
+1) Settings → enable Discipline Mode; set default bullets (1–10)
+2) On dashboard, check in your bullets for today
+3) Log trades with one tap; the pill shows bullets left; overriding is allowed but noted
+
 ## 🏗️ Project Structure
 
 ```

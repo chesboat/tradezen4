@@ -19,6 +19,8 @@ import { useUserProfileStore } from '@/store/useUserProfileStore';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
 import toast from 'react-hot-toast';
+import DisciplineModeToggle from '@/components/discipline/DisciplineModeToggle';
+import { setDisciplineMode } from '@/lib/discipline';
 
 export const SettingsPage: React.FC = () => {
   const { profile, updateProfile, updateDisplayName, refreshStats } = useUserProfileStore();
@@ -341,6 +343,28 @@ export const SettingsPage: React.FC = () => {
               </label>
             </div>
           </div>
+        </motion.div>
+
+        {/* Discipline Mode Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35 }}
+          className="bg-card rounded-xl border p-6 space-y-4"
+        >
+          <h2 className="text-xl font-semibold">Discipline</h2>
+          <DisciplineModeToggle
+            enabled={!!(profile as any)?.settings?.disciplineMode?.enabled}
+            defaultMax={(profile as any)?.settings?.disciplineMode?.defaultMax}
+            onUpdated={async ({ enabled, defaultMax }) => {
+              try {
+                await setDisciplineMode({ uid: currentUser!.uid, enabled, defaultMax });
+                toast.success('Discipline settings updated');
+              } catch (e) {
+                toast.error('Failed to update settings');
+              }
+            }}
+          />
         </motion.div>
       </div>
     </div>

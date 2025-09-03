@@ -31,6 +31,19 @@ import { useNavigationStore } from '@/store/useNavigationStore';
 import { formatCurrency } from '@/lib/localStorageUtils';
 import { cn, summarizeWinLossScratch } from '@/lib/utils';
 import type { HabitCategory } from '@/types';
+import { useAuth } from '@/contexts/AuthContext';
+import { useDisciplineUser, useTodayDay, useWeekDays } from '@/lib/disciplineHooks';
+import { todayInTZ, isAfterMarketClose } from '@/lib/time';
+import QuickLogButton from '@/components/discipline/QuickLogButton';
+import TradesLeftWidget from '@/components/discipline/TradesLeftWidget';
+import CheckInCard from '@/components/discipline/CheckInCard';
+import OverrideModal from '@/components/discipline/OverrideModal';
+import EndOfDayModalOn from '@/components/discipline/EndOfDayModalOn';
+import EODPromptOff from '@/components/discipline/EODPromptOff';
+import WeeklyReviewCard from '@/components/discipline/WeeklyReviewCard';
+import DisciplineNudgeCard from '@/components/discipline/DisciplineNudgeCard';
+import BulletMeter from '@/components/discipline/BulletMeter';
+import { useSWRConfig } from 'swr';
 
 // Helper function to get appropriate streak text based on habit category
 const getStreakText = (category: HabitCategory): string => {
@@ -663,11 +676,26 @@ const TIME_PERIODS: Array<{ value: TimePeriod; label: string }> = [
 
 // Main Minimal Dashboard Component
 export const MinimalDashboard: React.FC = () => {
+  const { currentUser } = useAuth();
   const { trades } = useTradeStore();
   const { selectedAccountId } = useAccountFilterStore();
   const [showBottomSection, setShowBottomSection] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>('30d');
+  const tz = (useUserProfileStore.getState().profile as any)?.timezone || 'America/New_York';
+  const { mutate } = useSWRConfig();
+  const todayStrTZ = todayInTZ(tz);
+  const { data: userDoc } = useDisciplineUser(currentUser?.uid);
+  const disciplineEnabled = !!userDoc?.settings?.disciplineMode?.enabled;
+  const defaultMax = userDoc?.settings?.disciplineMode?.defaultMax as number | undefined;
+  const { data: todayDay } = useTodayDay(currentUser?.uid, tz);
+  const { data: weekDays } = useWeekDays(currentUser?.uid, tz);
+  const [overrideOpen, setOverrideOpen] = useState(false);
+  const [eodOnOpen, setEodOnOpen] = useState(false);
+  const [eodOffOpen, setEodOffOpen] = useState(false);
   
+  // Expose mutate for onSnapshot to push cache updates
+  (window as any).__disc_mutate = mutate;
+
   // Filter trades by selected account and time period
   const filteredTrades = useMemo(() => {
     let filtered = selectedAccountId ? trades.filter(t => t.accountId === selectedAccountId) : trades;
@@ -708,6 +736,31 @@ export const MinimalDashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
       <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6 sm:space-y-8">
+        {/* Discipline Mode ON/OFF UI */}
+        {disciplineEnabled ? (
+          <div className="space-y-3">
+            {!todayDay?.checkInAt && (
+              <CheckInCard defaultMax={defaultMax} tz={tz} />
+            )}
+            {todayDay && (
+              <div className="flex items-center gap-3">
+                <QuickLogButton tz={tz} onMaxReached={() => setOverrideOpen(true)} />
+                <TradesLeftWidget maxTrades={todayDay?.maxTrades || 0} usedTrades={todayDay?.usedTrades || 0} />
+                <div className="ml-2">
+                  <BulletMeter max={todayDay?.maxTrades || 0} used={todayDay?.usedTrades || 0} />
+                </div>
+                {/* dev reset button removed */}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div>
+              <QuickLogButton tz={tz} />
+            </div>
+            <DisciplineNudgeCard onEnable={() => { /* handled in Settings */ }} />
+          </div>
+        )}
         
         {/* Performance Overview */}
         <motion.section
@@ -770,6 +823,26 @@ export const MinimalDashboard: React.FC = () => {
           </div>
         </motion.section>
 
+        {/* EOD Prompts */}
+        {isAfterMarketClose(tz, 16, 10) && (
+          disciplineEnabled ? (
+            <EndOfDayModalOn open={eodOnOpen} onClose={() => setEodOnOpen(false)} tz={tz} loggedCount={todayDay?.usedTrades || 0} />
+          ) : (
+            <EODPromptOff open={eodOffOpen} onClose={() => setEodOffOpen(false)} tz={tz} />
+          )
+        )}
+
+        {/* Weekly Review always mounted */}
+        <section>
+          <WeeklyReviewCard days={(weekDays || []).map((d: any) => ({
+            date: d.date,
+            status: (d.status || 'open'),
+            respectedLimit: d.respectedLimit,
+            lateLogging: d.lateLogging,
+            disciplineEnabled: !!(d.checkInAt || d.status === 'broken' || d.respectedLimit),
+          }))} />
+        </section>
+
         {/* Today's Focus Card */}
         <section>
           <TodaysFocusCard />
@@ -810,6 +883,7 @@ export const MinimalDashboard: React.FC = () => {
           )}
         </AnimatePresence>
       </div>
+      <OverrideModal open={overrideOpen} onClose={() => setOverrideOpen(false)} tz={tz} />
     </div>
   );
 };

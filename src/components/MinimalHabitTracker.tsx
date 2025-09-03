@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { useRuleTallyStore } from '@/store/useRuleTallyStore';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
-import { cn } from '@/lib/utils';
+import { cn, formatLocalDate } from '@/lib/utils';
 import type { HabitCategory } from '@/types';
 
 type ViewMode = 'week' | 'month';
@@ -611,12 +611,12 @@ interface HabitRuleCardProps {
   rule: any;
   tallyCount: number;
   streak: any;
-  onTally: (event: React.MouseEvent) => void;
+  onTally: (event: React.MouseEvent, dateOverride?: string) => void;
   onEdit: (rule: any) => void;
   onDelete: (ruleId: string) => void;
   viewMode: ViewMode;
-  weeklyData?: number[];
-  monthlyData?: number[];
+  weeklyData?: { date: string; count: number }[];
+  monthlyData?: { date: string; count: number }[];
 }
 
 const HabitRuleCard: React.FC<HabitRuleCardProps> = ({ 
@@ -632,7 +632,9 @@ const HabitRuleCard: React.FC<HabitRuleCardProps> = ({
 }) => {
   const [showCelebration, setShowCelebration] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
-  const isToday = true; // You might want to pass this as a prop
+  const todayStr = formatLocalDate(new Date());
+  const [selectedDate, setSelectedDate] = useState<string>(todayStr);
+  const isToday = selectedDate === todayStr;
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -644,17 +646,19 @@ const HabitRuleCard: React.FC<HabitRuleCardProps> = ({
   }, [showMenu]);
 
   const handleTally = (event: React.MouseEvent) => {
-    onTally(event);
+    onTally(event, selectedDate);
     
     // Show celebration for milestones
-    if ((tallyCount + 1) % 5 === 0) {
+    if ((displayCount + 1) % 5 === 0) {
       setShowCelebration(true);
       setTimeout(() => setShowCelebration(false), 2000);
     }
   };
 
   const data = viewMode === 'week' ? weeklyData : monthlyData;
-  const maxCount = Math.max(...data, tallyCount);
+  const selectedEntry = data?.find(d => d.date === selectedDate);
+  const displayCount = selectedEntry ? selectedEntry.count : (isToday ? tallyCount : 0);
+  const maxCount = Math.max(...(data?.map(d => d.count) || []), displayCount);
 
   return (
     <motion.div
@@ -687,9 +691,22 @@ const HabitRuleCard: React.FC<HabitRuleCardProps> = ({
           </div>
           
           <div className="flex items-center gap-2">
+            <div
+              className={cn(
+                "px-2 py-1 rounded-lg text-xs",
+                isToday ? "bg-muted/30 text-muted-foreground" : "bg-primary/10 text-primary"
+              )}
+              title={selectedDate}
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedDate(todayStr);
+              }}
+            >
+              {isToday ? 'Today' : new Date(selectedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+            </div>
             <TallyButton 
               onTally={handleTally} 
-              count={tallyCount} 
+              count={displayCount} 
               isToday={isToday}
             />
             
@@ -748,34 +765,47 @@ const HabitRuleCard: React.FC<HabitRuleCardProps> = ({
 
         {/* Tally Marks */}
         <div className="mb-6">
-          <AnimatedTallyMarks count={tallyCount} />
+          <AnimatedTallyMarks count={displayCount} />
         </div>
 
         {/* Progress Visualization */}
-        {data.length > 0 && (
+        {data && data.length > 0 && (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-muted-foreground">
                 {viewMode === 'week' ? 'This Week' : 'This Month'}
               </span>
               <span className="text-xs text-muted-foreground">
-                Total: {data.reduce((sum, count) => sum + count, 0)}
+                Total: {data.reduce((sum, d) => sum + d.count, 0)}
               </span>
             </div>
             
             <div className="flex items-end gap-1 h-16">
-              {data.map((count, index) => (
+              {data.map((d, index) => (
                 <motion.div
                   key={index}
-                  className="flex-1 bg-gradient-to-t from-primary/20 to-primary/40 rounded-t-lg min-h-[4px]"
+                  className={cn(
+                    "flex-1 bg-gradient-to-t from-primary/20 to-primary/40 rounded-t-lg min-h-[4px] border border-transparent",
+                    selectedDate === d.date && "ring-2 ring-primary/50 border-primary/50"
+                  )}
                   style={{ 
-                    height: maxCount > 0 ? `${(count / maxCount) * 100}%` : '4px'
+                    height: maxCount > 0 ? `${(d.count / maxCount) * 100}%` : '4px'
                   }}
                   initial={{ height: 0 }}
                   animate={{ 
-                    height: maxCount > 0 ? `${(count / maxCount) * 100}%` : '4px'
+                    height: maxCount > 0 ? `${(d.count / maxCount) * 100}%` : '4px'
                   }}
                   transition={{ delay: index * 0.05, duration: 0.3 }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const todayISO = todayStr;
+                    if (new Date(d.date) > new Date(todayISO)) return;
+                    if (rule.schedule?.days && rule.schedule.days.length > 0) {
+                      const dow = new Date(d.date).getDay();
+                      if (!rule.schedule.days.includes(dow)) return;
+                    }
+                    setSelectedDate(d.date);
+                  }}
                 />
               ))}
             </div>
@@ -783,9 +813,9 @@ const HabitRuleCard: React.FC<HabitRuleCardProps> = ({
         )}
 
         {/* Milestone Badges */}
-        {tallyCount > 0 && (
+        {displayCount > 0 && (
           <div className="flex items-center gap-2 mt-4">
-            {tallyCount >= 5 && (
+            {displayCount >= 5 && (
               <motion.div
                 className="flex items-center gap-1 px-2 py-1 bg-orange-100 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 rounded-full text-xs font-medium"
                 initial={{ scale: 0 }}
@@ -796,7 +826,7 @@ const HabitRuleCard: React.FC<HabitRuleCardProps> = ({
                 Consistent
               </motion.div>
             )}
-            {tallyCount >= 10 && (
+            {displayCount >= 10 && (
               <motion.div
                 className="flex items-center gap-1 px-2 py-1 bg-yellow-100 dark:bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 rounded-full text-xs font-medium"
                 initial={{ scale: 0 }}
@@ -871,7 +901,7 @@ export const MinimalHabitTracker: React.FC = () => {
     emoji: string;
   }>>([]);
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = formatLocalDate(new Date());
   const accountRules = selectedAccountId ? getRulesByAccount(selectedAccountId) : [];
 
   // Load data
@@ -963,11 +993,11 @@ export const MinimalHabitTracker: React.FC = () => {
     }
   };
 
-  const handleAddTally = async (ruleId: string, event: React.MouseEvent) => {
+  const handleAddTally = async (ruleId: string, event: React.MouseEvent, dateOverride?: string) => {
     if (!selectedAccountId) return;
     
     try {
-      await addTally(ruleId, selectedAccountId);
+      await addTally(ruleId, selectedAccountId, dateOverride);
       
       // Create floating reward animation
       const rect = (event.target as HTMLElement).getBoundingClientRect();
@@ -1124,12 +1154,12 @@ export const MinimalHabitTracker: React.FC = () => {
               rule={rule}
               tallyCount={tallyCount}
               streak={streak}
-              onTally={(event) => handleAddTally(rule.id, event)}
+              onTally={(event, dateOverride) => handleAddTally(rule.id, event, dateOverride)}
               onEdit={(rule) => setEditingHabit(rule)}
               onDelete={(ruleId) => setDeletingHabitId(ruleId)}
               viewMode={viewMode}
-              weeklyData={weeklyData.map(d => d.count)}
-              monthlyData={monthlyData.map(d => d.count)}
+              weeklyData={weeklyData}
+              monthlyData={monthlyData}
             />
           );
         })}
