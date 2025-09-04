@@ -3,7 +3,7 @@ import { useActivityLogStore } from './useActivityLogStore';
 import { useQuestStore } from './useQuestStore';
 import { localStorage, STORAGE_KEYS } from '@/lib/localStorageUtils';
 import { db } from '@/lib/firebase';
-import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import { levelFromTotalXp, canPrestige, xpToNextLevel, getLevelProgress } from '@/lib/xp/math';
 
 export interface XpHistoryEntry {
@@ -78,16 +78,73 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
     set({ isLoading: true });
     
     try {
-      // Try to load from Firestore first
-      let profile = await get().loadFromFirestore(userId);
-      
-      // If not in Firestore, try localStorage
-      if (!profile) {
-        profile = get().loadFromStorage(userId);
+      // Clean up any existing subscriptions before re-initializing
+      try {
+        const existingProfileUnsub = (window as any).__profileUnsub;
+        if (typeof existingProfileUnsub === 'function') {
+          existingProfileUnsub();
+        }
+        (window as any).__profileUnsub = undefined;
+      } catch {}
+      try {
+        const existingXpUnsub = (window as any).__xpUnsub;
+        if (typeof existingXpUnsub === 'function') {
+          existingXpUnsub();
+        }
+        (window as any).__xpUnsub = undefined;
+      } catch {}
+
+      // 1) Load any cached profile immediately for faster UI hydration
+      const cachedProfile = get().loadFromStorage(userId);
+      if (cachedProfile) {
+        set({ profile: cachedProfile });
       }
-      
-      if (!profile) {
-        // Create new profile with prestige system
+
+      // 2) Attach realtime subscription to the canonical profile doc
+      try {
+        const profileDocRef = doc(db, 'userProfiles', userId);
+        const unsubProfile = onSnapshot(profileDocRef, (snap) => {
+          const data = snap.data();
+          if (!data) return;
+          const rawXp: any = (data as any).xp || {};
+          const seasonXp = Number(rawXp.seasonXp || 0);
+          const totalXp = Number(rawXp.total || 0);
+          const prestige = Number(rawXp.prestige || 0);
+          const level = Number(rawXp.level || levelFromTotalXp(seasonXp).level);
+
+          const nextProfile: UserProfile = {
+            ...(data as any),
+            joinedAt: (data as any).joinedAt ? new Date((data as any).joinedAt) : new Date(),
+            xp: {
+              total: totalXp,
+              seasonXp: seasonXp,
+              level: level,
+              prestige: prestige,
+              canPrestige: canPrestige(seasonXp),
+              history: rawXp.history || [],
+              lastLevelUpAt: rawXp.lastLevelUpAt ? new Date(rawXp.lastLevelUpAt) : undefined,
+              lastPrestigedAt: rawXp.lastPrestigedAt ? new Date(rawXp.lastPrestigedAt) : undefined,
+            },
+          } as UserProfile;
+          set({ profile: nextProfile });
+          get().saveToStorage();
+        });
+        (window as any).__profileUnsub = unsubProfile;
+      } catch (e) {
+        console.warn('Profile subscribe failed; will rely on one-time fetch and cache:', e);
+      }
+
+      // 3) Try authoritative fetch from Firestore
+      let profile: UserProfile | null = null;
+      try {
+        profile = await get().loadFromFirestore(userId);
+      } catch (e) {
+        // Network/permission error – avoid creating defaults; keep cache and subscription
+        console.warn('Transient error loading profile from Firestore; using cache until realtime updates arrive.', e);
+      }
+
+      // 4) If profile truly doesn't exist anywhere, create a new one
+      if (!profile && !cachedProfile) {
         profile = {
           id: userId,
           displayName: email?.split('@')[0] || 'Trader',
@@ -115,12 +172,11 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
             longestStreak: 0,
           },
         };
+        set({ profile });
+        get().saveToStorage();
       }
       
-      set({ profile, isLoading: false });
-      get().saveToStorage();
-      
-      // Ensure xp/status doc exists and attach realtime subscription
+      // 5) Ensure XP realtime subscription is active
       try {
         const { XpService } = await import('@/lib/xp/XpService');
         const unsub = XpService.subscribe(({ total, seasonXp, level, prestige }) => {
@@ -132,7 +188,6 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
               ...current.xp,
               total,
               seasonXp,
-              // Derive level locally until server-side is added
               level: levelFromTotalXp(seasonXp).level,
               prestige,
               canPrestige: canPrestige(seasonXp),
@@ -141,19 +196,19 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
           set({ profile: updated });
           get().saveToStorage();
         });
-        // Optionally store unsub if needed later
         (window as any).__xpUnsub = unsub;
       } catch (e) {
         console.warn('XP subscribe failed (will still use local xp):', e);
       }
 
-      // Sync to Firestore (profile fields)
+      // 6) Sync lightweight profile fields to Firestore (merge)
       await get().syncToFirestore();
-      
-      // Refresh stats and XP
+
+      // 7) Derive and persist stats
       get().refreshStats();
     } catch (error) {
       console.error('Failed to initialize profile:', error);
+    } finally {
       set({ isLoading: false });
     }
   },
@@ -414,46 +469,41 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
   },
 
   loadFromFirestore: async (userId) => {
-    try {
-      const profileDoc = doc(db, 'userProfiles', userId);
-      const docSnap = await getDoc(profileDoc);
+    const profileDoc = doc(db, 'userProfiles', userId);
+    const docSnap = await getDoc(profileDoc);
+    
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      console.log('🧲 loadFromFirestore read XP:', {
+        seasonXp: (data as any)?.xp?.seasonXp,
+        totalXp: (data as any)?.xp?.total,
+        level: (data as any)?.xp?.level,
+        prestige: (data as any)?.xp?.prestige,
+      });
       
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        console.log('🧲 loadFromFirestore read XP:', {
-          seasonXp: (data as any)?.xp?.seasonXp,
-          totalXp: (data as any)?.xp?.total,
-          level: (data as any)?.xp?.level,
-          prestige: (data as any)?.xp?.prestige,
-        });
-        
-        // Ensure XP object is properly initialized
-        const rawXp = (data as any)?.xp || {};
-        const seasonXp = rawXp.seasonXp || 0;
-        const totalXp = rawXp.total || 0;
-        const prestige = rawXp.prestige || 0;
-        const level = rawXp.level || levelFromTotalXp(seasonXp).level;
-        
-        const profile: UserProfile = {
-          ...data,
-          joinedAt: data.joinedAt ? new Date(data.joinedAt) : new Date(),
-          xp: {
-            total: totalXp,
-            seasonXp: seasonXp,
-            level: level,
-            prestige: prestige,
-            canPrestige: canPrestige(seasonXp),
-            history: rawXp.history || [],
-            lastLevelUpAt: rawXp.lastLevelUpAt ? new Date(rawXp.lastLevelUpAt) : undefined,
-            lastPrestigedAt: rawXp.lastPrestigedAt ? new Date(rawXp.lastPrestigedAt) : undefined,
-          }
-        } as UserProfile;
-        
-        set({ profile });
-        return profile;
-      }
-    } catch (error) {
-      console.error('Failed to load profile from Firestore:', error);
+      const rawXp = (data as any)?.xp || {};
+      const seasonXp = rawXp.seasonXp || 0;
+      const totalXp = rawXp.total || 0;
+      const prestige = rawXp.prestige || 0;
+      const level = rawXp.level || levelFromTotalXp(seasonXp).level;
+      
+      const profile: UserProfile = {
+        ...data,
+        joinedAt: (data as any).joinedAt ? new Date((data as any).joinedAt) : new Date(),
+        xp: {
+          total: totalXp,
+          seasonXp: seasonXp,
+          level: level,
+          prestige: prestige,
+          canPrestige: canPrestige(seasonXp),
+          history: rawXp.history || [],
+          lastLevelUpAt: rawXp.lastLevelUpAt ? new Date(rawXp.lastLevelUpAt) : undefined,
+          lastPrestigedAt: rawXp.lastPrestigedAt ? new Date(rawXp.lastPrestigedAt) : undefined,
+        }
+      } as UserProfile;
+      
+      set({ profile });
+      return profile;
     }
     return null;
   },

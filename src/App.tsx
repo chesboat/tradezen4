@@ -56,11 +56,12 @@ function AppContent() {
       if (currentUser) {
         console.log('Starting app initialization for user:', currentUser.uid);
         try {
+          // Load profile first so other stores can rely on it
+          await initializeProfile(currentUser.uid, currentUser.email || undefined);
           await initializeDefaultAccounts();
           await initializeDefaultQuests();
           await initializeTradeStore();
           await initializeRuleTallyStore();
-          await initializeProfile(currentUser.uid, currentUser.email || undefined);
           await initializeQuickNoteStore();
           console.log('App initialization completed successfully');
         } catch (error) {
