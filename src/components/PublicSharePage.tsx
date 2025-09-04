@@ -2833,7 +2833,7 @@ export const PublicSharePage: React.FC = () => {
                                     {/* Sunday through Friday (first 6 days) */}
                                     {week.slice(0, 6).map((day, dayIndex) => {
                                       const getDayClassName = () => {
-                                        let classes = 'relative p-1 sm:p-2 lg:p-3 rounded border border-border/30 transition-all duration-200 cursor-pointer hover:border-primary/50 aspect-square sm:aspect-[6/5] lg:aspect-[6/5] flex flex-col overflow-hidden';
+                                        let classes = 'relative p-1 sm:p-2 lg:p-3 rounded border border-border/30 transition-all duration-200 cursor-pointer hover:border-primary/50 aspect-square sm:aspect-[6/5] lg:aspect-[6/5] min-h-[84px] sm:min-h-[96px] lg:min-h-[110px] flex flex-col overflow-hidden';
                                         
                                         if (day.isOtherMonth) classes += ' opacity-30';
                                         if (day.isToday) classes += ' ring-1 ring-primary/50 bg-primary/5';
@@ -2883,16 +2883,16 @@ export const PublicSharePage: React.FC = () => {
                                           </div>
                                           
                                           {/* Bottom Row - P&L or Trade Count */}
-                                          <div className="flex flex-col items-center lg:items-start">
+                                          <div className="flex flex-col items-center lg:items-start leading-tight">
                                             {day.pnl !== 0 ? (
-                                              <div className={`text-[8px] sm:text-[10px] lg:text-xs 2xl:text-sm 3xl:text-base 4xl:text-lg font-bold ${day.pnl > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                              <div className={`text-[8px] sm:text-[10px] lg:text-xs 2xl:text-sm 3xl:text-base 4xl:text-lg font-bold leading-tight ${day.pnl > 0 ? 'text-green-500' : 'text-red-500'}`}>
                                                 {Math.abs(day.pnl) > 999 ? 
                                                   `${day.pnl > 0 ? '+' : ''}${(day.pnl/1000).toFixed(1)}k` : 
                                                   `${day.pnl > 0 ? '+' : ''}${Math.round(day.pnl)}`
                                                 }
                                               </div>
                                             ) : day.tradesCount > 0 ? (
-                                              <div className="text-[8px] sm:text-[10px] lg:text-xs 2xl:text-sm 3xl:text-base 4xl:text-lg text-muted-foreground">
+                                              <div className="text-[8px] sm:text-[10px] lg:text-xs 2xl:text-sm 3xl:text-base 4xl:text-lg text-muted-foreground leading-tight mt-0.5">
                                                 {day.tradesCount}<span className="hidden sm:inline">t</span>
                                               </div>
                                             ) : null}
@@ -2912,16 +2912,16 @@ export const PublicSharePage: React.FC = () => {
                                     
                                     {/* Week Summary Column (replaces Saturday) */}
                                     <motion.div
-                                      className="bg-muted/30 border border-border/50 rounded p-1 sm:p-2 lg:p-4 hover:bg-muted/50 transition-colors cursor-pointer aspect-square sm:aspect-[6/5] lg:aspect-[6/5] flex flex-col justify-center overflow-hidden"
+                                      className="bg-muted/30 border border-border/50 rounded p-1 sm:p-2 lg:p-4 hover:bg-muted/50 transition-colors cursor-pointer aspect-square sm:aspect-[6/5] lg:aspect-[6/5] min-h-[84px] sm:min-h-[96px] lg:min-h-[110px] flex flex-col justify-center overflow-hidden"
                                       onClick={redirectToSignup}
                                       whileHover={{ scale: 1.01 }}
                                       title="Sign up to view weekly details"
                                     >
-                                      <div className="text-center space-y-0 sm:space-y-1 lg:space-y-2 pt-1 pb-1">
+                                      <div className="text-center space-y-0 sm:space-y-1 lg:space-y-2 pt-1 pb-1 leading-tight">
                                         <div className="text-[8px] sm:text-[10px] lg:text-sm 2xl:text-base 3xl:text-lg 4xl:text-xl font-medium text-muted-foreground truncate">
                                           W{weekIndex + 1}
                                         </div>
-                                        <div className={`text-[8px] sm:text-xs lg:text-lg 2xl:text-xl 3xl:text-2xl 4xl:text-3xl font-bold leading-none truncate whitespace-nowrap ${
+                                        <div className={`text-[8px] sm:text-xs lg:text-lg 2xl:text-xl 3xl:text-2xl 4xl:text-3xl font-bold leading-tight truncate whitespace-nowrap ${
                                           weekTotalPnl > 0 ? 'text-green-500' : 
                                           weekTotalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
                                         }`}>
@@ -2930,7 +2930,7 @@ export const PublicSharePage: React.FC = () => {
                                             weekTotalPnl !== 0 ? `${weekTotalPnl > 0 ? '+' : ''}${Math.round(weekTotalPnl)}` : '$0'
                                           }
                                         </div>
-                                        <div className="text-[10px] lg:text-xs 2xl:text-sm 3xl:text-base 4xl:text-lg text-muted-foreground leading-none">
+                                        <div className="text-[10px] lg:text-xs 2xl:text-sm 3xl:text-base 4xl:text-lg text-muted-foreground leading-tight">
                                           {weekActiveDays}d
                                         </div>
                                       </div>
