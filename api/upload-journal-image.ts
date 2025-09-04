@@ -58,7 +58,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Content-Type must be image/*' });
     }
 
-    const filenameHeader = (req.headers['x-filename'] as string) || `upload-${Date.now()}-${nanoid()}`;
+    const filenameHeader = `upload-${Date.now()}-${nanoid()}`;
 
     // Read the raw request body into a Buffer
     const chunks: Buffer[] = [];

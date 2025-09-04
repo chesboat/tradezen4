@@ -19,7 +19,6 @@ export async function uploadJournalImage(file: File): Promise<string> {
     headers: {
       'content-type': file.type,
       ...(idToken ? { authorization: `Bearer ${idToken}` } : {}),
-      'x-filename': file.name,
     },
     body: file,
   });
