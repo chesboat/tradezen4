@@ -1494,7 +1494,7 @@ const DemoCalendarView: React.FC = () => {
     const isSelected = selectedDay?.date.toDateString() === day.date.toDateString();
     const isHovered = hoveredDay?.date.toDateString() === day.date.toDateString();
     
-    return `relative p-3 rounded-xl border border-border/50 transition-all duration-200 cursor-pointer hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 overflow-hidden aspect-[7/6] ${
+    return `relative p-3 rounded-xl border border-border/50 transition-all duration-200 cursor-pointer hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 ${
       day.isOtherMonth ? 'opacity-40' : ''
     } ${
       isToday ? 'ring-2 ring-primary/50' : ''
@@ -1621,10 +1621,10 @@ const DemoCalendarView: React.FC = () => {
                   }}
                   onMouseEnter={() => setHoveredDay(day)}
                   onMouseLeave={() => setHoveredDay(null)}
-                  whileHover={{ scale: 1.0 }}
+                  whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <div className="flex flex-col h-full space-y-1">
+                  <div className="space-y-1">
                     {/* Date */}
                     <div className="flex items-center justify-between">
                       <span className={`text-sm font-medium ${
@@ -1644,14 +1644,14 @@ const DemoCalendarView: React.FC = () => {
                     
                     {/* Trade Count */}
                     {day.tradesCount > 0 && (
-                      <div className="text-xs text-muted-foreground truncate">
+                      <div className="text-xs text-muted-foreground">
                         {day.tradesCount} trade{day.tradesCount > 1 ? 's' : ''}
                       </div>
                     )}
                     
                     {/* Metrics */}
                     {day.tradesCount > 0 && (
-                      <div className="text-xs text-muted-foreground space-y-0.5 truncate">
+                      <div className="text-xs text-muted-foreground space-y-0.5">
                         <div>{day.avgRR.toFixed(1)}:1R, {day.winRate.toFixed(0)}%</div>
                       </div>
                     )}
@@ -1662,7 +1662,7 @@ const DemoCalendarView: React.FC = () => {
             
             {/* Weekly Summary */}
             <motion.div
-              className="bg-muted/30 border border-border/50 rounded-xl p-4 hover:bg-muted/50 transition-colors cursor-pointer overflow-hidden aspect-[7/6] flex items-center justify-center"
+              className="bg-muted/30 border border-border/50 rounded-xl p-4 hover:bg-muted/50 transition-colors cursor-pointer"
               whileHover={{ scale: 1.01 }}
               onClick={redirectToSignup}
             >
