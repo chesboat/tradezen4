@@ -2833,7 +2833,7 @@ export const PublicSharePage: React.FC = () => {
                                     {/* Sunday through Friday (first 6 days) */}
                                     {week.slice(0, 6).map((day, dayIndex) => {
                                       const getDayClassName = () => {
-                                        let classes = 'relative p-1 sm:p-2 lg:p-3 rounded border border-border/30 transition-all duration-200 cursor-pointer hover:border-primary/50 aspect-square sm:aspect-[6/5] lg:aspect-[6/5] flex flex-col overflow-hidden';
+                                        let classes = 'relative p-1 sm:p-2 lg:p-3 rounded border border-border/30 transition-all duration-200 cursor-pointer hover:border-primary/50 aspect-square sm:aspect-[7/6] lg:aspect-[7/6] flex flex-col overflow-hidden';
                                         
                                         if (day.isOtherMonth) classes += ' opacity-30';
                                         if (day.isToday) classes += ' ring-1 ring-primary/50 bg-primary/5';
@@ -2912,12 +2912,12 @@ export const PublicSharePage: React.FC = () => {
                                     
                                     {/* Week Summary Column (replaces Saturday) */}
                                     <motion.div
-                                      className="bg-muted/30 border border-border/50 rounded p-1 sm:p-2 lg:p-4 hover:bg-muted/50 transition-colors cursor-pointer aspect-square sm:aspect-[6/5] lg:aspect-[6/5] flex flex-col justify-center overflow-hidden"
+                                      className="bg-muted/30 border border-border/50 rounded p-1 sm:p-2 lg:p-4 hover:bg-muted/50 transition-colors cursor-pointer aspect-square sm:aspect-[7/6] lg:aspect-[7/6] flex flex-col justify-center overflow-hidden"
                                       onClick={redirectToSignup}
                                       whileHover={{ scale: 1.01 }}
                                       title="Sign up to view weekly details"
                                     >
-                                      <div className="text-center space-y-0 sm:space-y-1 lg:space-y-2 pt-1 pb-1">
+                                      <div className="text-center space-y-0 sm:space-y-1 lg:space-y-2 pb-1">
                                         <div className="text-[8px] sm:text-[10px] lg:text-sm 2xl:text-base 3xl:text-lg 4xl:text-xl font-medium text-muted-foreground truncate">
                                           W{weekIndex + 1}
                                         </div>
