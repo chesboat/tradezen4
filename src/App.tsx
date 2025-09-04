@@ -33,6 +33,8 @@ import { initializeTradeStore } from './store/useTradeStore';
 import { useUserProfileStore } from './store/useUserProfileStore';
 import { initializeQuickNoteStore } from './store/useQuickNoteStore';
 import { initializeRuleTallyStore } from './store/useRuleTallyStore';
+import { useAccountFilterStore } from './store/useAccountFilterStore';
+import { useTradeStore } from './store/useTradeStore';
 import { CoachChat } from './components/CoachChat';
 import { NudgeToast } from './components/NudgeToast';
 import { TodoDrawer } from './components/TodoDrawer';
@@ -76,8 +78,8 @@ function AppContent() {
   // Recovery: if user is present but stores are empty (e.g., after returning from /share demo), re-init
   React.useEffect(() => {
     if (!loading && currentUser) {
-      const { accounts } = (require('./store/useAccountFilterStore') as any).useAccountFilterStore.getState();
-      const { trades } = (require('./store/useTradeStore') as any).useTradeStore.getState();
+      const { accounts } = useAccountFilterStore.getState();
+      const { trades } = useTradeStore.getState();
       if ((accounts?.length || 0) === 0 || (trades?.length || 0) === 0) {
         (async () => {
           try {
