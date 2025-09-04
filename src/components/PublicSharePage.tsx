@@ -2829,14 +2829,14 @@ export const PublicSharePage: React.FC = () => {
                                   </div>
                                   
                                   {/* Week Row - 6 Days + Week Summary */}
-                                  <div className="grid grid-cols-7 gap-1 sm:gap-2 lg:gap-4">
+                                  <div className="grid grid-cols-7 gap-0.5 sm:gap-1 lg:gap-3">
                                     {/* Sunday through Friday (first 6 days) */}
                                     {week.slice(0, 6).map((day, dayIndex) => {
                                       const getDayClassName = () => {
                                         let classes = 'relative p-1 sm:p-2 lg:p-3 rounded border border-border/30 transition-all duration-200 cursor-pointer hover:border-primary/50 aspect-square sm:aspect-[6/5] lg:aspect-[6/5] min-h-[84px] sm:min-h-[96px] lg:min-h-[110px] flex flex-col overflow-hidden';
                                         
                                         if (day.isOtherMonth) classes += ' opacity-30';
-                                        if (day.isToday) classes += ' ring-1 ring-primary/50 ring-offset-1 ring-offset-background bg-primary/5';
+                                        if (day.isToday) classes += ' ring-1 ring-primary/50 bg-primary/5';
                                         if (day.tradesCount > 0) classes += ' bg-muted/20';
                                         if (day.pnl > 0) classes += ' border-green-500/40';
                                         if (day.pnl < 0) classes += ' border-red-500/40';
@@ -2863,7 +2863,7 @@ export const PublicSharePage: React.FC = () => {
                                       return (
                                         <motion.div
                                           key={`${weekIndex}-${dayIndex}`}
-                                          className={getDayClassName() + ' relative z-0'}
+                                          className={getDayClassName()}
                                           onClick={redirectToSignup}
                                           whileHover={{ scale: 1.0 }}
                                           whileTap={{ scale: 0.98 }}
