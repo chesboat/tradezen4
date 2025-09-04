@@ -2829,11 +2829,11 @@ export const PublicSharePage: React.FC = () => {
                                   </div>
                                   
                                   {/* Week Row - 6 Days + Week Summary */}
-                                  <div className="grid grid-cols-7 gap-4 sm:gap-5 lg:gap-8">
+                                  <div className="grid grid-cols-7 gap-2 sm:gap-3 lg:gap-5">
                                     {/* Sunday through Friday (first 6 days) */}
                                     {week.slice(0, 6).map((day, dayIndex) => {
                                       const getDayClassName = () => {
-                                        let classes = 'relative p-1 sm:p-2 lg:p-3 rounded border border-border/30 bg-card transition-colors duration-200 cursor-pointer hover:bg-card aspect-square sm:aspect-[6/5] lg:aspect-[6/5] min-h-[84px] sm:min-h-[96px] lg:min-h-[110px] flex flex-col overflow-hidden';
+                                        let classes = 'relative p-1 sm:p-2 lg:p-3 rounded border border-border/30 bg-card transition-all duration-200 cursor-pointer aspect-square sm:aspect-[6/5] lg:aspect-[6/5] min-h-[84px] sm:min-h-[96px] lg:min-h-[110px] flex flex-col overflow-hidden';
                                         
                                         if (day.isOtherMonth) classes += ' opacity-30';
                                         if (day.isToday) classes += ' border-2 border-primary/40 bg-primary/5';
