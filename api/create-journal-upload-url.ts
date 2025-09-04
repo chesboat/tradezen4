@@ -34,21 +34,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // Require Authorization: Bearer <Firebase ID token>
-    const authHeader = req.headers.authorization || '';
-    const token = authHeader.startsWith('Bearer ')
-      ? authHeader.slice('Bearer '.length)
-      : undefined;
+    const allowPublic = process.env.ALLOW_PUBLIC_UPLOAD_URLS === 'true';
+    if (!allowPublic) {
+      // Require Authorization: Bearer <Firebase ID token>
+      const authHeader = req.headers.authorization || '';
+      const token = authHeader.startsWith('Bearer ')
+        ? authHeader.slice('Bearer '.length)
+        : undefined;
 
-    if (!token || !admin.apps.length) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
+      if (!token || !admin.apps.length) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
 
-    let decoded: admin.auth.DecodedIdToken | null = null;
-    try {
-      decoded = await admin.auth().verifyIdToken(token);
-    } catch (err) {
-      return res.status(401).json({ error: 'Invalid token' });
+      try {
+        await admin.auth().verifyIdToken(token);
+      } catch (err) {
+        return res.status(401).json({ error: 'Invalid token' });
+      }
     }
 
     // Optionally, you can enforce per-user quotas/validation using decoded.uid
