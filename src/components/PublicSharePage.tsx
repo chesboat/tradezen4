@@ -2865,7 +2865,7 @@ export const PublicSharePage: React.FC = () => {
                                           key={`${weekIndex}-${dayIndex}`}
                                           className={getDayClassName()}
                                           onClick={redirectToSignup}
-                                          whileHover={{ scale: 1.0 }}
+                                          whileHover={{ scale: 1.02 }}
                                           whileTap={{ scale: 0.98 }}
                                           title="Sign up to view day details"
                                         >
@@ -2882,14 +2882,28 @@ export const PublicSharePage: React.FC = () => {
                                             )}
                                           </div>
                                           
-                                          {/* Bottom Row - Compact: P&L and Trades */}
+                                          {/* Bottom Row - P&L or Trade Count */}
                                           <div className="flex flex-col items-center lg:items-start leading-tight">
-                                            <div className={`text-[8px] sm:text-[10px] lg:text-xs 2xl:text-sm 3xl:text-base 4xl:text-lg font-bold ${day.pnl > 0 ? 'text-green-500' : day.pnl < 0 ? 'text-red-500' : 'text-muted-foreground'}`}>
-                                              {Math.abs(day.pnl) > 999 ? `${day.pnl > 0 ? '+' : ''}${(day.pnl/1000).toFixed(1)}k` : `${day.pnl > 0 ? '+' : ''}${Math.round(day.pnl)}`}
-                                            </div>
-                                            <div className="text-[8px] sm:text-[10px] lg:text-[11px] 2xl:text-xs 3xl:text-sm 4xl:text-base text-muted-foreground">
-                                              {day.tradesCount} trades
-                                            </div>
+                                            {day.pnl !== 0 ? (
+                                              <div className={`text-[8px] sm:text-[10px] lg:text-xs 2xl:text-sm 3xl:text-base 4xl:text-lg font-bold leading-tight ${day.pnl > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                                {Math.abs(day.pnl) > 999 ? 
+                                                  `${day.pnl > 0 ? '+' : ''}${(day.pnl/1000).toFixed(1)}k` : 
+                                                  `${day.pnl > 0 ? '+' : ''}${Math.round(day.pnl)}`
+                                                }
+                                              </div>
+                                            ) : day.tradesCount > 0 ? (
+                                              <div className="text-[8px] sm:text-[10px] lg:text-xs 2xl:text-sm 3xl:text-base 4xl:text-lg text-muted-foreground leading-tight mt-0.5">
+                                                {day.tradesCount}<span className="hidden sm:inline">t</span>
+                                              </div>
+                                            ) : null}
+                                            
+                                            {/* Desktop Additional Info */}
+                                            {day.tradesCount > 0 && (
+                                              <div className="hidden lg:block text-xs 2xl:text-sm 3xl:text-base 4xl:text-lg text-muted-foreground mt-1 space-y-0.5">
+                                                <div>{day.tradesCount} trade{day.tradesCount > 1 ? 's' : ''}</div>
+                                                <div>{day.avgRR.toFixed(1)}:1R • {day.winRate.toFixed(0)}%</div>
+                                              </div>
+                                            )}
                                           </div>
                                         </div>
                                         </motion.div>
