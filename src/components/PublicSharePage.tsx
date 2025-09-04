@@ -2828,12 +2828,12 @@ export const PublicSharePage: React.FC = () => {
                                     </div>
                                   </div>
                                   
-                                  {/* Week Row - 6 Days + Week Summary */}
-                                  <div className="grid grid-cols-7 gap-0.5 sm:gap-1 lg:gap-3">
+                                  {/* Week Row - 6 Days + Week Summary (mobile style across breakpoints) */}
+                                  <div className="grid grid-cols-7 gap-1 sm:gap-1.5 lg:gap-2">
                                     {/* Sunday through Friday (first 6 days) */}
                                     {week.slice(0, 6).map((day, dayIndex) => {
                                       const getDayClassName = () => {
-                                        let classes = 'relative p-1 sm:p-2 lg:p-3 rounded border border-border/30 transition-all duration-200 cursor-pointer hover:border-primary/50 aspect-square sm:aspect-[7/6] lg:aspect-[7/6] flex flex-col overflow-hidden';
+                                        let classes = 'relative p-1 sm:p-2 lg:p-3 rounded border border-border/30 bg-card cursor-pointer aspect-square sm:aspect-[7/6] lg:aspect-[7/6] flex flex-col overflow-hidden';
                                         
                                         if (day.isOtherMonth) classes += ' opacity-30';
                                         if (day.isToday) classes += ' ring-1 ring-primary/50 bg-primary/5';
@@ -2865,7 +2865,7 @@ export const PublicSharePage: React.FC = () => {
                                           key={`${weekIndex}-${dayIndex}`}
                                           className={getDayClassName()}
                                           onClick={redirectToSignup}
-                                          whileHover={{ scale: 1.02 }}
+                                          whileHover={{ scale: 1.0 }}
                                           whileTap={{ scale: 0.98 }}
                                           title="Sign up to view day details"
                                         >
@@ -2882,27 +2882,11 @@ export const PublicSharePage: React.FC = () => {
                                             )}
                                           </div>
                                           
-                                          {/* Bottom Row - P&L or Trade Count */}
-                                          <div className="flex flex-col items-center lg:items-start">
-                                            {day.pnl !== 0 ? (
-                                              <div className={`text-[8px] sm:text-[10px] lg:text-xs 2xl:text-sm 3xl:text-base 4xl:text-lg font-bold ${day.pnl > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                                                {Math.abs(day.pnl) > 999 ? 
-                                                  `${day.pnl > 0 ? '+' : ''}${(day.pnl/1000).toFixed(1)}k` : 
-                                                  `${day.pnl > 0 ? '+' : ''}${Math.round(day.pnl)}`
-                                                }
-                                              </div>
-                                            ) : day.tradesCount > 0 ? (
-                                              <div className="text-[8px] sm:text-[10px] lg:text-xs 2xl:text-sm 3xl:text-base 4xl:text-lg text-muted-foreground">
-                                                {day.tradesCount}<span className="hidden sm:inline">t</span>
-                                              </div>
-                                            ) : null}
-                                            
-                                            {/* Desktop Additional Info */}
+                                          {/* Bottom Row - Compact: PnL and Trades only */}
+                                          <div className="flex flex-col items-center lg:items-start leading-tight">
+                                            <div className={`text-[8px] sm:text-[10px] lg:text-xs 2xl:text-sm font-bold ${day.pnl > 0 ? 'text-green-500' : day.pnl < 0 ? 'text-red-500' : 'text-muted-foreground'}`}>{Math.abs(day.pnl) > 999 ? `${day.pnl > 0 ? '+' : ''}${(day.pnl/1000).toFixed(1)}k` : `${day.pnl > 0 ? '+' : ''}${Math.round(day.pnl)}`}</div>
                                             {day.tradesCount > 0 && (
-                                              <div className="hidden lg:block text-xs 2xl:text-sm 3xl:text-base 4xl:text-lg text-muted-foreground mt-1 space-y-0.5">
-                                                <div>{day.tradesCount} trade{day.tradesCount > 1 ? 's' : ''}</div>
-                                                <div>{day.avgRR.toFixed(1)}:1R • {day.winRate.toFixed(0)}%</div>
-                                              </div>
+                                              <div className="text-[8px] sm:text-[10px] lg:text-[11px] 2xl:text-xs text-muted-foreground">{day.tradesCount} trades</div>
                                             )}
                                           </div>
                                         </div>
@@ -2912,9 +2896,9 @@ export const PublicSharePage: React.FC = () => {
                                     
                                     {/* Week Summary Column (replaces Saturday) */}
                                     <motion.div
-                                      className="bg-muted/30 border border-border/50 rounded p-1 sm:p-2 lg:p-4 hover:bg-muted/50 transition-colors cursor-pointer aspect-square sm:aspect-[7/6] lg:aspect-[7/6] flex flex-col justify-center overflow-hidden"
+                                      className="bg-muted/30 border border-border/50 rounded p-1 sm:p-2 lg:p-4 cursor-pointer aspect-square sm:aspect-[7/6] lg:aspect-[7/6] flex flex-col justify-center overflow-hidden"
                                       onClick={redirectToSignup}
-                                      whileHover={{ scale: 1.01 }}
+                                      whileHover={{ scale: 1.0 }}
                                       title="Sign up to view weekly details"
                                     >
                                       <div className="text-center space-y-0 sm:space-y-1 lg:space-y-2 pb-1">
