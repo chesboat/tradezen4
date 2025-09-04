@@ -1,19 +1,25 @@
 // Client utility: uploads a File directly to Vercel Blob using a server-generated URL
 // and returns the permanent HTTPS asset URL.
 
-import { createJournalImageUploadURL } from '@/lib/blob/createJournalImageUploadURL';
+import { auth } from '@/lib/firebase';
 
 export async function uploadJournalImage(file: File): Promise<string> {
   if (!file || !file.type.startsWith('image/')) {
     throw new Error('Only image files are supported.');
   }
 
-  const { uploadURL } = await createJournalImageUploadURL();
+  const user = auth.currentUser;
+  const idToken = user ? await user.getIdToken() : undefined;
 
-  const res = await fetch(uploadURL, {
-    method: 'PUT',
+  const base = (import.meta as any).env?.VITE_API_BASE_URL as string | undefined;
+  const endpoint = `${base ? base.replace(/\/$/, '') : ''}/api/upload-journal-image`;
+
+  const res = await fetch(endpoint, {
+    method: 'POST',
     headers: {
       'content-type': file.type,
+      ...(idToken ? { authorization: `Bearer ${idToken}` } : {}),
+      'x-filename': file.name,
     },
     body: file,
   });
@@ -23,17 +29,9 @@ export async function uploadJournalImage(file: File): Promise<string> {
     throw new Error(`Upload failed: ${res.status} ${text}`);
   }
 
-  const location = res.headers.get('Location') || res.headers.get('location');
-  if (location) return location;
-
-  try {
-    const data = await res.json();
-    if (data?.url) return data.url as string;
-  } catch {
-    // ignore
-  }
-
-  throw new Error('Upload succeeded but no URL was returned.');
+  const data = await res.json();
+  if (!data?.url) throw new Error('Upload succeeded but no URL returned');
+  return data.url as string;
 }
 
 
