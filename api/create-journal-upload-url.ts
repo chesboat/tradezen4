@@ -1,9 +1,10 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createUploadURL } from '@vercel/blob';
-import * as admin from 'firebase-admin';
+import { initializeApp, cert, getApps } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
 
 // Initialize Firebase Admin once per runtime
-if (!admin.apps.length) {
+if (!getApps().length) {
   try {
     const projectId = process.env.FIREBASE_PROJECT_ID;
     const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
@@ -14,8 +15,8 @@ if (!admin.apps.length) {
       // You must configure env vars in Vercel for authenticated writes
       console.warn('Firebase Admin env vars are not fully set.');
     } else {
-      admin.initializeApp({
-        credential: admin.credential.cert({
+      initializeApp({
+        credential: cert({
           projectId,
           clientEmail,
           privateKey,
@@ -42,12 +43,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ? authHeader.slice('Bearer '.length)
         : undefined;
 
-      if (!token || !admin.apps.length) {
+      if (!token || !getApps().length) {
         return res.status(401).json({ error: 'Unauthorized' });
       }
 
       try {
-        await admin.auth().verifyIdToken(token);
+        await getAuth().verifyIdToken(token);
       } catch (err) {
         return res.status(401).json({ error: 'Invalid token' });
       }
