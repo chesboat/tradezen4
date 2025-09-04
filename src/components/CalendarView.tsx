@@ -331,12 +331,12 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
       ? 'p-1.5 sm:p-2 lg:p-2.5 2xl:p-3 3xl:p-4' 
       : 'p-1.5 sm:p-2.5 lg:p-3 2xl:p-4 3xl:p-5';
     
-    // Mobile: Use aspect-square, desktop: use aspect-[6/5] to provide a bit more height and prevent clipping
+    // Mobile: Use aspect-square, desktop: use aspect-[7/6] for slightly taller tiles to prevent text cutoff
     const heightClasses = allExpanded
-      ? 'aspect-square sm:aspect-[6/5] lg:aspect-[6/5] 2xl:aspect-[6/5] 3xl:aspect-[6/5] 4xl:aspect-[6/5]'
+      ? 'aspect-square sm:aspect-[7/6] lg:aspect-[7/6] 2xl:aspect-[7/6] 3xl:aspect-[7/6] 4xl:aspect-[7/6]'
       : bothSidebarsExpanded
-      ? 'aspect-square sm:aspect-[6/5] lg:aspect-[6/5] 2xl:aspect-[6/5] 3xl:aspect-[6/5] 4xl:aspect-[6/5]'
-      : 'aspect-square sm:aspect-[6/5] lg:aspect-[6/5] 2xl:aspect-[6/5] 3xl:aspect-[6/5] 4xl:aspect-[6/5]';
+      ? 'aspect-square sm:aspect-[7/6] lg:aspect-[7/6] 2xl:aspect-[7/6] 3xl:aspect-[7/6] 4xl:aspect-[7/6]'
+      : 'aspect-square sm:aspect-[7/6] lg:aspect-[7/6] 2xl:aspect-[7/6] 3xl:aspect-[7/6] 4xl:aspect-[7/6]';
     
     return cn(
       'relative overflow-hidden rounded-lg sm:rounded-xl transition-all duration-300 cursor-pointer',
@@ -928,7 +928,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
               {/* Weekly Summary - Desktop only (8th column) */}
             <motion.div
                 className={cn(
-                  "hidden lg:flex overflow-hidden bg-muted/30 border border-border/50 rounded-lg sm:rounded-xl hover:bg-muted/50 transition-all duration-300 aspect-[6/5] items-center justify-center cursor-pointer relative",
+                  "hidden lg:flex overflow-hidden bg-muted/30 border border-border/50 rounded-lg sm:rounded-xl hover:bg-muted/50 transition-all duration-300 aspect-[7/6] items-center justify-center cursor-pointer relative",
                   compactMode 
                     ? 'p-1.5 sm:p-2 lg:p-2.5 2xl:p-3 3xl:p-4' 
                     : 'p-1.5 sm:p-2.5 lg:p-3 2xl:p-4 3xl:p-5',
