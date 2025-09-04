@@ -84,6 +84,13 @@ export const initializeDefaultAccounts = async () => {
   console.log('Initializing accounts...');
   const { setSelectedAccount } = useAccountFilterStore.getState();
   try {
+    // Clean up any prior realtime listener
+    try {
+      const existingUnsub = (window as any).__accountsUnsub;
+      if (typeof existingUnsub === 'function') existingUnsub();
+      (window as any).__accountsUnsub = undefined;
+    } catch {}
+
     // Load all accounts from Firestore
     const fetched = await accountService.getAll();
     // Sort deterministically by createdAt ascending, fallback to name/id to ensure stability across devices
@@ -117,6 +124,31 @@ export const initializeDefaultAccounts = async () => {
       const pick = leader || active || state.accounts[0];
       setSelectedAccount(pick.id);
     }
+
+    // Attach realtime subscription for accounts
+    const unsub = accountService.listenAll((docs) => {
+      try {
+        const sorted = [...docs].sort((a: any, b: any) => {
+          const aTs = a?.createdAt ? new Date(a.createdAt).getTime() : Number.MAX_SAFE_INTEGER;
+          const bTs = b?.createdAt ? new Date(b.createdAt).getTime() : Number.MAX_SAFE_INTEGER;
+          if (aTs !== bTs) return aTs - bTs;
+          const an = (a?.name || '').localeCompare?.(b?.name || '') || 0;
+          if (an !== 0) return an;
+          return String(a?.id || '').localeCompare(String(b?.id || ''));
+        });
+        useAccountFilterStore.setState({ accounts: sorted });
+        const st = useAccountFilterStore.getState();
+        if (!st.selectedAccountId && st.accounts.length > 0) {
+          const leader = st.accounts.find(a => (a as any).linkedAccountIds && (a as any).linkedAccountIds.length > 0);
+          const active = st.accounts.find(a => a.isActive);
+          const pick = leader || active || st.accounts[0];
+          setSelectedAccount(pick.id);
+        }
+      } catch (e) {
+        console.warn('accounts realtime update failed:', e);
+      }
+    });
+    (window as any).__accountsUnsub = unsub;
   } catch (error) {
     console.error('Failed to initialize accounts:', error);
   }

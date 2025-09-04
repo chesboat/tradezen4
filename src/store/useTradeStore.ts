@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { Trade, TradeResult } from '@/types';
 import { classifyTradeResult } from '@/lib/utils';
 import { FirestoreService } from '@/lib/firestore';
+import { onSnapshot, query, orderBy, collection } from 'firebase/firestore';
+import { db, auth } from '@/lib/firebase';
 
 const tradeService = new FirestoreService<Trade>('trades');
 
@@ -51,6 +53,41 @@ export const useTradeStore = create<TradeState>((set, get) => ({
         // If account store is not ready yet, fall back to unfiltered
       }
       set({ trades: filtered.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()) });
+
+      // Attach realtime listener for trades under current user
+      try {
+        const existingUnsub = (window as any).__tradesUnsub;
+        if (typeof existingUnsub === 'function') existingUnsub();
+      } catch {}
+      try {
+        const userId = auth.currentUser?.uid;
+        if (userId) {
+          const colRef = collection(db as any, `users/${userId}/trades`);
+          const q = query(colRef, orderBy('createdAt', 'desc'));
+          const unsub = onSnapshot(q, async (snap) => {
+            const docs = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as Trade[];
+            const formatted = docs.map(trade => ({
+              ...trade,
+              createdAt: new Date(trade.createdAt),
+              updatedAt: new Date(trade.updatedAt),
+              entryTime: new Date(trade.entryTime as any),
+              exitTime: (trade as any).exitTime ? new Date((trade as any).exitTime) : undefined,
+            }));
+            let filteredRealtime = formatted;
+            try {
+              const { accounts } = (await import('./useAccountFilterStore')).useAccountFilterStore.getState();
+              if (accounts && accounts.length > 0) {
+                const validIds = new Set(accounts.filter(a => a.isActive !== false).map(a => a.id));
+                filteredRealtime = formatted.filter(t => validIds.has((t as any).accountId));
+              }
+            } catch {}
+            set({ trades: filteredRealtime });
+          });
+          (window as any).__tradesUnsub = unsub;
+        }
+      } catch (e) {
+        console.warn('Trades realtime subscription failed (fallback to one-time load):', e);
+      }
     } catch (error) {
       console.error('Failed to initialize trades:', error);
       set({ trades: [] });

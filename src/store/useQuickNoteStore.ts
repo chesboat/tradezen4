@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { QuickNote } from '@/types';
 import { QuickNoteState } from '@/types/stores';
 import { FirestoreService } from '@/lib/firestore';
+import { onSnapshot, query, orderBy, collection } from 'firebase/firestore';
+import { db, auth } from '@/lib/firebase';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import app from '@/lib/firebase';
 import { useQuickNoteModalStore } from './useQuickNoteModalStore';
@@ -54,6 +56,36 @@ export const useQuickNoteStore = create<QuickNoteState>((set, get) => ({
         notes: formattedNotes.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
         allTags: tags
       });
+
+      // Attach realtime listener for quick notes
+      try {
+        const existingUnsub = (window as any).__quickNotesUnsub;
+        if (typeof existingUnsub === 'function') existingUnsub();
+      } catch {}
+      try {
+        const userId = auth.currentUser?.uid;
+        if (userId) {
+          const colRef = collection(db as any, `users/${userId}/quickNotes`);
+          const q = query(colRef, orderBy('updatedAt', 'desc'));
+          const unsub = onSnapshot(q, (snap) => {
+            const docs = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as any[];
+            const formatted = docs.map(note => ({
+              ...note,
+              tags: Array.isArray((note as any).tags) ? (note as any).tags : [],
+              createdAt: new Date(note.createdAt),
+              updatedAt: new Date(note.updatedAt),
+            }));
+            const newTags = [...new Set(formatted.flatMap(n => n.tags))];
+            set({ 
+              notes: formatted,
+              allTags: newTags
+            });
+          });
+          (window as any).__quickNotesUnsub = unsub;
+        }
+      } catch (e) {
+        console.warn('Quick notes realtime subscription failed (fallback to one-time load):', e);
+      }
 
       // Background migration: replace legacy Firebase Storage URLs in note content
       // that use the JSON API form `/o?name=...` with signed download URLs.
