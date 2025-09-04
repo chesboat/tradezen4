@@ -1879,6 +1879,11 @@ export const PublicSharePage: React.FC = () => {
   const handleCloseModal = () => {
     setShowModal(false);
     setDemoMode(true);
+    try {
+      // Avoid side-effects on the main app by resetting any demo-local state
+      // and not touching auth/localStorage keys used by the authenticated app.
+      sessionStorage.setItem('tz-demo-mode', '1');
+    } catch {}
   };
 
   const renderDemoView = () => {

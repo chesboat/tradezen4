@@ -45,7 +45,7 @@ function AppContent() {
   const { currentView } = useNavigationStore();
   const { theme } = useTheme();
   const tradeLoggerModal = useTradeLoggerModal();
-  const { currentUser } = useAuth();
+  const { currentUser, loading } = useAuth();
   const { initializeProfile } = useUserProfileStore();
   const { isExpanded: todoExpanded, railWidth } = useTodoStore();
   const { showLevelUpToast, levelUpData, closeLevelUpToast } = useXpRewards();
@@ -53,7 +53,7 @@ function AppContent() {
   // Initialize data when user is authenticated
   React.useEffect(() => {
     const initializeData = async () => {
-      if (currentUser) {
+      if (!loading && currentUser) {
         console.log('Starting app initialization for user:', currentUser.uid);
         try {
           // Load profile first so other stores can rely on it
@@ -71,7 +71,26 @@ function AppContent() {
     };
     
     initializeData();
-  }, [currentUser, initializeProfile]);
+  }, [loading, currentUser, initializeProfile]);
+
+  // Recovery: if user is present but stores are empty (e.g., after returning from /share demo), re-init
+  React.useEffect(() => {
+    if (!loading && currentUser) {
+      const { accounts } = (require('./store/useAccountFilterStore') as any).useAccountFilterStore.getState();
+      const { trades } = (require('./store/useTradeStore') as any).useTradeStore.getState();
+      if ((accounts?.length || 0) === 0 || (trades?.length || 0) === 0) {
+        (async () => {
+          try {
+            await initializeDefaultAccounts();
+            await initializeTradeStore();
+            await initializeQuickNoteStore();
+          } catch (e) {
+            console.warn('Recovery initialization failed:', e);
+          }
+        })();
+      }
+    }
+  }, [loading, currentUser]);
 
   // If visiting a public share link, bypass auth gating entirely
   if (typeof window !== 'undefined' && window.location.pathname.startsWith('/share/')) {
