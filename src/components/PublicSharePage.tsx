@@ -2829,14 +2829,14 @@ export const PublicSharePage: React.FC = () => {
                                   </div>
                                   
                                   {/* Week Row - 6 Days + Week Summary */}
-                                  <div className="grid grid-cols-7 gap-2 sm:gap-3 lg:gap-5">
+                                  <div className="grid grid-cols-7 gap-1 sm:gap-2 lg:gap-4">
                                     {/* Sunday through Friday (first 6 days) */}
                                     {week.slice(0, 6).map((day, dayIndex) => {
                                       const getDayClassName = () => {
-                                        let classes = 'relative p-1 sm:p-2 lg:p-3 rounded border border-border/30 bg-card transition-all duration-200 cursor-pointer aspect-square sm:aspect-[6/5] lg:aspect-[6/5] min-h-[84px] sm:min-h-[96px] lg:min-h-[110px] flex flex-col overflow-hidden';
+                                        let classes = 'relative p-1 sm:p-2 lg:p-3 rounded border border-border/30 transition-all duration-200 cursor-pointer hover:border-primary/50 aspect-square sm:aspect-[6/5] lg:aspect-[6/5] min-h-[84px] sm:min-h-[96px] lg:min-h-[110px] flex flex-col overflow-hidden';
                                         
                                         if (day.isOtherMonth) classes += ' opacity-30';
-                                        if (day.isToday) classes += ' border-2 border-primary/40 bg-primary/5';
+                                        if (day.isToday) classes += ' ring-1 ring-primary/50 ring-offset-1 ring-offset-background bg-primary/5';
                                         if (day.tradesCount > 0) classes += ' bg-muted/20';
                                         if (day.pnl > 0) classes += ' border-green-500/40';
                                         if (day.pnl < 0) classes += ' border-red-500/40';
@@ -2898,7 +2898,7 @@ export const PublicSharePage: React.FC = () => {
                                     
                                     {/* Week Summary Column (replaces Saturday) */}
                                     <motion.div
-                                      className="bg-muted/30 border border-border/50 rounded p-1 sm:p-2 lg:p-4 transition-colors cursor-pointer aspect-square sm:aspect-[6/5] lg:aspect-[6/5] min-h-[84px] sm:min-h-[96px] lg:min-h-[110px] flex flex-col justify-center overflow-hidden"
+                                      className="bg-muted/30 border border-border/50 rounded p-1 sm:p-2 lg:p-4 hover:bg-muted/50 transition-colors cursor-pointer aspect-square sm:aspect-[6/5] lg:aspect-[6/5] min-h-[84px] sm:min-h-[96px] lg:min-h-[110px] flex flex-col justify-center overflow-hidden"
                                       onClick={redirectToSignup}
                                       whileHover={{ scale: 1.01 }}
                                       title="Sign up to view weekly details"
