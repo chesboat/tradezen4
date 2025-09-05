@@ -40,6 +40,8 @@ import { NudgeToast } from './components/NudgeToast';
 import { TodoDrawer } from './components/TodoDrawer';
 import { MobileTodoPage } from './components/MobileTodoPage';
 import { useTodoStore } from './store/useTodoStore';
+import { collection, getDocs, limit, query } from 'firebase/firestore';
+import { db } from './lib/firebase';
 
 function AppContent() {
   const { isExpanded: sidebarExpanded } = useSidebarStore();
@@ -52,12 +54,17 @@ function AppContent() {
   const { isExpanded: todoExpanded, railWidth } = useTodoStore();
   const { showLevelUpToast, levelUpData, closeLevelUpToast } = useXpRewards();
 
+  const [bootHydrating, setBootHydrating] = React.useState(false);
+  const hydratingRef = React.useRef(false);
+
   // Initialize data when user is authenticated
   React.useEffect(() => {
     const initializeData = async () => {
       if (!loading && currentUser) {
         console.log('Starting app initialization for user:', currentUser.uid);
         try {
+          setBootHydrating(true);
+          hydratingRef.current = true;
           // Load profile first so other stores can rely on it
           await initializeProfile(currentUser.uid, currentUser.email || undefined);
           await initializeDefaultAccounts();
@@ -66,8 +73,50 @@ function AppContent() {
           await initializeRuleTallyStore();
           await initializeQuickNoteStore();
           console.log('App initialization completed successfully');
+
+          // Verify remote presence and wait for subscriptions to populate stores
+          try {
+            const tradesCol = collection(db as any, `users/${currentUser.uid}/trades`);
+            const accountsCol = collection(db as any, `users/${currentUser.uid}/tradingAccounts`);
+            const [tradesSnap, accountsSnap] = await Promise.all([
+              getDocs(query(tradesCol, limit(1))),
+              getDocs(query(accountsCol, limit(1)))
+            ]);
+            const remoteHasTrades = !tradesSnap.empty;
+            const remoteHasAccounts = !accountsSnap.empty;
+
+            const waitUntil = async (predicate: () => boolean, ms: number, attempts: number) => {
+              for (let i = 0; i < attempts; i++) {
+                if (predicate()) return true;
+                await new Promise((r) => setTimeout(r, ms));
+              }
+              return predicate();
+            };
+
+            const ok = await waitUntil(() => {
+              const { accounts } = useAccountFilterStore.getState();
+              const { trades } = useTradeStore.getState();
+              if (remoteHasAccounts && (accounts?.length || 0) > 0) return true;
+              if (remoteHasTrades && (trades?.length || 0) > 0) return true;
+              if (!remoteHasAccounts && !remoteHasTrades) return true; // nothing remote to wait for
+              return false;
+            }, 150, 40); // up to ~6s
+
+            if (!ok) {
+              console.warn('Hydration verification timed out, retrying store initializers');
+              await initializeDefaultAccounts();
+              await initializeTradeStore();
+            }
+          } catch (e) {
+            console.warn('Hydration verification failed:', e);
+          } finally {
+            setBootHydrating(false);
+            hydratingRef.current = false;
+          }
         } catch (error) {
           console.error('Error during app initialization:', error);
+          setBootHydrating(false);
+          hydratingRef.current = false;
         }
       }
     };
@@ -140,6 +189,18 @@ function AppContent() {
 
   if (!currentUser) {
     return <AuthPage />;
+  }
+
+  // Block UI until hydration completes to avoid flashing an empty dashboard when data exists remotely
+  if (bootHydrating) {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+        <div className="flex items-center gap-3 text-muted-foreground">
+          <div className="w-6 h-6 border-2 border-current border-t-transparent rounded-full animate-spin" />
+          <span>Loading your workspace…</span>
+        </div>
+      </div>
+    );
   }
 
   return (
