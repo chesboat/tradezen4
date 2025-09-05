@@ -125,7 +125,7 @@ export const initializeDefaultAccounts = async () => {
       setSelectedAccount(pick.id);
     }
 
-    // Attach realtime subscription for accounts
+    // Attach realtime subscription for accounts (SSOT)
     const unsub = accountService.listenAll((docs) => {
       try {
         const sorted = [...docs].sort((a: any, b: any) => {

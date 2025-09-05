@@ -120,6 +120,7 @@ export class FirestoreService<T extends FirestoreDocument> {
   }
 
   async getAll(): Promise<T[]> {
+    // Unified source of truth: Firestore only; consumers should subscribe for live updates.
     const querySnapshot = await getDocs(this.getCollection());
     return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }) as T);
   }

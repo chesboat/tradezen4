@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { initializeFirestore, enableIndexedDbPersistence, enableMultiTabIndexedDbPersistence } from 'firebase/firestore';
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
 import { getAnalytics, isSupported as analyticsIsSupported } from 'firebase/analytics';
 
 // Your Firebase configuration object
@@ -22,25 +22,12 @@ export const auth = getAuth(app);
 // Use auto-detected long polling to improve reliability on iOS Safari/mobile networks
 export const db = initializeFirestore(app, {
   experimentalAutoDetectLongPolling: true,
+  localCache: persistentLocalCache({
+    tabManager: persistentMultipleTabManager(),
+  }) as any,
 });
 
-// Enable Firestore offline persistence (with multi-tab support when possible)
-if (typeof window !== 'undefined') {
-  // Try multi-tab persistence first so multiple tabs can share the cache
-  enableMultiTabIndexedDbPersistence(db).catch(async (err: any) => {
-    // If multi-tab isn't available, try single-tab persistence
-    if (err?.code === 'failed-precondition' || err?.code === 'unimplemented') {
-      try {
-        await enableIndexedDbPersistence(db);
-      } catch (e) {
-        // Persistence not available (e.g., private mode); continue online-only
-        console.warn('Firestore persistence unavailable:', e);
-      }
-    } else {
-      console.warn('Failed to enable multi-tab persistence:', err);
-    }
-  });
-}
+// Persistence is configured via localCache above; no imperative enable calls needed.
 // Initialize Analytics only when supported (avoids blank page issues locally)
 export let analytics: ReturnType<typeof getAnalytics> | null = null;
 if (typeof window !== 'undefined') {
