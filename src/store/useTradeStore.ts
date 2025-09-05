@@ -83,6 +83,8 @@ export const useTradeStore = create<TradeState>((set, get) => ({
             } catch {}
             set({ trades: filteredRealtime });
             try { (window as any).__tradesReady = true; } catch {}
+          }, (error) => {
+            console.error('Trades snapshot error:', error);
           });
           (window as any).__tradesUnsub = unsub;
         }

@@ -81,6 +81,8 @@ export const useQuickNoteStore = create<QuickNoteState>((set, get) => ({
               allTags: newTags
             });
             try { (window as any).__notesReady = true; } catch {}
+          }, (error) => {
+            console.error('QuickNotes snapshot error:', error);
           });
           (window as any).__quickNotesUnsub = unsub;
         }
