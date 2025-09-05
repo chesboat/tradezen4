@@ -80,6 +80,7 @@ export const useQuickNoteStore = create<QuickNoteState>((set, get) => ({
               notes: formatted,
               allTags: newTags
             });
+            try { (window as any).__notesReady = true; } catch {}
           });
           (window as any).__quickNotesUnsub = unsub;
         }

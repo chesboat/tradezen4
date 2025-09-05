@@ -82,6 +82,7 @@ export const useTradeStore = create<TradeState>((set, get) => ({
               }
             } catch {}
             set({ trades: filteredRealtime });
+            try { (window as any).__tradesReady = true; } catch {}
           });
           (window as any).__tradesUnsub = unsub;
         }

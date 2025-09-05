@@ -151,7 +151,8 @@ function AppContent() {
               const { accounts } = useAccountFilterStore.getState();
               const { trades } = useTradeStore.getState();
               const notesCount = (await import('./store/useQuickNoteStore')).useQuickNoteStore.getState().notes.length;
-              const ready = (accounts?.length || 0) > 0 || (trades?.length || 0) > 0 || notesCount > 0;
+              const anyReadyFlag = (window as any).__accountsReady || (window as any).__tradesReady || (window as any).__notesReady;
+              const ready = anyReadyFlag || (accounts?.length || 0) > 0 || (trades?.length || 0) > 0 || notesCount > 0;
               setBootHydrating(!ready);
               hydratingRef.current = !ready;
             }

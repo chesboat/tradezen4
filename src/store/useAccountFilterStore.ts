@@ -128,6 +128,7 @@ export const initializeDefaultAccounts = async () => {
           return String(a?.id || '').localeCompare(String(b?.id || ''));
         });
         useAccountFilterStore.setState({ accounts: sorted });
+        try { (window as any).__accountsReady = true; } catch {}
         const st = useAccountFilterStore.getState();
         if (!st.selectedAccountId && st.accounts.length > 0) {
           const leader = st.accounts.find(a => (a as any).linkedAccountIds && (a as any).linkedAccountIds.length > 0);
