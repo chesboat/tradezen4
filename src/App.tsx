@@ -92,22 +92,25 @@ function AppContent() {
           await initializeProfile(currentUser.uid, currentUser.email || undefined);
           await initializeDefaultAccounts();
           await initializeDefaultQuests();
-          await initializeTradeStore(currentUser.uid);
+          await initializeTradeStore();
           await initializeRuleTallyStore();
-          await initializeQuickNoteStore(currentUser.uid);
+          await initializeQuickNoteStore();
           console.log('App initialization completed successfully');
 
           // Verify remote presence and wait for subscriptions to populate stores
           try {
             const tradesCol = collection(db as any, `users/${currentUser.uid}/trades`);
             const accountsCol = collection(db as any, `users/${currentUser.uid}/tradingAccounts`);
-            const [tradesSnap, accountsSnap] = await Promise.all([
+            const quickNotesCol = collection(db as any, `users/${currentUser.uid}/quickNotes`);
+            const [tradesSnap, accountsSnap, notesSnap] = await Promise.all([
               getDocs(query(tradesCol, limit(1))),
-              getDocs(query(accountsCol, limit(1)))
+              getDocs(query(accountsCol, limit(1))),
+              getDocs(query(quickNotesCol, limit(1)))
             ]);
             const remoteHasTrades = !tradesSnap.empty;
             const remoteHasAccounts = !accountsSnap.empty;
-            remoteExpectedRef.current = remoteHasAccounts || remoteHasTrades;
+            const remoteHasNotes = !notesSnap.empty;
+            remoteExpectedRef.current = remoteHasAccounts || remoteHasTrades || remoteHasNotes;
 
             const waitUntil = async (predicate: () => boolean, ms: number, attempts: number) => {
               for (let i = 0; i < attempts; i++) {
@@ -141,7 +144,8 @@ function AppContent() {
               // If remote expected, only release if stores are now populated
               const { accounts } = useAccountFilterStore.getState();
               const { trades } = useTradeStore.getState();
-              const ready = (accounts?.length || 0) > 0 || (trades?.length || 0) > 0;
+              const notesCount = (await import('./store/useQuickNoteStore')).useQuickNoteStore.getState().notes.length;
+              const ready = (accounts?.length || 0) > 0 || (trades?.length || 0) > 0 || notesCount > 0;
               setBootHydrating(!ready);
               hydratingRef.current = !ready;
             }

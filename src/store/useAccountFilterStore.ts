@@ -107,17 +107,8 @@ export const initializeDefaultAccounts = async () => {
 
     const state = useAccountFilterStore.getState();
     if (state.accounts.length === 0) {
-      console.log('No accounts found, creating default demo account...');
-      const defaultAccount = {
-        name: 'Demo Account',
-        type: 'demo' as const,
-        balance: 10000,
-        currency: 'USD',
-        broker: 'Demo Broker',
-        isActive: true,
-      };
-      const newAccount = await state.addAccount(defaultAccount);
-      setSelectedAccount(newAccount.id);
+      // Do not auto-create demo accounts in SSOT mode
+      console.log('No accounts found for user. Leaving empty (SSOT).');
     } else if (!state.selectedAccountId) {
       const leader = state.accounts.find(a => (a as any).linkedAccountIds && (a as any).linkedAccountIds.length > 0);
       const active = state.accounts.find(a => a.isActive);
