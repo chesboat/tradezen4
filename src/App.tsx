@@ -56,15 +56,28 @@ function AppContent() {
 
   const [bootHydrating, setBootHydrating] = React.useState(false);
   const hydratingRef = React.useRef(false);
+  const initializedUidRef = React.useRef<string | null>(null);
 
   // Initialize data when user is authenticated
   React.useEffect(() => {
     const initializeData = async () => {
       if (!loading && currentUser) {
+        if (initializedUidRef.current === currentUser.uid && !hydratingRef.current) {
+          return; // prevent duplicate init for same user
+        }
         console.log('Starting app initialization for user:', currentUser.uid);
         try {
           setBootHydrating(true);
           hydratingRef.current = true;
+          initializedUidRef.current = currentUser.uid;
+          // Absolute safety timer to avoid indefinite loader
+          const abortTimer = setTimeout(() => {
+            if (hydratingRef.current) {
+              console.warn('Hydration abort timer fired, releasing UI.');
+              setBootHydrating(false);
+              hydratingRef.current = false;
+            }
+          }, 15000);
           // Load profile first so other stores can rely on it
           await initializeProfile(currentUser.uid, currentUser.email || undefined);
           await initializeDefaultAccounts();
@@ -112,11 +125,13 @@ function AppContent() {
           } finally {
             setBootHydrating(false);
             hydratingRef.current = false;
+            clearTimeout(abortTimer);
           }
         } catch (error) {
           console.error('Error during app initialization:', error);
           setBootHydrating(false);
           hydratingRef.current = false;
+          initializedUidRef.current = null; // allow retry on next render
         }
       }
     };
