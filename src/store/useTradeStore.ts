@@ -53,6 +53,7 @@ export const useTradeStore = create<TradeState>((set, get) => ({
         // If account store is not ready yet, fall back to unfiltered
       }
       set({ trades: filtered.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()) });
+      try { (window as any).__tradesReady = true; } catch {}
 
       // Attach realtime listener for trades under current user
       try {

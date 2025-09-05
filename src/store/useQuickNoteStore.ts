@@ -56,6 +56,7 @@ export const useQuickNoteStore = create<QuickNoteState>((set, get) => ({
         notes: formattedNotes.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
         allTags: tags
       });
+      try { (window as any).__notesReady = true; } catch {}
 
       // Attach realtime listener for quick notes
       try {
