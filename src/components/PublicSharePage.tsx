@@ -1790,6 +1790,7 @@ export const PublicSharePage: React.FC = () => {
   const [showModal, setShowModal] = useState(true);
   const [demoMode, setDemoMode] = useState(false);
   const [currentDemoView, setCurrentDemoView] = useState<'dashboard' | 'calendar' | 'trades' | 'journal' | 'notes' | 'analytics' | 'quests' | 'wellness' | 'coach'>('journal');
+  const [showSignupPrompt, setShowSignupPrompt] = useState(false);
 
   React.useEffect(() => {
     (async () => {
@@ -1885,6 +1886,20 @@ export const PublicSharePage: React.FC = () => {
       sessionStorage.setItem('tz-demo-mode', '1');
     } catch {}
   };
+
+  // Timed signup prompt (one-time per session)
+  React.useEffect(() => {
+    if (!demoMode) return;
+    try {
+      const shown = sessionStorage.getItem('tz-demo-cta-shown');
+      if (shown) return;
+    } catch {}
+    const t = setTimeout(() => {
+      setShowSignupPrompt(true);
+      try { sessionStorage.setItem('tz-demo-cta-shown', '1'); } catch {}
+    }, 6000);
+    return () => clearTimeout(t);
+  }, [demoMode]);
 
   const renderDemoView = () => {
     switch (currentDemoView) {
@@ -2982,6 +2997,27 @@ export const PublicSharePage: React.FC = () => {
             </motion.div>
           </div>
         </motion.div>
+        </div>
+      )}
+
+      {/* Signup Prompt Modal (demo) */}
+      {demoMode && showSignupPrompt && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-card border border-border rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                <span className="text-primary text-lg">✨</span>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold mb-1">Like what you see?</h3>
+                <p className="text-sm text-muted-foreground">Create your account to start journaling with your real data.</p>
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-2 mt-6">
+              <button onClick={() => setShowSignupPrompt(false)} className="px-3 py-1.5 rounded-lg bg-muted hover:bg-muted/80 text-sm">Keep exploring</button>
+              <button onClick={redirectToSignup} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-sm">Sign up</button>
+            </div>
+          </div>
         </div>
       )}
     </div>
