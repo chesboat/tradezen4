@@ -43,7 +43,21 @@ export const QuickLogButton: React.FC<Props> = ({ tz, onMaxReached }) => {
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key.toLowerCase() === 'l' || (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 't')) {
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName?.toLowerCase();
+      const isEditable = !!target && (
+        target.isContentEditable ||
+        tag === 'input' ||
+        tag === 'textarea' ||
+        tag === 'select'
+      );
+      if (isEditable) return;
+
+      const key = (e.key || '').toLowerCase();
+      if (key === 'l') {
+        e.preventDefault();
+        doLog();
+      } else if (e.ctrlKey && e.shiftKey && key === 't') {
         e.preventDefault();
         doLog();
       }

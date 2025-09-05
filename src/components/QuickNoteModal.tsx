@@ -121,6 +121,16 @@ export const QuickNoteModal: React.FC<QuickNoteModalProps> = ({
         textareaRef.current?.focus();
       }, 100);
     }
+    // Lock horizontal scroll while modal is open
+    try {
+      if (isModalOpen) {
+        document.documentElement.style.overflowX = 'hidden';
+        document.body.style.overflowX = 'hidden';
+      } else {
+        document.documentElement.style.overflowX = '';
+        document.body.style.overflowX = '';
+      }
+    } catch {}
   }, [isModalOpen]);
 
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -281,7 +291,7 @@ export const QuickNoteModal: React.FC<QuickNoteModalProps> = ({
           {/* Modal */}
           <motion.div
             className={cn(
-              "fixed inset-4 w-full max-w-lg mx-auto bg-card border border-border/50 rounded-2xl shadow-2xl z-50 overflow-hidden flex flex-col max-h-[calc(100vh-2rem)]",
+              "fixed inset-4 w-full max-w-lg mx-auto bg-card border border-border/50 rounded-2xl shadow-2xl z-50 overflow-hidden flex flex-col max-h-[calc(100vh-2rem)] overflow-x-hidden",
               className
             )}
             variants={modalVariants}
