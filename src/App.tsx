@@ -99,6 +99,7 @@ function AppContent() {
 
           // Verify remote presence and wait for subscriptions to populate stores
           try {
+            const profileDoc = collection(db as any, `userProfiles`);
             const tradesCol = collection(db as any, `users/${currentUser.uid}/trades`);
             const accountsCol = collection(db as any, `users/${currentUser.uid}/tradingAccounts`);
             const quickNotesCol = collection(db as any, `users/${currentUser.uid}/quickNotes`);
@@ -110,7 +111,9 @@ function AppContent() {
             const remoteHasTrades = !tradesSnap.empty;
             const remoteHasAccounts = !accountsSnap.empty;
             const remoteHasNotes = !notesSnap.empty;
-            remoteExpectedRef.current = remoteHasAccounts || remoteHasTrades || remoteHasNotes;
+            // Treat existing user profile as signal via store state
+            const hasProfile = !!useUserProfileStore.getState().profile;
+            remoteExpectedRef.current = hasProfile || remoteHasAccounts || remoteHasTrades || remoteHasNotes;
 
             const waitUntil = async (predicate: () => boolean, ms: number, attempts: number) => {
               for (let i = 0; i < attempts; i++) {
@@ -135,7 +138,10 @@ function AppContent() {
               await initializeTradeStore();
             }
           } catch (e) {
-            console.warn('Hydration verification failed:', e);
+            console.warn('Hydration verification failed (keeping loader):', e);
+            // Keep loader instead of releasing UI on verification failure
+            setBootHydrating(true);
+            hydratingRef.current = true;
           } finally {
             if (!remoteExpectedRef.current) {
               setBootHydrating(false);
