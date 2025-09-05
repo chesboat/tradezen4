@@ -94,11 +94,9 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
         (window as any).__xpUnsub = undefined;
       } catch {}
 
-      // 1) Load any cached profile immediately for faster UI hydration
+      // 1) Do not fabricate profile; rely on Firestore as SSOT. Use cache only for quick UI display.
       const cachedProfile = get().loadFromStorage(userId);
-      if (cachedProfile) {
-        set({ profile: cachedProfile });
-      }
+      if (cachedProfile) set({ profile: cachedProfile });
 
       // 2) Attach realtime subscription to the canonical profile doc
       try {
@@ -143,37 +141,19 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
         console.warn('Transient error loading profile from Firestore; using cache until realtime updates arrive.', e);
       }
 
-      // 4) If profile truly doesn't exist anywhere, create a new one
+      // 4) If the profile doc does not exist, create it once in Firestore, not locally
       if (!profile && !cachedProfile) {
-        profile = {
+        const profileDoc = doc(db, 'userProfiles', userId);
+        const base = {
           id: userId,
           displayName: email?.split('@')[0] || 'Trader',
           email,
-          xp: {
-            total: 0,
-            seasonXp: 0,
-            level: 1,
-            prestige: 0,
-            canPrestige: false,
-            history: []
-          },
-          joinedAt: new Date(),
-          preferences: {
-            theme: 'system',
-            notifications: true,
-            autoBackup: true,
-          },
-          stats: {
-            totalTrades: 0,
-            totalQuests: 0,
-            totalWellnessActivities: 0,
-            totalReflections: 0,
-            currentStreak: 0,
-            longestStreak: 0,
-          },
-        };
-        set({ profile });
-        get().saveToStorage();
+          joinedAt: new Date().toISOString(),
+          preferences: { theme: 'system', notifications: true, autoBackup: true },
+          stats: { totalTrades: 0, totalQuests: 0, totalWellnessActivities: 0, totalReflections: 0, currentStreak: 0, longestStreak: 0 },
+          updatedAt: serverTimestamp(),
+        } as any;
+        await setDoc(profileDoc, base, { merge: true });
       }
       
       // 5) Ensure XP realtime subscription is active

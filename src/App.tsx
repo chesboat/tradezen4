@@ -178,7 +178,7 @@ function AppContent() {
     }
   }, [loading, currentUser]);
 
-  // If visiting a public share link, bypass auth gating entirely
+  // If visiting a public share link, render share page inside a minimal shell and avoid mounting data stores
   if (typeof window !== 'undefined' && window.location.pathname.startsWith('/share/')) {
     return <PublicSharePage />;
   }
