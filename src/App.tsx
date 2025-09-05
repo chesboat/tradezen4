@@ -72,6 +72,8 @@ function AppContent() {
           setBootHydrating(true);
           hydratingRef.current = true;
           initializedUidRef.current = currentUser.uid;
+          // For authenticated users, expect remote data by default (profile/accounts/trades/notes)
+          remoteExpectedRef.current = true;
           // Absolute safety timer to avoid indefinite loader
           const abortTimer = setTimeout(() => {
             if (hydratingRef.current) {
