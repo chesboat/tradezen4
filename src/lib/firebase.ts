@@ -22,7 +22,6 @@ export const auth = getAuth(app);
 // Use auto-detected long polling to improve reliability on iOS Safari/mobile networks
 export const db = initializeFirestore(app, {
   // Mitigate Safari/extension/CORS issues with Firestore listen/write
-  experimentalAutoDetectLongPolling: true,
   experimentalForceLongPolling: true as any,
   localCache: persistentLocalCache({
     tabManager: persistentMultipleTabManager(),
