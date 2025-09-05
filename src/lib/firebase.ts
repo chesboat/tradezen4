@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
+import { initializeFirestore, memoryLocalCache } from 'firebase/firestore';
 import { getAnalytics, isSupported as analyticsIsSupported } from 'firebase/analytics';
 
 // Your Firebase configuration object
@@ -21,11 +21,9 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 // Use auto-detected long polling to improve reliability on iOS Safari/mobile networks
 export const db = initializeFirestore(app, {
-  // Mitigate Safari/extension/CORS issues with Firestore listen/write
+  // Force long polling to avoid blocked streams; use in-memory cache to avoid IndexedDB issues
   experimentalForceLongPolling: true as any,
-  localCache: persistentLocalCache({
-    tabManager: persistentMultipleTabManager(),
-  }) as any,
+  localCache: memoryLocalCache() as any,
 });
 
 // Persistence is configured via localCache above; no imperative enable calls needed.
