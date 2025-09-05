@@ -24,7 +24,6 @@ export const db = initializeFirestore(app, {
   // Mitigate Safari/extension/CORS issues with Firestore listen/write
   experimentalAutoDetectLongPolling: true,
   experimentalForceLongPolling: true as any,
-  useFetchStreams: false as any,
   localCache: persistentLocalCache({
     tabManager: persistentMultipleTabManager(),
   }) as any,
