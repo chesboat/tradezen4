@@ -131,11 +131,14 @@ export class FirestoreService<T extends FirestoreDocument> {
     return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }) as T);
   }
 
-  listenAll(onChange: (docs: T[]) => void): () => void {
+  listenAll(onChange: (docs: T[]) => void, onError?: (error: unknown) => void): () => void {
     const col = this.getCollection();
     const unsubscribe = onSnapshot(col, (snapshot) => {
       const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as T));
       onChange(docs);
+    }, (error) => {
+      if (onError) onError(error);
+      else console.error('FirestoreService.listenAll error:', error);
     });
     return unsubscribe;
   }

@@ -139,6 +139,8 @@ export const initializeDefaultAccounts = async () => {
       } catch (e) {
         console.warn('accounts realtime update failed:', e);
       }
+    }, (err) => {
+      console.error('Accounts snapshot error:', err);
     });
     (window as any).__accountsUnsub = unsub;
   } catch (error) {
