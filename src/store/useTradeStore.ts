@@ -20,7 +20,7 @@ interface TradeState {
   calculatePnL: (trade: Trade) => number;
   autoCalculateResult: (trade: Trade) => TradeResult;
   getRecentTrades: () => Trade[];
-  initializeTrades: () => Promise<void>;
+  initializeTrades: (userIdOverride?: string) => Promise<void>;
 }
 
 /**
@@ -30,7 +30,7 @@ export const useTradeStore = create<TradeState>((set, get) => ({
   trades: [],
 
   // Initialize trades from Firestore
-  initializeTrades: async () => {
+  initializeTrades: async (userIdOverride?: string) => {
     try {
       const trades = await tradeService.getAll();
       const formattedTrades = trades.map(trade => ({
@@ -60,7 +60,7 @@ export const useTradeStore = create<TradeState>((set, get) => ({
         if (typeof existingUnsub === 'function') existingUnsub();
       } catch {}
       try {
-        const userId = auth.currentUser?.uid;
+        const userId = userIdOverride || auth.currentUser?.uid;
         if (userId) {
           const colRef = collection(db as any, `users/${userId}/trades`);
           const q = query(colRef, orderBy('createdAt', 'desc'));

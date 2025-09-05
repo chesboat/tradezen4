@@ -39,7 +39,7 @@ export const useQuickNoteStore = create<QuickNoteState>((set, get) => ({
     return newContent;
   },
 
-  initializeNotes: async () => {
+  initializeNotes: async (userIdOverride?: string) => {
     try {
       const notes = await quickNoteService.getAll();
       const formattedNotes = notes.map(note => ({
@@ -63,7 +63,7 @@ export const useQuickNoteStore = create<QuickNoteState>((set, get) => ({
         if (typeof existingUnsub === 'function') existingUnsub();
       } catch {}
       try {
-        const userId = auth.currentUser?.uid;
+        const userId = userIdOverride || auth.currentUser?.uid;
         if (userId) {
           const colRef = collection(db as any, `users/${userId}/quickNotes`);
           const q = query(colRef, orderBy('updatedAt', 'desc'));

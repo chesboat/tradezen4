@@ -92,9 +92,9 @@ function AppContent() {
           await initializeProfile(currentUser.uid, currentUser.email || undefined);
           await initializeDefaultAccounts();
           await initializeDefaultQuests();
-          await initializeTradeStore();
+          await initializeTradeStore(currentUser.uid);
           await initializeRuleTallyStore();
-          await initializeQuickNoteStore();
+          await initializeQuickNoteStore(currentUser.uid);
           console.log('App initialization completed successfully');
 
           // Verify remote presence and wait for subscriptions to populate stores
