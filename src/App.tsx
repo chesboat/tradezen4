@@ -57,6 +57,8 @@ function AppContent() {
   const [bootHydrating, setBootHydrating] = React.useState(false);
   const hydratingRef = React.useRef(false);
   const initializedUidRef = React.useRef<string | null>(null);
+  const remoteExpectedRef = React.useRef(false);
+  const [bootReloadTick, setBootReloadTick] = React.useState(0);
 
   // Initialize data when user is authenticated
   React.useEffect(() => {
@@ -73,9 +75,17 @@ function AppContent() {
           // Absolute safety timer to avoid indefinite loader
           const abortTimer = setTimeout(() => {
             if (hydratingRef.current) {
-              console.warn('Hydration abort timer fired, releasing UI.');
-              setBootHydrating(false);
-              hydratingRef.current = false;
+              console.warn('Hydration abort timer fired');
+              // Only release UI if we do NOT expect remote data
+              if (!remoteExpectedRef.current) {
+                console.warn('No remote data expected; releasing UI.');
+                setBootHydrating(false);
+                hydratingRef.current = false;
+              } else {
+                console.warn('Remote data expected; keeping loader visible and retrying.');
+                // kick a retry
+                setBootReloadTick((x) => x + 1);
+              }
             }
           }, 15000);
           // Load profile first so other stores can rely on it
@@ -97,6 +107,7 @@ function AppContent() {
             ]);
             const remoteHasTrades = !tradesSnap.empty;
             const remoteHasAccounts = !accountsSnap.empty;
+            remoteExpectedRef.current = remoteHasAccounts || remoteHasTrades;
 
             const waitUntil = async (predicate: () => boolean, ms: number, attempts: number) => {
               for (let i = 0; i < attempts; i++) {
@@ -123,8 +134,17 @@ function AppContent() {
           } catch (e) {
             console.warn('Hydration verification failed:', e);
           } finally {
-            setBootHydrating(false);
-            hydratingRef.current = false;
+            if (!remoteExpectedRef.current) {
+              setBootHydrating(false);
+              hydratingRef.current = false;
+            } else {
+              // If remote expected, only release if stores are now populated
+              const { accounts } = useAccountFilterStore.getState();
+              const { trades } = useTradeStore.getState();
+              const ready = (accounts?.length || 0) > 0 || (trades?.length || 0) > 0;
+              setBootHydrating(!ready);
+              hydratingRef.current = !ready;
+            }
             clearTimeout(abortTimer);
           }
         } catch (error) {
@@ -137,7 +157,7 @@ function AppContent() {
     };
     
     initializeData();
-  }, [loading, currentUser, initializeProfile]);
+  }, [loading, currentUser, initializeProfile, bootReloadTick]);
 
   // Recovery: if user is present but stores are empty (e.g., after returning from /share demo), re-init
   React.useEffect(() => {
@@ -210,9 +230,17 @@ function AppContent() {
   if (bootHydrating) {
     return (
       <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
-        <div className="flex items-center gap-3 text-muted-foreground">
-          <div className="w-6 h-6 border-2 border-current border-t-transparent rounded-full animate-spin" />
-          <span>Loading your workspace…</span>
+        <div className="flex flex-col items-center gap-4 text-muted-foreground">
+          <div className="flex items-center gap-3">
+            <div className="w-6 h-6 border-2 border-current border-t-transparent rounded-full animate-spin" />
+            <span>Loading your workspace…</span>
+          </div>
+          <button
+            onClick={() => setBootReloadTick((x) => x + 1)}
+            className="px-3 py-1.5 text-xs rounded bg-muted hover:bg-muted/80 text-foreground border border-border"
+          >
+            Retry
+          </button>
         </div>
       </div>
     );
