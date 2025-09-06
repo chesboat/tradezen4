@@ -71,9 +71,17 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
 
   // Advanced responsive system based on available space
   const [viewportWidth, setViewportWidth] = useState<number>(typeof window !== 'undefined' ? window.innerWidth : 1920);
+  const [tileSize, setTileSize] = useState<number>(0);
   useEffect(() => {
-    const onResize = () => setViewportWidth(window.innerWidth);
+    const onResize = () => {
+      setViewportWidth(window.innerWidth);
+      // Recompute a representative tile width
+      const el = document.querySelector('[data-day-tile]') as HTMLElement | null;
+      if (el) setTileSize(el.clientWidth);
+    };
     window.addEventListener('resize', onResize);
+    // Initial compute
+    onResize();
     return () => window.removeEventListener('resize', onResize);
   }, []);
   
@@ -486,6 +494,19 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
     if (spaceLevel === 'normal') return { fontSize: 'clamp(16px, 2.0vw, 24px)', lineHeight: 1 };
     return { fontSize: 'clamp(18px, 2.2vw, 28px)', lineHeight: 1 };
   }, [spaceLevel]);
+
+  // Container-size-informed font sizes
+  const computedDailyPnlFont: React.CSSProperties = useMemo(() => {
+    if (!tileSize) return pnlFontStyle;
+    const px = Math.max(12, Math.min(26, tileSize * 0.18));
+    return { ...pnlFontStyle, fontSize: `${px}px` };
+  }, [tileSize, pnlFontStyle]);
+
+  const computedWeeklyPnlFont: React.CSSProperties = useMemo(() => {
+    if (!tileSize) return weeklyPnlFontStyle;
+    const px = Math.max(14, Math.min(28, tileSize * 0.2));
+    return { ...weeklyPnlFontStyle, fontSize: `${px}px` };
+  }, [tileSize, weeklyPnlFontStyle]);
 
   // Helper function to generate tooltip content for compact day tiles
   const getDayTooltipContent = (day: CalendarDay) => {
@@ -942,6 +963,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   layout
+                  data-day-tile
                 >
                   <div className="flex flex-col h-full space-y-1">
                     {/* Date */}
@@ -1020,7 +1042,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                                 'font-bold truncate',
                                 'flex items-center justify-center',
                                 day.pnl > 0 ? 'text-green-500' : 'text-red-500'
-                              )} style={pnlFontStyle}>
+                              )} style={computedDailyPnlFont}>
                                 {(['ultra-compact', 'compact'] as const).includes(spaceLevel as any)
                                   ? (Math.abs(day.pnl) >= 1000 
                                       ? `${day.pnl > 0 ? '+' : ''}${(day.pnl/1000).toFixed(1)}k`
@@ -1131,7 +1153,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                       'font-bold leading-tight',
                       weeklyData[weekIndex]?.totalPnl > 0 ? 'text-green-500' : 
                       weeklyData[weekIndex]?.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
-                    )} style={weeklyPnlFontStyle}>
+                    )} style={computedWeeklyPnlFont}>
                       {formatCurrency(weeklyData[weekIndex]?.totalPnl || 0)}
                     </div>
                     <div className={cn(textSizes.weekDays, 'text-muted-foreground leading-tight')}>
