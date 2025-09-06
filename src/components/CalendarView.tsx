@@ -84,6 +84,20 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
     onResize();
     return () => window.removeEventListener('resize', onResize);
   }, []);
+
+  // Observe tile size changes (covers Firefox when sidebars expand without window resize)
+  useEffect(() => {
+    const el = document.querySelector('[data-day-tile]') as HTMLElement | null;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver((entries) => {
+      if (entries[0]) {
+        const w = Math.floor(entries[0].contentRect.width);
+        if (w > 0) setTileSize(w);
+      }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [bothSidebarsExpanded, activityLogExpanded, sidebarExpanded]);
   
   // Calculate available space more precisely
   const getSpaceLevel = (): 'ultra-compact' | 'compact' | 'normal' | 'spacious' => {
@@ -498,13 +512,15 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
   // Container-size-informed font sizes
   const computedDailyPnlFont: React.CSSProperties = useMemo(() => {
     if (!tileSize) return pnlFontStyle;
-    const px = Math.max(12, Math.min(26, tileSize * 0.18));
+    const factor = spaceLevel === 'ultra-compact' ? 0.22 : spaceLevel === 'compact' ? 0.24 : spaceLevel === 'normal' ? 0.26 : 0.28;
+    const px = Math.max(12, Math.min(30, tileSize * factor));
     return { ...pnlFontStyle, fontSize: `${px}px` };
   }, [tileSize, pnlFontStyle]);
 
   const computedWeeklyPnlFont: React.CSSProperties = useMemo(() => {
     if (!tileSize) return weeklyPnlFontStyle;
-    const px = Math.max(14, Math.min(28, tileSize * 0.2));
+    const factor = spaceLevel === 'ultra-compact' ? 0.24 : spaceLevel === 'compact' ? 0.26 : spaceLevel === 'normal' ? 0.28 : 0.3;
+    const px = Math.max(14, Math.min(32, tileSize * factor));
     return { ...weeklyPnlFontStyle, fontSize: `${px}px` };
   }, [tileSize, weeklyPnlFontStyle]);
 
