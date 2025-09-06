@@ -423,7 +423,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
       case 'ultra-compact':
         return {
           date: 'text-xs',
-          pnl: 'text-[11px]',
+          pnl: 'text-[10px]',
           trades: 'text-[10px]',
           stats: 'text-[9px]',
           weekend: 'text-[10px]',
@@ -434,7 +434,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
       case 'compact':
         return {
           date: 'text-sm',
-          pnl: 'text-xs',
+          pnl: 'text-[11px]',
           trades: 'text-xs',
           stats: 'text-[10px]',
           weekend: 'text-xs',
@@ -445,7 +445,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
       case 'normal':
         return {
           date: 'text-sm lg:text-base',
-          pnl: 'text-xs lg:text-base',
+          pnl: 'text-[11px] lg:text-base',
           trades: 'text-xs lg:text-sm',
           stats: 'text-xs',
           weekend: 'text-xs lg:text-sm',
@@ -457,7 +457,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
       default:
         return {
           date: 'text-base lg:text-lg xl:text-xl',
-          pnl: 'text-sm lg:text-lg xl:text-xl',
+          pnl: 'text-xs lg:text-lg xl:text-xl',
           trades: 'text-sm lg:text-base',
           stats: 'text-xs lg:text-sm',
           weekend: 'text-sm lg:text-base',
