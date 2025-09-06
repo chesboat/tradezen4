@@ -69,14 +69,30 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
   const [selectedDay, setSelectedDay] = useState<CalendarDay | null>(null);
   const [hoveredDay, setHoveredDay] = useState<CalendarDay | null>(null);
 
-  // Viewport-aware compactness: only use compact content when both sidebars are expanded AND viewport is narrow
+  // Advanced responsive system based on available space
   const [viewportWidth, setViewportWidth] = useState<number>(typeof window !== 'undefined' ? window.innerWidth : 1920);
   useEffect(() => {
     const onResize = () => setViewportWidth(window.innerWidth);
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
-  const compactMode = bothSidebarsExpanded && viewportWidth < 1400; // avoid tiny text on wide screens
+  
+  // Calculate available space more precisely
+  const getSpaceLevel = (): 'ultra-compact' | 'compact' | 'normal' | 'spacious' => {
+    const sidebarWidth = sidebarExpanded ? 280 : 80;
+    const activityWidth = activityLogExpanded ? 320 : 0;
+    const todoWidth = todoExpanded ? 320 : 0;
+    const usedSpace = sidebarWidth + activityWidth + todoWidth;
+    const availableSpace = viewportWidth - usedSpace - 64; // 64px for margins
+    
+    if (availableSpace < 800) return 'ultra-compact';
+    if (availableSpace < 1000) return 'compact';
+    if (availableSpace < 1200) return 'normal';
+    return 'spacious';
+  };
+  
+  const spaceLevel = getSpaceLevel();
+  const compactMode = spaceLevel === 'ultra-compact' || spaceLevel === 'compact';
 
   // Listen for weekly review open events from todo links
   useEffect(() => {
@@ -361,20 +377,26 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
     const isHovered = hoveredDay?.date.toDateString() === day.date.toDateString();
     const isWeekend = day.date.getDay() === 0 || day.date.getDay() === 6; // Sunday or Saturday
     
-    // Mobile-first responsive padding and height - make mobile tiles square
-    const paddingClasses = bothSidebarsExpanded 
-      ? 'p-1.5 sm:p-2 lg:p-2.5 2xl:p-3 3xl:p-4' 
-      : 'p-1.5 sm:p-2.5 lg:p-3 2xl:p-4 3xl:p-5';
+    // Space-aware responsive padding - ensures minimum padding to prevent cutoff
+    const paddingClasses = (() => {
+      switch (spaceLevel) {
+        case 'ultra-compact':
+          return 'p-1 sm:p-1.5 lg:p-2';
+        case 'compact':
+          return 'p-1.5 sm:p-2 lg:p-2.5';
+        case 'normal':
+          return 'p-2 sm:p-2.5 lg:p-3 2xl:p-3.5';
+        case 'spacious':
+        default:
+          return 'p-2.5 sm:p-3 lg:p-4 2xl:p-5 3xl:p-6';
+      }
+    })();
     
-    // Mobile: Use aspect-square, desktop: use aspect-[7/6] for slightly taller tiles to prevent text cutoff
-    const heightClasses = allExpanded
-      ? 'aspect-square sm:aspect-[7/6] lg:aspect-[7/6] 2xl:aspect-[7/6] 3xl:aspect-[7/6] 4xl:aspect-[7/6]'
-      : bothSidebarsExpanded
-      ? 'aspect-square sm:aspect-[7/6] lg:aspect-[7/6] 2xl:aspect-[7/6] 3xl:aspect-[7/6] 4xl:aspect-[7/6]'
-      : 'aspect-square sm:aspect-[7/6] lg:aspect-[7/6] 2xl:aspect-[7/6] 3xl:aspect-[7/6] 4xl:aspect-[7/6]';
+    // Consistent aspect ratio that prevents text cutoff
+    const heightClasses = 'aspect-[7/6] min-h-0';
     
     return cn(
-      'relative overflow-hidden rounded-lg sm:rounded-xl transition-all duration-300 cursor-pointer',
+      'relative overflow-hidden rounded-lg sm:rounded-xl transition-all duration-300 cursor-pointer flex flex-col',
       paddingClasses,
       heightClasses,
       
@@ -393,6 +415,59 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
       day.pnl < 0 && 'border-red-500/30 bg-red-50/10',
     );
   };
+
+  // Space-aware text sizing helper
+  const getTextSizes = () => {
+    switch (spaceLevel) {
+      case 'ultra-compact':
+        return {
+          date: 'text-xs',
+          pnl: 'text-xs',
+          trades: 'text-[10px]',
+          stats: 'text-[9px]',
+          weekend: 'text-[10px]',
+          weekTitle: 'text-xs',
+          weekPnl: 'text-sm',
+          weekDays: 'text-[10px]'
+        };
+      case 'compact':
+        return {
+          date: 'text-sm',
+          pnl: 'text-sm',
+          trades: 'text-xs',
+          stats: 'text-[10px]',
+          weekend: 'text-xs',
+          weekTitle: 'text-sm',
+          weekPnl: 'text-base',
+          weekDays: 'text-xs'
+        };
+      case 'normal':
+        return {
+          date: 'text-sm lg:text-base',
+          pnl: 'text-sm lg:text-base',
+          trades: 'text-xs lg:text-sm',
+          stats: 'text-xs',
+          weekend: 'text-xs lg:text-sm',
+          weekTitle: 'text-sm lg:text-base',
+          weekPnl: 'text-lg lg:text-xl',
+          weekDays: 'text-xs lg:text-sm'
+        };
+      case 'spacious':
+      default:
+        return {
+          date: 'text-base lg:text-lg xl:text-xl',
+          pnl: 'text-base lg:text-lg xl:text-xl',
+          trades: 'text-sm lg:text-base',
+          stats: 'text-xs lg:text-sm',
+          weekend: 'text-sm lg:text-base',
+          weekTitle: 'text-base lg:text-lg xl:text-xl',
+          weekPnl: 'text-xl lg:text-2xl xl:text-3xl',
+          weekDays: 'text-sm lg:text-base'
+        };
+    }
+  };
+
+  const textSizes = getTextSizes();
 
   // Helper function to generate tooltip content for compact day tiles
   const getDayTooltipContent = (day: CalendarDay) => {
@@ -796,8 +871,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                           {/* Date */}
                           <div className="flex items-center justify-between">
                             <span className={cn(
-                              // Mobile: much smaller text to prevent overflow
-                              'text-xs sm:text-base lg:text-sm 2xl:text-base 3xl:text-lg 4xl:text-xl font-medium',
+                              textSizes.date,
+                              'font-medium',
                               day.isOtherMonth ? 'text-muted-foreground' : 'text-foreground'
                             )}>
                               {day.date.getDate()}
@@ -815,19 +890,19 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                           {/* Weekend Content */}
                           <div className="flex flex-col items-center justify-center flex-1 text-center">
                             <div className="flex flex-col items-center space-y-0.5">
-                              <div className="text-xs 2xl:text-sm text-muted-foreground/70">
-                                Weekend
-                              </div>
-                              {day.quickNotesCount > 0 && (
-                                <div className="text-xs text-muted-foreground">
-                                  {day.quickNotesCount} note{day.quickNotesCount > 1 ? 's' : ''}
-                                </div>
-                              )}
-                              {day.hasReflection && (
-                                <div className="text-xs text-green-600">
-                                  Reflection
-                                </div>
-                              )}
+                          <div className={cn(textSizes.weekend, 'text-muted-foreground/70')}>
+                            Weekend
+                          </div>
+                          {day.quickNotesCount > 0 && (
+                            <div className={cn(textSizes.stats, 'text-muted-foreground')}>
+                              {day.quickNotesCount} note{day.quickNotesCount > 1 ? 's' : ''}
+                            </div>
+                          )}
+                          {day.hasReflection && (
+                            <div className={cn(textSizes.stats, 'text-green-600')}>
+                              Reflection
+                            </div>
+                          )}
                             </div>
                           </div>
                         </div>
@@ -852,8 +927,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                     {/* Date */}
                     <div className="flex items-center justify-between">
                       <span className={cn(
-                        // Mobile: much smaller text to prevent overflow
-                        'text-xs sm:text-base lg:text-sm 2xl:text-base 3xl:text-lg 4xl:text-xl font-medium',
+                        textSizes.date,
+                        'font-medium',
                         day.isOtherMonth ? 'text-muted-foreground' : 'text-foreground'
                       )}>
                         {day.date.getDate()}
@@ -872,16 +947,16 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                     {(isSaturday || day.date.getDay() === 0) ? (
                       <div className="flex flex-col items-center justify-center flex-1 text-center">
                         <div className="flex flex-col items-center space-y-0.5">
-                          <div className="text-xs 2xl:text-sm text-muted-foreground/70">
+                          <div className={cn(textSizes.weekend, 'text-muted-foreground/70')}>
                             Weekend
                           </div>
                           {day.quickNotesCount > 0 && (
-                      <div className="text-xs text-muted-foreground">
+                            <div className={cn(textSizes.stats, 'text-muted-foreground')}>
                               {day.quickNotesCount} note{day.quickNotesCount > 1 ? 's' : ''}
                             </div>
                           )}
                           {day.hasReflection && (
-                            <div className="text-xs text-green-600">
+                            <div className={cn(textSizes.stats, 'text-green-600')}>
                               Reflection
                             </div>
                           )}
@@ -897,9 +972,20 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                             fullWidth
                           >
                             <div className="flex flex-col items-center justify-center flex-1 space-y-0.5">
-                              {day.pnl !== 0 && formatPnL(day.pnl, true)}
+                              {day.pnl !== 0 && (
+                                <div className={cn(
+                                  textSizes.pnl,
+                                  'font-bold truncate',
+                                  day.pnl > 0 ? 'text-green-500' : 'text-red-500'
+                                )}>
+                                  {Math.abs(day.pnl) >= 1000 
+                                    ? `${day.pnl > 0 ? '+' : ''}${(day.pnl / 1000).toFixed(1)}k`
+                                    : formatCurrency(day.pnl)
+                                  }
+                                </div>
+                              )}
                               {day.tradesCount > 0 && (
-                                <div className="text-[10px] text-muted-foreground">
+                                <div className={cn(textSizes.trades, 'text-muted-foreground')}>
                                   {day.tradesCount}T
                                 </div>
                               )}
@@ -907,49 +993,40 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                           </Tooltip>
                         ) : (
                           <>
-                            {/* P&L - Mobile optimized (weekdays only) */}
+                            {/* P&L - Space-aware sizing */}
                             {day.pnl !== 0 && (
                               <div className={cn(
-                                // Mobile: very small text to prevent overflow, responsive to sidebar state
-                                'text-xs sm:text-sm lg:text-sm 2xl:text-base 3xl:text-lg 4xl:text-xl font-bold truncate',
+                                textSizes.pnl,
+                                'font-bold truncate',
                                 day.pnl > 0 ? 'text-green-500' : 'text-red-500'
                               )}>
-                                {/* Mobile: Show very abbreviated currency */}
-                                <span className="lg:hidden">
-                                  {Math.abs(day.pnl) >= 1000 
-                                    ? `${day.pnl > 0 ? '+' : ''}${(day.pnl/1000).toFixed(0)}k`
-                                    : `${day.pnl > 0 ? '+' : ''}${Math.round(day.pnl)}`
-                                  }
-                                </span>
-                                {/* Desktop: Show full currency */}
-                                <span className="hidden lg:block">
-                                  {formatCurrency(day.pnl)}
-                                </span>
+                                {(['ultra-compact', 'compact'] as const).includes(spaceLevel as any)
+                                  ? (Math.abs(day.pnl) >= 1000 
+                                      ? `${day.pnl > 0 ? '+' : ''}${(day.pnl/1000).toFixed(1)}k`
+                                      : `${day.pnl > 0 ? '+' : ''}${Math.round(day.pnl)}`)
+                                  : formatCurrency(day.pnl)
+                                }
                               </div>
                             )}
                             
-                            {/* Trade Count - Mobile: Show dot indicator, Desktop: Show count (weekdays only) */}
+                            {/* Trade Count - Space-aware display */}
                             {day.tradesCount > 0 && (
-                              <>
-                                {/* Mobile: Simple dot indicator */}
-                                <div className="lg:hidden flex justify-center mt-1">
-                                  <div className={cn(
-                                    "w-1 h-1 rounded-full",
-                                    day.pnl > 0 ? 'bg-green-500' : day.pnl < 0 ? 'bg-red-500' : 'bg-muted-foreground'
-                                  )} />
-                                </div>
-                                {/* Desktop: Trade count text */}
-                                <div className="hidden lg:block text-[11px] 2xl:text-xs 3xl:text-sm text-muted-foreground">
-                                  {day.tradesCount} trade{day.tradesCount > 1 ? 's' : ''}
-                                </div>
-                              </>
+                              <div className={cn(
+                                textSizes.trades,
+                                'text-muted-foreground text-center'
+                              )}>
+                                {(spaceLevel as any) === 'ultra-compact' 
+                                  ? `${day.tradesCount}T`
+                                  : `${day.tradesCount} trade${day.tradesCount > 1 ? 's' : ''}`
+                                }
+                              </div>
                             )}
                             
-                            {/* Metrics - Desktop only (weekdays only) */}
-                    {day.tradesCount > 0 && (
-                              <div className="hidden lg:block text-[11px] 2xl:text-xs 3xl:text-sm text-muted-foreground space-y-0.5">
-                        <div>{day.avgRR.toFixed(1)}:1R, {day.winRate.toFixed(0)}%</div>
-                      </div>
+                            {/* Metrics - Space-aware display */}
+                            {day.tradesCount > 0 && (spaceLevel as any) !== 'ultra-compact' && (
+                              <div className={cn(textSizes.stats, 'text-muted-foreground text-center')}>
+                                {day.avgRR.toFixed(1)}:1R, {day.winRate.toFixed(0)}%
+                              </div>
                             )}
                           </>
                         )}
@@ -964,9 +1041,19 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
             <motion.div
                 className={cn(
                   "hidden lg:flex overflow-hidden bg-muted/30 border border-border/50 rounded-lg sm:rounded-xl hover:bg-muted/50 transition-all duration-300 aspect-[7/6] flex-col justify-between cursor-pointer relative",
-                  compactMode 
-                    ? 'p-1.5 sm:p-2 lg:p-2.5 2xl:p-3 3xl:p-4' 
-                    : 'p-1.5 sm:p-2.5 lg:p-3 2xl:p-4 3xl:p-5',
+                  (() => {
+                    switch (spaceLevel) {
+                      case 'ultra-compact':
+                        return 'p-1 lg:p-1.5';
+                      case 'compact':
+                        return 'p-1.5 lg:p-2';
+                      case 'normal':
+                        return 'p-2 lg:p-3';
+                      case 'spacious':
+                      default:
+                        return 'p-3 lg:p-4 xl:p-5';
+                    }
+                  })(),
                   getWeekReviewStatus(week) === 'completed' && 'ring-1 ring-green-500/30 bg-green-500/5',
                   getWeekReviewStatus(week) === 'available' && 'ring-1 ring-blue-500/30 bg-blue-500/5'
                 )}
@@ -993,11 +1080,12 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                     fullWidth
                   >
                     <div className="flex flex-col items-center justify-center space-y-0.5">
-                      <div className="text-xs font-medium text-muted-foreground leading-tight">
+                      <div className={cn(textSizes.weekTitle, 'font-medium text-muted-foreground leading-tight')}>
                         W{weeklyData[weekIndex]?.weekNumber}
                       </div>
                       <div className={cn(
-                        'text-sm font-bold leading-tight',
+                        textSizes.weekPnl,
+                        'font-bold leading-tight',
                         weeklyData[weekIndex]?.totalPnl > 0 ? 'text-green-500' : 
                         weeklyData[weekIndex]?.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
                       )}>
@@ -1006,7 +1094,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                           : formatCurrency(weeklyData[weekIndex]?.totalPnl || 0)
                         }
                       </div>
-                      <div className="text-[10px] text-muted-foreground leading-tight">
+                      <div className={cn(textSizes.weekDays, 'text-muted-foreground leading-tight')}>
                         {weeklyData[weekIndex]?.activeDays || 0}d
                       </div>
                     </div>
@@ -1014,20 +1102,21 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                 ) : (
                   // Normal weekly summary
                   <div className="flex flex-col items-center justify-center space-y-1">
-                    <div className="text-sm 2xl:text-base 3xl:text-lg font-medium text-muted-foreground leading-tight">
+                    <div className={cn(textSizes.weekTitle, 'font-medium text-muted-foreground leading-tight')}>
                       Week {weeklyData[weekIndex]?.weekNumber}
                     </div>
                     <div className={cn(
-                      'text-lg 2xl:text-xl 3xl:text-2xl 4xl:text-3xl font-bold leading-tight',
+                      textSizes.weekPnl,
+                      'font-bold leading-tight',
                       weeklyData[weekIndex]?.totalPnl > 0 ? 'text-green-500' : 
                       weeklyData[weekIndex]?.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
                     )}>
                       {formatCurrency(weeklyData[weekIndex]?.totalPnl || 0)}
                     </div>
-                    <div className="text-xs 2xl:text-sm 3xl:text-base text-muted-foreground leading-tight">
+                    <div className={cn(textSizes.weekDays, 'text-muted-foreground leading-tight')}>
                       {weeklyData[weekIndex]?.activeDays || 0} days
                     </div>
-                  </div>
+  </div>
                 )}
               </div>
               {/* Removed inline review chip; the entire tile is clickable to open the review */}
