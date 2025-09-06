@@ -928,7 +928,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
               {/* Weekly Summary - Desktop only (8th column) */}
             <motion.div
                 className={cn(
-                  "hidden lg:flex overflow-hidden bg-muted/30 border border-border/50 rounded-lg sm:rounded-xl hover:bg-muted/50 transition-all duration-300 aspect-[7/6] items-center justify-center cursor-pointer relative",
+                  "hidden lg:flex overflow-hidden bg-muted/30 border border-border/50 rounded-lg sm:rounded-xl hover:bg-muted/50 transition-all duration-300 aspect-[7/6] flex-col justify-between cursor-pointer relative",
                   compactMode 
                     ? 'p-1.5 sm:p-2 lg:p-2.5 2xl:p-3 3xl:p-4' 
                     : 'p-1.5 sm:p-2.5 lg:p-3 2xl:p-4 3xl:p-5',
