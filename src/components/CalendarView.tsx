@@ -470,6 +470,22 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
 
   const textSizes = getTextSizes();
 
+  // Dynamic font-size helpers using CSS clamp to prevent overflow on narrow tiles (e.g., Firefox)
+  const pnlFontStyle: React.CSSProperties = useMemo(() => {
+    // Smaller minimums when space is tight
+    if (spaceLevel === 'ultra-compact') return { fontSize: 'clamp(10px, 1.2vw, 12px)' };
+    if (spaceLevel === 'compact') return { fontSize: 'clamp(11px, 1.3vw, 13px)' };
+    if (spaceLevel === 'normal') return { fontSize: 'clamp(12px, 1.1vw, 16px)' };
+    return { fontSize: 'clamp(13px, 1.0vw, 18px)' };
+  }, [spaceLevel]);
+
+  const weeklyPnlFontStyle: React.CSSProperties = useMemo(() => {
+    if (spaceLevel === 'ultra-compact') return { fontSize: 'clamp(12px, 1.4vw, 14px)' };
+    if (spaceLevel === 'compact') return { fontSize: 'clamp(13px, 1.5vw, 16px)' };
+    if (spaceLevel === 'normal') return { fontSize: 'clamp(14px, 1.2vw, 20px)' };
+    return { fontSize: 'clamp(16px, 1.1vw, 22px)' };
+  }, [spaceLevel]);
+
   // Helper function to generate tooltip content for compact day tiles
   const getDayTooltipContent = (day: CalendarDay) => {
     const parts: string[] = [];
@@ -1003,7 +1019,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                                 'font-bold truncate',
                                 'flex items-center justify-center',
                                 day.pnl > 0 ? 'text-green-500' : 'text-red-500'
-                              )}>
+                              )} style={pnlFontStyle}>
                                 {(['ultra-compact', 'compact'] as const).includes(spaceLevel as any)
                                   ? (Math.abs(day.pnl) >= 1000 
                                       ? `${day.pnl > 0 ? '+' : ''}${(day.pnl/1000).toFixed(1)}k`
@@ -1114,7 +1130,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                       'font-bold leading-tight',
                       weeklyData[weekIndex]?.totalPnl > 0 ? 'text-green-500' : 
                       weeklyData[weekIndex]?.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
-                    )}>
+                    )} style={weeklyPnlFontStyle}>
                       {formatCurrency(weeklyData[weekIndex]?.totalPnl || 0)}
                     </div>
                     <div className={cn(textSizes.weekDays, 'text-muted-foreground leading-tight')}>
