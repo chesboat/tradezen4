@@ -537,7 +537,16 @@ export const useRuleTallyStore = create<RuleTallyState>()(
           let filteredLogs = logs;
           
           if (accountId) {
+            console.log('🔍 LoadLogs: Before accountId filter', {
+              accountId,
+              totalLogs: filteredLogs.length,
+              hitMacrosLogs: filteredLogs.filter(l => l.ruleId === 'ekWS96zlKqFcdBr2YJu8').map(l => ({ date: l.date, accountId: l.accountId, matchesFilter: l.accountId === accountId }))
+            });
             filteredLogs = filteredLogs.filter(log => log.accountId === accountId);
+            console.log('🔍 LoadLogs: After accountId filter', {
+              filteredCount: filteredLogs.length,
+              hitMacrosLogs: filteredLogs.filter(l => l.ruleId === 'ekWS96zlKqFcdBr2YJu8').map(l => ({ date: l.date, accountId: l.accountId }))
+            });
           }
           
           if (startDate) {
