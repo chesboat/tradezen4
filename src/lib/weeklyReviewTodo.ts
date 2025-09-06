@@ -1,6 +1,25 @@
 import { useTodoStore } from '@/store/useTodoStore';
 import { useWeeklyReviewStore } from '@/store/useWeeklyReviewStore';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
+import { useNavigationStore } from '@/store/useNavigationStore';
+
+// Remove duplicate weekly-review todos for the same week
+export const cleanupWeeklyReviewTodos = async (): Promise<void> => {
+  const { tasks, deleteTask } = useTodoStore.getState();
+  const seen = new Set<string>();
+  for (const t of tasks) {
+    if (!t.url) continue;
+    const weekOf = parseWeeklyReviewUrl(t.url);
+    if (!weekOf) continue;
+    const key = `weekly:${weekOf}`;
+    if (seen.has(key)) {
+      // keep the earliest pinned/open one; delete extras
+      await deleteTask(t.id);
+    } else {
+      seen.add(key);
+    }
+  }
+};
 
 /**
  * Checks if it's time to add a weekly review todo and adds it if needed.
@@ -12,6 +31,8 @@ export const checkAndAddWeeklyReviewTodo = async (): Promise<void> => {
   const { tasks, addTask } = useTodoStore.getState();
   
   if (!selectedAccountId) return;
+  // First, clean up any duplicate weekly-review todos
+  await cleanupWeeklyReviewTodos();
   
   const now = new Date();
   const currentWeekMonday = getMondayOfWeek(now);
@@ -24,17 +45,17 @@ export const checkAndAddWeeklyReviewTodo = async (): Promise<void> => {
   // Check if review is already completed
   const existingReview = getReviewByWeek(currentWeekMonday, selectedAccountId);
   if (existingReview?.isComplete) {
+    // If it's already complete, ensure any related todos are marked done
+    const url = `#weekly-review:${currentWeekMonday}`;
+    const related = tasks.filter(t => t.url === url && t.status !== 'done');
+    const { updateTask } = useTodoStore.getState();
+    await Promise.all(related.map(t => updateTask(t.id, { status: 'done', completedAt: new Date().toISOString() as any })));
     return;
   }
   
-  // Check if we already have a weekly review todo for this week
-  const weeklyReviewTodoExists = tasks.some(task => 
-    task.text.includes('Complete Weekly Review') && 
-    task.status === 'open' &&
-    task.category === 'journal' &&
-    task.scheduledFor &&
-    new Date(task.scheduledFor).toISOString().split('T')[0] >= currentWeekMonday
-  );
+  // Check if we already have a weekly review todo for this week (any status)
+  const weeklyUrl = `#weekly-review:${currentWeekMonday}`;
+  const weeklyReviewTodoExists = tasks.some(task => task.url === weeklyUrl);
   
   if (weeklyReviewTodoExists) {
     return;
@@ -52,7 +73,7 @@ export const checkAndAddWeeklyReviewTodo = async (): Promise<void> => {
       priority: 'high',
       category: 'journal',
       scheduledFor: now.toISOString(),
-      url: `#weekly-review:${currentWeekMonday}`, // Special URL format to trigger modal
+      url: weeklyUrl, // Special URL format to trigger modal
       pinned: true
     });
     
@@ -78,11 +99,19 @@ export const parseWeeklyReviewUrl = (url: string): string | null => {
 export const openWeeklyReviewFromUrl = (url: string): boolean => {
   const weekOf = parseWeeklyReviewUrl(url);
   if (!weekOf) return false;
-  
-  // Dispatch a custom event that the calendar view can listen to
-  window.dispatchEvent(new CustomEvent('openWeeklyReview', { 
-    detail: { weekOf } 
-  }));
-  
+  // Ensure we are on the calendar view
+  try {
+    const { setCurrentView } = useNavigationStore.getState();
+    setCurrentView('calendar');
+  } catch {}
+
+  // If CalendarView is not yet mounted, stash the intent globally
+  (window as any).__pendingOpenWeeklyReview = weekOf;
+
+  // Dispatch after a short delay to give CalendarView time to mount
+  setTimeout(() => {
+    window.dispatchEvent(new CustomEvent('openWeeklyReview', { detail: { weekOf } }));
+  }, 150);
+
   return true;
 };

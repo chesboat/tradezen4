@@ -98,6 +98,16 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
     };
 
     window.addEventListener('openWeeklyReview', handleOpenWeeklyReview as EventListener);
+    // If there is a pending intent (from a todo link), honor it on mount
+    try {
+      const pending = (window as any).__pendingOpenWeeklyReview as string | undefined;
+      if (pending) {
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('openWeeklyReview', { detail: { weekOf: pending } }));
+          (window as any).__pendingOpenWeeklyReview = undefined;
+        }, 50);
+      }
+    } catch {}
     return () => {
       window.removeEventListener('openWeeklyReview', handleOpenWeeklyReview as EventListener);
     };
