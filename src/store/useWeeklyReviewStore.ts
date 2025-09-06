@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { WeeklyReview } from '@/types';
-import { generateId } from '@/lib/localStorageUtils';
+// (no local ID generation needed)
 import { FirestoreService } from '@/lib/firestore';
 import { onSnapshot, query, orderBy, collection } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
@@ -11,12 +11,12 @@ interface WeeklyReviewState {
   isLoading: boolean;
 
   // Actions
-  addReview: (reviewData: Omit<WeeklyReview, 'id' | 'createdAt' | 'updatedAt'>) => WeeklyReview;
-  updateReview: (id: string, updates: Partial<WeeklyReview>) => void;
-  deleteReview: (id: string) => void;
+  addReview: (reviewData: Omit<WeeklyReview, 'id' | 'createdAt' | 'updatedAt'>) => Promise<WeeklyReview>;
+  updateReview: (id: string, updates: Partial<WeeklyReview>) => Promise<void>;
+  deleteReview: (id: string) => Promise<void>;
   getReviewByWeek: (weekOf: string, accountId: string) => WeeklyReview | undefined;
   getReviewsByAccount: (accountId: string) => WeeklyReview[];
-  markReviewComplete: (id: string) => void;
+  markReviewComplete: (id: string) => Promise<void>;
   getWeeklyReviewStreak: (accountId: string) => number;
   
   // Utility functions
@@ -216,21 +216,6 @@ export const useWeeklyReviewStore = create<WeeklyReviewState>()(
         }
 
         return streak;
-      },
-
-      getMondayOfWeek,
-
-      isWeekReviewAvailable: (weekOf, accountId) => {
-        // Check if review is available and not already completed
-        const existingReview = get().getReviewByWeek(weekOf, accountId);
-        if (existingReview?.isComplete) return false;
-        
-        return isWeekReviewAvailable(weekOf);
-      },
-
-      getCurrentWeekReview: (accountId) => {
-        const currentWeekMonday = getMondayOfWeek(new Date());
-        return get().getReviewByWeek(currentWeekMonday, accountId);
       },
 
       getMondayOfWeek,
