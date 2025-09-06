@@ -462,8 +462,8 @@ export const useRuleTallyStore = create<RuleTallyState>()(
       },
 
       getStreakForRule: (ruleId) => {
-        const { streaks } = get();
-        return streaks.get(ruleId) || null;
+        // Always calculate fresh instead of using cached streaks to avoid stale data
+        return get().calculateStreak(ruleId);
       },
 
       loadRules: async (accountId) => {
@@ -490,6 +490,7 @@ export const useRuleTallyStore = create<RuleTallyState>()(
         set({ isLoading: true });
         try {
           const logs = await logsService.getAll();
+          console.log('🔍 LoadLogs: Raw logs from Firestore:', logs.length, logs.map(l => ({ id: l.id, date: l.date, ruleId: l.ruleId })));
           let filteredLogs = logs;
           
           if (accountId) {
