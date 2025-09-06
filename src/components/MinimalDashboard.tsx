@@ -104,7 +104,7 @@ const TodaysFocusCard: React.FC = () => {
   const { getReflectionByDate } = useDailyReflectionStore();
   const { setCurrentView } = useNavigationStore();
   
-  const today = new Date().toISOString().split('T')[0];
+  const today = formatLocalDate(new Date());
   const todayReflection = getReflectionByDate(today);
   const accountRules = selectedAccountId ? rules.filter(r => r.accountId === selectedAccountId) : [];
   
@@ -590,7 +590,7 @@ const AIInsights: React.FC = () => {
     }
     
     // Habit tracking insights
-    const today = new Date().toISOString().split('T')[0];
+    const today = formatLocalDate(new Date());
     const todayTallies = accountRules.reduce((sum, rule) => sum + getTallyCountForRule(rule.id, today), 0);
     
     if (todayTallies > 0) {

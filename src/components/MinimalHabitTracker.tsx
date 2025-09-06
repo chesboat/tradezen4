@@ -1143,7 +1143,7 @@ export const MinimalHabitTracker: React.FC = () => {
           // Calculate start of week for weekly data
           const startOfWeek = new Date(currentDate);
           startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
-          const weekStartDate = startOfWeek.toISOString().split('T')[0];
+          const weekStartDate = formatLocalDate(startOfWeek);
           
           const weeklyData = getWeeklyTallies(rule.id, weekStartDate);
           const monthlyData = getMonthlyTallies(rule.id, currentDate.getFullYear(), currentDate.getMonth());

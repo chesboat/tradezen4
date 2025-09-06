@@ -555,7 +555,7 @@ export const useRuleTallyStore = create<RuleTallyState>()(
           // Load recent logs (last 30 days)
           const thirtyDaysAgo = new Date();
           thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-          const startDate = thirtyDaysAgo.toISOString().split('T')[0];
+          const startDate = formatLocalDate(thirtyDaysAgo);
           
           await get().loadLogs(undefined, startDate);
           

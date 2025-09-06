@@ -446,7 +446,7 @@ export const RuleTallyTracker: React.FC = () => {
   const [celebrationMessage, setCelebrationMessage] = useState('');
   const [showCelebration, setShowCelebration] = useState(false);
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = formatLocalDate(new Date());
   const accountRules = selectedAccountId ? getRulesByAccount(selectedAccountId) : [];
 
   // Load data on mount and account change
@@ -564,7 +564,7 @@ export const RuleTallyTracker: React.FC = () => {
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const date = new Date(weekStart);
     date.setDate(weekStart.getDate() + i);
-    return date.toISOString().split('T')[0];
+    return formatLocalDate(date);
   });
 
   return (
