@@ -995,22 +995,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                   </>
                 )}
               </div>
-              {selectedAccountId && getWeekReviewStatus(week) !== 'completed' && isWeekReviewAvailable(getMondayOfWeek(week[0].date), selectedAccountId) && (
-                <div className="mt-2 w-full flex justify-end">
-                  <motion.button
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-border/60 bg-card/70 backdrop-blur text-[11px] text-foreground hover:bg-card/90 hover:border-border truncate"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleWeeklySummaryClick(weekIndex, week);
-                    }}
-                  >
-                    <Clock className="w-3 h-3 text-blue-500" />
-                    <span className="truncate">Review</span>
-                  </motion.button>
-                </div>
-              )}
+              {/* Removed inline review chip; the entire tile is clickable to open the review */}
             </motion.div>
             </div>
           </React.Fragment>
