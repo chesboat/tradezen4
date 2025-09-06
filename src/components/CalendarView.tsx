@@ -393,7 +393,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
     })();
     
     // Consistent aspect ratio that prevents text cutoff
-    const heightClasses = 'aspect-[7/6] min-h-0';
+    // Mobile: match weekly summary tile (square). Desktop: slightly taller for readability
+    const heightClasses = 'aspect-square lg:aspect-[7/6] min-h-0';
     
     return cn(
       'relative overflow-hidden rounded-lg sm:rounded-xl transition-all duration-300 cursor-pointer flex flex-col',
