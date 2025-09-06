@@ -427,7 +427,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
           stats: 'text-[9px]',
           weekend: 'text-[10px]',
           weekTitle: 'text-xs',
-          weekPnl: 'text-sm',
+          weekPnl: 'text-xs',
           weekDays: 'text-[10px]'
         };
       case 'compact':
@@ -438,7 +438,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
           stats: 'text-[10px]',
           weekend: 'text-xs',
           weekTitle: 'text-sm',
-          weekPnl: 'text-base',
+          weekPnl: 'text-sm',
           weekDays: 'text-xs'
         };
       case 'normal':
@@ -449,7 +449,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
           stats: 'text-xs',
           weekend: 'text-xs lg:text-sm',
           weekTitle: 'text-sm lg:text-base',
-          weekPnl: 'text-lg lg:text-xl',
+          weekPnl: 'text-base lg:text-lg',
           weekDays: 'text-xs lg:text-sm'
         };
       case 'spacious':
@@ -461,7 +461,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
           stats: 'text-xs lg:text-sm',
           weekend: 'text-sm lg:text-base',
           weekTitle: 'text-base lg:text-lg xl:text-xl',
-          weekPnl: 'text-xl lg:text-2xl xl:text-3xl',
+          weekPnl: 'text-lg lg:text-xl xl:text-2xl',
           weekDays: 'text-sm lg:text-base'
         };
     }
@@ -747,7 +747,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
         "grid-cols-7 gap-1 sm:gap-2",
         // Desktop: 8-column grid with weekly summary
         "lg:grid-cols-8",
-        bothSidebarsExpanded ? "lg:gap-2 2xl:gap-2.5" : "lg:gap-2.5 2xl:gap-3 3xl:gap-3.5"
+        bothSidebarsExpanded ? "lg:gap-2 2xl:gap-2.5" : "lg:gap-2.5 2xl:gap-3 3xl:gap-3.5",
+        // Ensure bottom breathing room when space is tight
+        spaceLevel === 'ultra-compact' ? 'pb-2' : spaceLevel === 'compact' ? 'pb-3' : 'pb-4'
       )}>
         {/* Day Headers */}
         <div className={cn(
@@ -867,7 +869,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                         whileTap={{ scale: 0.98 }}
                         layout
                       >
-                        <div className="flex flex-col h-full space-y-1">
+                        <div className="flex flex-col h-full space-y-1 pb-1">
                           {/* Date */}
                           <div className="flex items-center justify-between">
                             <span className={cn(
@@ -971,7 +973,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                             position="top"
                             fullWidth
                           >
-                            <div className="flex flex-col items-center justify-center flex-1 space-y-0.5">
+                            <div className="flex flex-col items-center justify-center flex-1 space-y-0.5 pb-0.5">
                               {day.pnl !== 0 && (
                                 <div className={cn(
                                   textSizes.pnl,
@@ -998,6 +1000,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                               <div className={cn(
                                 textSizes.pnl,
                                 'font-bold truncate',
+                                'flex items-center justify-center',
                                 day.pnl > 0 ? 'text-green-500' : 'text-red-500'
                               )}>
                                 {(['ultra-compact', 'compact'] as const).includes(spaceLevel as any)
@@ -1044,11 +1047,11 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                   (() => {
                     switch (spaceLevel) {
                       case 'ultra-compact':
-                        return 'p-1 lg:p-1.5';
-                      case 'compact':
                         return 'p-1.5 lg:p-2';
+                      case 'compact':
+                        return 'p-2 lg:p-2.5';
                       case 'normal':
-                        return 'p-2 lg:p-3';
+                        return 'p-2.5 lg:p-3';
                       case 'spacious':
                       default:
                         return 'p-3 lg:p-4 xl:p-5';
@@ -1071,7 +1074,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                   </div>
                 )}
                 
-              <div className="flex flex-col items-center justify-center text-center h-full min-h-0">
+              <div className="flex flex-col items-center justify-center text-center h-full min-h-0 pb-1">
                 {compactMode ? (
                   // Ultra-compact weekly summary - with tooltip
                   <Tooltip 
