@@ -85,10 +85,10 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
     const usedSpace = sidebarWidth + activityWidth + todoWidth;
     const availableSpace = viewportWidth - usedSpace - 64; // 64px for margins
     
-    // More conservative breakpoints so compact modes engage sooner (prevents clipping on Firefox)
-    if (availableSpace < 1200) return 'ultra-compact';
-    if (availableSpace < 1600) return 'compact';
-    if (availableSpace < 2000) return 'normal';
+    // Tuned breakpoints: only use ultra-compact at very tight widths
+    if (availableSpace < 1000) return 'ultra-compact';
+    if (availableSpace < 1400) return 'compact';
+    if (availableSpace < 1800) return 'normal';
     return 'spacious';
   };
   
@@ -473,18 +473,18 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
 
   // Dynamic font-size helpers using CSS clamp to prevent overflow on narrow tiles (e.g., Firefox)
   const pnlFontStyle: React.CSSProperties = useMemo(() => {
-    // Smaller minimums when space is tight
-    if (spaceLevel === 'ultra-compact') return { fontSize: 'clamp(10px, 1.0vw, 12px)' };
-    if (spaceLevel === 'compact') return { fontSize: 'clamp(11px, 0.9vw, 13px)' };
-    if (spaceLevel === 'normal') return { fontSize: 'clamp(12px, 0.85vw, 15px)' };
-    return { fontSize: 'clamp(13px, 0.8vw, 18px)' };
+    // Adaptive sizes that still grow when there is space
+    if (spaceLevel === 'ultra-compact') return { fontSize: 'clamp(10px, 1.0vw, 12px)', lineHeight: 1 };
+    if (spaceLevel === 'compact') return { fontSize: 'clamp(12px, 1.0vw, 14px)', lineHeight: 1 };
+    if (spaceLevel === 'normal') return { fontSize: 'clamp(13px, 0.95vw, 16px)', lineHeight: 1 };
+    return { fontSize: 'clamp(14px, 0.9vw, 18px)', lineHeight: 1 };
   }, [spaceLevel]);
 
   const weeklyPnlFontStyle: React.CSSProperties = useMemo(() => {
-    if (spaceLevel === 'ultra-compact') return { fontSize: 'clamp(12px, 1.0vw, 14px)' };
-    if (spaceLevel === 'compact') return { fontSize: 'clamp(13px, 1.1vw, 16px)' };
-    if (spaceLevel === 'normal') return { fontSize: 'clamp(14px, 1.0vw, 18px)' };
-    return { fontSize: 'clamp(16px, 0.95vw, 20px)' };
+    if (spaceLevel === 'ultra-compact') return { fontSize: 'clamp(12px, 1.0vw, 14px)', lineHeight: 1 };
+    if (spaceLevel === 'compact') return { fontSize: 'clamp(14px, 1.1vw, 17px)', lineHeight: 1 };
+    if (spaceLevel === 'normal') return { fontSize: 'clamp(15px, 1.0vw, 20px)', lineHeight: 1 };
+    return { fontSize: 'clamp(16px, 0.95vw, 22px)', lineHeight: 1 };
   }, [spaceLevel]);
 
   // Helper function to generate tooltip content for compact day tiles
