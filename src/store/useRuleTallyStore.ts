@@ -348,12 +348,8 @@ export const useRuleTallyStore = create<RuleTallyState>()(
         const rule = rules.find(r => r.id === ruleId);
         let ruleLogs = logs
           .filter((log) => log.ruleId === ruleId)
-          .sort((a, b) => {
-            // Ensure proper date parsing for sorting
-            const dateA = new Date(a.date + 'T00:00:00').getTime();
-            const dateB = new Date(b.date + 'T00:00:00').getTime();
-            return dateB - dateA; // Newest first
-          });
+          // Sort by YYYY-MM-DD string lexicographically (safe and timezone-agnostic)
+          .sort((a, b) => b.date.localeCompare(a.date));
 
         if (ruleLogs.length === 0) {
           return {
@@ -381,11 +377,14 @@ export const useRuleTallyStore = create<RuleTallyState>()(
         };
 
         const today = new Date();
-        // Normalize all rule log dates to local YYYY-MM-DD for consistent comparisons
+        // Normalize only non-YYYY-MM-DD values to local YYYY-MM-DD; leave valid strings untouched
         for (let i = 0; i < ruleLogs.length; i++) {
-          // Ensure dates are in YYYY-MM-DD (some historical entries may hold Date strings)
-          const d = new Date(ruleLogs[i].date);
-          ruleLogs[i] = { ...ruleLogs[i], date: formatLocalDate(d) } as typeof ruleLogs[number];
+          const dVal = ruleLogs[i].date as unknown as string;
+          const isYmd = typeof dVal === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dVal);
+          if (!isYmd) {
+            const d = new Date(dVal);
+            ruleLogs[i] = { ...ruleLogs[i], date: formatLocalDate(d) } as typeof ruleLogs[number];
+          }
         }
         
         // Debug logging removed - using original working logic
