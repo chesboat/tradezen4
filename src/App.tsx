@@ -44,6 +44,7 @@ import { collection, getDocs, limit, query } from 'firebase/firestore';
 import { db } from './lib/firebase';
 import { checkAndAddWeeklyReviewTodo } from './lib/weeklyReviewTodo';
 import { initializeWeeklyReviewStore } from './store/useWeeklyReviewStore';
+import { useDailyReflectionStore } from './store/useDailyReflectionStore';
 
 function AppContent() {
   const { isExpanded: sidebarExpanded } = useSidebarStore();
@@ -118,6 +119,13 @@ function AppContent() {
           await initializeTradeStore();
           await initializeRuleTallyStore();
           await initializeQuickNoteStore();
+          // Start daily reflections real-time subscription
+          try {
+            const unsub = useDailyReflectionStore.getState().subscribeRemote?.();
+            (window as any).__dailyReflectionsUnsub = unsub;
+          } catch (e) {
+            console.warn('Failed to subscribe to daily reflections:', e);
+          }
           
           // Initialize weekly review store with real-time Firebase subscription
           await initializeWeeklyReviewStore();

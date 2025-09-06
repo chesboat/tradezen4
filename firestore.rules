@@ -79,6 +79,11 @@ service cloud.firestore {
     match /users/{userId}/weeklyReviews/{reviewId} {
       allow read, write: if isOwner(userId);
     }
+
+    // Daily reflections (journal) - cloud-based source of truth
+    match /users/{userId}/dailyReflections/{reflectionId} {
+      allow read, write: if isOwner(userId);
+    }
     
     // Public share snapshots (explicitly sanitized content only)
     match /publicShares/{shareId} {

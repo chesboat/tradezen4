@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { MoodType } from '@/types';
 import { localStorage, STORAGE_KEYS, generateId } from '@/lib/localStorageUtils';
+import { FirestoreService } from '@/lib/firestore';
 import { getGroupIdsFromAnySelection } from '@/store/useAccountFilterStore';
 
 interface MoodEntry {
@@ -98,11 +99,14 @@ interface DailyReflectionState {
   // Utilities
   loadFromStorage: () => void;
   saveToStorage: () => void;
+  subscribeRemote?: () => () => void;
 }
 
 export const useDailyReflectionStore = create<DailyReflectionState>()(
   devtools(
     (set, get) => ({
+      // Cloud-first: use Firestore as source of truth
+      _remoteService: new FirestoreService<any>('dailyReflections'),
       reflections: [],
       currentStreak: 0,
       totalReflectionDays: 0,
@@ -122,8 +126,18 @@ export const useDailyReflectionStore = create<DailyReflectionState>()(
           reflections: [newReflection, ...state.reflections],
           totalReflectionDays: state.totalReflectionDays + 1,
         }));
-
-        get().saveToStorage();
+        // Remote upsert (fire-and-forget)
+        try {
+          const svc: FirestoreService<any> = (get() as any)._remoteService;
+          const payload = {
+            ...newReflection,
+            createdAt: newReflection.createdAt.toISOString(),
+            updatedAt: newReflection.updatedAt.toISOString(),
+          } as any;
+          svc.setWithId(newReflection.id, payload);
+        } catch (e) {
+          console.warn('[dailyReflections] remote create deferred:', e);
+        }
         return newReflection;
       },
 
@@ -135,7 +149,16 @@ export const useDailyReflectionStore = create<DailyReflectionState>()(
               : reflection
           ),
         }));
-        get().saveToStorage();
+        // Remote update
+        try {
+          const svc: FirestoreService<any> = (get() as any)._remoteService;
+          const prepared: any = { ...updates };
+          if (prepared.updatedAt instanceof Date) prepared.updatedAt = prepared.updatedAt.toISOString();
+          if (prepared.createdAt instanceof Date) prepared.createdAt = prepared.createdAt.toISOString();
+          svc.update(id, prepared);
+        } catch (e) {
+          console.warn('[dailyReflections] remote update deferred:', e);
+        }
       },
 
       // Create or update the same reflection data across a selection (single or group)
@@ -182,7 +205,12 @@ export const useDailyReflectionStore = create<DailyReflectionState>()(
         set((state) => ({
           reflections: state.reflections.filter((reflection) => reflection.id !== id),
         }));
-        get().saveToStorage();
+        try {
+          const svc: FirestoreService<any> = (get() as any)._remoteService;
+          svc.delete(id);
+        } catch (e) {
+          console.warn('[dailyReflections] remote delete deferred:', e);
+        }
       },
 
       addMoodEntry: (date, mood, trigger, relatedId, timestamp, accountId) => {
@@ -482,52 +510,31 @@ export const useDailyReflectionStore = create<DailyReflectionState>()(
         };
       },
 
-      loadFromStorage: () => {
+      // Disable localStorage persistence (cloud-first)
+      loadFromStorage: () => {},
+      saveToStorage: () => {},
+
+      // Real-time subscription to Firestore
+      subscribeRemote: () => {
         try {
-          const stored = localStorage.getItem(STORAGE_KEYS.DAILY_REFLECTIONS, []);
-          if (stored.length > 0) {
-            const parsedReflections = stored.map((reflection: any) => ({
-              ...reflection,
-              reflectionRich: reflection.reflectionRich ?? reflection.reflection_json ?? undefined,
-              keyFocus: typeof reflection.keyFocus === 'string' 
-                ? reflection.keyFocus 
-                : (reflection.keyFocus && typeof reflection.keyFocus.title === 'string' 
-                    ? reflection.keyFocus.title 
-                    : (reflection.keyFocus ? JSON.stringify(reflection.keyFocus) : '')),
-              reflectionTags: reflection.reflectionTags || [], // Backward compatibility
-              createdAt: new Date(reflection.createdAt),
-              updatedAt: new Date(reflection.updatedAt),
-              completedAt: reflection.completedAt ? new Date(reflection.completedAt) : undefined,
-              moodTimeline: reflection.moodTimeline.map((entry: any) => ({
-                ...entry,
-                timestamp: new Date(entry.timestamp),
+          const svc: FirestoreService<any> = (get() as any)._remoteService;
+          const unsub = svc.listenAll((docs: any[]) => {
+            const parsed = docs.map((d) => ({
+              ...d,
+              createdAt: new Date(d.createdAt),
+              updatedAt: new Date(d.updatedAt),
+              completedAt: d.completedAt ? new Date(d.completedAt) : undefined,
+              moodTimeline: (d.moodTimeline || []).map((m: any) => ({
+                ...m,
+                timestamp: new Date(m.timestamp),
               })),
-            }));
-            // Merge with current in-memory state to avoid overwriting newer data
-            set((state) => {
-              const byId = new Map<string, any>();
-              [...parsedReflections, ...state.reflections].forEach((r) => byId.set(r.id, r));
-              return { reflections: Array.from(byId.values()) };
-            });
-          }
-
-          // Load pinned tags
-          const storedPinnedTags = localStorage.getItem(`${STORAGE_KEYS.DAILY_REFLECTIONS}_pinned_tags`, []);
-          if (storedPinnedTags.length > 0) {
-            set({ pinnedTags: storedPinnedTags });
-          }
-        } catch (error) {
-          console.error('Failed to load daily reflections from storage:', error);
-        }
-      },
-
-      saveToStorage: () => {
-        try {
-          const { reflections, pinnedTags } = get();
-          localStorage.setItem(STORAGE_KEYS.DAILY_REFLECTIONS, reflections);
-          localStorage.setItem(`${STORAGE_KEYS.DAILY_REFLECTIONS}_pinned_tags`, pinnedTags);
-        } catch (error) {
-          console.error('Failed to save daily reflections to storage:', error);
+            })) as DailyReflectionData[];
+            set({ reflections: parsed });
+          });
+          return unsub;
+        } catch (e) {
+          console.warn('[dailyReflections] subscribe failed:', e);
+          return () => {};
         }
       },
     }),
