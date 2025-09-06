@@ -450,7 +450,9 @@ export const useRuleTallyStore = create<RuleTallyState>()(
           totalLogs: ruleLogs.length,
           todayStr,
           todayIsValid,
-          firstLogDate: ruleLogs[0]?.date
+          firstLogDate: ruleLogs[0]?.date,
+          allLogDates: ruleLogs.map(log => log.date),
+          hasLogForToday: ruleLogs.some(log => log.date === todayStr)
         });
         
         return result;

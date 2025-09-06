@@ -678,7 +678,11 @@ const HabitRuleCard: React.FC<HabitRuleCardProps> = ({
     singleDayCount,
     displayCount,
     selectedDate,
-    isToday
+    isToday,
+    todayStr,
+    tallyCount,
+    weeklyData: data,
+    todayInWeeklyData: data?.find(d => d.date === todayStr)
   });
 
   return (
