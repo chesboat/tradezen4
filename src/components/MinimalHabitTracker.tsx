@@ -834,6 +834,17 @@ const HabitRuleCard: React.FC<HabitRuleCardProps> = ({
                 />
               ))}
             </div>
+            {/* Weekday labels (Sun → Sat) */}
+            <div className="mt-1 grid grid-cols-7 gap-1 text-[10px] leading-none text-muted-foreground select-none">
+              {data.map((d, idx) => {
+                const day = new Date(d.date).getDay();
+                const label = ['S','M','T','W','T','F','S'][day];
+                const isToday = d.date === todayStr;
+                return (
+                  <div key={`lbl-${idx}`} className={cn("text-center", isToday && "text-foreground font-medium")}>{label}</div>
+                );
+              })}
+            </div>
           </div>
         )}
 
