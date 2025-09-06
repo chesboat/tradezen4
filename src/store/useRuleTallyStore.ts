@@ -411,6 +411,15 @@ export const useRuleTallyStore = create<RuleTallyState>()(
             }
           }
           
+          console.log('🔍 Streak gap check:', {
+            lastLogDate: ruleLogs[0].date,
+            todayStr,
+            daysSinceLastLog,
+            missedValidDays,
+            currentStreakBefore: currentStreak,
+            willResetStreak: missedValidDays > 1
+          });
+          
           // If we missed more than 1 valid day (today doesn't count as missed yet), streak is broken
           if (missedValidDays > 1) {
             currentStreak = 0;
