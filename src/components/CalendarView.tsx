@@ -974,7 +974,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                   </div>
                 )}
                 
-              <div className="text-center space-y-1">
+              <div className="flex flex-col items-center justify-center text-center space-y-1 h-full">
                 {compactMode ? (
                   // Ultra-compact weekly summary - with tooltip
                   <Tooltip 

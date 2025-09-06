@@ -75,6 +75,11 @@ service cloud.firestore {
       allow read, write: if isOwner(userId);
     }
     
+    // Weekly reviews collection under each user
+    match /users/{userId}/weeklyReviews/{reviewId} {
+      allow read, write: if isOwner(userId);
+    }
+    
     // Public share snapshots (explicitly sanitized content only)
     match /publicShares/{shareId} {
       // PUBLIC read for developer testing; tighten later with expiration if desired
