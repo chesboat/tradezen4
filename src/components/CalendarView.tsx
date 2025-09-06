@@ -473,18 +473,18 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
 
   // Dynamic font-size helpers using CSS clamp to prevent overflow on narrow tiles (e.g., Firefox)
   const pnlFontStyle: React.CSSProperties = useMemo(() => {
-    // Adaptive sizes that still grow when there is space
-    if (spaceLevel === 'ultra-compact') return { fontSize: 'clamp(10px, 1.0vw, 12px)', lineHeight: 1 };
-    if (spaceLevel === 'compact') return { fontSize: 'clamp(12px, 1.0vw, 14px)', lineHeight: 1 };
-    if (spaceLevel === 'normal') return { fontSize: 'clamp(13px, 0.95vw, 16px)', lineHeight: 1 };
-    return { fontSize: 'clamp(14px, 0.9vw, 18px)', lineHeight: 1 };
+    // Make PNL visually prominent while still shrinking when narrow
+    if (spaceLevel === 'ultra-compact') return { fontSize: 'clamp(12px, 1.4vw, 16px)', lineHeight: 1 };
+    if (spaceLevel === 'compact') return { fontSize: 'clamp(13px, 1.6vw, 18px)', lineHeight: 1 };
+    if (spaceLevel === 'normal') return { fontSize: 'clamp(14px, 1.8vw, 22px)', lineHeight: 1 };
+    return { fontSize: 'clamp(16px, 2.0vw, 26px)', lineHeight: 1 };
   }, [spaceLevel]);
 
   const weeklyPnlFontStyle: React.CSSProperties = useMemo(() => {
-    if (spaceLevel === 'ultra-compact') return { fontSize: 'clamp(12px, 1.0vw, 14px)', lineHeight: 1 };
-    if (spaceLevel === 'compact') return { fontSize: 'clamp(14px, 1.1vw, 17px)', lineHeight: 1 };
-    if (spaceLevel === 'normal') return { fontSize: 'clamp(15px, 1.0vw, 20px)', lineHeight: 1 };
-    return { fontSize: 'clamp(16px, 0.95vw, 22px)', lineHeight: 1 };
+    if (spaceLevel === 'ultra-compact') return { fontSize: 'clamp(14px, 1.6vw, 18px)', lineHeight: 1 };
+    if (spaceLevel === 'compact') return { fontSize: 'clamp(15px, 1.8vw, 20px)', lineHeight: 1 };
+    if (spaceLevel === 'normal') return { fontSize: 'clamp(16px, 2.0vw, 24px)', lineHeight: 1 };
+    return { fontSize: 'clamp(18px, 2.2vw, 28px)', lineHeight: 1 };
   }, [spaceLevel]);
 
   // Helper function to generate tooltip content for compact day tiles
