@@ -324,7 +324,7 @@ export const useRuleTallyStore = create<RuleTallyState>()(
       calculateStreak: (ruleId) => {
         const { logs, rules } = get();
         const rule = rules.find(r => r.id === ruleId);
-        const ruleLogs = logs
+        let ruleLogs = logs
           .filter((log) => log.ruleId === ruleId)
           .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
@@ -354,12 +354,18 @@ export const useRuleTallyStore = create<RuleTallyState>()(
         };
 
         const today = new Date();
+        // Normalize all rule log dates to local YYYY-MM-DD for consistent comparisons
+        for (let i = 0; i < ruleLogs.length; i++) {
+          // Ensure dates are in YYYY-MM-DD (some historical entries may hold Date strings)
+          const d = new Date(ruleLogs[i].date);
+          ruleLogs[i] = { ...ruleLogs[i], date: formatLocalDate(d) } as typeof ruleLogs[number];
+        }
         let currentStreak = 0;
         let longestStreak = 0;
         let tempStreak = 0;
         
-        // Calculate current streak
-        const todayStr = today.toISOString().split('T')[0];
+        // Calculate current streak (use local date to avoid UTC off-by-one)
+        const todayStr = formatLocalDate(today);
         
         // Check if today is a valid day for this habit
         const todayIsValid = isValidDay(today);
@@ -371,7 +377,7 @@ export const useRuleTallyStore = create<RuleTallyState>()(
           let checkDate = getPreviousValidDay(today);
           
           for (let i = 1; i < ruleLogs.length; i++) {
-            const checkDateStr = checkDate.toISOString().split('T')[0];
+            const checkDateStr = formatLocalDate(checkDate);
             
             if (ruleLogs[i].date === checkDateStr) {
               currentStreak++;
@@ -389,14 +395,14 @@ export const useRuleTallyStore = create<RuleTallyState>()(
           // Today is not a valid day (e.g., weekend for trading habits)
           // Check the most recent valid day
           let mostRecentValidDay = getPreviousValidDay(today);
-          const mostRecentValidDayStr = mostRecentValidDay.toISOString().split('T')[0];
+          const mostRecentValidDayStr = formatLocalDate(mostRecentValidDay);
           
           if (ruleLogs[0].date === mostRecentValidDayStr) {
             currentStreak = 1;
             let checkDate = getPreviousValidDay(mostRecentValidDay);
             
             for (let i = 1; i < ruleLogs.length; i++) {
-              const checkDateStr = checkDate.toISOString().split('T')[0];
+              const checkDateStr = formatLocalDate(checkDate);
               
               if (ruleLogs[i].date === checkDateStr) {
                 currentStreak++;
@@ -419,7 +425,7 @@ export const useRuleTallyStore = create<RuleTallyState>()(
           
           // Find the expected previous valid day from current log
           const expectedPrevDay = getPreviousValidDay(currentLogDate);
-          const expectedPrevDayStr = expectedPrevDay.toISOString().split('T')[0];
+          const expectedPrevDayStr = formatLocalDate(expectedPrevDay);
           
           if (ruleLogs[i].date === expectedPrevDayStr) {
             tempStreak++;
@@ -507,7 +513,7 @@ export const useRuleTallyStore = create<RuleTallyState>()(
         for (let i = 0; i < 7; i++) {
           const date = new Date(start);
           date.setDate(start.getDate() + i);
-          const dateStr = date.toISOString().split('T')[0];
+          const dateStr = formatLocalDate(date);
           
           const log = logs.find(l => l.ruleId === ruleId && l.date === dateStr);
           weekData.push({
@@ -526,7 +532,7 @@ export const useRuleTallyStore = create<RuleTallyState>()(
         
         for (let day = 1; day <= daysInMonth; day++) {
           const date = new Date(year, month, day);
-          const dateStr = date.toISOString().split('T')[0];
+          const dateStr = formatLocalDate(date);
           
           const log = logs.find(l => l.ruleId === ruleId && l.date === dateStr);
           monthData.push({
