@@ -348,7 +348,12 @@ export const useRuleTallyStore = create<RuleTallyState>()(
         const rule = rules.find(r => r.id === ruleId);
         let ruleLogs = logs
           .filter((log) => log.ruleId === ruleId)
-          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+          .sort((a, b) => {
+            // Ensure proper date parsing for sorting
+            const dateA = new Date(a.date + 'T00:00:00').getTime();
+            const dateB = new Date(b.date + 'T00:00:00').getTime();
+            return dateB - dateA; // Newest first
+          });
 
         if (ruleLogs.length === 0) {
           return {
@@ -382,6 +387,13 @@ export const useRuleTallyStore = create<RuleTallyState>()(
           const d = new Date(ruleLogs[i].date);
           ruleLogs[i] = { ...ruleLogs[i], date: formatLocalDate(d) } as typeof ruleLogs[number];
         }
+        
+        console.log('🔍 Sorted ruleLogs:', {
+          ruleId,
+          sortedDates: ruleLogs.map(l => l.date),
+          firstDate: ruleLogs[0]?.date,
+          expectedToday: formatLocalDate(today)
+        });
         let currentStreak = 0;
         let longestStreak = 0;
         let tempStreak = 0;
