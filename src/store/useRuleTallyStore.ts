@@ -436,12 +436,27 @@ export const useRuleTallyStore = create<RuleTallyState>()(
         }
         longestStreak = Math.max(longestStreak, tempStreak);
 
-        return {
+        const result = {
           ruleId,
           currentStreak,
           longestStreak,
           lastTallyDate: ruleLogs[0]?.date || null,
         };
+        
+        // Debug logging for streak calculation
+        console.log('Streak calculation result:', {
+          ruleId,
+          ruleName: rule?.label || 'Unknown',
+          currentStreak,
+          longestStreak,
+          lastTallyDate: result.lastTallyDate,
+          totalLogs: ruleLogs.length,
+          todayStr,
+          todayIsValid,
+          firstLogDate: ruleLogs[0]?.date
+        });
+        
+        return result;
       },
 
       getStreakForRule: (ruleId) => {

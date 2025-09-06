@@ -645,20 +645,41 @@ const HabitRuleCard: React.FC<HabitRuleCardProps> = ({
     }
   }, [showMenu]);
 
+  const data = viewMode === 'week' ? weeklyData : monthlyData;
+  const selectedEntry = data?.find(d => d.date === selectedDate);
+  
+  // For habits that are typically "once per day", show cumulative count across the period
+  // For habits that can be done multiple times per day (like "drink water"), show selected day count
+  const totalPeriodCount = data?.reduce((sum, d) => sum + d.count, 0) || 0;
+  const singleDayCount = selectedEntry ? selectedEntry.count : (isToday ? tallyCount : 0);
+  
+  // Use total count for display and milestones, but show selected day in tally marks
+  const displayCount = totalPeriodCount;
+  const tallyMarksCount = singleDayCount;
+  const maxCount = Math.max(...(data?.map(d => d.count) || []), singleDayCount);
+
   const handleTally = (event: React.MouseEvent) => {
     onTally(event, selectedDate);
     
-    // Show celebration for milestones
-    if ((displayCount + 1) % 5 === 0) {
+    // Show celebration for milestones based on the count that will be after this tally
+    const newCount = singleDayCount + 1;
+    if (newCount % 5 === 0) {
       setShowCelebration(true);
       setTimeout(() => setShowCelebration(false), 2000);
     }
   };
-
-  const data = viewMode === 'week' ? weeklyData : monthlyData;
-  const selectedEntry = data?.find(d => d.date === selectedDate);
-  const displayCount = selectedEntry ? selectedEntry.count : (isToday ? tallyCount : 0);
-  const maxCount = Math.max(...(data?.map(d => d.count) || []), displayCount);
+  
+  // Debug logging
+  console.log('Habit Card Debug:', {
+    ruleId: rule.id,
+    ruleName: rule.label,
+    streak: streak,
+    totalPeriodCount,
+    singleDayCount,
+    displayCount,
+    selectedDate,
+    isToday
+  });
 
   return (
     <motion.div
@@ -765,7 +786,7 @@ const HabitRuleCard: React.FC<HabitRuleCardProps> = ({
 
         {/* Tally Marks */}
         <div className="mb-6">
-          <AnimatedTallyMarks count={displayCount} />
+          <AnimatedTallyMarks count={tallyMarksCount} />
         </div>
 
         {/* Progress Visualization */}
