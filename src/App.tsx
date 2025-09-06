@@ -121,7 +121,10 @@ function AppContent() {
           await initializeQuickNoteStore();
           // Start daily reflections real-time subscription
           try {
-            const unsub = useDailyReflectionStore.getState().subscribeRemote?.();
+            const drStore = useDailyReflectionStore.getState();
+            // Migrate legacy local data once, then subscribe
+            await drStore.migrateLegacyLocalToFirestore?.();
+            const unsub = drStore.subscribeRemote?.();
             (window as any).__dailyReflectionsUnsub = unsub;
           } catch (e) {
             console.warn('Failed to subscribe to daily reflections:', e);

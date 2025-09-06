@@ -100,6 +100,7 @@ interface DailyReflectionState {
   loadFromStorage: () => void;
   saveToStorage: () => void;
   subscribeRemote?: () => () => void;
+  migrateLegacyLocalToFirestore?: () => Promise<void>;
 }
 
 export const useDailyReflectionStore = create<DailyReflectionState>()(
@@ -535,6 +536,40 @@ export const useDailyReflectionStore = create<DailyReflectionState>()(
         } catch (e) {
           console.warn('[dailyReflections] subscribe failed:', e);
           return () => {};
+        }
+      },
+
+      // One-time migration of legacy localStorage reflections to Firestore
+      migrateLegacyLocalToFirestore: async () => {
+        try {
+          const migratedFlag = localStorage.getItem(`${STORAGE_KEYS.DAILY_REFLECTIONS}_migrated`, false as any);
+          if (migratedFlag) return; // already migrated
+          const legacy = localStorage.getItem(STORAGE_KEYS.DAILY_REFLECTIONS, [] as any[]);
+          if (!legacy || legacy.length === 0) {
+            localStorage.setItem(`${STORAGE_KEYS.DAILY_REFLECTIONS}_migrated`, true as any);
+            return;
+          }
+          const svc: FirestoreService<any> = (get() as any)._remoteService;
+          for (const r of legacy as any[]) {
+            try {
+              const payload = {
+                ...r,
+                createdAt: (r.createdAt && typeof r.createdAt === 'string') ? r.createdAt : new Date(r.createdAt).toISOString(),
+                updatedAt: (r.updatedAt && typeof r.updatedAt === 'string') ? r.updatedAt : new Date(r.updatedAt).toISOString(),
+                completedAt: r.completedAt ? (typeof r.completedAt === 'string' ? r.completedAt : new Date(r.completedAt).toISOString()) : undefined,
+                moodTimeline: (r.moodTimeline || []).map((m: any) => ({
+                  ...m,
+                  timestamp: (m.timestamp && typeof m.timestamp === 'string') ? m.timestamp : new Date(m.timestamp).toISOString(),
+                })),
+              };
+              await svc.setWithId(r.id, payload as any);
+            } catch (e) {
+              console.warn('[dailyReflections] migrate entry failed:', e);
+            }
+          }
+          localStorage.setItem(`${STORAGE_KEYS.DAILY_REFLECTIONS}_migrated`, true as any);
+        } catch (e) {
+          console.warn('[dailyReflections] migration failed:', e);
         }
       },
     }),
