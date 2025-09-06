@@ -42,6 +42,7 @@ import { MobileTodoPage } from './components/MobileTodoPage';
 import { useTodoStore } from './store/useTodoStore';
 import { collection, getDocs, limit, query } from 'firebase/firestore';
 import { db } from './lib/firebase';
+import { checkAndAddWeeklyReviewTodo } from './lib/weeklyReviewTodo';
 
 function AppContent() {
   const { isExpanded: sidebarExpanded } = useSidebarStore();
@@ -59,6 +60,25 @@ function AppContent() {
   const initializedUidRef = React.useRef<string | null>(null);
   const remoteExpectedRef = React.useRef(false);
   const [bootReloadTick, setBootReloadTick] = React.useState(0);
+
+  // Periodic check for weekly review todo (every hour)
+  React.useEffect(() => {
+    if (!currentUser || loading) return;
+    
+    const checkWeeklyReviewTodo = async () => {
+      try {
+        await checkAndAddWeeklyReviewTodo();
+      } catch (error) {
+        console.error('Failed to check weekly review todo:', error);
+      }
+    };
+    
+    // Check immediately and then every hour
+    checkWeeklyReviewTodo();
+    const interval = setInterval(checkWeeklyReviewTodo, 60 * 60 * 1000); // 1 hour
+    
+    return () => clearInterval(interval);
+  }, [currentUser, loading]);
 
   // Initialize data when user is authenticated
   React.useEffect(() => {
@@ -97,6 +117,8 @@ function AppContent() {
           await initializeTradeStore();
           await initializeRuleTallyStore();
           await initializeQuickNoteStore();
+          // Check for weekly review todo after all stores are initialized
+          await checkAndAddWeeklyReviewTodo();
           console.log('App initialization completed successfully');
 
           // Verify remote presence and wait for subscriptions to populate stores

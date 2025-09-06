@@ -21,6 +21,7 @@ import { ImprovementTask } from '@/types';
 import { cn } from '@/lib/utils';
 import { CustomSelect } from './CustomSelect';
 import { CalendarPicker } from './CalendarPicker';
+import { checkAndAddWeeklyReviewTodo, openWeeklyReviewFromUrl, parseWeeklyReviewUrl } from '@/lib/weeklyReviewTodo';
 
 export const MobileTodoPage: React.FC = () => {
   const { tasks, toggleDone, addTask, deleteTask, updateTask, scheduleTask, togglePin } = useTodoStore();
@@ -36,6 +37,14 @@ export const MobileTodoPage: React.FC = () => {
   const [schedulingTaskId, setSchedulingTaskId] = useState<string | null>(null);
   const [editingUrlId, setEditingUrlId] = useState<string | null>(null);
   const [editingUrl, setEditingUrl] = useState<string>('');
+
+  // Initialize and check for weekly review todo
+  useEffect(() => {
+    const init = async () => {
+      await checkAndAddWeeklyReviewTodo();
+    };
+    init();
+  }, []);
 
   const filteredTasks = useMemo(() => {
     const today = new Date();
@@ -126,6 +135,15 @@ export const MobileTodoPage: React.FC = () => {
 
   // Helper function to format URLs for display (same as desktop)
   const formatUrlForDisplay = (url: string): string => {
+    // Check for weekly review URLs first
+    const weekOf = parseWeeklyReviewUrl(url);
+    if (weekOf) {
+      const weekDate = new Date(weekOf);
+      const weekEndDate = new Date(weekDate);
+      weekEndDate.setDate(weekDate.getDate() + 6);
+      return `Weekly Review (${weekDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${weekEndDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})`;
+    }
+    
     try {
       const urlObj = new URL(url);
       const hostname = urlObj.hostname.replace('www.', '');
@@ -367,16 +385,20 @@ export const MobileTodoPage: React.FC = () => {
                   {/* Task Meta */}
                   <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
                     {task.url && (
-                      <a
-                        href={task.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <button
                         className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-blue-500/10 text-blue-600 border border-blue-500/20 hover:bg-blue-500/20 transition-colors text-xs font-medium"
-                        onClick={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (parseWeeklyReviewUrl(task.url!)) {
+                            openWeeklyReviewFromUrl(task.url!);
+                          } else {
+                            window.open(task.url!, '_blank', 'noopener,noreferrer');
+                          }
+                        }}
                       >
                         <ExternalLink className="w-3 h-3" />
                         {formatUrlForDisplay(task.url)}
-                      </a>
+                      </button>
                     )}
                     {task.category && (
                       <div className="flex items-center gap-1">

@@ -78,6 +78,31 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
   }, []);
   const compactMode = bothSidebarsExpanded && viewportWidth < 1400; // avoid tiny text on wide screens
 
+  // Listen for weekly review open events from todo links
+  useEffect(() => {
+    const handleOpenWeeklyReview = (event: CustomEvent) => {
+      const { weekOf } = event.detail;
+      if (weekOf && selectedAccountId) {
+        const review = getReviewByWeek(weekOf, selectedAccountId);
+        
+        if (review && review.isComplete) {
+          // Show completed review
+          setSelectedWeeklyReview(review);
+          setIsWeeklyReviewViewOpen(true);
+        } else {
+          // Edit or create review
+          setWeeklyReviewWeek(weekOf);
+          setIsWeeklyReviewOpen(true);
+        }
+      }
+    };
+
+    window.addEventListener('openWeeklyReview', handleOpenWeeklyReview as EventListener);
+    return () => {
+      window.removeEventListener('openWeeklyReview', handleOpenWeeklyReview as EventListener);
+    };
+  }, [selectedAccountId, getReviewByWeek, setSelectedWeeklyReview, setIsWeeklyReviewViewOpen, setWeeklyReviewWeek, setIsWeeklyReviewOpen]);
+
   const handleWeeklySummaryClick = (weekIndex: number, week: CalendarDay[]) => {
     if (!selectedAccountId) return;
 

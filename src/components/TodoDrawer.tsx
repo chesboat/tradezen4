@@ -5,6 +5,7 @@ import { useTodoStore, initializeSampleTasks } from '@/store/useTodoStore';
 import { ImprovementTask } from '@/types';
 import { useActivityLogStore } from '@/store/useActivityLogStore';
 import { CustomSelect } from './CustomSelect';
+import { checkAndAddWeeklyReviewTodo, openWeeklyReviewFromUrl, parseWeeklyReviewUrl } from '@/lib/weeklyReviewTodo';
 
 interface TodoDrawerProps {
   className?: string;
@@ -43,6 +44,8 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
     const init = async () => {
       await initialize();
       await initializeSampleTasks();
+      // Check if we need to add a weekly review todo
+      await checkAndAddWeeklyReviewTodo();
     };
     init();
   }, [initialize]);
@@ -121,6 +124,15 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
 
   // Helper function to format URLs for display
   const formatUrlForDisplay = (url: string): string => {
+    // Check for weekly review URLs first
+    const weekOf = parseWeeklyReviewUrl(url);
+    if (weekOf) {
+      const weekDate = new Date(weekOf);
+      const weekEndDate = new Date(weekDate);
+      weekEndDate.setDate(weekDate.getDate() + 6);
+      return `Weekly Review (${weekDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${weekEndDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})`;
+    }
+    
     try {
       const urlObj = new URL(url);
       const hostname = urlObj.hostname.replace('www.', '');
@@ -484,16 +496,20 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                     <div className="flex items-center justify-between mt-2 text-xs gap-2">
                       <div className="flex items-center gap-2 flex-wrap">
                         {task.url && (
-                          <a
-                            href={task.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                          <button
                             className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 border border-blue-500/20 hover:bg-blue-500/20 transition-colors text-[10px] font-medium"
-                            onClick={(e) => e.stopPropagation()}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (parseWeeklyReviewUrl(task.url!)) {
+                                openWeeklyReviewFromUrl(task.url!);
+                              } else {
+                                window.open(task.url!, '_blank', 'noopener,noreferrer');
+                              }
+                            }}
                           >
                             <ExternalLink className="w-3 h-3" />
                             {formatUrlForDisplay(task.url)}
-                          </a>
+                          </button>
                         )}
                         {task.dueAt && (
                           <span className="inline-flex items-center gap-1 text-muted-foreground"><Clock className="w-3 h-3" /> {new Date(task.dueAt).toLocaleDateString()}</span>
@@ -708,16 +724,20 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                     <div className="flex items-center justify-between mt-2 text-xs gap-2">
                       <div className="flex items-center gap-2 flex-wrap">
                         {task.url && (
-                          <a
-                            href={task.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                          <button
                             className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 border border-blue-500/20 hover:bg-blue-500/20 transition-colors text-[10px] font-medium"
-                            onClick={(e) => e.stopPropagation()}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (parseWeeklyReviewUrl(task.url!)) {
+                                openWeeklyReviewFromUrl(task.url!);
+                              } else {
+                                window.open(task.url!, '_blank', 'noopener,noreferrer');
+                              }
+                            }}
                           >
                             <ExternalLink className="w-3 h-3" />
                             {formatUrlForDisplay(task.url)}
-                          </a>
+                          </button>
                         )}
                         {task.dueAt && (
                           <span className="inline-flex items-center gap-1 text-muted-foreground"><Clock className="w-3 h-3" /> {new Date(task.dueAt).toLocaleDateString()}</span>
