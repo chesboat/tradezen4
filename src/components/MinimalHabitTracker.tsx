@@ -837,7 +837,9 @@ const HabitRuleCard: React.FC<HabitRuleCardProps> = ({
             {/* Weekday labels (Sun → Sat) */}
             <div className="mt-1 grid grid-cols-7 gap-1 text-[10px] leading-none text-muted-foreground select-none">
               {data.map((d, idx) => {
-                const day = new Date(d.date).getDay();
+                // Parse YYYY-MM-DD into a local Date to avoid UTC shift
+                const [yy, mm, dd] = d.date.split('-').map(Number);
+                const day = new Date(yy, (mm || 1) - 1, dd || 1).getDay();
                 const label = ['S','M','T','W','T','F','S'][day];
                 const isToday = d.date === todayStr;
                 return (
