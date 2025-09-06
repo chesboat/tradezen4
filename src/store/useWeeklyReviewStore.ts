@@ -3,6 +3,8 @@ import { devtools } from 'zustand/middleware';
 import { WeeklyReview } from '@/types';
 import { generateId } from '@/lib/localStorageUtils';
 import { FirestoreService } from '@/lib/firestore';
+import { onSnapshot, query, orderBy, collection } from 'firebase/firestore';
+import { db, auth } from '@/lib/firebase';
 
 interface WeeklyReviewState {
   reviews: WeeklyReview[];
@@ -22,11 +24,8 @@ interface WeeklyReviewState {
   isWeekReviewAvailable: (weekOf: string, accountId: string) => boolean;
   getCurrentWeekReview: (accountId: string) => WeeklyReview | undefined;
   
-  // Storage
-  saveToStorage: () => void;
-  loadFromStorage: () => void;
-  syncToFirestore: () => Promise<void>;
-  loadFromFirestore: () => Promise<void>;
+  // Initialization
+  initializeWeeklyReviews: (userIdOverride?: string) => Promise<void>;
 }
 
 // Helper function to get Monday of a given week
@@ -66,58 +65,80 @@ export const useWeeklyReviewStore = create<WeeklyReviewState>()(
       reviews: [],
       isLoading: false,
 
-      addReview: (reviewData) => {
-        const newReview: WeeklyReview = {
-          ...reviewData,
-          id: generateId(),
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        };
-
-        set((state) => ({
-          reviews: [newReview, ...state.reviews],
-        }));
-
-        get().saveToStorage();
-        
-        // Sync to Firestore asynchronously
-        weeklyReviewService.create(newReview).catch(error => {
-          console.error('Failed to sync weekly review to Firestore:', error);
-        });
-        
-        return newReview;
+      // Initialize with real-time Firebase subscription
+      initializeWeeklyReviews: async (userIdOverride?: string) => {
+        try {
+          set({ isLoading: true });
+          
+          // Clean up existing subscription
+          try {
+            const existingUnsub = (window as any).__weeklyReviewsUnsub;
+            if (typeof existingUnsub === 'function') existingUnsub();
+          } catch {}
+          
+          const userId = userIdOverride || auth.currentUser?.uid;
+          if (userId) {
+            const colRef = collection(db as any, `users/${userId}/weeklyReviews`);
+            const q = query(colRef, orderBy('weekOf', 'desc'));
+            const unsub = onSnapshot(q, (snap) => {
+              const docs = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as WeeklyReview[];
+              const formatted = docs.map(review => ({
+                ...review,
+                createdAt: review.createdAt instanceof Date ? review.createdAt : new Date(review.createdAt),
+                updatedAt: review.updatedAt instanceof Date ? review.updatedAt : new Date(review.updatedAt),
+                completedAt: review.completedAt ? (review.completedAt instanceof Date ? review.completedAt : new Date(review.completedAt)) : undefined,
+              }));
+              
+              set({ reviews: formatted, isLoading: false });
+              console.log('Weekly reviews loaded from Firebase:', formatted.length);
+            }, (error) => {
+              console.error('Weekly reviews snapshot error:', error);
+              set({ isLoading: false });
+            });
+            (window as any).__weeklyReviewsUnsub = unsub;
+          }
+        } catch (error) {
+          console.error('Failed to initialize weekly reviews:', error);
+          set({ isLoading: false });
+        }
       },
 
-      updateReview: (id, updates) => {
-        const updatedReview = { ...updates, updatedAt: new Date() };
-        
-        set((state) => ({
-          reviews: state.reviews.map((review) =>
-            review.id === id
-              ? { ...review, ...updatedReview }
-              : review
-          ),
-        }));
-        
-        get().saveToStorage();
-        
-        // Sync to Firestore asynchronously
-        weeklyReviewService.update(id, updatedReview).catch(error => {
-          console.error('Failed to sync weekly review update to Firestore:', error);
-        });
+      addReview: async (reviewData) => {
+        try {
+          const newReview = await weeklyReviewService.create({
+            ...reviewData,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
+          // The real-time subscription will update the state automatically
+          return newReview;
+        } catch (error) {
+          console.error('Failed to add weekly review:', error);
+          throw error;
+        }
       },
 
-      deleteReview: (id) => {
-        set((state) => ({
-          reviews: state.reviews.filter((review) => review.id !== id),
-        }));
-        
-        get().saveToStorage();
-        
-        // Sync to Firestore asynchronously
-        weeklyReviewService.delete(id).catch(error => {
-          console.error('Failed to delete weekly review from Firestore:', error);
-        });
+      updateReview: async (id, updates) => {
+        try {
+          await weeklyReviewService.update(id, {
+            ...updates,
+            updatedAt: new Date(),
+          });
+          // The real-time subscription will update the state automatically
+        } catch (error) {
+          console.error('Failed to update weekly review:', error);
+          throw error;
+        }
+      },
+
+      deleteReview: async (id) => {
+        try {
+          await weeklyReviewService.delete(id);
+          // The real-time subscription will update the state automatically
+        } catch (error) {
+          console.error('Failed to delete weekly review:', error);
+          throw error;
+        }
       },
 
       getReviewByWeek: (weekOf, accountId) => {
@@ -134,34 +155,38 @@ export const useWeeklyReviewStore = create<WeeklyReviewState>()(
           .sort((a, b) => new Date(b.weekOf).getTime() - new Date(a.weekOf).getTime());
       },
 
-      markReviewComplete: (id) => {
+      markReviewComplete: async (id) => {
         const review = get().reviews.find(r => r.id === id);
         if (!review) return;
 
         const xpEarned = 150; // Base XP for completing weekly review
 
-        get().updateReview(id, {
-          isComplete: true,
-          completedAt: new Date(),
-          xpEarned,
-        });
-
-        // Award XP through the prestige system
-        import('@/lib/xp/XpService').then(({ awardXp }) => {
-          awardXp.weeklyReview().catch(console.error);
-        });
-
-        // Add activity log entry for completion
-        import('./useActivityLogStore').then(({ useActivityLogStore }) => {
-          useActivityLogStore.getState().addActivity({
-            type: 'weekly_review',
-            title: 'Weekly Review Completed',
-            description: `Completed weekly review for ${new Date(review.weekOf).toLocaleDateString()}`,
+        try {
+          await get().updateReview(id, {
+            isComplete: true,
+            completedAt: new Date(),
             xpEarned,
-            relatedId: id,
-            accountId: review.accountId,
           });
-        });
+
+          // Award XP through the prestige system
+          import('@/lib/xp/XpService').then(({ awardXp }) => {
+            awardXp.weeklyReview().catch(console.error);
+          });
+
+          // Add activity log entry for completion
+          import('./useActivityLogStore').then(({ useActivityLogStore }) => {
+            useActivityLogStore.getState().addActivity({
+              type: 'weekly_review',
+              title: 'Weekly Review Completed',
+              description: `Completed weekly review for ${new Date(review.weekOf).toLocaleDateString()}`,
+              xpEarned,
+              relatedId: id,
+              accountId: review.accountId,
+            });
+          });
+        } catch (error) {
+          console.error('Failed to mark review complete:', error);
+        }
       },
 
       getWeeklyReviewStreak: (accountId) => {
@@ -208,102 +233,27 @@ export const useWeeklyReviewStore = create<WeeklyReviewState>()(
         return get().getReviewByWeek(currentWeekMonday, accountId);
       },
 
-      saveToStorage: () => {
-        try {
-          const { reviews } = get();
-          localStorage.setItem('weeklyReviews', JSON.stringify(reviews));
-        } catch (error) {
-          console.error('Failed to save weekly reviews to localStorage:', error);
-        }
+      getMondayOfWeek,
+
+      isWeekReviewAvailable: (weekOf, accountId) => {
+        // Check if review is available and not already completed
+        const existingReview = get().getReviewByWeek(weekOf, accountId);
+        if (existingReview?.isComplete) return false;
+        
+        return isWeekReviewAvailable(weekOf);
       },
 
-      loadFromStorage: () => {
-        try {
-          const stored = localStorage.getItem('weeklyReviews');
-          if (stored) {
-            let reviews = JSON.parse(stored);
-            
-            // Migration: Fix weekOf dates that were created with the old buggy getMondayOfWeek
-            reviews = reviews.map((review: any) => {
-              if (review.weekOf === '2025-08-19') {
-                console.log('Migrating review from 2025-08-19 to 2025-08-18');
-                return { ...review, weekOf: '2025-08-18' };
-              }
-              return review;
-            });
-            
-            set({ reviews });
-            
-            // Save migrated data back to localStorage
-            localStorage.setItem('weeklyReviews', JSON.stringify(reviews));
-          }
-        } catch (error) {
-          console.error('Failed to load weekly reviews from localStorage:', error);
-        }
-      },
-
-      syncToFirestore: async () => {
-        try {
-          const { reviews } = get();
-          
-          // Sync all reviews to Firestore
-          for (const review of reviews) {
-            try {
-              await weeklyReviewService.setWithId(review.id, review);
-            } catch (error) {
-              console.error(`Failed to sync review ${review.id} to Firestore:`, error);
-            }
-          }
-          
-          console.log('Weekly reviews synced to Firestore');
-        } catch (error) {
-          console.error('Failed to sync weekly reviews to Firestore:', error);
-        }
-      },
-
-      loadFromFirestore: async () => {
-        try {
-          set({ isLoading: true });
-          
-          const firestoreReviews = await weeklyReviewService.getAll();
-          
-          // Merge with local reviews, preferring Firestore data for conflicts
-          const localReviews = get().reviews;
-          const reviewsById = new Map<string, WeeklyReview>();
-          
-          // Add local reviews first
-          localReviews.forEach(review => reviewsById.set(review.id, review));
-          
-          // Override with Firestore reviews (they take precedence)
-          firestoreReviews.forEach(review => {
-            // Convert Firestore timestamps back to Date objects
-            const processedReview = {
-              ...review,
-              createdAt: review.createdAt instanceof Date ? review.createdAt : new Date(review.createdAt),
-              updatedAt: review.updatedAt instanceof Date ? review.updatedAt : new Date(review.updatedAt),
-              completedAt: review.completedAt ? (review.completedAt instanceof Date ? review.completedAt : new Date(review.completedAt)) : undefined,
-            };
-            reviewsById.set(review.id, processedReview);
-          });
-          
-          const mergedReviews = Array.from(reviewsById.values())
-            .sort((a, b) => new Date(b.weekOf).getTime() - new Date(a.weekOf).getTime());
-          
-          set({ reviews: mergedReviews, isLoading: false });
-          get().saveToStorage();
-          
-          console.log('Weekly reviews loaded from Firestore');
-        } catch (error) {
-          console.error('Failed to load weekly reviews from Firestore:', error);
-          set({ isLoading: false });
-        }
+      getCurrentWeekReview: (accountId) => {
+        const currentWeekMonday = getMondayOfWeek(new Date());
+        return get().getReviewByWeek(currentWeekMonday, accountId);
       },
     }),
     { name: 'weekly-review-store' }
   )
 );
 
-// Initialize store on load
-if (typeof window !== 'undefined') {
-  useWeeklyReviewStore.getState().loadFromStorage();
-}
+// Export initialization function for use in App.tsx
+export const initializeWeeklyReviewStore = async () => {
+  const { initializeWeeklyReviews } = useWeeklyReviewStore.getState();
+  await initializeWeeklyReviews();
+};

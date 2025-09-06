@@ -132,13 +132,13 @@ export const WeeklyReviewModal: React.FC<WeeklyReviewModalProps> = ({
     try {
       if (existingReview) {
         // Update existing review
-        updateReview(existingReview.id, {
+        await updateReview(existingReview.id, {
           ...formData,
           weeklyStats: weekStats || undefined
         });
       } else {
         // Create new review
-        addReview({
+        await addReview({
           weekOf: reviewWeek,
           ...formData,
           isComplete: false,
@@ -166,15 +166,15 @@ export const WeeklyReviewModal: React.FC<WeeklyReviewModalProps> = ({
       await handleSubmit();
       const newReview = getReviewByWeek(reviewWeek, selectedAccountId || 'default');
       if (newReview) {
-        markReviewComplete(newReview.id);
+        await markReviewComplete(newReview.id);
       }
     } else {
       // Ensure latest form data and computed stats are saved before completing
-      updateReview(existingReview.id, {
+      await updateReview(existingReview.id, {
         ...formData,
         weeklyStats: weekStats || undefined,
       });
-      markReviewComplete(existingReview.id);
+      await markReviewComplete(existingReview.id);
     }
     
     setShowSuccess(true);

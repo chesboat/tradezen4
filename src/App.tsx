@@ -43,7 +43,7 @@ import { useTodoStore } from './store/useTodoStore';
 import { collection, getDocs, limit, query } from 'firebase/firestore';
 import { db } from './lib/firebase';
 import { checkAndAddWeeklyReviewTodo } from './lib/weeklyReviewTodo';
-import { useWeeklyReviewStore } from './store/useWeeklyReviewStore';
+import { initializeWeeklyReviewStore } from './store/useWeeklyReviewStore';
 
 function AppContent() {
   const { isExpanded: sidebarExpanded } = useSidebarStore();
@@ -119,9 +119,8 @@ function AppContent() {
           await initializeRuleTallyStore();
           await initializeQuickNoteStore();
           
-          // Initialize weekly review store from Firestore
-          const { loadFromFirestore: loadWeeklyReviews } = useWeeklyReviewStore.getState();
-          await loadWeeklyReviews();
+          // Initialize weekly review store with real-time Firebase subscription
+          await initializeWeeklyReviewStore();
           
           // Check for weekly review todo after all stores are initialized
           await checkAndAddWeeklyReviewTodo();
