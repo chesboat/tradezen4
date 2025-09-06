@@ -984,7 +984,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                   </div>
                 )}
                 
-              <div className="flex flex-col items-center justify-center text-center space-y-1 h-full">
+              <div className="flex flex-col items-center justify-center text-center h-full min-h-0">
                 {compactMode ? (
                   // Ultra-compact weekly summary - with tooltip
                   <Tooltip 
@@ -992,12 +992,12 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                     position="top"
                     fullWidth
                   >
-                    <div>
-                      <div className="text-xs font-medium text-muted-foreground">
+                    <div className="flex flex-col items-center justify-center space-y-0.5">
+                      <div className="text-xs font-medium text-muted-foreground leading-tight">
                         W{weeklyData[weekIndex]?.weekNumber}
                       </div>
                       <div className={cn(
-                        'text-sm font-bold',
+                        'text-sm font-bold leading-tight',
                         weeklyData[weekIndex]?.totalPnl > 0 ? 'text-green-500' : 
                         weeklyData[weekIndex]?.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
                       )}>
@@ -1006,28 +1006,28 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                           : formatCurrency(weeklyData[weekIndex]?.totalPnl || 0)
                         }
                       </div>
-                      <div className="text-[10px] text-muted-foreground">
+                      <div className="text-[10px] text-muted-foreground leading-tight">
                         {weeklyData[weekIndex]?.activeDays || 0}d
                       </div>
                     </div>
                   </Tooltip>
                 ) : (
                   // Normal weekly summary
-                  <>
-                    <div className="text-sm 2xl:text-base 3xl:text-lg font-medium text-muted-foreground">
-                  Week {weeklyData[weekIndex]?.weekNumber}
-                </div>
-                <div className={cn(
-                      'text-lg 2xl:text-xl 3xl:text-2xl 4xl:text-3xl font-bold',
-                  weeklyData[weekIndex]?.totalPnl > 0 ? 'text-green-500' : 
-                  weeklyData[weekIndex]?.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
-                )}>
-                  {formatCurrency(weeklyData[weekIndex]?.totalPnl || 0)}
-                </div>
-                    <div className="text-xs 2xl:text-sm 3xl:text-base text-muted-foreground">
-                  {weeklyData[weekIndex]?.activeDays || 0} days
-                </div>
-                  </>
+                  <div className="flex flex-col items-center justify-center space-y-1">
+                    <div className="text-sm 2xl:text-base 3xl:text-lg font-medium text-muted-foreground leading-tight">
+                      Week {weeklyData[weekIndex]?.weekNumber}
+                    </div>
+                    <div className={cn(
+                      'text-lg 2xl:text-xl 3xl:text-2xl 4xl:text-3xl font-bold leading-tight',
+                      weeklyData[weekIndex]?.totalPnl > 0 ? 'text-green-500' : 
+                      weeklyData[weekIndex]?.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
+                    )}>
+                      {formatCurrency(weeklyData[weekIndex]?.totalPnl || 0)}
+                    </div>
+                    <div className="text-xs 2xl:text-sm 3xl:text-base text-muted-foreground leading-tight">
+                      {weeklyData[weekIndex]?.activeDays || 0} days
+                    </div>
+                  </div>
                 )}
               </div>
               {/* Removed inline review chip; the entire tile is clickable to open the review */}
