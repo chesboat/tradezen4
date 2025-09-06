@@ -995,6 +995,19 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                   </>
                 )}
               </div>
+              {selectedAccountId && getWeekReviewStatus(week) !== 'completed' && isWeekReviewAvailable(getMondayOfWeek(week[0].date), selectedAccountId) && (
+                <motion.button
+                  className="absolute inset-x-3 bottom-3 px-2 py-1 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleWeeklySummaryClick(weekIndex, week);
+                  }}
+                >
+                  Complete Weekly Review
+                </motion.button>
+              )}
             </motion.div>
             </div>
           </React.Fragment>

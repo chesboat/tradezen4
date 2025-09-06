@@ -37,25 +37,22 @@ const getMondayOfWeek = (date: Date): string => {
 };
 
 // Helper function to check if a week review should be available
+// Window: From Friday 4:00 PM local time through Sunday 11:59:59 PM local time
 const isWeekReviewAvailable = (weekOf: string): boolean => {
   const monday = new Date(weekOf);
   const friday = new Date(monday);
-  friday.setDate(monday.getDate() + 4); // Friday is 4 days after Monday
-  
+  friday.setDate(monday.getDate() + 4); // Friday
+
   const now = new Date();
-  const currentDay = now.getDay(); // 0=Sunday, 1=Monday, ..., 5=Friday, 6=Saturday
-  
-  // Trading week ends Friday after market close (4 PM ET)
-  // Review becomes available Friday evening or anytime Saturday onwards
-  if (currentDay === 5) { // Friday
-    // Available after 4 PM ET (16:00)
-    const marketCloseTime = new Date(friday);
-    marketCloseTime.setHours(16, 0, 0, 0); // 4 PM ET
-    return now >= marketCloseTime;
-  }
-  
-  // Available anytime Saturday (6) or Sunday (0) onwards, or after the week has ended
-  return currentDay === 6 || currentDay === 0 || now > friday;
+
+  const windowStart = new Date(friday);
+  windowStart.setHours(16, 0, 0, 0); // 4:00 PM local
+
+  const sundayEnd = new Date(monday);
+  sundayEnd.setDate(monday.getDate() + 6); // Sunday
+  sundayEnd.setHours(23, 59, 59, 999);
+
+  return now >= windowStart && now <= sundayEnd;
 };
 
 export const useWeeklyReviewStore = create<WeeklyReviewState>()(
