@@ -661,9 +661,9 @@ const HabitRuleCard: React.FC<HabitRuleCardProps> = ({
   const handleTally = (event: React.MouseEvent) => {
     onTally(event, selectedDate);
     
-    // Show celebration for milestones based on the count that will be after this tally
-    const newCount = singleDayCount + 1;
-    if (newCount % 5 === 0) {
+    // Show celebration for milestones based on the cumulative count that will be after this tally
+    const newCumulativeCount = displayCount + 1;
+    if (newCumulativeCount % 5 === 0) {
       setShowCelebration(true);
       setTimeout(() => setShowCelebration(false), 2000);
     }
@@ -786,7 +786,7 @@ const HabitRuleCard: React.FC<HabitRuleCardProps> = ({
 
         {/* Tally Marks */}
         <div className="mb-6">
-          <AnimatedTallyMarks count={tallyMarksCount} />
+          <AnimatedTallyMarks count={displayCount} />
         </div>
 
         {/* Progress Visualization */}
