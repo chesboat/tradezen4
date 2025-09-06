@@ -181,6 +181,13 @@ export const useRuleTallyStore = create<RuleTallyState>()(
         );
 
         try {
+          console.log('🔍 AddTally: Before update', {
+            targetDate,
+            ruleId,
+            existingLog: existingLog ? { id: existingLog.id, date: existingLog.date, count: existingLog.tallyCount } : null,
+            currentLogsCount: logs.length
+          });
+
           if (existingLog) {
             // Update existing log
             const updatedLog = {
@@ -198,6 +205,8 @@ export const useRuleTallyStore = create<RuleTallyState>()(
                 log.id === existingLog.id ? updatedLog : log
               ),
             }));
+            
+            console.log('🔍 AddTally: Updated existing log', { updatedLog });
           } else {
             // Create new log
             const newLog: TallyLog = {
@@ -216,7 +225,17 @@ export const useRuleTallyStore = create<RuleTallyState>()(
             set((state) => ({
               logs: [...state.logs, createdLog],
             }));
+            
+            console.log('🔍 AddTally: Created new log', { createdLog });
           }
+          
+          // Check logs after update
+          const { logs: updatedLogs } = get();
+          console.log('🔍 AddTally: After update', {
+            logsCount: updatedLogs.length,
+            todayLog: updatedLogs.find(l => l.date === targetDate && l.ruleId === ruleId),
+            allDatesForRule: updatedLogs.filter(l => l.ruleId === ruleId).map(l => l.date)
+          });
 
           // Log XP activity with enhanced messaging
           if (rule) {
