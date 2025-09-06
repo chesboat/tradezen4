@@ -390,9 +390,11 @@ export const useRuleTallyStore = create<RuleTallyState>()(
         
         console.log('🔍 Sorted ruleLogs:', {
           ruleId,
+          timestamp: new Date().toISOString(),
           sortedDates: ruleLogs.map(l => l.date),
           firstDate: ruleLogs[0]?.date,
-          expectedToday: formatLocalDate(today)
+          expectedToday: formatLocalDate(today),
+          totalLogsInStore: logs.length
         });
         let currentStreak = 0;
         let longestStreak = 0;
