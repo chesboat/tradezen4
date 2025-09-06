@@ -433,7 +433,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
         return {
           date: 'text-xs',
           pnl: 'text-[10px]',
-          trades: 'text-[10px]',
+          trades: 'text-[12px]',
           stats: 'text-[9px]',
           weekend: 'text-[10px]',
           weekTitle: 'text-xs',
@@ -444,7 +444,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
         return {
           date: 'text-sm',
           pnl: 'text-[11px]',
-          trades: 'text-xs',
+          trades: 'text-[12px]',
           stats: 'text-[10px]',
           weekend: 'text-xs',
           weekTitle: 'text-sm',
@@ -455,7 +455,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
         return {
           date: 'text-sm lg:text-base',
           pnl: 'text-[11px] lg:text-base',
-          trades: 'text-xs lg:text-sm',
+          trades: 'text-sm',
           stats: 'text-xs',
           weekend: 'text-xs lg:text-sm',
           weekTitle: 'text-sm lg:text-base',
@@ -467,7 +467,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
         return {
           date: 'text-base lg:text-lg xl:text-xl',
           pnl: 'text-xs lg:text-lg xl:text-xl',
-          trades: 'text-sm lg:text-base',
+          trades: 'text-base',
           stats: 'text-xs lg:text-sm',
           weekend: 'text-sm lg:text-base',
           weekTitle: 'text-base lg:text-lg xl:text-xl',
@@ -1058,10 +1058,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                                 textSizes.trades,
                                 'text-muted-foreground text-center'
                               )}>
-                                {(spaceLevel as any) === 'ultra-compact' 
-                                  ? `${day.tradesCount}T`
-                                  : `${day.tradesCount} trade${day.tradesCount > 1 ? 's' : ''}`
-                                }
+                                {`${day.tradesCount}T`}
                               </div>
                             )}
                             
