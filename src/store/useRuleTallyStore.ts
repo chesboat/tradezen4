@@ -539,7 +539,16 @@ export const useRuleTallyStore = create<RuleTallyState>()(
           }
           
           if (startDate) {
+            console.log('🔍 LoadLogs: Before startDate filter', {
+              startDate,
+              totalLogs: filteredLogs.length,
+              hitMacrosLogs: filteredLogs.filter(l => l.ruleId === 'ekWS96zlKqFcdBr2YJu8').map(l => ({ date: l.date, comparison: l.date >= startDate }))
+            });
             filteredLogs = filteredLogs.filter(log => log.date >= startDate);
+            console.log('🔍 LoadLogs: After startDate filter', {
+              filteredCount: filteredLogs.length,
+              hitMacrosLogs: filteredLogs.filter(l => l.ruleId === 'ekWS96zlKqFcdBr2YJu8').map(l => l.date)
+            });
           }
           
           if (endDate) {
