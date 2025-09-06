@@ -527,6 +527,7 @@ export const useRuleTallyStore = create<RuleTallyState>()(
       },
 
       loadLogs: async (accountId, startDate, endDate) => {
+        console.log('🔍 LoadLogs: CALLED', { accountId, startDate, endDate, stackTrace: new Error().stack });
         set({ isLoading: true });
         try {
           const logs = await logsService.getAll();
