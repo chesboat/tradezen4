@@ -18,7 +18,7 @@ import {
 import { useRuleTallyStore } from '@/store/useRuleTallyStore';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
 import { Tooltip } from './ui/Tooltip';
-import { cn } from '@/lib/utils';
+import { cn, formatLocalDate } from '@/lib/utils';
 
 type ViewMode = 'week' | 'month';
 

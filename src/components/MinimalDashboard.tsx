@@ -29,7 +29,7 @@ import { FEATURE_XP_PRESTIGE } from '@/lib/xp/constants';
 import { useDailyReflectionStore } from '@/store/useDailyReflectionStore';
 import { useNavigationStore } from '@/store/useNavigationStore';
 import { formatCurrency } from '@/lib/localStorageUtils';
-import { cn, summarizeWinLossScratch } from '@/lib/utils';
+import { cn, summarizeWinLossScratch, formatLocalDate } from '@/lib/utils';
 import type { HabitCategory } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDisciplineUser, useTodayDay, useWeekDays } from '@/lib/disciplineHooks';
