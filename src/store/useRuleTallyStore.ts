@@ -222,10 +222,10 @@ export const useRuleTallyStore = create<RuleTallyState>()(
           if (rule) {
             const { addActivity } = useActivityLogStore.getState();
             const currentTallyCount = existingLog ? existingLog.tallyCount + 1 : 1;
-            
-            // Calculate streak for enhanced messaging
-            const streak = get().calculateStreak(ruleId);
 
+            // Calculate streak AFTER logs are updated
+            const streak = get().calculateStreak(ruleId);
+            
             // Compute XP using centralized rewards (base + streak bonus)
             const { XpRewards, awardXp, XpService } = await import('@/lib/xp/XpService');
             const baseXp = XpRewards.HABIT_COMPLETE;
@@ -298,11 +298,14 @@ export const useRuleTallyStore = create<RuleTallyState>()(
             }
           }
 
-          // Update streak
-          const streak = get().calculateStreak(ruleId);
-          set((state) => ({
-            streaks: new Map(state.streaks).set(ruleId, streak),
-          }));
+          // Update streak in the streaks map (use the already calculated streak from above)
+          if (rule) {
+            // The streak was already calculated above after logs were updated
+            const finalStreak = get().calculateStreak(ruleId);
+            set((state) => ({
+              streaks: new Map(state.streaks).set(ruleId, finalStreak),
+            }));
+          }
 
         } catch (error) {
           console.error('Failed to add tally:', error);
