@@ -346,147 +346,66 @@ export const useRuleTallyStore = create<RuleTallyState>()(
       calculateStreak: (ruleId) => {
         const { logs, rules } = get();
         const rule = rules.find(r => r.id === ruleId);
-        let ruleLogs = logs
-          .filter((log) => log.ruleId === ruleId)
-          // Sort by YYYY-MM-DD string lexicographically (safe and timezone-agnostic)
-          .sort((a, b) => b.date.localeCompare(a.date));
-
-        if (ruleLogs.length === 0) {
-          return {
-            ruleId,
-            currentStreak: 0,
-            longestStreak: 0,
-            lastTallyDate: null,
-          };
-        }
-
-        // Helper function to check if a date is a valid day for this habit
-        const isValidDay = (date: Date): boolean => {
-          if (!rule?.schedule?.days) return true; // Default to all days if no schedule
-          const dayOfWeek = date.getDay();
-          return rule.schedule.days.includes(dayOfWeek);
-        };
-
-        // Helper function to get the previous valid day
-        const getPreviousValidDay = (date: Date): Date => {
-          const prevDate = new Date(date);
-          do {
-            prevDate.setDate(prevDate.getDate() - 1);
-          } while (!isValidDay(prevDate));
-          return prevDate;
-        };
-
         const today = new Date();
-        // Normalize only non-YYYY-MM-DD values to local YYYY-MM-DD; leave valid strings untouched
-        for (let i = 0; i < ruleLogs.length; i++) {
-          const dVal = ruleLogs[i].date as unknown as string;
-          const isYmd = typeof dVal === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dVal);
-          if (!isYmd) {
-            const d = new Date(dVal);
-            ruleLogs[i] = { ...ruleLogs[i], date: formatLocalDate(d) } as typeof ruleLogs[number];
-          }
-        }
-        
-        // Debug logging removed - using original working logic
-        let currentStreak = 0;
-        let longestStreak = 0;
-        let tempStreak = 0;
-        
-        // Calculate current streak (use local date to avoid UTC off-by-one)
-        const todayStr = formatLocalDate(today);
-        
-        // Check if today is a valid day for this habit
-        const todayIsValid = isValidDay(today);
-        
-        // Start streak calculation (original working logic)
-        if (ruleLogs[0].date === todayStr && todayIsValid) {
-          // User has logged today and today is a valid day
-          currentStreak = 1;
-          let checkDate = getPreviousValidDay(today);
-          
-          for (let i = 1; i < ruleLogs.length; i++) {
-            const checkDateStr = formatLocalDate(checkDate);
-            
-            if (ruleLogs[i].date === checkDateStr) {
-              currentStreak++;
-              checkDate = getPreviousValidDay(checkDate);
-            } else {
-              // Check if there are any missed valid days between logs
-              const logDate = new Date(ruleLogs[i].date);
-              if (logDate < checkDate) {
-                // There's a gap, streak is broken
-                break;
-              }
-            }
-          }
-        } else if (!todayIsValid) {
-          // Today is not a valid day (e.g., weekend for trading habits)
-          // Check the most recent valid day
-          let mostRecentValidDay = getPreviousValidDay(today);
-          const mostRecentValidDayStr = formatLocalDate(mostRecentValidDay);
-          
-          if (ruleLogs[0].date === mostRecentValidDayStr) {
-            currentStreak = 1;
-            let checkDate = getPreviousValidDay(mostRecentValidDay);
-            
-            for (let i = 1; i < ruleLogs.length; i++) {
-              const checkDateStr = formatLocalDate(checkDate);
-              
-              if (ruleLogs[i].date === checkDateStr) {
-                currentStreak++;
-                checkDate = getPreviousValidDay(checkDate);
-              } else {
-                const logDate = new Date(ruleLogs[i].date);
-                if (logDate < checkDate) {
-                  break;
-                }
-              }
-            }
-          }
-        }
-        
-        // Calculate longest streak (considering only valid days)
-        tempStreak = 1;
-        for (let i = 1; i < ruleLogs.length; i++) {
-          const currentLogDate = new Date(ruleLogs[i - 1].date);
-          const nextLogDate = new Date(ruleLogs[i].date);
-          
-          // Find the expected previous valid day from current log
-          const expectedPrevDay = getPreviousValidDay(currentLogDate);
-          const expectedPrevDayStr = formatLocalDate(expectedPrevDay);
-          
-          if (ruleLogs[i].date === expectedPrevDayStr) {
-            tempStreak++;
-          } else {
-            longestStreak = Math.max(longestStreak, tempStreak);
-            tempStreak = 1;
-          }
-        }
-        longestStreak = Math.max(longestStreak, tempStreak);
 
-        const result = {
-          ruleId,
-          currentStreak,
-          longestStreak,
-          lastTallyDate: ruleLogs[0]?.date || null,
+        // Build a set of YYYY-MM-DD dates for this rule (timezone-agnostic)
+        const dateSet = new Set(
+          logs
+            .filter(l => l.ruleId === ruleId)
+            .map(l => typeof l.date === 'string' ? l.date : formatLocalDate(new Date(l.date as any)))
+        );
+
+        if (dateSet.size === 0) {
+          return { ruleId, currentStreak: 0, longestStreak: 0, lastTallyDate: null };
+        }
+
+        const isValidDay = (d: Date): boolean => {
+          const days = rule?.schedule?.days;
+          if (!days || days.length === 0) return true;
+          return days.includes(d.getDay());
         };
-        
-        // Debug logging for streak calculation
-        console.log('Streak calculation result:', {
-          ruleId,
-          ruleName: rule?.label || 'Unknown',
-          currentStreak,
-          longestStreak,
-          lastTallyDate: result.lastTallyDate,
-          totalLogs: ruleLogs.length,
-          todayStr,
-          todayIsValid,
-          firstLogDate: ruleLogs[0]?.date,
-          allLogDates: ruleLogs.map(log => log.date),
-          hasLogForToday: ruleLogs.some(log => log.date === todayStr)
-        });
-        
-        return result;
+        const prevValid = (d: Date): Date => {
+          const x = new Date(d);
+          do { x.setDate(x.getDate() - 1); } while (!isValidDay(x));
+          return x;
+        };
+
+        // Find anchor: latest valid day with a tally, on or before today
+        let anchor: Date | null = null;
+        let probe = new Date(today);
+        for (let i = 0; i < 90; i++) { // 90-day lookback window
+          if (isValidDay(probe) && dateSet.has(formatLocalDate(probe))) { anchor = new Date(probe); break; }
+          probe = prevValid(probe);
+        }
+
+        const latest = Array.from(dateSet).sort((a,b)=>b.localeCompare(a))[0] || null;
+        if (!anchor) {
+          return { ruleId, currentStreak: 0, longestStreak: 0, lastTallyDate: latest };
+        }
+
+        // Current streak: walk backwards through valid days while present in set
+        let currentStreak = 1;
+        let walk = prevValid(anchor);
+        while (dateSet.has(formatLocalDate(walk))) {
+          currentStreak++;
+          walk = prevValid(walk);
+        }
+
+        // Longest streak: approximate by scanning each logged day as a potential anchor
+        const sorted = Array.from(dateSet).sort((a,b)=>b.localeCompare(a));
+        let longestStreak = 0;
+        for (const ds of sorted) {
+          let s = 1;
+          let d = new Date(ds + 'T00:00:00');
+          let p = prevValid(d);
+          while (dateSet.has(formatLocalDate(p))) {
+            s++;
+            p = prevValid(p);
+          }
+          if (s > longestStreak) longestStreak = s;
+        }
+
+        return { ruleId, currentStreak, longestStreak, lastTallyDate: latest };
       },
 
       getStreakForRule: (ruleId) => {
