@@ -512,15 +512,18 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
   // Container-size-informed font sizes
   const computedDailyPnlFont: React.CSSProperties = useMemo(() => {
     if (!tileSize) return pnlFontStyle;
-    const factor = spaceLevel === 'ultra-compact' ? 0.22 : spaceLevel === 'compact' ? 0.24 : spaceLevel === 'normal' ? 0.26 : 0.28;
-    const px = Math.max(12, Math.min(30, tileSize * factor));
+    // Make text smaller when there is more space (collapsed sidebars), and larger when compact
+    const factor = spaceLevel === 'spacious' ? 0.22 : spaceLevel === 'normal' ? 0.24 : spaceLevel === 'compact' ? 0.26 : 0.28;
+    const maxPx = spaceLevel === 'spacious' ? 24 : spaceLevel === 'normal' ? 26 : 28;
+    const px = Math.max(12, Math.min(maxPx, tileSize * factor));
     return { ...pnlFontStyle, fontSize: `${px}px` };
   }, [tileSize, pnlFontStyle]);
 
   const computedWeeklyPnlFont: React.CSSProperties = useMemo(() => {
     if (!tileSize) return weeklyPnlFontStyle;
-    const factor = spaceLevel === 'ultra-compact' ? 0.24 : spaceLevel === 'compact' ? 0.26 : spaceLevel === 'normal' ? 0.28 : 0.3;
-    const px = Math.max(14, Math.min(32, tileSize * factor));
+    const factor = spaceLevel === 'spacious' ? 0.24 : spaceLevel === 'normal' ? 0.26 : spaceLevel === 'compact' ? 0.28 : 0.3;
+    const maxPx = spaceLevel === 'spacious' ? 26 : spaceLevel === 'normal' ? 28 : 32;
+    const px = Math.max(14, Math.min(maxPx, tileSize * factor));
     return { ...weeklyPnlFontStyle, fontSize: `${px}px` };
   }, [tileSize, weeklyPnlFontStyle]);
 
