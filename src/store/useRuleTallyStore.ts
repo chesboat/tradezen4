@@ -370,50 +370,47 @@ export const useRuleTallyStore = create<RuleTallyState>()(
         // Check if today is a valid day for this habit
         const todayIsValid = isValidDay(today);
         
-        // Start streak calculation
-        if (ruleLogs[0].date === todayStr && todayIsValid) {
-          // User has logged today and today is a valid day
-          currentStreak = 1;
-          let checkDate = getPreviousValidDay(today);
+        // Start streak calculation - count consecutive days from most recent log
+        // A streak continues as long as there are no missed valid days
+        currentStreak = 1; // Start with the most recent log
+        let checkDate = getPreviousValidDay(new Date(ruleLogs[0].date));
+        
+        for (let i = 1; i < ruleLogs.length; i++) {
+          const checkDateStr = formatLocalDate(checkDate);
           
-          for (let i = 1; i < ruleLogs.length; i++) {
-            const checkDateStr = formatLocalDate(checkDate);
-            
-            if (ruleLogs[i].date === checkDateStr) {
-              currentStreak++;
-              checkDate = getPreviousValidDay(checkDate);
-            } else {
-              // Check if there are any missed valid days between logs
-              const logDate = new Date(ruleLogs[i].date);
-              if (logDate < checkDate) {
-                // There's a gap, streak is broken
-                break;
-              }
+          if (ruleLogs[i].date === checkDateStr) {
+            currentStreak++;
+            checkDate = getPreviousValidDay(checkDate);
+          } else {
+            // Check if there are any missed valid days between logs
+            const logDate = new Date(ruleLogs[i].date);
+            if (logDate < checkDate) {
+              // There's a gap, streak is broken
+              break;
             }
           }
-        } else if (!todayIsValid) {
-          // Today is not a valid day (e.g., weekend for trading habits)
-          // Check the most recent valid day
-          let mostRecentValidDay = getPreviousValidDay(today);
-          const mostRecentValidDayStr = formatLocalDate(mostRecentValidDay);
+        }
+        
+        // If today is a valid day and we haven't logged today yet, 
+        // check if the streak is still active (no missed days)
+        if (todayIsValid && ruleLogs[0].date !== todayStr) {
+          // Check if we missed any valid days between the last log and today
+          const lastLogDate = new Date(ruleLogs[0].date);
+          const daysSinceLastLog = Math.floor((today.getTime() - lastLogDate.getTime()) / (24 * 60 * 60 * 1000));
           
-          if (ruleLogs[0].date === mostRecentValidDayStr) {
-            currentStreak = 1;
-            let checkDate = getPreviousValidDay(mostRecentValidDay);
-            
-            for (let i = 1; i < ruleLogs.length; i++) {
-              const checkDateStr = formatLocalDate(checkDate);
-              
-              if (ruleLogs[i].date === checkDateStr) {
-                currentStreak++;
-                checkDate = getPreviousValidDay(checkDate);
-              } else {
-                const logDate = new Date(ruleLogs[i].date);
-                if (logDate < checkDate) {
-                  break;
-                }
-              }
+          // Count how many valid days we should have had since the last log
+          let missedValidDays = 0;
+          for (let d = 1; d <= daysSinceLastLog; d++) {
+            const checkDay = new Date(lastLogDate);
+            checkDay.setDate(lastLogDate.getDate() + d);
+            if (isValidDay(checkDay)) {
+              missedValidDays++;
             }
+          }
+          
+          // If we missed more than 1 valid day (today doesn't count as missed yet), streak is broken
+          if (missedValidDays > 1) {
+            currentStreak = 0;
           }
         }
         
