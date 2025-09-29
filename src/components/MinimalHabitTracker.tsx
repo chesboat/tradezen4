@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { useRuleTallyStore } from '@/store/useRuleTallyStore';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
-import { cn, formatLocalDate } from '@/lib/utils';
+import { cn, formatLocalDate, parseLocalDateString } from '@/lib/utils';
 import type { HabitCategory } from '@/types';
 
 type ViewMode = 'week' | 'month';
@@ -727,7 +727,7 @@ const HabitRuleCard: React.FC<HabitRuleCardProps> = ({
                 setSelectedDate(todayStr);
               }}
             >
-              {isToday ? 'Today' : new Date(selectedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              {isToday ? 'Today' : parseLocalDateString(selectedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
             </div>
             <TallyButton 
               onTally={handleTally} 
@@ -824,9 +824,9 @@ const HabitRuleCard: React.FC<HabitRuleCardProps> = ({
                   onClick={(e) => {
                     e.stopPropagation();
                     const todayISO = todayStr;
-                    if (new Date(d.date) > new Date(todayISO)) return;
+                    if (parseLocalDateString(d.date) > parseLocalDateString(todayISO)) return;
                     if (rule.schedule?.days && rule.schedule.days.length > 0) {
-                      const dow = new Date(d.date).getDay();
+                      const dow = parseLocalDateString(d.date).getDay();
                       if (!rule.schedule.days.includes(dow)) return;
                     }
                     setSelectedDate(d.date);

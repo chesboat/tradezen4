@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { FirestoreService } from '@/lib/firestore';
-import { formatLocalDate } from '@/lib/utils';
+import { formatLocalDate, parseLocalDateString } from '@/lib/utils';
 import { useActivityLogStore } from './useActivityLogStore';
 import type { TallyRule, TallyLog, TallyStreak } from '@/types';
 
@@ -163,13 +163,14 @@ export const useRuleTallyStore = create<RuleTallyState>()(
         }
 
         // Guard: future dates not allowed
-        if (new Date(targetDate) > new Date(today)) {
+        // Compare using local-midnight dates to avoid timezone-related off-by-one
+        if (parseLocalDateString(targetDate) > parseLocalDateString(today)) {
           throw new Error('Cannot add tally for a future date');
         }
 
         // Guard: respect habit schedule (if provided)
         if (rule.schedule?.days && rule.schedule.days.length > 0) {
-          const dayOfWeek = new Date(targetDate).getDay();
+          const dayOfWeek = parseLocalDateString(targetDate).getDay();
           if (!rule.schedule.days.includes(dayOfWeek)) {
             throw new Error('Selected date is not in habit schedule');
           }

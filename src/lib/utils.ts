@@ -153,6 +153,19 @@ export function formatLocalDate(date: Date = new Date()): string {
   return `${year}-${month}-${day}`;
 }
 
+/**
+ * Parse a YYYY-MM-DD string into a Date using local time (avoids timezone shifts)
+ * Returns a Date at local midnight for the provided date string.
+ */
+export function parseLocalDateString(dateStr: string): Date {
+  const [y, m, d] = dateStr.split('-').map((v) => Number(v));
+  // Fallbacks to ensure we construct a valid date even if parts are missing
+  const year = Number.isFinite(y) ? y : new Date().getFullYear();
+  const monthIdx = Number.isFinite(m) ? m - 1 : 0; // JS months are 0-based
+  const day = Number.isFinite(d) ? d : 1;
+  return new Date(year, monthIdx, day);
+}
+
 // --- Trading metrics helpers (win/loss classification) ---
 import type { Trade, TradeResult } from '@/types';
 
