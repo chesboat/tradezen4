@@ -32,6 +32,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
   weeklyData
 }) => {
   const canvasRef = useRef<HTMLDivElement>(null);
+  const captureRef = useRef<HTMLDivElement>(null); // offscreen, fixed-size capture target
   const [isGenerating, setIsGenerating] = useState(false);
   const { theme } = useTheme();
 
@@ -74,19 +75,32 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
     );
   };
 
+  const getCaptureTarget = (): HTMLDivElement | null => {
+    // Prefer the fixed-size offscreen capture for consistent output across devices
+    return captureRef.current || canvasRef.current;
+  };
+
+  const html2canvasOpts = {
+    background: 'transparent',
+    useCORS: true,
+    allowTaint: true,
+    // Force a desktop-like viewport for consistent rendering
+    windowWidth: 1200,
+    windowHeight: 1000,
+    width: 1200,
+    height: 1000,
+    scale: Math.min(2, (typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1) * 1.25),
+  } as any;
+
   const handleDownload = async () => {
-    if (!canvasRef.current) return;
+    const target = getCaptureTarget();
+    if (!target) return;
     
     setIsGenerating(true);
     try {
       // Dynamic import for html2canvas
       const html2canvas = (await import('html2canvas')).default;
-      
-      const canvas = await html2canvas(canvasRef.current, {
-        background: 'transparent',
-        useCORS: true,
-        allowTaint: true,
-      } as any);
+      const canvas = await html2canvas(target, html2canvasOpts);
 
       // Create download link
       const link = document.createElement('a');
@@ -104,17 +118,13 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
   };
 
   const handleCopyImage = async () => {
-    if (!canvasRef.current) return;
+    const target = getCaptureTarget();
+    if (!target) return;
     
     setIsGenerating(true);
     try {
       const html2canvas = (await import('html2canvas')).default;
-      
-      const canvas = await html2canvas(canvasRef.current, {
-        background: 'transparent',
-        useCORS: true,
-        allowTaint: true,
-      } as any);
+      const canvas = await html2canvas(target, html2canvasOpts);
 
       canvas.toBlob(async (blob) => {
         if (blob && navigator.clipboard && window.ClipboardItem) {
@@ -139,17 +149,13 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
   };
 
   const handleShareToX = async () => {
-    if (!canvasRef.current) return;
+    const target = getCaptureTarget();
+    if (!target) return;
     
     setIsGenerating(true);
     try {
       const html2canvas = (await import('html2canvas')).default;
-      
-      const canvas = await html2canvas(canvasRef.current, {
-        background: 'transparent',
-        useCORS: true,
-        allowTaint: true,
-      } as any);
+      const canvas = await html2canvas(target, html2canvasOpts);
 
       // Check clipboard support and try multiple methods
       const hasClipboardSupport =
@@ -222,17 +228,13 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
   };
 
   const handleShareToInstagram = async () => {
-    if (!canvasRef.current) return;
+    const target = getCaptureTarget();
+    if (!target) return;
     
     setIsGenerating(true);
     try {
       const html2canvas = (await import('html2canvas')).default;
-      
-      const canvas = await html2canvas(canvasRef.current, {
-        background: 'transparent',
-        useCORS: true,
-        allowTaint: true,
-      } as any);
+      const canvas = await html2canvas(target, html2canvasOpts);
 
       // Download the image
       const link = document.createElement('a');
@@ -501,6 +503,97 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
                     </div>
                   </div>
                 </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Offscreen, fixed-size capture target for consistent desktop framing on all devices */}
+            <div
+              ref={captureRef}
+              className="fixed -left-[10000px] top-0 bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 rounded-2xl"
+              style={{ width: 1200, height: 1000, padding: 48 }}
+            >
+              <div className="w-full h-full flex items-center justify-center">
+                <div className={`${theme}`} style={{ width: 1000 }}>
+                  <div className="bg-background rounded-xl pt-4 pb-6 px-6 border relative" 
+                    style={{ 
+                      boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15), 0 10px 20px rgba(0, 0, 0, 0.1), 0 5px 10px rgba(0, 0, 0, 0.05)'
+                    }}>
+                    {/* Header */}
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
+                          <div className="p-2 rounded-lg text-muted-foreground">
+                            <ChevronLeft className="w-5 h-5" />
+                          </div>
+                          <h1 className="text-2xl font-bold text-foreground">{currentMonth} {currentYear}</h1>
+                          <div className="p-2 rounded-lg text-muted-foreground">
+                            <ChevronRight className="w-5 h-5" />
+                          </div>
+                        </div>
+                        <div className="px-4 py-2 bg-primary/10 text-primary rounded-lg">TODAY</div>
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Monthly stats: <span className="font-semibold text-green-500">{formatCurrency(monthlyPnL)}</span>
+                      </div>
+                    </div>
+
+                    {/* Grid */}
+                    <div className="space-y-1">
+                      <div className="grid grid-cols-8 gap-1">
+                        {DAYS_OF_WEEK.map((day) => (
+                          <div key={`h-${day}`} className="text-center font-semibold text-muted-foreground py-2">{day}</div>
+                        ))}
+                        <div className="text-center font-semibold text-muted-foreground py-2">Week</div>
+                      </div>
+
+                      {calendarData.weeks.map((week: any, weekIndex: number) => (
+                        <div key={`w-${weekIndex}`} className="grid grid-cols-8 gap-1">
+                          {week.map((day: any, dayIndex: number) => {
+                            const isWeekend = day.date.getDay() === 0 || day.date.getDay() === 6;
+                            return (
+                              <div key={`d-${weekIndex}-${dayIndex}`} className={`${getDayClassName(day)} aspect-[7/6] w-full`}>
+                                <div className="flex flex-col h-full space-y-1">
+                                  <div className="flex items-center justify-between">
+                                    <span className={cn('text-sm font-medium', day.isOtherMonth ? 'text-muted-foreground' : 'text-foreground')}>{day.date.getDate()}</span>
+                                    <div className="flex items-center gap-1">
+                                      {day.hasNews && <CalendarIcon className="w-3 h-3 text-primary" />}
+                                      {day.hasReflection && <BookOpen className="w-3 h-3 text-green-500" />}
+                                    </div>
+                                  </div>
+                                  {isWeekend ? (
+                                    <div className="flex flex-col items-center justify-center flex-1 text-center space-y-0.5">
+                                      <div className="text-xs text-muted-foreground/70">Weekend</div>
+                                    </div>
+                                  ) : (
+                                    <>
+                                      {formatPnL(day.pnl)}
+                                      {day.tradesCount > 0 && (
+                                        <div className="text-xs text-muted-foreground">{day.tradesCount} trade{day.tradesCount > 1 ? 's' : ''}</div>
+                                      )}
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+
+                          <div className={cn('relative p-3 rounded-xl border border-border/50 bg-card aspect-[7/6] w-full',
+                              weeklyData[weekIndex]?.totalPnl > 0 && 'border-green-500/30 bg-green-50/10',
+                              weeklyData[weekIndex]?.totalPnl < 0 && 'border-red-500/30 bg-red-50/10')}
+                          >
+                            <div className="flex flex-col items-center justify-center h-full text-center space-y-1">
+                              <div className="text-xs font-medium text-muted-foreground">Week {weeklyData[weekIndex]?.weekNumber}</div>
+                              <div className={cn('text-sm font-bold', weeklyData[weekIndex]?.totalPnl > 0 ? 'text-green-500' : weeklyData[weekIndex]?.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground')}>
+                                {formatCurrency(weeklyData[weekIndex]?.totalPnl || 0)}
+                              </div>
+                              <div className="text-xs text-muted-foreground">{weeklyData[weekIndex]?.activeDays || 0} days</div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
