@@ -512,23 +512,13 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
   // Container-size-informed font sizes
   const computedDailyPnlFont: React.CSSProperties = useMemo(() => {
     if (!tileSize) return pnlFontStyle;
-    // Base factors tuned for collapsed sidebars (less aggressive)
-    let factor = spaceLevel === 'spacious' ? 0.21 : spaceLevel === 'normal' ? 0.23 : spaceLevel === 'compact' ? 0.25 : 0.27;
-    let maxPx = spaceLevel === 'spacious' ? 32 : spaceLevel === 'normal' ? 30 : spaceLevel === 'compact' ? 28 : 26;
-    let minPx = 12;
-    // When activity log is expanded, bias upward so tiles feel fuller even if width didn't shrink much
-    if (activityLogExpanded) {
-      factor *= 1.35; // stronger boost
-      maxPx += 12;    // allow a higher cap when expanded
-      minPx = 18;     // ensure it never feels tiny when expanded
-    } else {
-      // Slightly tone down when collapsed so it doesn't feel oversized
-      factor *= 0.95;
-    }
-    const raw = tileSize * factor + (activityLogExpanded ? 4 : -1);
-    const px = Math.max(minPx, Math.min(maxPx, raw));
+    // Scale strictly by tile width; smaller factors and conservative caps to avoid oversizing
+    const factor = spaceLevel === 'spacious' ? 0.20 : spaceLevel === 'normal' ? 0.19 : spaceLevel === 'compact' ? 0.18 : 0.17;
+    const maxPx = spaceLevel === 'spacious' ? 30 : spaceLevel === 'normal' ? 28 : spaceLevel === 'compact' ? 26 : 24;
+    const minPx = 12;
+    const px = Math.max(minPx, Math.min(maxPx, tileSize * factor));
     return { ...pnlFontStyle, fontSize: `${px}px` };
-  }, [tileSize, pnlFontStyle, activityLogExpanded, spaceLevel]);
+  }, [tileSize, pnlFontStyle, spaceLevel]);
 
   const computedWeeklyPnlFont: React.CSSProperties = useMemo(() => {
     if (!tileSize) return weeklyPnlFontStyle;
@@ -541,37 +531,21 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
   // Additional size helpers for trades count and stats to better utilize tile space on desktop
   const computedTradesFont: React.CSSProperties = useMemo(() => {
     if (!tileSize) return {};
-    let factor = spaceLevel === 'spacious' ? 0.15 : spaceLevel === 'normal' ? 0.165 : spaceLevel === 'compact' ? 0.175 : 0.175;
-    let maxPx = spaceLevel === 'spacious' ? 20 : spaceLevel === 'normal' ? 19 : 18;
-    let minPx = 11;
-    if (activityLogExpanded) {
-      factor *= 1.35;
-      maxPx += 6;
-      minPx = 14;
-    } else {
-      factor *= 0.95;
-    }
-    const raw = tileSize * factor + (activityLogExpanded ? 2 : -0.5);
-    const px = Math.max(minPx, Math.min(maxPx, raw));
+    const factor = spaceLevel === 'spacious' ? 0.14 : spaceLevel === 'normal' ? 0.145 : spaceLevel === 'compact' ? 0.155 : 0.16;
+    const maxPx = spaceLevel === 'spacious' ? 18 : spaceLevel === 'normal' ? 17 : spaceLevel === 'compact' ? 16 : 16;
+    const minPx = 11;
+    const px = Math.max(minPx, Math.min(maxPx, tileSize * factor));
     return { fontSize: `${px}px`, lineHeight: 1.05 };
-  }, [tileSize, spaceLevel, activityLogExpanded]);
+  }, [tileSize, spaceLevel]);
 
   const computedStatsFont: React.CSSProperties = useMemo(() => {
     if (!tileSize) return {};
-    let factor = spaceLevel === 'spacious' ? 0.135 : spaceLevel === 'normal' ? 0.145 : spaceLevel === 'compact' ? 0.155 : 0.155;
-    let maxPx = spaceLevel === 'spacious' ? 18 : spaceLevel === 'normal' ? 17 : 16;
-    let minPx = 10;
-    if (activityLogExpanded) {
-      factor *= 1.35; // stronger boost
-      maxPx += 5;
-      minPx = 13;
-    } else {
-      factor *= 0.95;
-    }
-    const raw = tileSize * factor + (activityLogExpanded ? 1.5 : -0.5);
-    const px = Math.max(minPx, Math.min(maxPx, raw));
+    const factor = spaceLevel === 'spacious' ? 0.12 : spaceLevel === 'normal' ? 0.13 : spaceLevel === 'compact' ? 0.14 : 0.14;
+    const maxPx = spaceLevel === 'spacious' ? 16 : spaceLevel === 'normal' ? 15 : 14;
+    const minPx = 10;
+    const px = Math.max(minPx, Math.min(maxPx, tileSize * factor));
     return { fontSize: `${px}px`, lineHeight: 1.05 };
-  }, [tileSize, spaceLevel, activityLogExpanded]);
+  }, [tileSize, spaceLevel]);
 
   // Helper function to generate tooltip content for compact day tiles
   const getDayTooltipContent = (day: CalendarDay) => {
