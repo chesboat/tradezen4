@@ -512,12 +512,17 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
   // Container-size-informed font sizes
   const computedDailyPnlFont: React.CSSProperties = useMemo(() => {
     if (!tileSize) return pnlFontStyle;
-    // Scale with container size; allow larger caps to better fill space on wide tiles
-    const factor = spaceLevel === 'spacious' ? 0.26 : spaceLevel === 'normal' ? 0.28 : spaceLevel === 'compact' ? 0.30 : 0.32;
-    const maxPx = spaceLevel === 'spacious' ? 42 : spaceLevel === 'normal' ? 40 : spaceLevel === 'compact' ? 36 : 32;
+    // Base factors tuned for collapsed sidebars (less aggressive)
+    let factor = spaceLevel === 'spacious' ? 0.22 : spaceLevel === 'normal' ? 0.24 : spaceLevel === 'compact' ? 0.26 : 0.28;
+    let maxPx = spaceLevel === 'spacious' ? 34 : spaceLevel === 'normal' ? 32 : spaceLevel === 'compact' ? 30 : 28;
+    // When activity log is expanded, bias upward so tiles feel fuller even if width didn't shrink much
+    if (activityLogExpanded) {
+      factor *= 1.15; // +15%
+      maxPx += 6;     // allow a higher cap when expanded
+    }
     const px = Math.max(12, Math.min(maxPx, tileSize * factor));
     return { ...pnlFontStyle, fontSize: `${px}px` };
-  }, [tileSize, pnlFontStyle]);
+  }, [tileSize, pnlFontStyle, activityLogExpanded, spaceLevel]);
 
   const computedWeeklyPnlFont: React.CSSProperties = useMemo(() => {
     if (!tileSize) return weeklyPnlFontStyle;
@@ -530,21 +535,27 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
   // Additional size helpers for trades count and stats to better utilize tile space on desktop
   const computedTradesFont: React.CSSProperties = useMemo(() => {
     if (!tileSize) return {};
-    // Increase caps so count can scale up on roomy tiles
-    const factor = spaceLevel === 'spacious' ? 0.18 : spaceLevel === 'normal' ? 0.19 : spaceLevel === 'compact' ? 0.20 : 0.20;
-    const maxPx = spaceLevel === 'spacious' ? 24 : spaceLevel === 'normal' ? 22 : 20;
+    let factor = spaceLevel === 'spacious' ? 0.16 : spaceLevel === 'normal' ? 0.17 : spaceLevel === 'compact' ? 0.18 : 0.18;
+    let maxPx = spaceLevel === 'spacious' ? 20 : spaceLevel === 'normal' ? 19 : 18;
+    if (activityLogExpanded) {
+      factor *= 1.18; // +18%
+      maxPx += 3;
+    }
     const px = Math.max(11, Math.min(maxPx, tileSize * factor));
     return { fontSize: `${px}px`, lineHeight: 1.05 };
-  }, [tileSize, spaceLevel]);
+  }, [tileSize, spaceLevel, activityLogExpanded]);
 
   const computedStatsFont: React.CSSProperties = useMemo(() => {
     if (!tileSize) return {};
-    // Keep stats slightly smaller than trades; raise caps for wide tiles
-    const factor = spaceLevel === 'spacious' ? 0.17 : spaceLevel === 'normal' ? 0.18 : spaceLevel === 'compact' ? 0.19 : 0.19;
-    const maxPx = spaceLevel === 'spacious' ? 22 : spaceLevel === 'normal' ? 20 : 18;
+    let factor = spaceLevel === 'spacious' ? 0.145 : spaceLevel === 'normal' ? 0.155 : spaceLevel === 'compact' ? 0.165 : 0.165;
+    let maxPx = spaceLevel === 'spacious' ? 18 : spaceLevel === 'normal' ? 17 : 16;
+    if (activityLogExpanded) {
+      factor *= 1.2; // +20%
+      maxPx += 3;
+    }
     const px = Math.max(10, Math.min(maxPx, tileSize * factor));
     return { fontSize: `${px}px`, lineHeight: 1.05 };
-  }, [tileSize, spaceLevel]);
+  }, [tileSize, spaceLevel, activityLogExpanded]);
 
   // Helper function to generate tooltip content for compact day tiles
   const getDayTooltipContent = (day: CalendarDay) => {
