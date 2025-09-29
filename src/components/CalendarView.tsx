@@ -1081,7 +1081,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                             position="top"
                             fullWidth
                           >
-                            <div className="flex flex-col items-center justify-center flex-1 space-y-0.5 pb-0.5">
+                            <div className="flex flex-col items-center justify-center flex-1 space-y-0.5">
                               {day.pnl !== 0 && (
                                 <div className={cn(
                                   textSizes.pnl,
@@ -1099,10 +1099,15 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                                   {day.tradesCount}T
                                 </div>
                               )}
+                              {day.tradesCount > 0 && (
+                                <div className={cn(textSizes.stats, 'text-muted-foreground leading-tight text-center')} style={computedStatsFont}>
+                                  {day.avgRR.toFixed(1)}:1R, {day.winRate.toFixed(0)}%
+                                </div>
+                              )}
                             </div>
                           </Tooltip>
                         ) : (
-                          <div className="flex-1 flex flex-col items-center justify-center space-y-0.5 pb-0.5">
+                          <div className="flex-1 flex flex-col items-center justify-center space-y-0.5">
                             {/* P&L - Space-aware sizing */}
                             {day.pnl !== 0 && (
                               <div className={cn(
@@ -1131,7 +1136,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                             )}
                             
                             {/* Metrics - Space-aware display */}
-                            {day.tradesCount > 0 && (spaceLevel as any) !== 'ultra-compact' && (
+                            {day.tradesCount > 0 && (
                               <div className={cn(textSizes.stats, 'text-muted-foreground text-center leading-tight')} style={computedStatsFont}>
                                 {day.avgRR.toFixed(1)}:1R, {day.winRate.toFixed(0)}%
                               </div>
