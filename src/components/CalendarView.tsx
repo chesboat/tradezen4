@@ -547,6 +547,35 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
     return { fontSize: `${px}px`, lineHeight: 1.05 };
   }, [tileSize, spaceLevel]);
 
+  // Compute per-tile P&L font-size that fits the actual text within the tile width
+  const getPnlFontStyle = useCallback((pnl: number): React.CSSProperties => {
+    if (!tileSize) return computedDailyPnlFont;
+    // Derive the exact text that will be shown for width estimation
+    const pnlText = (['ultra-compact', 'compact'] as const).includes(spaceLevel as any)
+      ? (Math.abs(pnl) >= 1000
+          ? `${pnl > 0 ? '+' : ''}${(pnl / 1000).toFixed(1)}k`
+          : `${pnl > 0 ? '+' : ''}${Math.round(pnl)}`)
+      : formatCurrency(pnl);
+
+    // Start from proportional base
+    const baseFactor = spaceLevel === 'spacious' ? 0.28 : spaceLevel === 'normal' ? 0.24 : spaceLevel === 'compact' ? 0.21 : 0.19;
+    const baseCap = spaceLevel === 'spacious' ? 56 : spaceLevel === 'normal' ? 48 : spaceLevel === 'compact' ? 40 : 34;
+    const minPx = 12;
+    const basePx = Math.max(minPx, Math.min(baseCap, tileSize * baseFactor));
+
+    // Estimate available inner width (account for padding and icons)
+    const horizontalPadding = spaceLevel === 'spacious' ? 16 : spaceLevel === 'normal' ? 14 : spaceLevel === 'compact' ? 12 : 10; // px per side approx
+    const availableWidth = Math.max(40, tileSize - horizontalPadding * 2);
+
+    // Estimate text width: average glyph width multiplier for our font
+    const avgGlyphWidth = 0.58; // conservative for bold numbers including commas/decimals
+    const charCount = Math.max(1, pnlText.length);
+    const fitPx = Math.floor(availableWidth / (avgGlyphWidth * charCount));
+
+    const finalPx = Math.max(minPx, Math.min(baseCap, Math.min(basePx, fitPx)));
+    return { fontSize: `${finalPx}px`, lineHeight: 1 } as React.CSSProperties;
+  }, [tileSize, spaceLevel, computedDailyPnlFont]);
+
   // Helper function to generate tooltip content for compact day tiles
   const getDayTooltipContent = (day: CalendarDay) => {
     const parts: string[] = [];
@@ -1058,7 +1087,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                                   textSizes.pnl,
                                   'font-bold truncate',
                                   day.pnl > 0 ? 'text-green-500' : 'text-red-500'
-                                )} style={computedDailyPnlFont}>
+                                )} style={getPnlFontStyle(day.pnl)}>
                                   {Math.abs(day.pnl) >= 1000 
                                     ? `${day.pnl > 0 ? '+' : ''}${(day.pnl / 1000).toFixed(1)}k`
                                     : formatCurrency(day.pnl)
@@ -1081,7 +1110,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                                 'font-bold truncate leading-tight',
                                 'flex items-center justify-center',
                                 day.pnl > 0 ? 'text-green-500' : 'text-red-500'
-                              )} style={computedDailyPnlFont}>
+                              )} style={getPnlFontStyle(day.pnl)}>
                                 {(['ultra-compact', 'compact'] as const).includes(spaceLevel as any)
                                   ? (Math.abs(day.pnl) >= 1000 
                                       ? `${day.pnl > 0 ? '+' : ''}${(day.pnl/1000).toFixed(1)}k`
