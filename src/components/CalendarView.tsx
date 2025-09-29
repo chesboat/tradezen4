@@ -1100,7 +1100,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                                 </div>
                               )}
                               {day.tradesCount > 0 && (
-                                <div className={cn(textSizes.stats, 'text-muted-foreground leading-tight text-center')} style={computedStatsFont}>
+                                <div className={cn(textSizes.stats, 'hidden sm:block text-muted-foreground leading-tight text-center')} style={computedStatsFont}>
                                   {day.avgRR.toFixed(1)}:1R, {day.winRate.toFixed(0)}%
                                 </div>
                               )}
@@ -1137,7 +1137,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                             
                             {/* Metrics - Space-aware display */}
                             {day.tradesCount > 0 && (
-                              <div className={cn(textSizes.stats, 'text-muted-foreground text-center leading-tight')} style={computedStatsFont}>
+                              <div className={cn(textSizes.stats, 'hidden sm:block text-muted-foreground text-center leading-tight')} style={computedStatsFont}>
                                 {day.avgRR.toFixed(1)}:1R, {day.winRate.toFixed(0)}%
                               </div>
                             )}
