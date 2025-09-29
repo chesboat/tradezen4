@@ -1102,7 +1102,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                             </div>
                           </Tooltip>
                         ) : (
-                          <>
+                          <div className="flex-1 flex flex-col items-center justify-center space-y-0.5 pb-0.5">
                             {/* P&L - Space-aware sizing */}
                             {day.pnl !== 0 && (
                               <div className={cn(
@@ -1136,7 +1136,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                                 {day.avgRR.toFixed(1)}:1R, {day.winRate.toFixed(0)}%
                               </div>
                             )}
-                          </>
+                          </div>
                         )}
                       </>
                     )}
