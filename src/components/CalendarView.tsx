@@ -527,6 +527,25 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
     return { ...weeklyPnlFontStyle, fontSize: `${px}px` };
   }, [tileSize, weeklyPnlFontStyle]);
 
+  // Additional size helpers for trades count and stats to better utilize tile space on desktop
+  const computedTradesFont: React.CSSProperties = useMemo(() => {
+    if (!tileSize) return {};
+    // Slightly larger when there is more space to reduce perceived blank space
+    const factor = spaceLevel === 'spacious' ? 0.16 : spaceLevel === 'normal' ? 0.17 : spaceLevel === 'compact' ? 0.18 : 0.18;
+    const maxPx = spaceLevel === 'spacious' ? 20 : spaceLevel === 'normal' ? 18 : 16;
+    const px = Math.max(11, Math.min(maxPx, tileSize * factor));
+    return { fontSize: `${px}px`, lineHeight: 1.05 };
+  }, [tileSize, spaceLevel]);
+
+  const computedStatsFont: React.CSSProperties = useMemo(() => {
+    if (!tileSize) return {};
+    // Keep stats slightly smaller than trades to maintain hierarchy
+    const factor = spaceLevel === 'spacious' ? 0.14 : spaceLevel === 'normal' ? 0.15 : spaceLevel === 'compact' ? 0.16 : 0.16;
+    const maxPx = spaceLevel === 'spacious' ? 18 : spaceLevel === 'normal' ? 16 : 14;
+    const px = Math.max(10, Math.min(maxPx, tileSize * factor));
+    return { fontSize: `${px}px`, lineHeight: 1.05 };
+  }, [tileSize, spaceLevel]);
+
   // Helper function to generate tooltip content for compact day tiles
   const getDayTooltipContent = (day: CalendarDay) => {
     const parts: string[] = [];
@@ -984,7 +1003,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                   layout
                   data-day-tile
                 >
-                  <div className="flex flex-col h-full space-y-1">
+                  <div className="flex flex-col h-full space-y-0.5 md:space-y-1">
                     {/* Date */}
                     <div className="flex items-center justify-between">
                       <span className={cn(
@@ -1058,7 +1077,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                             {day.pnl !== 0 && (
                               <div className={cn(
                                 textSizes.pnl,
-                                'font-bold truncate',
+                                'font-bold truncate leading-tight',
                                 'flex items-center justify-center',
                                 day.pnl > 0 ? 'text-green-500' : 'text-red-500'
                               )} style={computedDailyPnlFont}>
@@ -1075,15 +1094,15 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                             {day.tradesCount > 0 && (
                               <div className={cn(
                                 textSizes.trades,
-                                'text-muted-foreground text-center'
-                              )}>
+                                'text-muted-foreground text-center leading-tight'
+                              )} style={computedTradesFont}>
                                 {`${day.tradesCount}T`}
                               </div>
                             )}
                             
                             {/* Metrics - Space-aware display */}
                             {day.tradesCount > 0 && (spaceLevel as any) !== 'ultra-compact' && (
-                              <div className={cn(textSizes.stats, 'text-muted-foreground text-center')}>
+                              <div className={cn(textSizes.stats, 'text-muted-foreground text-center leading-tight')} style={computedStatsFont}>
                                 {day.avgRR.toFixed(1)}:1R, {day.winRate.toFixed(0)}%
                               </div>
                             )}
