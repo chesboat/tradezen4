@@ -513,14 +513,20 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
   const computedDailyPnlFont: React.CSSProperties = useMemo(() => {
     if (!tileSize) return pnlFontStyle;
     // Base factors tuned for collapsed sidebars (less aggressive)
-    let factor = spaceLevel === 'spacious' ? 0.22 : spaceLevel === 'normal' ? 0.24 : spaceLevel === 'compact' ? 0.26 : 0.28;
-    let maxPx = spaceLevel === 'spacious' ? 34 : spaceLevel === 'normal' ? 32 : spaceLevel === 'compact' ? 30 : 28;
+    let factor = spaceLevel === 'spacious' ? 0.21 : spaceLevel === 'normal' ? 0.23 : spaceLevel === 'compact' ? 0.25 : 0.27;
+    let maxPx = spaceLevel === 'spacious' ? 32 : spaceLevel === 'normal' ? 30 : spaceLevel === 'compact' ? 28 : 26;
+    let minPx = 12;
     // When activity log is expanded, bias upward so tiles feel fuller even if width didn't shrink much
     if (activityLogExpanded) {
-      factor *= 1.15; // +15%
-      maxPx += 6;     // allow a higher cap when expanded
+      factor *= 1.35; // stronger boost
+      maxPx += 12;    // allow a higher cap when expanded
+      minPx = 18;     // ensure it never feels tiny when expanded
+    } else {
+      // Slightly tone down when collapsed so it doesn't feel oversized
+      factor *= 0.95;
     }
-    const px = Math.max(12, Math.min(maxPx, tileSize * factor));
+    const raw = tileSize * factor + (activityLogExpanded ? 4 : -1);
+    const px = Math.max(minPx, Math.min(maxPx, raw));
     return { ...pnlFontStyle, fontSize: `${px}px` };
   }, [tileSize, pnlFontStyle, activityLogExpanded, spaceLevel]);
 
@@ -535,25 +541,35 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
   // Additional size helpers for trades count and stats to better utilize tile space on desktop
   const computedTradesFont: React.CSSProperties = useMemo(() => {
     if (!tileSize) return {};
-    let factor = spaceLevel === 'spacious' ? 0.16 : spaceLevel === 'normal' ? 0.17 : spaceLevel === 'compact' ? 0.18 : 0.18;
+    let factor = spaceLevel === 'spacious' ? 0.15 : spaceLevel === 'normal' ? 0.165 : spaceLevel === 'compact' ? 0.175 : 0.175;
     let maxPx = spaceLevel === 'spacious' ? 20 : spaceLevel === 'normal' ? 19 : 18;
+    let minPx = 11;
     if (activityLogExpanded) {
-      factor *= 1.18; // +18%
-      maxPx += 3;
+      factor *= 1.35;
+      maxPx += 6;
+      minPx = 14;
+    } else {
+      factor *= 0.95;
     }
-    const px = Math.max(11, Math.min(maxPx, tileSize * factor));
+    const raw = tileSize * factor + (activityLogExpanded ? 2 : -0.5);
+    const px = Math.max(minPx, Math.min(maxPx, raw));
     return { fontSize: `${px}px`, lineHeight: 1.05 };
   }, [tileSize, spaceLevel, activityLogExpanded]);
 
   const computedStatsFont: React.CSSProperties = useMemo(() => {
     if (!tileSize) return {};
-    let factor = spaceLevel === 'spacious' ? 0.145 : spaceLevel === 'normal' ? 0.155 : spaceLevel === 'compact' ? 0.165 : 0.165;
+    let factor = spaceLevel === 'spacious' ? 0.135 : spaceLevel === 'normal' ? 0.145 : spaceLevel === 'compact' ? 0.155 : 0.155;
     let maxPx = spaceLevel === 'spacious' ? 18 : spaceLevel === 'normal' ? 17 : 16;
+    let minPx = 10;
     if (activityLogExpanded) {
-      factor *= 1.2; // +20%
-      maxPx += 3;
+      factor *= 1.35; // stronger boost
+      maxPx += 5;
+      minPx = 13;
+    } else {
+      factor *= 0.95;
     }
-    const px = Math.max(10, Math.min(maxPx, tileSize * factor));
+    const raw = tileSize * factor + (activityLogExpanded ? 1.5 : -0.5);
+    const px = Math.max(minPx, Math.min(maxPx, raw));
     return { fontSize: `${px}px`, lineHeight: 1.05 };
   }, [tileSize, spaceLevel, activityLogExpanded]);
 
