@@ -512,11 +512,11 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
   // Container-size-informed font sizes
   const computedDailyPnlFont: React.CSSProperties = useMemo(() => {
     if (!tileSize) return pnlFontStyle;
-    // Scale strictly by tile width; smaller factors and conservative caps to avoid oversizing
-    const factor = spaceLevel === 'spacious' ? 0.20 : spaceLevel === 'normal' ? 0.19 : spaceLevel === 'compact' ? 0.18 : 0.17;
-    const maxPx = spaceLevel === 'spacious' ? 30 : spaceLevel === 'normal' ? 28 : spaceLevel === 'compact' ? 26 : 24;
+    // Proportional to tile width with generous caps on large tiles (e.g., 4k)
+    const factor = spaceLevel === 'spacious' ? 0.28 : spaceLevel === 'normal' ? 0.24 : spaceLevel === 'compact' ? 0.21 : 0.19;
     const minPx = 12;
-    const px = Math.max(minPx, Math.min(maxPx, tileSize * factor));
+    const absCap = spaceLevel === 'spacious' ? 56 : spaceLevel === 'normal' ? 48 : spaceLevel === 'compact' ? 40 : 34;
+    const px = Math.max(minPx, Math.min(absCap, tileSize * factor));
     return { ...pnlFontStyle, fontSize: `${px}px` };
   }, [tileSize, pnlFontStyle, spaceLevel]);
 
@@ -531,19 +531,19 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
   // Additional size helpers for trades count and stats to better utilize tile space on desktop
   const computedTradesFont: React.CSSProperties = useMemo(() => {
     if (!tileSize) return {};
-    const factor = spaceLevel === 'spacious' ? 0.14 : spaceLevel === 'normal' ? 0.145 : spaceLevel === 'compact' ? 0.155 : 0.16;
-    const maxPx = spaceLevel === 'spacious' ? 18 : spaceLevel === 'normal' ? 17 : spaceLevel === 'compact' ? 16 : 16;
+    const factor = spaceLevel === 'spacious' ? 0.20 : spaceLevel === 'normal' ? 0.18 : spaceLevel === 'compact' ? 0.165 : 0.155;
     const minPx = 11;
-    const px = Math.max(minPx, Math.min(maxPx, tileSize * factor));
+    const absCap = spaceLevel === 'spacious' ? 28 : spaceLevel === 'normal' ? 24 : spaceLevel === 'compact' ? 22 : 20;
+    const px = Math.max(minPx, Math.min(absCap, tileSize * factor));
     return { fontSize: `${px}px`, lineHeight: 1.05 };
   }, [tileSize, spaceLevel]);
 
   const computedStatsFont: React.CSSProperties = useMemo(() => {
     if (!tileSize) return {};
-    const factor = spaceLevel === 'spacious' ? 0.12 : spaceLevel === 'normal' ? 0.13 : spaceLevel === 'compact' ? 0.14 : 0.14;
-    const maxPx = spaceLevel === 'spacious' ? 16 : spaceLevel === 'normal' ? 15 : 14;
+    const factor = spaceLevel === 'spacious' ? 0.17 : spaceLevel === 'normal' ? 0.155 : spaceLevel === 'compact' ? 0.145 : 0.14;
     const minPx = 10;
-    const px = Math.max(minPx, Math.min(maxPx, tileSize * factor));
+    const absCap = spaceLevel === 'spacious' ? 22 : spaceLevel === 'normal' ? 20 : spaceLevel === 'compact' ? 18 : 16;
+    const px = Math.max(minPx, Math.min(absCap, tileSize * factor));
     return { fontSize: `${px}px`, lineHeight: 1.05 };
   }, [tileSize, spaceLevel]);
 
