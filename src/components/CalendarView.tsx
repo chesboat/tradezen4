@@ -1084,7 +1084,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                                   textSizes.pnl,
                                   'font-bold truncate',
                                   day.pnl > 0 ? 'text-green-500' : 'text-red-500'
-                                )}>
+                                )} style={computedDailyPnlFont}>
                                   {Math.abs(day.pnl) >= 1000 
                                     ? `${day.pnl > 0 ? '+' : ''}${(day.pnl / 1000).toFixed(1)}k`
                                     : formatCurrency(day.pnl)
@@ -1092,7 +1092,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                                 </div>
                               )}
                               {day.tradesCount > 0 && (
-                                <div className={cn(textSizes.trades, 'text-muted-foreground')}>
+                                <div className={cn(textSizes.trades, 'text-muted-foreground')} style={computedTradesFont}>
                                   {day.tradesCount}T
                                 </div>
                               )}
