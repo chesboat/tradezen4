@@ -243,7 +243,7 @@ export const AccountFilter: React.FC<AccountFilterProps> = ({ className }) => {
             exit="hidden"
           >
             <div className="py-2 max-h-64 overflow-y-auto">
-              {/* All Accounts option */}
+              {/* All Active Accounts option */}
               {accounts.length > 1 && activeAccounts.length > 0 && (
                 <motion.button
                   className={`w-full flex items-center gap-3 px-3 py-2.5 hover:bg-accent transition-colors group ${
@@ -257,7 +257,7 @@ export const AccountFilter: React.FC<AccountFilterProps> = ({ className }) => {
                   <div className="flex-1 text-left">
                     <div className="text-sm font-medium text-popover-foreground flex items-center gap-2">
                       All Active Accounts
-                      <span className="inline-flex items-center px-1.5 py-0.5 text-[10px] rounded-full bg-primary/10 text-primary border border-primary/20">
+                      <span className="inline-flex items-center px-1.5 py-0.5 text-[10px] rounded-full bg-green-500/10 text-green-500 border border-green-500/20">
                         {activeAccounts.length}
                       </span>
                     </div>
@@ -271,9 +271,37 @@ export const AccountFilter: React.FC<AccountFilterProps> = ({ className }) => {
                 </motion.button>
               )}
               
+              {/* All Accounts (Including Archived) option */}
+              {accounts.length > 1 && archivedAccounts.length > 0 && (
+                <motion.button
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 hover:bg-accent transition-colors group ${
+                    selectedAccountId === 'all-with-archived' ? 'bg-accent' : ''
+                  }`}
+                  onClick={() => handleAccountSelect('all-with-archived')}
+                  whileHover={{ x: 2 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Users className="w-4 h-4 text-muted-foreground" />
+                  <div className="flex-1 text-left">
+                    <div className="text-sm font-medium text-popover-foreground flex items-center gap-2">
+                      All Accounts
+                      <span className="inline-flex items-center px-1.5 py-0.5 text-[10px] rounded-full bg-primary/10 text-primary border border-primary/20">
+                        {accounts.length}
+                      </span>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {activeAccounts.length} active, {archivedAccounts.length} archived
+                    </div>
+                  </div>
+                  {selectedAccountId === 'all-with-archived' && (
+                    <Check className="w-4 h-4 text-primary" />
+                  )}
+                </motion.button>
+              )}
+              
               {/* No Active Accounts Message */}
               {activeAccounts.length === 0 && archivedAccounts.length > 0 && (
-                <div className="px-3 py-3 text-center">
+                <div className="px-3 py-3 text-center border-b border-border">
                   <div className="text-sm text-muted-foreground">
                     No active accounts
                   </div>

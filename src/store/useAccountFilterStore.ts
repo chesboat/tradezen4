@@ -176,7 +176,7 @@ export const useAccountFilterActions = () => useAccountFilterStore((state) => ({
 // Pseudo account helpers
 export const isPseudoAccountId = (accountId: string | null | undefined): boolean => {
   if (!accountId) return false;
-  return accountId === 'all' || String(accountId).startsWith('group:');
+  return accountId === 'all' || accountId === 'all-with-archived' || String(accountId).startsWith('group:');
 };
 
 export const filterRealAccounts = <T extends { accountId: string }>(items: T[]): T[] => {
@@ -187,6 +187,11 @@ export const filterRealAccounts = <T extends { accountId: string }>(items: T[]):
 export const getAccountIdsForSelection = (selectedId: string | null, includeArchived: boolean = false): string[] => {
   const { accounts } = useAccountFilterStore.getState();
   const filterFn = (a: TradingAccount) => includeArchived ? getAccountStatus(a) !== 'deleted' : isAccountActive(a);
+  
+  // Special case: "all-with-archived" shows ALL accounts (active + archived)
+  if (selectedId === 'all-with-archived') {
+    return accounts.filter(a => getAccountStatus(a) !== 'deleted').map(a => a.id);
+  }
   
   if (!selectedId) return accounts.filter(filterFn).map((a) => a.id);
   if (selectedId.startsWith('group:')) {
