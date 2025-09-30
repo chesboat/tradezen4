@@ -242,7 +242,9 @@ export const getAccountIdsForSelection = (selectedId: string | null, includeArch
     return [...includeLeader, ...linked];
   }
   const single = accounts.find(a => a.id === selectedId);
-  return single && filterFn(single) ? [selectedId] : [];
+  // When explicitly selecting an individual account (even archived), always return it
+  // This allows viewing historical data from archived accounts
+  return single && getAccountStatus(single) !== 'deleted' ? [selectedId] : [];
 };
 
 // Get the full group (leader first) for any account selection (single or group)

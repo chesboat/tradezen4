@@ -40,13 +40,18 @@ export const useTradeStore = create<TradeState>((set, get) => ({
         entryTime: new Date(trade.entryTime),
         exitTime: trade.exitTime ? new Date(trade.exitTime) : undefined,
       }));
-      // Exclude trades belonging to deleted/inactive accounts
+      // Exclude trades belonging to deleted accounts (keep active AND archived)
       let filtered = formattedTrades;
       try {
         const mod = await import('./useAccountFilterStore');
-        const { accounts } = mod.useAccountFilterStore.getState();
-        if (accounts && accounts.length > 0) {
-          const validIds = new Set(accounts.filter(a => a.isActive !== false).map(a => a.id));
+        const { getAccountStatus } = mod;
+        const accountState = mod.useAccountFilterStore.getState();
+        if (accountState.accounts && accountState.accounts.length > 0) {
+          const validIds = new Set(
+            accountState.accounts
+              .filter(a => getAccountStatus(a) !== 'deleted')
+              .map(a => a.id)
+          );
           filtered = formattedTrades.filter(t => validIds.has(t.accountId));
         }
       } catch (_e) {
@@ -76,9 +81,15 @@ export const useTradeStore = create<TradeState>((set, get) => ({
             }));
             let filteredRealtime = formatted;
             try {
-              const { accounts } = (await import('./useAccountFilterStore')).useAccountFilterStore.getState();
+              const mod = await import('./useAccountFilterStore');
+              const { accounts } = mod.useAccountFilterStore.getState();
+              const { getAccountStatus } = mod;
               if (accounts && accounts.length > 0) {
-                const validIds = new Set(accounts.filter(a => a.isActive !== false).map(a => a.id));
+                const validIds = new Set(
+                  accounts
+                    .filter(a => getAccountStatus(a) !== 'deleted')
+                    .map(a => a.id)
+                );
                 filteredRealtime = formatted.filter(t => validIds.has((t as any).accountId));
               }
             } catch {}
