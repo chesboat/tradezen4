@@ -76,6 +76,42 @@ export const useAccountFilterStore = create<AccountFilterState>((set, get) => ({
       console.error('Failed to remove account:', error);
       throw error;
     }
+  },
+
+  duplicateAccount: async (id) => {
+    try {
+      const currentAccounts = get().accounts;
+      const accountToDuplicate = currentAccounts.find(acc => acc.id === id);
+      
+      if (!accountToDuplicate) {
+        throw new Error('Account not found');
+      }
+
+      // Generate new name with incremented number
+      const baseName = accountToDuplicate.name.replace(/\s+\d+$/, ''); // Remove trailing number
+      const existingNumbers = currentAccounts
+        .filter(acc => acc.name.startsWith(baseName))
+        .map(acc => {
+          const match = acc.name.match(/\s+(\d+)$/);
+          return match ? parseInt(match[1]) : 1;
+        });
+      const nextNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 2;
+      const newName = `${baseName} ${nextNumber}`;
+
+      // Create duplicate without id, createdAt, updatedAt, and without linkedAccountIds
+      const { id: _id, createdAt: _created, updatedAt: _updated, linkedAccountIds: _linked, archivedAt, archivedReason, ...accountData } = accountToDuplicate as any;
+      
+      const duplicatedAccount = {
+        ...accountData,
+        name: newName,
+        status: 'active' as const, // Always start duplicates as active
+      };
+
+      return await get().addAccount(duplicatedAccount);
+    } catch (error) {
+      console.error('Failed to duplicate account:', error);
+      throw error;
+    }
   }
 }));
 
@@ -171,6 +207,7 @@ export const useAccountFilterActions = () => useAccountFilterStore((state) => ({
   addAccount: state.addAccount,
   updateAccount: state.updateAccount,
   removeAccount: state.removeAccount,
+  duplicateAccount: state.duplicateAccount,
 }));
 
 // Pseudo account helpers

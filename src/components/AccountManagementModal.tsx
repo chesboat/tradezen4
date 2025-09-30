@@ -11,12 +11,14 @@ import {
   EyeOff,
   AlertTriangle,
   Archive,
-  ArchiveRestore
+  ArchiveRestore,
+  Copy
 } from 'lucide-react';
 import { useAccountFilterActions, useAccounts, getAccountStatus } from '@/store/useAccountFilterStore';
 import { TradingAccount } from '@/types';
 import { formatCurrency } from '@/lib/localStorageUtils';
 import { cn } from '@/lib/utils';
+import { getTemplate, PROP_FIRM_TEMPLATES } from '@/lib/propFirmTemplates';
 
 interface AccountManagementModalProps {
   isOpen: boolean;
@@ -89,7 +91,7 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
   onClose,
   editingAccount
 }) => {
-  const { addAccount, updateAccount, removeAccount, setSelectedAccount } = useAccountFilterActions();
+  const { addAccount, updateAccount, removeAccount, setSelectedAccount, duplicateAccount } = useAccountFilterActions();
   const accounts = useAccounts();
   const parentLeader = accounts.find(a => (a.linkedAccountIds || []).includes(editingAccount?.id || ''));
   
@@ -321,6 +323,20 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
     onClose();
   };
 
+  const handleDuplicate = async () => {
+    if (!editingAccount) return;
+    
+    try {
+      const duplicated = await duplicateAccount(editingAccount.id);
+      if (duplicated) {
+        setSelectedAccount(duplicated.id);
+      }
+      onClose();
+    } catch (error) {
+      console.error('Failed to duplicate account:', error);
+    }
+  };
+
   const updateForm = (field: keyof AccountForm, value: any) => {
     setForm(prev => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
@@ -512,6 +528,58 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
             {/* Prop Account Specific Fields */}
             {form.type === 'prop' && (
               <>
+                {/* Smart Account Size Selector */}
+                {form.propFirm && getTemplate(form.propFirm) && (
+                  <div className="space-y-2 p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                    <label className="text-sm font-medium flex items-center gap-2">
+                      <span>🎯 Quick Setup - Select Account Size</span>
+                    </label>
+                    <div className="text-xs text-muted-foreground mb-3">
+                      Choose a standard size to auto-fill limits and targets
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      {getTemplate(form.propFirm)?.sizes.map((sizeOption) => (
+                        <button
+                          key={sizeOption.size}
+                          type="button"
+                          onClick={() => {
+                            // Auto-fill all the fields
+                            updateForm('balance', sizeOption.size.toString());
+                            updateForm('dailyLossLimit', sizeOption.dailyLossLimit.toString());
+                            updateForm('maxDrawdown', sizeOption.maxDrawdown.toString());
+                            updateForm('profitTarget', sizeOption.profitTarget.toString());
+                            const template = getTemplate(form.propFirm);
+                            if (template) {
+                              updateForm('profitSplit', template.profitSplit.toString());
+                              updateForm('minTradingDays', template.minTradingDays.toString());
+                            }
+                          }}
+                          className={cn(
+                            "p-3 text-left border rounded-lg transition-all hover:border-primary/70 hover:bg-primary/5",
+                            parseInt(form.balance) === sizeOption.size
+                              ? "border-primary bg-primary/10 shadow-sm ring-1 ring-primary/20"
+                              : "border-border"
+                          )}
+                        >
+                          <div className="font-semibold text-lg">{sizeOption.displayName}</div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            Daily: ${sizeOption.dailyLossLimit.toLocaleString()}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Max DD: ${sizeOption.maxDrawdown.toLocaleString()}
+                          </div>
+                          <div className="text-xs text-primary/70">
+                            Target: ${sizeOption.profitTarget.toLocaleString()}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                    <div className="text-xs text-muted-foreground/60 mt-2">
+                      💡 You can still adjust individual values below
+                    </div>
+                  </div>
+                )}
+
                 {/* Account Phase */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Account Phase</label>
@@ -975,14 +1043,25 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
           {/* Actions - Fixed at bottom */}
           <div className="flex gap-3 p-6 border-t border-border bg-card/50 backdrop-blur-sm">
             {editingAccount && (
-              <button
-                type="button"
-                onClick={() => setShowDeleteConfirm(true)}
-                className="flex items-center gap-2 px-4 py-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
-              >
-                <Trash2 className="w-4 h-4" />
-                Delete
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={handleDuplicate}
+                  className="flex items-center gap-2 px-4 py-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                  title="Create a duplicate of this account"
+                >
+                  <Copy className="w-4 h-4" />
+                  Duplicate
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="flex items-center gap-2 px-4 py-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete
+                </button>
+              </>
             )}
             
             <div className="flex-1" />

@@ -22,6 +22,7 @@ export interface AccountFilterState {
   addAccount: (account: Omit<TradingAccount, 'id' | 'createdAt' | 'updatedAt'>) => Promise<TradingAccount>;
   updateAccount: (id: string, updates: Partial<TradingAccount>) => void;
   removeAccount: (id: string) => void;
+  duplicateAccount: (id: string) => Promise<TradingAccount>;
 }
 
 export interface QuestState {
