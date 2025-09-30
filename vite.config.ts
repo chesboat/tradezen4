@@ -13,9 +13,14 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
+    chunkSizeWarningLimit: 1600,
     rollupOptions: {
       output: {
-        manualChunks: undefined,
+        manualChunks: {
+          'vendor': ['react', 'react-dom', 'zustand', 'framer-motion'],
+          'firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage'],
+          'editor': ['@tiptap/react', '@tiptap/core', '@tiptap/starter-kit'],
+        },
       },
     },
   },
