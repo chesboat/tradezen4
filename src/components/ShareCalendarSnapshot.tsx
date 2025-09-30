@@ -25,13 +25,23 @@ type RenderData = {
 };
 
 export const ShareCalendarSnapshot: React.FC = () => {
+  const [isMobile, setIsMobile] = React.useState(false);
+  
+  React.useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      setIsMobile(mobile);
+      console.log('[ShareCalendarSnapshot] isMobile:', mobile, 'width:', window.innerWidth, 'userAgent:', navigator.userAgent);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+  
   const params = new URLSearchParams(window.location.search);
   const theme = (params.get('theme') as 'light' | 'dark') || 'dark';
   const raw = params.get('data') || '';
   let data: RenderData | null = null;
-  
-  // Debug log
-  console.log('[ShareCalendarSnapshot] Rendering, window width:', window.innerWidth);
   try {
     const json = atob(decodeURIComponent(raw));
     const parsed = JSON.parse(json);
@@ -63,7 +73,8 @@ export const ShareCalendarSnapshot: React.FC = () => {
   return (
     <div className={cn('min-h-screen overflow-x-hidden', theme)}>
       {/* Mobile version - clean and scrollable */}
-      <div className="block sm:hidden w-full min-h-screen bg-gradient-to-br from-blue-600 via-purple-500 to-pink-400 p-3">
+      {isMobile && (
+      <div className="w-full min-h-screen bg-gradient-to-br from-blue-600 via-purple-500 to-pink-400 p-3">
         <div className="bg-background rounded-xl border-2 border-blue-500 shadow-xl max-w-md mx-auto">
           <div className="p-3">
             {/* Mobile Header */}
@@ -139,9 +150,11 @@ export const ShareCalendarSnapshot: React.FC = () => {
           </div>
         </div>
       </div>
+      )}
 
       {/* Desktop/Screenshot version - shown on tablet+ */}
-      <div className="hidden sm:block w-full bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 py-16 px-12" data-share-calendar-card>
+      {!isMobile && (
+      <div className="w-full bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 py-16 px-12" data-share-calendar-card>
         <div className="bg-background rounded-2xl border w-full max-w-[1100px] mx-auto shadow-2xl">
           <div className="pt-6 pb-8 px-6">
             {/* Header */}
@@ -240,6 +253,7 @@ export const ShareCalendarSnapshot: React.FC = () => {
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 };
