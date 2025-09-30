@@ -94,6 +94,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
     scale: Math.min(2, (typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1) * 1.25),
     scrollX: 0,
     scrollY: 0,
+    removeContainer: true,
     onclone: (clonedDoc: Document) => {
       try {
         // Hide everything except the capture root to avoid fixed overlays bleeding in
@@ -133,7 +134,10 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
       const link = document.createElement('a');
       link.download = `TradeFutura-Calendar-${currentMonth}-${currentYear}.png`;
       link.href = canvas.toDataURL('image/png');
+      link.rel = 'noopener';
+      document.body.appendChild(link);
       link.click();
+      setTimeout(() => link.remove(), 0);
       
       toast.success('Calendar image downloaded!');
     } catch (error) {
@@ -223,7 +227,9 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
               const link = document.createElement('a');
               link.download = `TradeFutura-Calendar-${currentMonth}-${currentYear}.png`;
               link.href = canvas.toDataURL('image/png');
+              document.body.appendChild(link);
               link.click();
+              setTimeout(() => link.remove(), 0);
               
               const text = `Check out my trading performance for ${currentMonth} ${currentYear}! 📊 Made ${formatCurrency(monthlyPnL)} with ${totalTrades} trades. Building my edge with TradeFutura 🚀 #TradingJournal #TradeFutura`;
               const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
@@ -240,7 +246,9 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
         const link = document.createElement('a');
         link.download = `TradeFutura-Calendar-${currentMonth}-${currentYear}.png`;
         link.href = canvas.toDataURL('image/png');
+        document.body.appendChild(link);
         link.click();
+        setTimeout(() => link.remove(), 0);
         
         const text = `Check out my trading performance for ${currentMonth} ${currentYear}! 📊 Made ${formatCurrency(monthlyPnL)} with ${totalTrades} trades. Building my edge with TradeFutura 🚀 #TradingJournal #TradeFutura`;
         const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
@@ -542,8 +550,8 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
             <div
               ref={captureRef}
               id="calendar-share-capture"
-              className="absolute -left-[10000px] top-0 bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 rounded-2xl"
-              style={{ width: 1200, height: 1000, padding: 48 }}
+              className="absolute -left-[9999px] top-0 bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 rounded-2xl"
+              style={{ width: 1200, height: 1000, padding: 48, opacity: 1 }}
             >
               <div className="w-full h-full flex items-center justify-center">
                 <div className={`${theme}`} style={{ width: 1000 }}>
