@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { ChevronDown, Check, Plus, CreditCard, Edit3 } from 'lucide-react';
+import { ChevronDown, Check, Plus, CreditCard, Edit3, Archive } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAccountFilterStore, initializeDefaultAccounts, isAccountActive } from '@/store/useAccountFilterStore';
+import { useAccountFilterStore, initializeDefaultAccounts, isAccountActive, getAccountStatus } from '@/store/useAccountFilterStore';
 import { Users } from 'lucide-react';
 import { AccountManagementModal } from './AccountManagementModal';
 import { TradingAccount } from '@/types';
@@ -25,6 +25,10 @@ export const AccountFilter: React.FC<AccountFilterProps> = ({ className }) => {
   } = useAccountFilterStore();
 
   const selectedAccount = accounts.find(acc => acc.id === selectedAccountId);
+
+  // Calculate active and archived account counts
+  const activeAccounts = useMemo(() => accounts.filter(isAccountActive), [accounts]);
+  const archivedAccounts = useMemo(() => accounts.filter(acc => getAccountStatus(acc) === 'archived'), [accounts]);
 
   // Compute link roles
   const leaderIds = useMemo(() => {
@@ -251,11 +255,21 @@ export const AccountFilter: React.FC<AccountFilterProps> = ({ className }) => {
                 >
                   <Users className="w-4 h-4 text-muted-foreground" />
                   <div className="flex-1 text-left">
-                    <div className="text-sm font-medium text-popover-foreground flex items-center">
-                      All Accounts
-                      <span className="ml-2 inline-flex items-center px-1.5 py-0.5 text-[10px] rounded-full bg-primary/10 text-primary border border-primary/20">All</span>
+                    <div className="text-sm font-medium text-popover-foreground flex items-center gap-2">
+                      All Active Accounts
+                      <span className="inline-flex items-center px-1.5 py-0.5 text-[10px] rounded-full bg-primary/10 text-primary border border-primary/20">
+                        {activeAccounts.length}
+                      </span>
                     </div>
-                    <div className="text-xs text-muted-foreground">Combined view across {accounts.length} accounts</div>
+                    <div className="text-xs text-muted-foreground">
+                      {activeAccounts.map(a => a.name).join(', ')}
+                      {archivedAccounts.length > 0 && (
+                        <span className="inline-flex items-center gap-1 ml-2 text-muted-foreground/60">
+                          <Archive className="w-3 h-3" />
+                          {archivedAccounts.length} archived
+                        </span>
+                      )}
+                    </div>
                   </div>
                   {selectedAccountId === null && (
                     <Check className="w-4 h-4 text-primary" />
@@ -346,6 +360,57 @@ export const AccountFilter: React.FC<AccountFilterProps> = ({ className }) => {
                   </div>
                 );
               })}
+
+              {/* Archived Accounts Section */}
+              {archivedAccounts.length > 0 && (
+                <>
+                  <div className="px-3 py-2 border-t border-border mt-2 pt-3">
+                    <div className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                      <Archive className="w-3 h-3" />
+                      Archived Accounts ({archivedAccounts.length})
+                    </div>
+                  </div>
+                  {archivedAccounts.map((account) => (
+                    <motion.button
+                      key={account.id}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 hover:bg-accent transition-colors group opacity-60 ${
+                        selectedAccountId === account.id ? 'bg-accent' : ''
+                      }`}
+                      onClick={() => handleAccountSelect(account.id)}
+                      whileHover={{ x: 2 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <span className="text-sm">{getAccountIcon(account)}</span>
+                      <div className="flex-1 text-left">
+                        <div className="text-sm font-medium text-popover-foreground flex items-center gap-1.5">
+                          {account.name}
+                          <span title="Archived">
+                            <Archive className="w-3 h-3 text-muted-foreground/60" />
+                          </span>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {getAccountTypeLabel(account.type)} • {account.currency}
+                          {account.archivedReason && ` • ${account.archivedReason}`}
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={(e) => handleEditAccount(account, e)}
+                          className="p-1 opacity-0 group-hover:opacity-100 hover:bg-primary/10 rounded transition-all"
+                          title="Edit account"
+                        >
+                          <Edit3 className="w-3 h-3 text-muted-foreground hover:text-primary" />
+                        </button>
+                        
+                        {selectedAccountId === account.id && (
+                          <Check className="w-4 h-4 text-primary" />
+                        )}
+                      </div>
+                    </motion.button>
+                  ))}
+                </>
+              )}
 
               {/* Group totals now shown inline under each leader above */}
               
