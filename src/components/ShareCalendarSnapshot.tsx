@@ -59,8 +59,8 @@ export const ShareCalendarSnapshot: React.FC = () => {
 
   return (
     <div className={cn('min-h-screen', theme)}>
-      <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 p-6">
-        <div className="bg-background rounded-2xl border w-full max-w-[1200px]" data-share-calendar-card>
+      <div className="w-full bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 py-16 px-12" data-share-calendar-card>
+        <div className="bg-background rounded-2xl border w-full max-w-[1100px] mx-auto shadow-2xl">
           <div className="pt-6 pb-8 px-6">
             {/* Header */}
             <div className="flex items-center justify-between mb-4">

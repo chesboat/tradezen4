@@ -177,7 +177,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
       const themeParam = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
       const dataParam = encodeURIComponent(btoa(JSON.stringify(payload)));
       const shareUrl = `${window.location.origin}/share/calendar?theme=${themeParam}&data=${dataParam}`;
-      const api = `/api/screenshot-calendar?url=${encodeURIComponent(shareUrl)}&width=1200&height=1000&selector=${encodeURIComponent('[data-share-calendar-card]')}`;
+      const api = `/api/screenshot-calendar?url=${encodeURIComponent(shareUrl)}&width=1200&height=675&selector=${encodeURIComponent('[data-share-calendar-card]')}`;
       const resp = await fetch(api);
       if (!resp.ok) throw new Error('Screenshot API failed');
       const blob = await resp.blob();
@@ -209,7 +209,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
       const themeParam = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
       const dataParam = encodeURIComponent(btoa(JSON.stringify(payload)));
       const shareUrl = `${window.location.origin}/share/calendar?theme=${themeParam}&data=${dataParam}`;
-      const api = `/api/screenshot-calendar?url=${encodeURIComponent(shareUrl)}&width=1200&height=1000&selector=${encodeURIComponent('[data-share-calendar-card]')}`;
+      const api = `/api/screenshot-calendar?url=${encodeURIComponent(shareUrl)}&width=1200&height=675&selector=${encodeURIComponent('[data-share-calendar-card]')}`;
       const resp = await fetch(api);
       if (!resp.ok) throw new Error('Screenshot API failed');
       const blob = await resp.blob();
@@ -243,7 +243,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
       const themeParam = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
       const dataParam = encodeURIComponent(btoa(JSON.stringify(payload)));
       const shareUrl = `${window.location.origin}/share/calendar?theme=${themeParam}&data=${dataParam}`;
-      const api = `/api/screenshot-calendar?url=${encodeURIComponent(shareUrl)}&width=1200&height=1000&selector=${encodeURIComponent('[data-share-calendar-card]')}`;
+      const api = `/api/screenshot-calendar?url=${encodeURIComponent(shareUrl)}&width=1200&height=675&selector=${encodeURIComponent('[data-share-calendar-card]')}`;
       const resp = await fetch(api);
       if (!resp.ok) throw new Error('Screenshot API failed');
       const blob = await resp.blob();
@@ -305,7 +305,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
         const themeParam = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
         const dataParam = encodeURIComponent(btoa(JSON.stringify(payload)));
         const shareUrl = `${window.location.origin}/share/calendar?theme=${themeParam}&data=${dataParam}`;
-        const api = `/api/screenshot-calendar?url=${encodeURIComponent(shareUrl)}&width=1200&height=1000&selector=${encodeURIComponent('[data-share-calendar-card]')}`;
+        const api = `/api/screenshot-calendar?url=${encodeURIComponent(shareUrl)}&width=1200&height=675&selector=${encodeURIComponent('[data-share-calendar-card]')}`;
         const resp = await fetch(api);
         if (!resp.ok) throw new Error('Screenshot API failed');
         const b = await resp.blob();
@@ -336,7 +336,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
     try {
       // Download the image via server screenshot
       const shareUrl = window.location.origin + window.location.pathname + window.location.search;
-      const api = `/api/screenshot-calendar?url=${encodeURIComponent(shareUrl)}&width=1200&height=1000&selector=${encodeURIComponent('[data-share-calendar-card]')}`;
+      const api = `/api/screenshot-calendar?url=${encodeURIComponent(shareUrl)}&width=1200&height=675&selector=${encodeURIComponent('[data-share-calendar-card]')}`;
       const resp = await fetch(api);
       if (!resp.ok) throw new Error('Screenshot API failed');
       const blob = await resp.blob();
