@@ -80,6 +80,26 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
     return captureRef.current || canvasRef.current;
   };
 
+  const copyHeadStyles = (fromDoc: Document, toDoc: Document) => {
+    try {
+      // Copy <link rel="stylesheet"> and <style> tags so Tailwind classes resolve in the new window
+      const links = Array.from(fromDoc.querySelectorAll('link[rel="stylesheet"]')) as HTMLLinkElement[];
+      links.forEach((lnk) => {
+        const el = toDoc.createElement('link');
+        el.rel = 'stylesheet';
+        el.href = lnk.href;
+        toDoc.head.appendChild(el);
+      });
+      const styles = Array.from(fromDoc.querySelectorAll('style')) as HTMLStyleElement[];
+      styles.forEach((st) => {
+        const el = toDoc.createElement('style');
+        el.type = 'text/css';
+        el.textContent = st.textContent || '';
+        toDoc.head.appendChild(el);
+      });
+    } catch {}
+  };
+
   const html2canvasOpts = {
     backgroundColor: '#0b0b0b',
     useCORS: true,
@@ -134,6 +154,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
         const w = window.open('', '_blank', 'noopener,noreferrer,width=1300,height=1100');
         if (w && w.document) {
           w.document.write('<!doctype html><html><head><meta charset="utf-8"/></head><body style="margin:0;background:#0b0b0b;"></body></html>');
+          copyHeadStyles(document, w.document);
           const container = w.document.createElement('div');
           container.id = 'capture-root';
           container.style.width = '1200px';
@@ -150,13 +171,10 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
           w.document.body.appendChild(container);
           await new Promise(r=>setTimeout(r,50));
           const canvas = await html2canvas(container as any, { ...html2canvasOpts, scrollX:0, scrollY:0 });
-          const link = w.document.createElement('a');
-          link.download = `TradeFutura-Calendar-${currentMonth}-${currentYear}.png`;
-          link.href = canvas.toDataURL('image/png');
-          w.document.body.appendChild(link);
-          link.click();
-          setTimeout(() => { try { w.close(); } catch {} }, 150);
-          toast.success('Calendar image downloaded!');
+          const dataUrl = canvas.toDataURL('image/png');
+          // Display image for manual save (more reliable on iOS)
+          w.document.body.innerHTML = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#0b0b0b;padding:16px;"><img src="${dataUrl}" style="max-width:100%;height:auto;border-radius:12px"/></div>`;
+          toast.success('Image ready – long‑press to Save Image');
           setIsGenerating(false);
           return;
         }
