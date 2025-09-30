@@ -32,14 +32,18 @@ export const ShareCalendarSnapshot: React.FC = () => {
   try {
     const json = atob(decodeURIComponent(raw));
     const parsed = JSON.parse(json);
-    // Normalize dates
-    parsed.weeks = (parsed.weeks || []).map((w: any[]) => w.map((d: any) => ({
-      ...d,
-      date: typeof d.date === 'string' ? d.date : new Date(d.date),
-      isWeekend: d.isWeekend ?? (new Date(d.date).getDay() === 0 || new Date(d.date).getDay() === 6)
-    })));
+    // Normalize dates: JSON deserializes Date objects as ISO strings, convert back to Date
+    parsed.weeks = (parsed.weeks || []).map((w: any[]) => w.map((d: any) => {
+      const dateObj = typeof d.date === 'string' ? new Date(d.date) : d.date;
+      return {
+        ...d,
+        date: dateObj,
+        isWeekend: d.isWeekend ?? (dateObj.getDay() === 0 || dateObj.getDay() === 6)
+      };
+    }));
     data = parsed;
-  } catch {
+  } catch (e) {
+    console.error('Failed to parse share data:', e);
     // show minimal error state
   }
 
