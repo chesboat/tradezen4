@@ -1,11 +1,11 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import chromium from '@sparticuz/chromium-min';
-import puppeteer from 'puppeteer-core';
+import puppeteer, { Browser } from 'puppeteer-core';
 
 // GET /api/screenshot-calendar?url=https://your.app/share/calendar&width=1200&height=1000
 // Returns image/png
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  let browser = null;
+  let browser: Browser | null = null;
   try {
     console.log('[Screenshot API] Request received:', { 
       url: req.query.url, 
@@ -32,7 +32,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       args: chromium.args,
       defaultViewport: { width, height, deviceScaleFactor: 2 },
       executablePath,
-      headless: chromium.headless,
+      headless: chromium.headless as boolean,
     });
     console.log('[Screenshot API] Browser launched');
 
