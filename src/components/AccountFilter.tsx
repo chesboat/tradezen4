@@ -244,7 +244,7 @@ export const AccountFilter: React.FC<AccountFilterProps> = ({ className }) => {
           >
             <div className="py-2 max-h-64 overflow-y-auto">
               {/* All Accounts option */}
-              {accounts.length > 1 && (
+              {accounts.length > 1 && activeAccounts.length > 0 && (
                 <motion.button
                   className={`w-full flex items-center gap-3 px-3 py-2.5 hover:bg-accent transition-colors group ${
                     selectedAccountId === null ? 'bg-accent' : ''
@@ -263,18 +263,24 @@ export const AccountFilter: React.FC<AccountFilterProps> = ({ className }) => {
                     </div>
                     <div className="text-xs text-muted-foreground">
                       {activeAccounts.map(a => a.name).join(', ')}
-                      {archivedAccounts.length > 0 && (
-                        <span className="inline-flex items-center gap-1 ml-2 text-muted-foreground/60">
-                          <Archive className="w-3 h-3" />
-                          {archivedAccounts.length} archived
-                        </span>
-                      )}
                     </div>
                   </div>
                   {selectedAccountId === null && (
                     <Check className="w-4 h-4 text-primary" />
                   )}
                 </motion.button>
+              )}
+              
+              {/* No Active Accounts Message */}
+              {activeAccounts.length === 0 && archivedAccounts.length > 0 && (
+                <div className="px-3 py-3 text-center">
+                  <div className="text-sm text-muted-foreground">
+                    No active accounts
+                  </div>
+                  <div className="text-xs text-muted-foreground/60 mt-1">
+                    All {archivedAccounts.length} accounts are archived
+                  </div>
+                </div>
               )}
               {groupedAccounts.map((account) => {
                 const isFollower = followerIds.has(account.id);
