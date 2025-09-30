@@ -1089,7 +1089,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                           <div className="flex-1 flex flex-col items-center justify-center space-y-1">
                             {/* P&L - Locked sizing with smart abbreviation */}
                             <div className={cn(
-                              'text-sm lg:text-base 2xl:text-lg 3xl:text-xl font-bold leading-none',
+                              'text-base lg:text-lg 2xl:text-xl 3xl:text-2xl font-bold leading-none',
                               day.pnl > 0 ? 'text-green-500' : day.pnl < 0 ? 'text-red-500' : 'text-muted-foreground'
                             )}>
                               {formatPnLSmart(day.pnl)}
@@ -1179,7 +1179,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                       Week {weeklyData[weekIndex]?.weekNumber}
                     </div>
                     <div className={cn(
-                      'text-sm lg:text-base 2xl:text-lg 3xl:text-xl font-bold leading-none',
+                      'text-base lg:text-lg 2xl:text-xl 3xl:text-2xl font-bold leading-none',
                       weeklyData[weekIndex]?.totalPnl > 0 ? 'text-green-500' : 
                       weeklyData[weekIndex]?.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
                     )}>
