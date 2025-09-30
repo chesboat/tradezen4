@@ -60,55 +60,55 @@ export const ShareCalendarSnapshot: React.FC = () => {
   return (
     <div className={cn('min-h-screen overflow-x-hidden', theme)}>
       {/* Mobile version - clean and scrollable */}
-      <div className="sm:hidden w-full min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 p-4">
-        <div className="bg-background rounded-xl border shadow-xl">
-          <div className="p-4">
+      <div className="block sm:hidden w-full min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 p-3">
+        <div className="bg-background rounded-xl border shadow-xl max-w-md mx-auto">
+          <div className="p-3">
             {/* Mobile Header */}
-            <div className="mb-4 text-center">
-              <h1 className="text-xl font-bold text-foreground mb-1">{data.monthName} {data.year}</h1>
+            <div className="mb-3 text-center">
+              <h1 className="text-lg font-bold text-foreground mb-1">{data.monthName} {data.year}</h1>
               <div className="text-xs text-muted-foreground">
                 Monthly: <span className="font-semibold text-green-500">{formatCurrency(data.monthlyPnl)}</span>
               </div>
             </div>
 
             {/* Mobile Grid - 7 columns only */}
-            <div className="space-y-1">
-              <div className="grid grid-cols-7 gap-1">
+            <div className="space-y-0.5">
+              <div className="grid grid-cols-7 gap-0.5">
                 {DAYS_OF_WEEK.map((d) => (
-                  <div key={`h-${d}`} className="text-center font-semibold text-muted-foreground text-[10px] py-1">{d.slice(0, 3)}</div>
+                  <div key={`h-${d}`} className="text-center font-semibold text-muted-foreground text-[9px] py-0.5">{d.slice(0, 3)}</div>
                 ))}
               </div>
 
               {data.weeks.map((week, wi) => (
-                <div key={`w-${wi}`} className="grid grid-cols-7 gap-1">
+                <div key={`w-${wi}`} className="grid grid-cols-7 gap-0.5">
                   {week.map((day, di) => {
                     const dayDate = new Date(day.date);
                     const isWeekend = day.isWeekend || dayDate.getDay() === 0 || dayDate.getDay() === 6;
                     return (
                       <div key={`d-${wi}-${di}`} className={cn(
-                        'relative p-1 rounded-md border bg-card min-h-[45px] flex flex-col',
+                        'relative p-0.5 rounded border bg-card min-h-[42px] flex flex-col text-center',
                         day.pnl > 0 && 'border-green-500/30 bg-green-50/10',
                         day.pnl < 0 && 'border-red-500/30 bg-red-50/10',
                         day.isOtherMonth && 'opacity-40'
                       )}>
-                        <div className="flex flex-col h-full">
-                          <div className="flex items-start justify-between mb-0.5">
-                            <span className={cn('text-[10px] font-medium leading-none', day.isOtherMonth ? 'text-muted-foreground' : 'text-foreground')}>{dayDate.getDate()}</span>
-                            {day.hasReflection && <BookOpen className="w-2 h-2 text-green-500" />}
+                        <div className="flex flex-col h-full items-center justify-between py-0.5">
+                          <div className="flex items-center justify-between w-full px-0.5">
+                            <span className={cn('text-[9px] font-medium', day.isOtherMonth ? 'text-muted-foreground' : 'text-foreground')}>{dayDate.getDate()}</span>
+                            {day.hasReflection && <BookOpen className="w-1.5 h-1.5 text-green-500" />}
                           </div>
                           {isWeekend ? (
                             <div className="flex-1 flex items-center justify-center">
-                              <div className="text-[8px] text-muted-foreground/70">Wknd</div>
+                              <div className="text-[7px] text-muted-foreground/70">Wknd</div>
                             </div>
                           ) : (
-                            <div className="flex-1 flex flex-col justify-center items-center text-center gap-0.5">
+                            <div className="flex-1 flex flex-col justify-center items-center">
                               {day.pnl !== 0 && (
-                                <div className={cn('text-[9px] font-bold leading-none', day.pnl > 0 ? 'text-green-500' : 'text-red-500')}>
+                                <div className={cn('text-[8px] font-bold', day.pnl > 0 ? 'text-green-500' : 'text-red-500')}>
                                   {formatCurrency(day.pnl)}
                                 </div>
                               )}
                               {day.tradesCount > 0 && (
-                                <div className="text-[8px] text-muted-foreground/80 leading-none">{day.tradesCount} {day.tradesCount === 1 ? 'trade' : 'trades'}</div>
+                                <div className="text-[7px] text-muted-foreground/80 mt-0.5">{day.tradesCount}</div>
                               )}
                             </div>
                           )}
