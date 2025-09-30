@@ -1624,10 +1624,10 @@ const DemoCalendarView: React.FC = () => {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <div className="space-y-1">
+                  <div className="h-full flex flex-col justify-between space-y-1">
                     {/* Date */}
                     <div className="flex items-center justify-between">
-                      <span className={`text-sm font-medium ${
+                      <span className={`text-sm 2xl:text-sm 3xl:text-base 4xl:text-base font-medium ${
                         day.isOtherMonth ? 'text-muted-foreground' : 'text-foreground'
                       }`}>
                         {day.date.getDate()}
@@ -1640,19 +1640,14 @@ const DemoCalendarView: React.FC = () => {
                     </div>
                     
                     {/* P&L */}
-                    {formatPnL(day.pnl)}
+                    <div className={`text-xs 2xl:text-sm 3xl:text-base 4xl:text-base font-bold ${day.pnl > 0 ? 'text-green-500' : day.pnl < 0 ? 'text-red-500' : 'text-muted-foreground'}`}>
+                      {day.pnl !== 0 ? (Math.abs(day.pnl) > 999 ? `${day.pnl > 0 ? '+' : ''}${(day.pnl/1000).toFixed(1)}k` : `${day.pnl > 0 ? '+' : ''}${Math.round(day.pnl)}`) : '$0'}
+                    </div>
                     
                     {/* Trade Count */}
                     {day.tradesCount > 0 && (
-                      <div className="text-xs text-muted-foreground">
-                        {day.tradesCount} trade{day.tradesCount > 1 ? 's' : ''}
-                      </div>
-                    )}
-                    
-                    {/* Metrics */}
-                    {day.tradesCount > 0 && (
-                      <div className="text-xs text-muted-foreground space-y-0.5">
-                        <div>{day.avgRR.toFixed(1)}:1R, {day.winRate.toFixed(0)}%</div>
+                      <div className="text-[11px] 2xl:text-xs 3xl:text-sm 4xl:text-sm text-muted-foreground">
+                        {day.tradesCount} trades
                       </div>
                     )}
                   </div>
