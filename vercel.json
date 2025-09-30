@@ -6,6 +6,17 @@
       "memory": 1024
     }
   },
+  "headers": [
+    {
+      "source": "/share/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
+    }
+  ],
   "routes": [
     {
       "src": "/assets/(.*)",
