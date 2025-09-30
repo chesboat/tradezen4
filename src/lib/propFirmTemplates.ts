@@ -24,21 +24,21 @@ export const PROP_FIRM_TEMPLATES: Record<string, PropFirmTemplate> = {
       {
         size: 50000,
         dailyLossLimit: 2000,
-        maxDrawdown: 3000,
+        maxDrawdown: 2000,
         profitTarget: 3000,
         displayName: '$50K'
       },
       {
         size: 100000,
         dailyLossLimit: 3000,
-        maxDrawdown: 4500,
+        maxDrawdown: 3000,
         profitTarget: 6000,
         displayName: '$100K'
       },
       {
         size: 150000,
         dailyLossLimit: 4500,
-        maxDrawdown: 6750,
+        maxDrawdown: 4500,
         profitTarget: 9000,
         displayName: '$150K'
       }
@@ -83,6 +83,85 @@ export const PROP_FIRM_TEMPLATES: Record<string, PropFirmTemplate> = {
         dailyLossLimit: 10000,
         maxDrawdown: 20000,
         profitTarget: 20000,
+        displayName: '$200K'
+      }
+    ]
+  },
+  'Apex Trader Funding': {
+    name: 'Apex Trader Funding',
+    profitSplit: 90,
+    minTradingDays: 0, // No minimum trading days
+    description: 'Apex Trader Funding',
+    sizes: [
+      {
+        size: 25000,
+        dailyLossLimit: 1000,
+        maxDrawdown: 1500,
+        profitTarget: 1500,
+        displayName: '$25K'
+      },
+      {
+        size: 50000,
+        dailyLossLimit: 2000,
+        maxDrawdown: 2500,
+        profitTarget: 3000,
+        displayName: '$50K'
+      },
+      {
+        size: 100000,
+        dailyLossLimit: 4000,
+        maxDrawdown: 5000,
+        profitTarget: 6000,
+        displayName: '$100K'
+      },
+      {
+        size: 150000,
+        dailyLossLimit: 6000,
+        maxDrawdown: 7500,
+        profitTarget: 9000,
+        displayName: '$150K'
+      },
+      {
+        size: 250000,
+        dailyLossLimit: 10000,
+        maxDrawdown: 12500,
+        profitTarget: 15000,
+        displayName: '$250K'
+      }
+    ]
+  },
+  'Tradify': {
+    name: 'Tradify',
+    profitSplit: 80,
+    minTradingDays: 5,
+    description: 'Tradify',
+    sizes: [
+      {
+        size: 25000,
+        dailyLossLimit: 1250,
+        maxDrawdown: 2500,
+        profitTarget: 2000,
+        displayName: '$25K'
+      },
+      {
+        size: 50000,
+        dailyLossLimit: 2000,
+        maxDrawdown: 2500,
+        profitTarget: 3000,
+        displayName: '$50K'
+      },
+      {
+        size: 100000,
+        dailyLossLimit: 4000,
+        maxDrawdown: 5000,
+        profitTarget: 5000,
+        displayName: '$100K'
+      },
+      {
+        size: 200000,
+        dailyLossLimit: 8000,
+        maxDrawdown: 10000,
+        profitTarget: 10000,
         displayName: '$200K'
       }
     ]
@@ -145,44 +224,44 @@ export const PROP_FIRM_TEMPLATES: Record<string, PropFirmTemplate> = {
     sizes: [
       {
         size: 6000,
-        dailyLossLimit: 300,
-        maxDrawdown: 600,
-        profitTarget: 600,
+        dailyLossLimit: 360,
+        maxDrawdown: 360,
+        profitTarget: 360,
         displayName: '$6K'
       },
       {
         size: 15000,
         dailyLossLimit: 900,
-        maxDrawdown: 1500,
-        profitTarget: 1500,
+        maxDrawdown: 900,
+        profitTarget: 900,
         displayName: '$15K'
       },
       {
         size: 25000,
         dailyLossLimit: 1500,
-        maxDrawdown: 2500,
-        profitTarget: 2500,
+        maxDrawdown: 1500,
+        profitTarget: 1500,
         displayName: '$25K'
       },
       {
         size: 50000,
-        dailyLossLimit: 2500,
-        maxDrawdown: 5000,
-        profitTarget: 5000,
+        dailyLossLimit: 3000,
+        maxDrawdown: 3000,
+        profitTarget: 3000,
         displayName: '$50K'
       },
       {
         size: 100000,
-        dailyLossLimit: 5000,
-        maxDrawdown: 10000,
-        profitTarget: 10000,
+        dailyLossLimit: 6000,
+        maxDrawdown: 6000,
+        profitTarget: 6000,
         displayName: '$100K'
       },
       {
         size: 200000,
-        dailyLossLimit: 10000,
-        maxDrawdown: 20000,
-        profitTarget: 20000,
+        dailyLossLimit: 12000,
+        maxDrawdown: 12000,
+        profitTarget: 12000,
         displayName: '$200K'
       }
     ]
@@ -196,28 +275,28 @@ export const PROP_FIRM_TEMPLATES: Record<string, PropFirmTemplate> = {
       {
         size: 6000,
         dailyLossLimit: 300,
-        maxDrawdown: 500,
+        maxDrawdown: 360,
         profitTarget: 360,
         displayName: '$6K'
       },
       {
         size: 20000,
         dailyLossLimit: 1000,
-        maxDrawdown: 1500,
+        maxDrawdown: 1200,
         profitTarget: 1200,
         displayName: '$20K'
       },
       {
         size: 40000,
         dailyLossLimit: 2000,
-        maxDrawdown: 3000,
+        maxDrawdown: 2400,
         profitTarget: 2400,
         displayName: '$40K'
       },
       {
         size: 100000,
         dailyLossLimit: 5000,
-        maxDrawdown: 7500,
+        maxDrawdown: 6000,
         profitTarget: 6000,
         displayName: '$100K'
       }
@@ -232,28 +311,28 @@ export const PROP_FIRM_TEMPLATES: Record<string, PropFirmTemplate> = {
       {
         size: 25000,
         dailyLossLimit: 1500,
-        maxDrawdown: 2500,
+        maxDrawdown: 2000,
         profitTarget: 2000,
         displayName: '$25K'
       },
       {
         size: 50000,
         dailyLossLimit: 3000,
-        maxDrawdown: 5000,
+        maxDrawdown: 4000,
         profitTarget: 4000,
         displayName: '$50K'
       },
       {
         size: 100000,
         dailyLossLimit: 6000,
-        maxDrawdown: 10000,
+        maxDrawdown: 8000,
         profitTarget: 8000,
         displayName: '$100K'
       },
       {
         size: 250000,
         dailyLossLimit: 15000,
-        maxDrawdown: 25000,
+        maxDrawdown: 20000,
         profitTarget: 20000,
         displayName: '$250K'
       }
@@ -274,4 +353,3 @@ export const getAccountSize = (firmName: string, size: number): PropAccountSize 
 export const getAllFirmNames = (): string[] => {
   return Object.keys(PROP_FIRM_TEMPLATES);
 };
-

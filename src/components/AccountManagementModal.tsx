@@ -65,10 +65,12 @@ const ACCOUNT_TYPES = [
 
 const PROP_FIRMS = [
   'Topstep',
+  'Apex Trader Funding',
+  'Tradify',
   'FTMO',
+  'FundedNext',
   'MyForexFunds',
   'The5ers',
-  'FundedNext',
   'E8 Funding',
   'TradingPit',
   'BluFX',
