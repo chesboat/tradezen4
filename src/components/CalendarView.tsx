@@ -633,22 +633,28 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
     return parts.join(' • ');
   };
 
+  // Smart abbreviation: always max 5-6 chars for consistent sizing
+  const formatPnLSmart = (pnl: number): string => {
+    const abs = Math.abs(pnl);
+    const sign = pnl > 0 ? '+' : pnl < 0 ? '' : '';
+    
+    if (abs >= 1000000) return `${sign}${(pnl / 1000000).toFixed(1)}M`; // $1.2M
+    if (abs >= 100000) return `${sign}${Math.round(pnl / 1000)}k`;      // $123k
+    if (abs >= 10000) return `${sign}${(pnl / 1000).toFixed(1)}k`;      // $12.3k
+    if (abs >= 1000) return `${sign}${(pnl / 1000).toFixed(1)}k`;       // $1.2k
+    return `${sign}${Math.round(pnl)}`;                                  // $543
+  };
+
   const formatPnL = (pnl: number, isCompact: boolean = false) => {
     if (pnl === 0) return null;
     
     if (isCompact) {
-      // Ultra-compact mode: just show +/- and abbreviated amount
-      const sign = pnl > 0 ? '+' : '';
-      const abbreviated = Math.abs(pnl) >= 1000 
-        ? `${sign}${(pnl / 1000).toFixed(1)}k`
-        : `${sign}${pnl.toFixed(0)}`;
-      
       return (
         <div className={cn(
           'text-xs font-bold truncate',
           pnl > 0 ? 'text-green-500' : 'text-red-500'
         )}>
-          {abbreviated}
+          {formatPnLSmart(pnl)}
         </div>
       );
     }
@@ -660,7 +666,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
           : 'text-base 2xl:text-lg 3xl:text-xl 4xl:text-2xl font-bold',
         pnl > 0 ? 'text-green-500' : 'text-red-500'
       )}>
-        {formatCurrency(pnl)}
+        {formatPnLSmart(pnl)}
       </div>
     );
   };
@@ -1074,63 +1080,29 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                       </div>
                     ) : (
                       <>
-                        {compactMode ? (
-                          // Ultra-compact mode for weekdays when both sidebars expanded - with tooltip
-                          <Tooltip 
-                            content={getDayTooltipContent(day)}
-                            position="top"
-                            fullWidth
-                          >
-                            <div className="flex flex-col items-center justify-center flex-1 space-y-0.5">
-                              {day.pnl !== 0 && (
-                                <div className={cn(
-                                  textSizes.pnl,
-                                  'font-bold truncate',
-                                  day.pnl > 0 ? 'text-green-500' : 'text-red-500'
-                                )} style={getPnlFontStyle(day.pnl)}>
-                                  {Math.abs(day.pnl) >= 1000 
-                                    ? `${day.pnl > 0 ? '+' : ''}${(day.pnl / 1000).toFixed(1)}k`
-                                    : formatCurrency(day.pnl)
-                                  }
-                                </div>
-                              )}
-                              {day.tradesCount > 0 && (
-                                <div className={cn(textSizes.trades, 'text-muted-foreground')} style={computedTradesFont}>
-                                  {day.tradesCount} trades
-                                </div>
-                              )}
-                            </div>
-                          </Tooltip>
-                        ) : (
+                        {/* All modes with tooltip for metrics */}
+                        <Tooltip 
+                          content={getDayTooltipContent(day)}
+                          position="top"
+                          fullWidth
+                        >
                           <div className="flex-1 flex flex-col items-center justify-center space-y-0.5">
-                            {/* P&L - Space-aware sizing */}
-                            {day.pnl !== 0 && (
-                              <div className={cn(
-                                textSizes.pnl,
-                                'font-bold truncate leading-tight',
-                                'flex items-center justify-center',
-                                day.pnl > 0 ? 'text-green-500' : 'text-red-500'
-                              )} style={getPnlFontStyle(day.pnl)}>
-                                {(['ultra-compact', 'compact'] as const).includes(spaceLevel as any)
-                                  ? (Math.abs(day.pnl) >= 1000 
-                                      ? `${day.pnl > 0 ? '+' : ''}${(day.pnl/1000).toFixed(1)}k`
-                                      : `${day.pnl > 0 ? '+' : ''}${Math.round(day.pnl)}`)
-                                  : formatCurrency(day.pnl)
-                                }
-                              </div>
-                            )}
+                            {/* P&L - Locked sizing with smart abbreviation */}
+                            <div className={cn(
+                              'text-xs lg:text-sm 2xl:text-base 3xl:text-lg font-bold',
+                              day.pnl > 0 ? 'text-green-500' : day.pnl < 0 ? 'text-red-500' : 'text-muted-foreground'
+                            )}>
+                              {formatPnLSmart(day.pnl)}
+                            </div>
                             
-                            {/* Trade Count - Space-aware display */}
+                            {/* Trade Count - Locked sizing */}
                             {day.tradesCount > 0 && (
-                              <div className={cn(
-                                textSizes.trades,
-                                'text-muted-foreground text-center leading-tight'
-                              )} style={computedTradesFont}>
-                                {`${day.tradesCount} trades`}
+                              <div className="text-[10px] lg:text-xs 2xl:text-sm 3xl:text-base text-muted-foreground">
+                                {day.tradesCount} trades
                               </div>
                             )}
                           </div>
-                        )}
+                        </Tooltip>
                       </>
                     )}
                   </div>
@@ -1201,20 +1173,19 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                     </div>
                   </Tooltip>
                 ) : (
-                  // Normal weekly summary
+                  // Normal weekly summary - matched to day tile sizing
                   <div className="flex flex-col items-center justify-center space-y-1">
-                    <div className={cn(textSizes.weekTitle, 'font-medium text-muted-foreground leading-tight')}>
+                    <div className="text-xs lg:text-sm 2xl:text-base 3xl:text-lg font-medium text-muted-foreground">
                       Week {weeklyData[weekIndex]?.weekNumber}
                     </div>
                     <div className={cn(
-                      textSizes.weekPnl,
-                      'font-bold leading-tight',
+                      'text-xs lg:text-sm 2xl:text-base 3xl:text-lg font-bold',
                       weeklyData[weekIndex]?.totalPnl > 0 ? 'text-green-500' : 
                       weeklyData[weekIndex]?.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
-                    )} style={computedWeeklyPnlFont}>
-                      {formatCurrency(weeklyData[weekIndex]?.totalPnl || 0)}
+                    )}>
+                      {formatPnLSmart(weeklyData[weekIndex]?.totalPnl || 0)}
                     </div>
-                    <div className={cn(textSizes.weekDays, 'text-muted-foreground leading-tight')}>
+                    <div className="text-[10px] lg:text-xs 2xl:text-sm 3xl:text-base text-muted-foreground">
                       {weeklyData[weekIndex]?.activeDays || 0} days
                     </div>
   </div>
