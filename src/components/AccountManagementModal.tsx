@@ -9,9 +9,11 @@ import {
   User, 
   Eye, 
   EyeOff,
-  AlertTriangle
+  AlertTriangle,
+  Archive,
+  ArchiveRestore
 } from 'lucide-react';
-import { useAccountFilterActions, useAccounts } from '@/store/useAccountFilterStore';
+import { useAccountFilterActions, useAccounts, getAccountStatus } from '@/store/useAccountFilterStore';
 import { TradingAccount } from '@/types';
 import { formatCurrency } from '@/lib/localStorageUtils';
 import { cn } from '@/lib/utils';
@@ -28,7 +30,8 @@ interface AccountForm {
   balance: string;
   currency: string;
   broker: string;
-  isActive: boolean;
+  status: 'active' | 'archived' | 'deleted';
+  archivedReason?: string;
   linkedAccountIds?: string[];
   
   // Prop account fields
@@ -96,7 +99,8 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
     balance: '',
     currency: 'USD',
     broker: '',
-    isActive: true,
+    status: 'active',
+    archivedReason: '',
     linkedAccountIds: [],
     
     // Prop account fields
@@ -131,7 +135,8 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
         balance: editingAccount.balance.toString(),
         currency: editingAccount.currency,
         broker: editingAccount.broker || '',
-        isActive: editingAccount.isActive,
+        status: getAccountStatus(editingAccount),
+        archivedReason: editingAccount.archivedReason || '',
         
         // Prop account fields
         propFirm: editingAccount.propFirm || '',
@@ -160,7 +165,8 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
         balance: '',
         currency: 'USD',
         broker: '',
-        isActive: true,
+        status: 'active',
+        archivedReason: '',
         linkedAccountIds: [],
         
         // Prop account fields
@@ -258,7 +264,9 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
         currency: form.currency,
         // Only include broker if non-empty
         ...(form.broker.trim() ? { broker: form.broker.trim() } : {}),
-        isActive: form.isActive,
+        status: form.status,
+        ...(form.status === 'archived' && form.archivedReason ? { archivedReason: form.archivedReason } : {}),
+        ...(form.status === 'archived' && !editingAccount?.archivedAt ? { archivedAt: new Date().toISOString() } : {}),
         ...(form.linkedAccountIds && form.linkedAccountIds.length > 0 ? { linkedAccountIds: form.linkedAccountIds } : {}),
         
         // Prop account fields (only include if prop account)
@@ -828,36 +836,84 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
               </>
             )}
 
-            {/* Active Status */}
-            <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-              <div className="flex items-center gap-2">
-                {form.isActive ? (
-                  <Eye className="w-4 h-4 text-green-500" />
-                ) : (
-                  <EyeOff className="w-4 h-4 text-muted-foreground" />
-                )}
-                <div>
-                  <div className="font-medium">Account Active</div>
-                  <div className="text-xs text-muted-foreground">
-                    {form.isActive ? 'This account is visible and selectable' : 'This account is hidden from selection'}
+            {/* Account Status */}
+            <div className="space-y-3">
+              <label className="text-sm font-medium">Account Status</label>
+              
+              {/* Smart suggestion for breached accounts */}
+              {editingAccount && form.type === 'prop' && form.accountPhase === 'breached' && form.status === 'active' && (
+                <div className="p-3 bg-orange-500/10 border border-orange-500/20 rounded-lg flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
+                  <div className="text-sm">
+                    <div className="font-medium text-orange-500">Account Breached</div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Consider archiving this account to keep your workspace clean while preserving all historical data for analytics.
+                    </div>
                   </div>
                 </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => updateForm('isActive', !form.isActive)}
-                className={cn(
-                  "relative inline-flex h-5 w-9 items-center rounded-full transition-colors",
-                  form.isActive ? "bg-primary" : "bg-muted-foreground"
-                )}
-              >
-                <span
+              )}
+
+              <div className="grid grid-cols-1 gap-2">
+                <button
+                  type="button"
+                  onClick={() => updateForm('status', 'active')}
                   className={cn(
-                    "inline-block h-3 w-3 transform rounded-full bg-white transition-transform",
-                    form.isActive ? "translate-x-5" : "translate-x-1"
+                    "p-3 text-left border rounded-lg transition-all",
+                    form.status === 'active'
+                      ? "border-green-500 bg-green-500/10 shadow-sm"
+                      : "border-border hover:border-green-500/50"
                   )}
-                />
-              </button>
+                >
+                  <div className="flex items-center gap-2">
+                    <Eye className="w-4 h-4" />
+                    <div className="font-medium">Active</div>
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Currently trading • Visible in account selector
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => updateForm('status', 'archived')}
+                  className={cn(
+                    "p-3 text-left border rounded-lg transition-all",
+                    form.status === 'archived'
+                      ? "border-primary bg-primary/10 shadow-sm"
+                      : "border-border hover:border-primary/50"
+                  )}
+                >
+                  <div className="flex items-center gap-2">
+                    <Archive className="w-4 h-4" />
+                    <div className="font-medium">Archived</div>
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Not trading • Hidden from selector • Data preserved for analytics
+                  </div>
+                </button>
+              </div>
+
+              {/* Archive reason (shown when status is archived) */}
+              {form.status === 'archived' && (
+                <div className="space-y-2 pt-2">
+                  <label className="text-xs font-medium text-muted-foreground">Archive Reason (Optional)</label>
+                  <input
+                    type="text"
+                    value={form.archivedReason || ''}
+                    onChange={(e) => updateForm('archivedReason', e.target.value)}
+                    placeholder="e.g., Account breached, Switched prop firms, Taking a break"
+                    className="w-full px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-background text-foreground placeholder:text-muted-foreground"
+                  />
+                </div>
+              )}
+
+              {/* Show archived date if exists */}
+              {editingAccount?.archivedAt && form.status === 'archived' && (
+                <div className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Archive className="w-3 h-3" />
+                  Archived on {new Date(editingAccount.archivedAt).toLocaleDateString()}
+                </div>
+              )}
             </div>
 
             {/* Copy trading helper for followers */}

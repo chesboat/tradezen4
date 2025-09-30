@@ -26,7 +26,8 @@ import {
   CheckCircle,
   AlertCircle,
   Minus,
-  MinusCircle
+  MinusCircle,
+  Archive
 } from 'lucide-react';
 import { useTradeStore } from '@/store/useTradeStore';
 import TradeImageImport from '@/components/TradeImageImport';
@@ -97,6 +98,7 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
   const [showImageImport, setShowImageImport] = useState(false);
   const [bulkMood, setBulkMood] = useState<MoodType | ''>('');
   const [activeTag, setActiveTag] = useState<string | null>(null);
+  const [includeArchived, setIncludeArchived] = useState(false);
 
   // Get unique symbols for filter dropdown
   const uniqueSymbols = useMemo(() => {
@@ -114,7 +116,7 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
   // Filter and sort trades
   const filteredTrades = useMemo(() => {
     let filtered = (() => {
-      const ids = getAccountIdsForSelection(selectedAccountId || null);
+      const ids = getAccountIdsForSelection(selectedAccountId || null, includeArchived);
       return trades.filter(t => ids.includes(t.accountId));
     })();
 
@@ -590,17 +592,31 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={clearFilters}
-                  className="flex items-center gap-2 px-3 py-2 bg-muted/50 hover:bg-muted/70 rounded-lg transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                  Clear Filters
-                </button>
-                <span className="text-sm text-muted-foreground">
-                  {filteredTrades.length} of {trades.length} trades
-                </span>
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={clearFilters}
+                    className="flex items-center gap-2 px-3 py-2 bg-muted/50 hover:bg-muted/70 rounded-lg transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                    Clear Filters
+                  </button>
+                  <span className="text-sm text-muted-foreground">
+                    {filteredTrades.length} of {trades.length} trades
+                  </span>
+                </div>
+                
+                {/* Toggle for including archived accounts */}
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={includeArchived}
+                    onChange={(e) => setIncludeArchived(e.target.checked)}
+                    className="w-4 h-4 rounded border-border text-primary focus:ring-2 focus:ring-primary/50"
+                  />
+                  <Archive className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Include archived accounts</span>
+                </label>
               </div>
             </motion.div>
           )}

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { ChevronDown, Check, Plus, CreditCard, Edit3 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAccountFilterStore, initializeDefaultAccounts } from '@/store/useAccountFilterStore';
+import { useAccountFilterStore, initializeDefaultAccounts, isAccountActive } from '@/store/useAccountFilterStore';
 import { Users } from 'lucide-react';
 import { AccountManagementModal } from './AccountManagementModal';
 import { TradingAccount } from '@/types';
@@ -44,13 +44,15 @@ export const AccountFilter: React.FC<AccountFilterProps> = ({ className }) => {
   }, [accounts]);
 
   // Group accounts: each leader followed immediately by its followers, then any remaining accounts alpha
+  // Only show active accounts in the dropdown
   const groupedAccounts = useMemo(() => {
-    const byId = new Map(accounts.map(a => [a.id, a] as const));
+    const activeAccounts = accounts.filter(a => isAccountActive(a));
+    const byId = new Map(activeAccounts.map(a => [a.id, a] as const));
     const visited = new Set<string>();
     const groups: TradingAccount[] = [];
 
     // Add leaders and their followers
-    accounts.forEach(acc => {
+    activeAccounts.forEach(acc => {
       const links = (acc.linkedAccountIds || []);
       if (links.length === 0) return;
       if (visited.has(acc.id)) return;
@@ -66,7 +68,7 @@ export const AccountFilter: React.FC<AccountFilterProps> = ({ className }) => {
     });
 
     // Append any remaining accounts not in groups, sorted by name
-    const remaining = accounts.filter(a => !visited.has(a.id)).sort((a, b) => a.name.localeCompare(b.name));
+    const remaining = activeAccounts.filter(a => !visited.has(a.id)).sort((a, b) => a.name.localeCompare(b.name));
     return [...groups, ...remaining];
   }, [accounts]);
 

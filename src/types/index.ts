@@ -128,7 +128,10 @@ export interface TradingAccount extends FirestoreDocument {
   balance: number;
   currency: string;
   broker?: string;
-  isActive: boolean;
+  status: 'active' | 'archived' | 'deleted';
+  isActive?: boolean; // Deprecated: kept for backwards compatibility, use status instead
+  archivedAt?: string | Date; // Timestamp when account was archived
+  archivedReason?: string; // Optional reason for archiving
   propFirm?: string;
   accountPhase?: 'evaluation' | 'funded' | 'breached' | 'passed';
   dailyLossLimit?: number;

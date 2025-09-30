@@ -62,7 +62,12 @@ service cloud.firestore {
     
     // Trading accounts collection under each user
     match /users/{userId}/tradingAccounts/{accountId} {
-      allow read, write: if isOwner(userId);
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) 
+        && (!('status' in request.resource.data) || request.resource.data.status in ['active', 'archived', 'deleted']);
+      allow update: if isOwner(userId)
+        && (!('status' in request.resource.data) || request.resource.data.status in ['active', 'archived', 'deleted']);
+      allow delete: if isOwner(userId);
     }
     
     // Tally rules collection under each user

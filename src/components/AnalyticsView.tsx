@@ -83,8 +83,9 @@ export const AnalyticsView: React.FC = () => {
   const [showEdgeScoreModal, setShowEdgeScoreModal] = useState(false);
 
   // Filter trades by account and period
+  // ALWAYS include archived accounts in analytics for complete historical performance
   const filteredTrades = useMemo(() => {
-    const ids = getAccountIdsForSelection(selectedAccountId || null);
+    const ids = getAccountIdsForSelection(selectedAccountId || null, true); // includeArchived = true
     let filtered = trades.filter(trade => ids.includes(trade.accountId));
     
     if (selectedPeriod.days > 0) {

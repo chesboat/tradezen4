@@ -110,10 +110,10 @@ export const initializeDefaultAccounts = async () => {
       // Do not auto-create demo accounts in SSOT mode
       console.log('No accounts found for user. Leaving empty (SSOT).');
     } else if (!state.selectedAccountId) {
-      const leader = state.accounts.find(a => (a as any).linkedAccountIds && (a as any).linkedAccountIds.length > 0);
-      const active = state.accounts.find(a => a.isActive);
-      const pick = leader || active || state.accounts[0];
-      setSelectedAccount(pick.id);
+      const activeAccounts = state.accounts.filter(a => getAccountStatus(a) === 'active');
+      const leader = activeAccounts.find(a => (a as any).linkedAccountIds && (a as any).linkedAccountIds.length > 0);
+      const pick = leader || activeAccounts[0] || state.accounts[0];
+      if (pick) setSelectedAccount(pick.id);
     }
 
     // Attach realtime subscription for accounts (SSOT)
@@ -131,10 +131,10 @@ export const initializeDefaultAccounts = async () => {
         try { (window as any).__accountsReady = true; } catch {}
         const st = useAccountFilterStore.getState();
         if (!st.selectedAccountId && st.accounts.length > 0) {
-          const leader = st.accounts.find(a => (a as any).linkedAccountIds && (a as any).linkedAccountIds.length > 0);
-          const active = st.accounts.find(a => a.isActive);
-          const pick = leader || active || st.accounts[0];
-          setSelectedAccount(pick.id);
+          const activeAccounts = st.accounts.filter(a => getAccountStatus(a) === 'active');
+          const leader = activeAccounts.find(a => (a as any).linkedAccountIds && (a as any).linkedAccountIds.length > 0);
+          const pick = leader || activeAccounts[0] || st.accounts[0];
+          if (pick) setSelectedAccount(pick.id);
         }
       } catch (e) {
         console.warn('accounts realtime update failed:', e);
@@ -148,8 +148,24 @@ export const initializeDefaultAccounts = async () => {
   }
 };
 
+// Helper: Normalize account status (backwards compatibility)
+export const getAccountStatus = (account: TradingAccount): 'active' | 'archived' | 'deleted' => {
+  // Use new status field if available
+  if (account.status) return account.status;
+  // Fallback to old isActive field
+  return account.isActive !== false ? 'active' : 'archived';
+};
+
+// Helper: Check if account is active
+export const isAccountActive = (account: TradingAccount): boolean => {
+  return getAccountStatus(account) === 'active';
+};
+
 // Selector hooks
 export const useAccounts = () => useAccountFilterStore((state) => state.accounts);
+export const useActiveAccounts = () => useAccountFilterStore((state) => 
+  state.accounts.filter(acc => isAccountActive(acc))
+);
 export const useAccountFilterActions = () => useAccountFilterStore((state) => ({
   setSelectedAccount: state.setSelectedAccount,
   addAccount: state.addAccount,
@@ -168,21 +184,23 @@ export const filterRealAccounts = <T extends { accountId: string }>(items: T[]):
 };
 
 // Helper: resolve which account IDs are in scope for a given selection
-export const getAccountIdsForSelection = (selectedId: string | null): string[] => {
+export const getAccountIdsForSelection = (selectedId: string | null, includeArchived: boolean = false): string[] => {
   const { accounts } = useAccountFilterStore.getState();
-  if (!selectedId) return accounts.filter(a => a.isActive !== false).map((a) => a.id);
+  const filterFn = (a: TradingAccount) => includeArchived ? getAccountStatus(a) !== 'deleted' : isAccountActive(a);
+  
+  if (!selectedId) return accounts.filter(filterFn).map((a) => a.id);
   if (selectedId.startsWith('group:')) {
     const leaderId = selectedId.split(':')[1];
     const leader = accounts.find((a) => a.id === leaderId);
     const linked = (leader?.linkedAccountIds || []).filter(id => {
       const acc = accounts.find(a => a.id === id);
-      return acc && acc.isActive !== false;
+      return acc && filterFn(acc);
     });
-    const includeLeader = leader && leader.isActive !== false ? [leaderId] : [];
+    const includeLeader = leader && filterFn(leader) ? [leaderId] : [];
     return [...includeLeader, ...linked];
   }
   const single = accounts.find(a => a.id === selectedId);
-  return single && single.isActive !== false ? [selectedId] : [];
+  return single && filterFn(single) ? [selectedId] : [];
 };
 
 // Get the full group (leader first) for any account selection (single or group)
