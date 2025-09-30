@@ -162,7 +162,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
       year: currentYear,
       weeks,
       weeklySummaries,
-      monthlyPnl,
+      monthlyPnl: monthlyPnL,
     };
   };
 
