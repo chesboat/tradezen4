@@ -94,6 +94,28 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
     scale: Math.min(2, (typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1) * 1.25),
     scrollX: 0,
     scrollY: 0,
+    onclone: (clonedDoc: Document) => {
+      try {
+        // Hide everything except the capture root to avoid fixed overlays bleeding in
+        const root = clonedDoc.getElementById('calendar-share-capture');
+        if (root) {
+          const all = Array.from(clonedDoc.body.querySelectorAll('*')) as HTMLElement[];
+          for (const el of all) {
+            if (el === root || root.contains(el)) continue;
+            el.style.display = 'none';
+          }
+          // Normalize any transforms/filters/animations inside the capture tree
+          const inside = Array.from(root.querySelectorAll<HTMLElement>('*'));
+          for (const el of inside) {
+            el.style.transform = 'none';
+            el.style.filter = 'none';
+            el.style.animation = 'none';
+            el.style.transition = 'none';
+            el.style.backdropFilter = 'none';
+          }
+        }
+      } catch {}
+    }
   } as any;
 
   const handleDownload = async () => {
@@ -519,7 +541,8 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
             {/* Offscreen, fixed-size capture target for consistent desktop framing on all devices */}
             <div
               ref={captureRef}
-              className="fixed -left-[10000px] top-0 bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 rounded-2xl"
+              id="calendar-share-capture"
+              className="absolute -left-[10000px] top-0 bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 rounded-2xl"
               style={{ width: 1200, height: 1000, padding: 48 }}
             >
               <div className="w-full h-full flex items-center justify-center">
