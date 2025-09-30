@@ -1086,18 +1086,18 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                           position="top"
                           fullWidth
                         >
-                          <div className="flex-1 flex flex-col items-center justify-center space-y-1">
-                            {/* P&L - Locked sizing with smart abbreviation */}
+                          <div className="flex-1 flex flex-col items-center justify-center space-y-0.5 sm:space-y-1">
+                            {/* P&L - Mobile-optimized, then scales up */}
                             <div className={cn(
-                              'text-base lg:text-lg 2xl:text-xl 3xl:text-2xl font-bold leading-none',
+                              'text-xs sm:text-sm lg:text-lg 2xl:text-xl 3xl:text-2xl font-bold leading-tight',
                               day.pnl > 0 ? 'text-green-500' : day.pnl < 0 ? 'text-red-500' : 'text-muted-foreground'
                             )}>
                               {formatPnLSmart(day.pnl)}
                             </div>
                             
-                            {/* Trade Count - Locked sizing */}
+                            {/* Trade Count - Mobile-optimized */}
                             {day.tradesCount > 0 && (
-                              <div className="text-xs lg:text-sm 2xl:text-base 3xl:text-lg text-muted-foreground leading-none">
+                              <div className="text-[9px] sm:text-[10px] lg:text-sm 2xl:text-base 3xl:text-lg text-muted-foreground leading-tight">
                                 {day.tradesCount} trades
                               </div>
                             )}
@@ -1173,19 +1173,19 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                     </div>
                   </Tooltip>
                 ) : (
-                  // Normal weekly summary - matched to day tile sizing
-                  <div className="flex flex-col items-center justify-center space-y-1">
-                    <div className="text-xs lg:text-sm 2xl:text-base 3xl:text-lg font-medium text-muted-foreground leading-none">
+                  // Normal weekly summary - mobile-optimized, matched to day tile sizing
+                  <div className="flex flex-col items-center justify-center space-y-0.5 sm:space-y-1">
+                    <div className="text-[9px] sm:text-[10px] lg:text-sm 2xl:text-base 3xl:text-lg font-medium text-muted-foreground leading-tight">
                       Week {weeklyData[weekIndex]?.weekNumber}
                     </div>
                     <div className={cn(
-                      'text-base lg:text-lg 2xl:text-xl 3xl:text-2xl font-bold leading-none',
+                      'text-xs sm:text-sm lg:text-lg 2xl:text-xl 3xl:text-2xl font-bold leading-tight',
                       weeklyData[weekIndex]?.totalPnl > 0 ? 'text-green-500' : 
                       weeklyData[weekIndex]?.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
                     )}>
                       {formatPnLSmart(weeklyData[weekIndex]?.totalPnl || 0)}
                     </div>
-                    <div className="text-xs lg:text-sm 2xl:text-base 3xl:text-lg text-muted-foreground leading-none">
+                    <div className="text-[9px] sm:text-[10px] lg:text-sm 2xl:text-base 3xl:text-lg text-muted-foreground leading-tight">
                       {weeklyData[weekIndex]?.activeDays || 0} days
                     </div>
   </div>
