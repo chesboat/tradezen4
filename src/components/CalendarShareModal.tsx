@@ -81,7 +81,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
   };
 
   const html2canvasOpts = {
-    background: 'transparent',
+    backgroundColor: '#0b0b0b',
     useCORS: true,
     allowTaint: true,
     foreignObjectRendering: true,
@@ -91,7 +91,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
     windowHeight: 1000,
     width: 1200,
     height: 1000,
-    scale: Math.min(2, (typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1) * 1.25),
+    scale: Math.min(1.5, (typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1)),
     scrollX: 0,
     scrollY: 0,
     removeContainer: true,
@@ -125,11 +125,44 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
     
     setIsGenerating(true);
     try {
-      // Dynamic import for html2canvas
       const html2canvas = (await import('html2canvas')).default;
       if ((document as any).fonts?.ready) { try { await (document as any).fonts.ready; } catch {} }
-      const canvas = await html2canvas(target, html2canvasOpts);
 
+      // Mobile Safari can still fail cloning complex trees; create a clean window fallback
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+      if (isIOS) {
+        const w = window.open('', '_blank', 'noopener,noreferrer,width=1300,height=1100');
+        if (w && w.document) {
+          w.document.write('<!doctype html><html><head><meta charset="utf-8"/></head><body style="margin:0;background:#0b0b0b;"></body></html>');
+          const container = w.document.createElement('div');
+          container.id = 'capture-root';
+          container.style.width = '1200px';
+          container.style.height = '1000px';
+          container.style.padding = '48px';
+          container.style.background = 'linear-gradient(135deg,#9333ea,#ec4899,#fb923c)';
+          container.style.borderRadius = '16px';
+          container.style.overflow = 'hidden';
+          // Clone inner markup only
+          const clone = target.cloneNode(true) as HTMLElement;
+          // Ensure no animations
+          clone.querySelectorAll('*').forEach((el: any) => { el.style.animation='none'; el.style.transition='none'; });
+          container.appendChild(clone);
+          w.document.body.appendChild(container);
+          await new Promise(r=>setTimeout(r,50));
+          const canvas = await html2canvas(container as any, { ...html2canvasOpts, scrollX:0, scrollY:0 });
+          const link = w.document.createElement('a');
+          link.download = `TradeFutura-Calendar-${currentMonth}-${currentYear}.png`;
+          link.href = canvas.toDataURL('image/png');
+          w.document.body.appendChild(link);
+          link.click();
+          setTimeout(() => { try { w.close(); } catch {} }, 150);
+          toast.success('Calendar image downloaded!');
+          setIsGenerating(false);
+          return;
+        }
+      }
+
+      const canvas = await html2canvas(target, html2canvasOpts);
       // Create download link
       const link = document.createElement('a');
       link.download = `TradeFutura-Calendar-${currentMonth}-${currentYear}.png`;
@@ -550,8 +583,8 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
             <div
               ref={captureRef}
               id="calendar-share-capture"
-              className="absolute -left-[9999px] top-0 bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 rounded-2xl"
-              style={{ width: 1200, height: 1000, padding: 48, opacity: 1 }}
+              className="fixed left-0 top-0 bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 rounded-2xl"
+              style={{ width: 1200, height: 1000, padding: 48, opacity: 0, zIndex: -1000, pointerEvents: 'none' }}
             >
               <div className="w-full h-full flex items-center justify-center">
                 <div className={`${theme}`} style={{ width: 1000 }}>
