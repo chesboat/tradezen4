@@ -12,6 +12,7 @@ import {
   Share
 } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/localStorageUtils';
+import { renderCalendarToDataURL } from '@/lib/share/CalendarRenderer';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
 import toast from 'react-hot-toast';
@@ -139,52 +140,43 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
     }
   } as any;
 
+  // Build minimal data for the reliable canvas renderer
+  const buildRenderData = () => {
+    const weeks = calendarData.weeks.map((week: any[]) => week.map((d: any) => ({
+      date: new Date(d.date),
+      pnl: d.pnl,
+      tradesCount: d.tradesCount,
+      winRate: d.winRate,
+      avgRR: d.avgRR,
+      isOtherMonth: d.isOtherMonth,
+      isWeekend: d.date.getDay() === 0 || d.date.getDay() === 6,
+      hasReflection: d.hasReflection,
+    })));
+    const weeklySummaries = weeks.map((w: any[], idx: number) => ({
+      weekNumber: idx + 1,
+      totalPnl: w.reduce((s: number, d: any) => s + (d.pnl || 0), 0),
+      activeDays: w.filter((d: any) => d.tradesCount > 0).length,
+    }));
+    return {
+      monthName: currentMonth,
+      year: currentYear,
+      weeks,
+      weeklySummaries,
+      monthlyPnl,
+    };
+  };
+
   const handleDownload = async () => {
     const target = getCaptureTarget();
     if (!target) return;
     
     setIsGenerating(true);
     try {
-      const html2canvas = (await import('html2canvas')).default;
-      if ((document as any).fonts?.ready) { try { await (document as any).fonts.ready; } catch {} }
-
-      // Mobile Safari can still fail cloning complex trees; create a clean window fallback
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
-      if (isIOS) {
-        const w = window.open('', '_blank', 'noopener,noreferrer,width=1300,height=1100');
-        if (w && w.document) {
-          w.document.write('<!doctype html><html><head><meta charset="utf-8"/></head><body style="margin:0;background:#0b0b0b;"></body></html>');
-          copyHeadStyles(document, w.document);
-          const container = w.document.createElement('div');
-          container.id = 'capture-root';
-          container.style.width = '1200px';
-          container.style.height = '1000px';
-          container.style.padding = '48px';
-          container.style.background = 'linear-gradient(135deg,#9333ea,#ec4899,#fb923c)';
-          container.style.borderRadius = '16px';
-          container.style.overflow = 'hidden';
-          // Clone inner markup only
-          const clone = target.cloneNode(true) as HTMLElement;
-          // Ensure no animations
-          clone.querySelectorAll('*').forEach((el: any) => { el.style.animation='none'; el.style.transition='none'; });
-          container.appendChild(clone);
-          w.document.body.appendChild(container);
-          await new Promise(r=>setTimeout(r,50));
-          const canvas = await html2canvas(container as any, { ...html2canvasOpts, scrollX:0, scrollY:0 });
-          const dataUrl = canvas.toDataURL('image/png');
-          // Display image for manual save (more reliable on iOS)
-          w.document.body.innerHTML = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#0b0b0b;padding:16px;"><img src="${dataUrl}" style="max-width:100%;height:auto;border-radius:12px"/></div>`;
-          toast.success('Image ready – long‑press to Save Image');
-          setIsGenerating(false);
-          return;
-        }
-      }
-
-      const canvas = await html2canvas(target, html2canvasOpts);
-      // Create download link
+      const renderData = buildRenderData();
+      const dataUrl = await renderCalendarToDataURL(renderData, { width: 1200, height: 1000, theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light' });
       const link = document.createElement('a');
       link.download = `TradeFutura-Calendar-${currentMonth}-${currentYear}.png`;
-      link.href = canvas.toDataURL('image/png');
+      link.href = dataUrl;
       link.rel = 'noopener';
       document.body.appendChild(link);
       link.click();
@@ -205,11 +197,9 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
     
     setIsGenerating(true);
     try {
-      const html2canvas = (await import('html2canvas')).default;
-      if ((document as any).fonts?.ready) { try { await (document as any).fonts.ready; } catch {} }
-      const canvas = await html2canvas(target, html2canvasOpts);
-
-      canvas.toBlob(async (blob) => {
+      const renderData = buildRenderData();
+      const dataUrl = await renderCalendarToDataURL(renderData, { width: 1200, height: 1000, theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light' });
+      const blob = await (await fetch(dataUrl)).blob();
         if (blob && navigator.clipboard && window.ClipboardItem) {
           try {
             await navigator.clipboard.write([
@@ -222,7 +212,6 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
         } else {
           toast.error('Clipboard not supported in this browser');
         }
-      }, 'image/png');
     } catch (error) {
       console.error('Error copying calendar image:', error);
       toast.error('Failed to copy calendar image');
@@ -237,9 +226,8 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
     
     setIsGenerating(true);
     try {
-      const html2canvas = (await import('html2canvas')).default;
-      if ((document as any).fonts?.ready) { try { await (document as any).fonts.ready; } catch {} }
-      const canvas = await html2canvas(target, html2canvasOpts);
+      const renderData = buildRenderData();
+      const dataUrl = await renderCalendarToDataURL(renderData, { width: 1200, height: 1000, theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light' });
 
       // Check clipboard support and try multiple methods
       const hasClipboardSupport =
@@ -250,8 +238,8 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
         typeof (navigator as any).clipboard?.write === 'function';
       
       if (hasClipboardSupport) {
-        canvas.toBlob(async (blob) => {
-          if (blob) {
+        const blob = await (await fetch(dataUrl)).blob();
+        if (blob) {
             try {
               // Create ClipboardItem with image
               const clipboardItem = new ClipboardItem({
@@ -277,7 +265,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
               // Fallback to download
               const link = document.createElement('a');
               link.download = `TradeFutura-Calendar-${currentMonth}-${currentYear}.png`;
-              link.href = canvas.toDataURL('image/png');
+              link.href = dataUrl;
               document.body.appendChild(link);
               link.click();
               setTimeout(() => link.remove(), 0);
@@ -288,15 +276,14 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
               window.open(twitterUrl, '_blank', 'noopener,noreferrer');
               toast.success('📎 Calendar downloaded! Drag and drop it into your tweet');
             }
-          }
-        }, 'image/png');
+        }
       } else {
         console.log('Clipboard not supported, using download fallback');
         
         // Direct download fallback
         const link = document.createElement('a');
         link.download = `TradeFutura-Calendar-${currentMonth}-${currentYear}.png`;
-        link.href = canvas.toDataURL('image/png');
+        link.href = dataUrl;
         document.body.appendChild(link);
         link.click();
         setTimeout(() => link.remove(), 0);
@@ -321,14 +308,12 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
     
     setIsGenerating(true);
     try {
-      const html2canvas = (await import('html2canvas')).default;
-      if ((document as any).fonts?.ready) { try { await (document as any).fonts.ready; } catch {} }
-      const canvas = await html2canvas(target, html2canvasOpts);
-
+      const renderData = buildRenderData();
+      const dataUrl = await renderCalendarToDataURL(renderData, { width: 1200, height: 1000, theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light' });
       // Download the image
       const link = document.createElement('a');
       link.download = `TradeFutura-Calendar-${currentMonth}-${currentYear}.png`;
-      link.href = canvas.toDataURL('image/png');
+      link.href = dataUrl;
       link.click();
       
       toast.success('Calendar downloaded! Upload it to your Instagram story or post');
