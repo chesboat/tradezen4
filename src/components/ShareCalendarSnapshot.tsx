@@ -59,7 +59,8 @@ export const ShareCalendarSnapshot: React.FC = () => {
 
   return (
     <div className={cn('min-h-screen', theme)}>
-      <div className="w-full bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 py-16 px-12" data-share-calendar-card>
+      {/* Desktop/Screenshot version - hidden on mobile */}
+      <div className="hidden sm:block w-full bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 py-16 px-12" data-share-calendar-card>
         <div className="bg-background rounded-2xl border w-full max-w-[1100px] mx-auto shadow-2xl">
           <div className="pt-6 pb-8 px-6">
             {/* Header */}
@@ -152,6 +153,83 @@ export const ShareCalendarSnapshot: React.FC = () => {
                 <div>
                   <h3 className="text-base font-bold text-foreground">TradeFutura</h3>
                   <p className="text-xs text-muted-foreground">Your edge, future-proofed</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile version - clean and scrollable */}
+      <div className="sm:hidden w-full min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 p-4">
+        <div className="bg-background rounded-xl border shadow-xl overflow-hidden">
+          <div className="p-4">
+            {/* Mobile Header */}
+            <div className="mb-4 text-center">
+              <h1 className="text-2xl font-bold text-foreground mb-1">{data.monthName} {data.year}</h1>
+              <div className="text-sm text-muted-foreground">
+                Monthly: <span className="font-semibold text-green-500">{formatCurrency(data.monthlyPnl)}</span>
+              </div>
+            </div>
+
+            {/* Mobile Grid - hide weekly summaries for cleaner view */}
+            <div className="space-y-1 overflow-x-auto">
+              <div className="grid grid-cols-7 gap-0.5 min-w-[320px]">
+                {DAYS_OF_WEEK.map((d) => (
+                  <div key={`h-${d}`} className="text-center font-semibold text-muted-foreground text-xs py-1">{d.slice(0, 3)}</div>
+                ))}
+              </div>
+
+              {data.weeks.map((week, wi) => (
+                <div key={`w-${wi}`} className="grid grid-cols-7 gap-0.5 min-w-[320px]">
+                  {week.map((day, di) => {
+                    const dayDate = new Date(day.date);
+                    const isWeekend = day.isWeekend || dayDate.getDay() === 0 || dayDate.getDay() === 6;
+                    return (
+                      <div key={`d-${wi}-${di}`} className={cn(
+                        'relative p-1.5 rounded-lg border bg-card min-h-[50px] flex flex-col',
+                        day.pnl > 0 && 'border-green-500/30 bg-green-50/10',
+                        day.pnl < 0 && 'border-red-500/30 bg-red-50/10',
+                        day.isOtherMonth && 'opacity-40'
+                      )}>
+                        <div className="flex flex-col h-full justify-between">
+                          <div className="flex items-center justify-between mb-0.5">
+                            <span className={cn('text-xs font-medium', day.isOtherMonth ? 'text-muted-foreground' : 'text-foreground')}>{dayDate.getDate()}</span>
+                            {day.hasReflection && <BookOpen className="w-2 h-2 text-green-500" />}
+                          </div>
+                          {isWeekend ? (
+                            <div className="flex-1 flex items-center justify-center">
+                              <div className="text-[9px] text-muted-foreground/70">Weekend</div>
+                            </div>
+                          ) : (
+                            <div className="flex-1 flex flex-col justify-center items-center text-center">
+                              {day.pnl !== 0 && (
+                                <div className={cn('text-[10px] font-bold leading-tight', day.pnl > 0 ? 'text-green-500' : 'text-red-500')}>
+                                  {formatCurrency(day.pnl)}
+                                </div>
+                              )}
+                              {day.tradesCount > 0 && (
+                                <div className="text-[9px] text-muted-foreground/80 leading-tight">{day.tradesCount}</div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+
+            {/* Mobile Branding */}
+            <div className="flex items-center justify-center mt-4 pt-4 border-t border-border/30">
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 bg-gradient-to-br from-primary to-primary/70 rounded-lg flex items-center justify-center">
+                  <Zap className="w-3 h-3 text-primary-foreground" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-foreground">TradeFutura</h3>
+                  <p className="text-[10px] text-muted-foreground">Your edge, future-proofed</p>
                 </div>
               </div>
             </div>
