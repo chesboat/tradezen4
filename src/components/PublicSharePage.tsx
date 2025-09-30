@@ -2892,7 +2892,7 @@ export const PublicSharePage: React.FC = () => {
                                                                                   <div className="h-full flex flex-col justify-between">
                                           {/* Top Row - Date and Indicator */}
                                           <div className="flex items-center justify-between mb-1">
-                                            <span className={`text-[10px] sm:text-xs lg:text-sm 2xl:text-base 3xl:text-lg 4xl:text-xl font-medium ${
+                                            <span className={`text-[10px] sm:text-xs lg:text-sm 2xl:text-sm 3xl:text-base 4xl:text-base font-medium ${
                                               day.isOtherMonth ? 'text-muted-foreground/60' : 'text-foreground'
                                             }`}>
                                               {day.day}
@@ -2904,9 +2904,9 @@ export const PublicSharePage: React.FC = () => {
                                           
                                           {/* Bottom Row - Compact: PnL and Trades only */}
                                           <div className="flex flex-col items-center lg:items-start leading-tight">
-                                            <div className={`text-[8px] sm:text-[10px] lg:text-xs 2xl:text-sm font-bold ${day.pnl > 0 ? 'text-green-500' : day.pnl < 0 ? 'text-red-500' : 'text-muted-foreground'}`}>{Math.abs(day.pnl) > 999 ? `${day.pnl > 0 ? '+' : ''}${(day.pnl/1000).toFixed(1)}k` : `${day.pnl > 0 ? '+' : ''}${Math.round(day.pnl)}`}</div>
+                                            <div className={`text-[8px] sm:text-[10px] lg:text-xs 2xl:text-sm 3xl:text-base 4xl:text-base font-bold ${day.pnl > 0 ? 'text-green-500' : day.pnl < 0 ? 'text-red-500' : 'text-muted-foreground'}`}>{Math.abs(day.pnl) > 999 ? `${day.pnl > 0 ? '+' : ''}${(day.pnl/1000).toFixed(1)}k` : `${day.pnl > 0 ? '+' : ''}${Math.round(day.pnl)}`}</div>
                                             {day.tradesCount > 0 && (
-                                              <div className="text-[8px] sm:text-[10px] lg:text-[11px] 2xl:text-xs text-muted-foreground">{day.tradesCount} trades</div>
+                                              <div className="text-[8px] sm:text-[10px] lg:text-[11px] 2xl:text-xs 3xl:text-sm 4xl:text-sm text-muted-foreground">{day.tradesCount} trades</div>
                                             )}
                                           </div>
                                         </div>
@@ -2922,10 +2922,10 @@ export const PublicSharePage: React.FC = () => {
                                       title="Sign up to view weekly details"
                                     >
                                       <div className="text-center space-y-0 sm:space-y-1 lg:space-y-2 pb-1">
-                                        <div className="text-[8px] sm:text-[10px] lg:text-sm 2xl:text-base 3xl:text-lg 4xl:text-xl font-medium text-muted-foreground truncate">
+                                        <div className="text-[8px] sm:text-[10px] lg:text-xs 2xl:text-sm 3xl:text-sm 4xl:text-sm font-medium text-muted-foreground truncate">
                                           W{weekIndex + 1}
                                         </div>
-                                        <div className={`text-[8px] sm:text-xs lg:text-lg 2xl:text-xl 3xl:text-2xl 4xl:text-3xl font-bold leading-none truncate whitespace-nowrap ${
+                                        <div className={`text-[8px] sm:text-xs lg:text-base 2xl:text-lg 3xl:text-xl 4xl:text-xl font-bold leading-none truncate whitespace-nowrap ${
                                           weekTotalPnl > 0 ? 'text-green-500' : 
                                           weekTotalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
                                         }`}>
@@ -2934,7 +2934,7 @@ export const PublicSharePage: React.FC = () => {
                                             weekTotalPnl !== 0 ? `${weekTotalPnl > 0 ? '+' : ''}${Math.round(weekTotalPnl)}` : '$0'
                                           }
                                         </div>
-                                        <div className="text-[10px] lg:text-xs 2xl:text-sm 3xl:text-base 4xl:text-lg text-muted-foreground leading-none">
+                                        <div className="text-[10px] lg:text-xs 2xl:text-xs 3xl:text-sm 4xl:text-sm text-muted-foreground leading-none">
                                           {weekActiveDays}d
                                         </div>
                                       </div>
