@@ -172,8 +172,13 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
     
     setIsGenerating(true);
     try {
-      const renderData = buildRenderData();
-      const dataUrl = await renderCalendarToDataURL(renderData, { width: 1200, height: 1000, theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light' });
+      // Prefer server-side screenshot of this modal preview for pixel-perfect output
+      const shareUrl = window.location.origin + window.location.pathname + window.location.search;
+      const api = `/api/screenshot-calendar?url=${encodeURIComponent(shareUrl)}&width=1200&height=1000&selector=${encodeURIComponent('[data-share-calendar-card]')}`;
+      const resp = await fetch(api);
+      if (!resp.ok) throw new Error('Screenshot API failed');
+      const blob = await resp.blob();
+      const dataUrl = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.download = `TradeFutura-Calendar-${currentMonth}-${currentYear}.png`;
       link.href = dataUrl;
@@ -197,9 +202,11 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
     
     setIsGenerating(true);
     try {
-      const renderData = buildRenderData();
-      const dataUrl = await renderCalendarToDataURL(renderData, { width: 1200, height: 1000, theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light' });
-      const blob = await (await fetch(dataUrl)).blob();
+      const shareUrl = window.location.origin + window.location.pathname + window.location.search;
+      const api = `/api/screenshot-calendar?url=${encodeURIComponent(shareUrl)}&width=1200&height=1000&selector=${encodeURIComponent('[data-share-calendar-card]')}`;
+      const resp = await fetch(api);
+      if (!resp.ok) throw new Error('Screenshot API failed');
+      const blob = await resp.blob();
         if (blob && navigator.clipboard && window.ClipboardItem) {
           try {
             await navigator.clipboard.write([
@@ -226,8 +233,11 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
     
     setIsGenerating(true);
     try {
-      const renderData = buildRenderData();
-      const dataUrl = await renderCalendarToDataURL(renderData, { width: 1200, height: 1000, theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light' });
+      const shareUrl = window.location.origin + window.location.pathname + window.location.search;
+      const api = `/api/screenshot-calendar?url=${encodeURIComponent(shareUrl)}&width=1200&height=1000&selector=${encodeURIComponent('[data-share-calendar-card]')}`;
+      const resp = await fetch(api);
+      if (!resp.ok) throw new Error('Screenshot API failed');
+      const blob = await resp.blob();
 
       // Check clipboard support and try multiple methods
       const hasClipboardSupport =
@@ -238,7 +248,6 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
         typeof (navigator as any).clipboard?.write === 'function';
       
       if (hasClipboardSupport) {
-        const blob = await (await fetch(dataUrl)).blob();
         if (blob) {
             try {
               // Create ClipboardItem with image
@@ -265,7 +274,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
               // Fallback to download
               const link = document.createElement('a');
               link.download = `TradeFutura-Calendar-${currentMonth}-${currentYear}.png`;
-              link.href = dataUrl;
+              link.href = URL.createObjectURL(blob);
               document.body.appendChild(link);
               link.click();
               setTimeout(() => link.remove(), 0);
@@ -283,7 +292,12 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
         // Direct download fallback
         const link = document.createElement('a');
         link.download = `TradeFutura-Calendar-${currentMonth}-${currentYear}.png`;
-        link.href = dataUrl;
+        const shareUrl = window.location.origin + window.location.pathname + window.location.search;
+        const api = `/api/screenshot-calendar?url=${encodeURIComponent(shareUrl)}&width=1200&height=1000&selector=${encodeURIComponent('[data-share-calendar-card]')}`;
+        const resp = await fetch(api);
+        if (!resp.ok) throw new Error('Screenshot API failed');
+        const b = await resp.blob();
+        link.href = URL.createObjectURL(b);
         document.body.appendChild(link);
         link.click();
         setTimeout(() => link.remove(), 0);
@@ -308,12 +322,15 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
     
     setIsGenerating(true);
     try {
-      const renderData = buildRenderData();
-      const dataUrl = await renderCalendarToDataURL(renderData, { width: 1200, height: 1000, theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light' });
-      // Download the image
+      // Download the image via server screenshot
+      const shareUrl = window.location.origin + window.location.pathname + window.location.search;
+      const api = `/api/screenshot-calendar?url=${encodeURIComponent(shareUrl)}&width=1200&height=1000&selector=${encodeURIComponent('[data-share-calendar-card]')}`;
+      const resp = await fetch(api);
+      if (!resp.ok) throw new Error('Screenshot API failed');
+      const blob = await resp.blob();
       const link = document.createElement('a');
       link.download = `TradeFutura-Calendar-${currentMonth}-${currentYear}.png`;
-      link.href = dataUrl;
+      link.href = URL.createObjectURL(blob);
       link.click();
       
       toast.success('Calendar downloaded! Upload it to your Instagram story or post');
@@ -423,7 +440,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
               style={{ minHeight: '750px', aspectRatio: '6/5' }}
             >
               {/* Calendar Content - Exact replica of CalendarView */}
-              <div className="max-w-4xl w-[85%] relative">
+              <div className="max-w-4xl w-[85%] relative" data-share-calendar-card>
                 <div className={`${theme}`}>
                   <div className="bg-background rounded-xl pt-4 pb-6 px-6 border relative" 
                    style={{ 
