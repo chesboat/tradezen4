@@ -84,12 +84,16 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
     background: 'transparent',
     useCORS: true,
     allowTaint: true,
+    foreignObjectRendering: true,
+    letterRendering: true,
     // Force a desktop-like viewport for consistent rendering
     windowWidth: 1200,
     windowHeight: 1000,
     width: 1200,
     height: 1000,
     scale: Math.min(2, (typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1) * 1.25),
+    scrollX: 0,
+    scrollY: 0,
   } as any;
 
   const handleDownload = async () => {
@@ -100,6 +104,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
     try {
       // Dynamic import for html2canvas
       const html2canvas = (await import('html2canvas')).default;
+      if ((document as any).fonts?.ready) { try { await (document as any).fonts.ready; } catch {} }
       const canvas = await html2canvas(target, html2canvasOpts);
 
       // Create download link
@@ -124,6 +129,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
     setIsGenerating(true);
     try {
       const html2canvas = (await import('html2canvas')).default;
+      if ((document as any).fonts?.ready) { try { await (document as any).fonts.ready; } catch {} }
       const canvas = await html2canvas(target, html2canvasOpts);
 
       canvas.toBlob(async (blob) => {
@@ -155,6 +161,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
     setIsGenerating(true);
     try {
       const html2canvas = (await import('html2canvas')).default;
+      if ((document as any).fonts?.ready) { try { await (document as any).fonts.ready; } catch {} }
       const canvas = await html2canvas(target, html2canvasOpts);
 
       // Check clipboard support and try multiple methods
@@ -234,6 +241,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
     setIsGenerating(true);
     try {
       const html2canvas = (await import('html2canvas')).default;
+      if ((document as any).fonts?.ready) { try { await (document as any).fonts.ready; } catch {} }
       const canvas = await html2canvas(target, html2canvasOpts);
 
       // Download the image
