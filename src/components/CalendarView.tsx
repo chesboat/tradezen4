@@ -1086,10 +1086,10 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                           position="top"
                           fullWidth
                         >
-                          <div className="flex-1 flex flex-col items-center justify-center space-y-0.5">
+                          <div className="flex-1 flex flex-col items-center justify-center space-y-1">
                             {/* P&L - Locked sizing with smart abbreviation */}
                             <div className={cn(
-                              'text-xs lg:text-sm 2xl:text-base 3xl:text-lg font-bold',
+                              'text-sm lg:text-base 2xl:text-lg 3xl:text-xl font-bold leading-none',
                               day.pnl > 0 ? 'text-green-500' : day.pnl < 0 ? 'text-red-500' : 'text-muted-foreground'
                             )}>
                               {formatPnLSmart(day.pnl)}
@@ -1097,7 +1097,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                             
                             {/* Trade Count - Locked sizing */}
                             {day.tradesCount > 0 && (
-                              <div className="text-[10px] lg:text-xs 2xl:text-sm 3xl:text-base text-muted-foreground">
+                              <div className="text-xs lg:text-sm 2xl:text-base 3xl:text-lg text-muted-foreground leading-none">
                                 {day.tradesCount} trades
                               </div>
                             )}
@@ -1175,17 +1175,17 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                 ) : (
                   // Normal weekly summary - matched to day tile sizing
                   <div className="flex flex-col items-center justify-center space-y-1">
-                    <div className="text-xs lg:text-sm 2xl:text-base 3xl:text-lg font-medium text-muted-foreground">
+                    <div className="text-xs lg:text-sm 2xl:text-base 3xl:text-lg font-medium text-muted-foreground leading-none">
                       Week {weeklyData[weekIndex]?.weekNumber}
                     </div>
                     <div className={cn(
-                      'text-xs lg:text-sm 2xl:text-base 3xl:text-lg font-bold',
+                      'text-sm lg:text-base 2xl:text-lg 3xl:text-xl font-bold leading-none',
                       weeklyData[weekIndex]?.totalPnl > 0 ? 'text-green-500' : 
                       weeklyData[weekIndex]?.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
                     )}>
                       {formatPnLSmart(weeklyData[weekIndex]?.totalPnl || 0)}
                     </div>
-                    <div className="text-[10px] lg:text-xs 2xl:text-sm 3xl:text-base text-muted-foreground">
+                    <div className="text-xs lg:text-sm 2xl:text-base 3xl:text-lg text-muted-foreground leading-none">
                       {weeklyData[weekIndex]?.activeDays || 0} days
                     </div>
   </div>
