@@ -1,5 +1,11 @@
 {
   "framework": "vite",
+  "functions": {
+    "api/screenshot-calendar.ts": {
+      "maxDuration": 30,
+      "memory": 1024
+    }
+  },
   "routes": [
     {
       "src": "/assets/(.*)",
