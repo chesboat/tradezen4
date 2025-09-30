@@ -173,7 +173,10 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
     setIsGenerating(true);
     try {
       // Prefer server-side screenshot of this modal preview for pixel-perfect output
-      const shareUrl = window.location.origin + window.location.pathname + window.location.search;
+      const payload = buildRenderData();
+      const themeParam = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+      const dataParam = encodeURIComponent(btoa(JSON.stringify(payload)));
+      const shareUrl = `${window.location.origin}/share/calendar?theme=${themeParam}&data=${dataParam}`;
       const api = `/api/screenshot-calendar?url=${encodeURIComponent(shareUrl)}&width=1200&height=1000&selector=${encodeURIComponent('[data-share-calendar-card]')}`;
       const resp = await fetch(api);
       if (!resp.ok) throw new Error('Screenshot API failed');
@@ -202,7 +205,10 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
     
     setIsGenerating(true);
     try {
-      const shareUrl = window.location.origin + window.location.pathname + window.location.search;
+      const payload = buildRenderData();
+      const themeParam = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+      const dataParam = encodeURIComponent(btoa(JSON.stringify(payload)));
+      const shareUrl = `${window.location.origin}/share/calendar?theme=${themeParam}&data=${dataParam}`;
       const api = `/api/screenshot-calendar?url=${encodeURIComponent(shareUrl)}&width=1200&height=1000&selector=${encodeURIComponent('[data-share-calendar-card]')}`;
       const resp = await fetch(api);
       if (!resp.ok) throw new Error('Screenshot API failed');
@@ -233,7 +239,10 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
     
     setIsGenerating(true);
     try {
-      const shareUrl = window.location.origin + window.location.pathname + window.location.search;
+      const payload = buildRenderData();
+      const themeParam = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+      const dataParam = encodeURIComponent(btoa(JSON.stringify(payload)));
+      const shareUrl = `${window.location.origin}/share/calendar?theme=${themeParam}&data=${dataParam}`;
       const api = `/api/screenshot-calendar?url=${encodeURIComponent(shareUrl)}&width=1200&height=1000&selector=${encodeURIComponent('[data-share-calendar-card]')}`;
       const resp = await fetch(api);
       if (!resp.ok) throw new Error('Screenshot API failed');
@@ -292,7 +301,10 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
         // Direct download fallback
         const link = document.createElement('a');
         link.download = `TradeFutura-Calendar-${currentMonth}-${currentYear}.png`;
-        const shareUrl = window.location.origin + window.location.pathname + window.location.search;
+        const payload = buildRenderData();
+        const themeParam = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+        const dataParam = encodeURIComponent(btoa(JSON.stringify(payload)));
+        const shareUrl = `${window.location.origin}/share/calendar?theme=${themeParam}&data=${dataParam}`;
         const api = `/api/screenshot-calendar?url=${encodeURIComponent(shareUrl)}&width=1200&height=1000&selector=${encodeURIComponent('[data-share-calendar-card]')}`;
         const resp = await fetch(api);
         if (!resp.ok) throw new Error('Screenshot API failed');
