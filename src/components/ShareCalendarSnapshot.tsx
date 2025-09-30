@@ -29,6 +29,9 @@ export const ShareCalendarSnapshot: React.FC = () => {
   const theme = (params.get('theme') as 'light' | 'dark') || 'dark';
   const raw = params.get('data') || '';
   let data: RenderData | null = null;
+  
+  // Debug log
+  console.log('[ShareCalendarSnapshot] Rendering, window width:', window.innerWidth);
   try {
     const json = atob(decodeURIComponent(raw));
     const parsed = JSON.parse(json);
@@ -60,11 +63,12 @@ export const ShareCalendarSnapshot: React.FC = () => {
   return (
     <div className={cn('min-h-screen overflow-x-hidden', theme)}>
       {/* Mobile version - clean and scrollable */}
-      <div className="block sm:hidden w-full min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 p-3">
-        <div className="bg-background rounded-xl border shadow-xl max-w-md mx-auto">
+      <div className="block sm:hidden w-full min-h-screen bg-gradient-to-br from-blue-600 via-purple-500 to-pink-400 p-3">
+        <div className="bg-background rounded-xl border-2 border-blue-500 shadow-xl max-w-md mx-auto">
           <div className="p-3">
             {/* Mobile Header */}
-            <div className="mb-3 text-center">
+            <div className="mb-3 text-center bg-blue-500/10 rounded p-2">
+              <div className="text-[10px] text-blue-400 mb-1">📱 MOBILE VIEW v2</div>
               <h1 className="text-lg font-bold text-foreground mb-1">{data.monthName} {data.year}</h1>
               <div className="text-xs text-muted-foreground">
                 Monthly: <span className="font-semibold text-green-500">{formatCurrency(data.monthlyPnl)}</span>
