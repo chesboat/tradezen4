@@ -168,27 +168,60 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
   };
 
   const handleDownload = async () => {
-    const target = getCaptureTarget();
-    if (!target) return;
-    
     setIsGenerating(true);
     try {
-      // Use canvas renderer for consistent, beautiful output
-      const payload = buildRenderData();
-      const themeParam = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
-      const dataUrl = await renderCalendarToDataURL(payload, { theme: themeParam as 'light' | 'dark' });
-      
-      const link = document.createElement('a');
-      link.download = `Refine-Calendar-${currentMonth}-${currentYear}.png`;
-      link.href = dataUrl;
-      document.body.appendChild(link);
-      link.click();
-      setTimeout(() => link.remove(), 0);
-      
-      toast.success('Calendar image downloaded!');
+      // Use server-side screenshot for pixel-perfect capture of the new calendar
+      const target = captureRef.current;
+      if (!target) {
+        toast.error('Calendar not ready');
+        return;
+      }
+
+      // Small delay to ensure everything is rendered
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Temporarily make visible for screenshot
+      const originalOpacity = target.style.opacity;
+      const originalZIndex = target.style.zIndex;
+      target.style.opacity = '1';
+      target.style.zIndex = '9999';
+
+      try {
+        // Use html2canvas for pixel-perfect capture
+        const html2canvas = (await import('html2canvas')).default;
+        const canvas = await html2canvas(target, {
+          backgroundColor: null,
+          scale: 2, // High quality
+          logging: false,
+          useCORS: true,
+        });
+
+        // Convert to blob and download
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            toast.error('Failed to generate image');
+            return;
+          }
+
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.download = `Refine-Calendar-${currentMonth}-${currentYear}.png`;
+          link.href = url;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+          
+          toast.success('Calendar downloaded!');
+        }, 'image/png');
+      } finally {
+        // Restore original styles
+        target.style.opacity = originalOpacity;
+        target.style.zIndex = originalZIndex;
+      }
     } catch (error) {
       console.error('Error generating calendar image:', error);
-      toast.error('Failed to generate calendar image');
+      toast.error('Failed to download calendar');
     } finally {
       setIsGenerating(false);
     }
