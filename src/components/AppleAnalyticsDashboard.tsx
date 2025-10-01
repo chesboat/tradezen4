@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   DollarSign, TrendingUp, TrendingDown, Activity, Calendar, 
   Trophy, AlertTriangle, ChevronDown, ChevronRight, X, ArrowUp, ArrowDown,
-  Target, Zap, MinusCircle, Lightbulb, Clock, FileDown, Trash2
+  Target, Zap, MinusCircle, Lightbulb, Clock, Trash2
 } from 'lucide-react';
 import { useTradeStore } from '@/store/useTradeStore';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
@@ -11,6 +11,8 @@ import { computeEdgeScore } from '@/lib/edgeScore';
 import { formatCurrency } from '@/lib/localStorageUtils';
 import { cn } from '@/lib/utils';
 import { useDailyReflectionStore } from '@/store/useDailyReflectionStore';
+import { useActivityLogStore } from '@/store/useActivityLogStore';
+import { useTodoStore } from '@/store/useTodoStore';
 
 // ===============================================
 // TYPES & UTILITIES
@@ -172,22 +174,6 @@ const HeroAnalyticsPnL: React.FC<{
               <div className="text-sm text-muted-foreground">profit factor</div>
             </div>
           </div>
-        </div>
-
-        {/* Export Button */}
-        <div className="ml-auto">
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => {
-              // TODO: Implement PDF export
-              alert('PDF Export coming soon! This will generate a beautiful report with all your analytics.');
-            }}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors shadow-lg"
-          >
-            <FileDown className="w-4 h-4" />
-            <span className="text-sm font-medium">Export Report</span>
-          </motion.button>
         </div>
       </div>
     </div>
@@ -1240,6 +1226,8 @@ const TradeHighlightsCard: React.FC<{ trades: any[] }> = ({ trades }) => {
 export const AppleAnalyticsDashboard: React.FC = () => {
   const { trades } = useTradeStore();
   const { selectedAccountId } = useAccountFilterStore();
+  const { isExpanded: activityLogExpanded } = useActivityLogStore();
+  const { isExpanded: todoExpanded } = useTodoStore();
   const [selectedPeriod, setSelectedPeriod] = React.useState<TimePeriod>('all');
   const [symbolFilter, setSymbolFilter] = React.useState<string | null>(null);
 
@@ -1317,14 +1305,19 @@ export const AppleAnalyticsDashboard: React.FC = () => {
         onPeriodChange={setSelectedPeriod}
       />
 
-      {/* Symbol Filter Badge (Sticky, always visible when active) */}
+      {/* Symbol Filter Badge (Sticky, respects sidebars) */}
       <AnimatePresence>
         {symbolFilter && (
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
-            className="fixed top-20 right-6 z-50"
+            className={cn(
+              "fixed top-20 z-50 transition-all duration-300",
+              activityLogExpanded && todoExpanded ? 'right-[500px]' :
+              activityLogExpanded ? 'right-[400px]' :
+              todoExpanded ? 'right-[480px]' : 'right-6'
+            )}
           >
             <div className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl shadow-xl border border-primary/20">
               <span className="text-sm font-medium">Viewing: {symbolFilter}</span>
