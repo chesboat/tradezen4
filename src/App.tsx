@@ -229,11 +229,6 @@ function AppContent() {
     }
   }, [loading, currentUser]);
 
-  // If visiting a public share link, render share page inside a minimal shell and avoid mounting data stores
-  if (typeof window !== 'undefined' && window.location.pathname.startsWith('/share/')) {
-    return <PublicSharePage />;
-  }
-
   // Render current view
   const renderCurrentView = () => {
     switch (currentView) {
@@ -357,6 +352,11 @@ function AppContent() {
 }
 
 function App() {
+  // Check for public share route BEFORE rendering any app components/hooks
+  if (typeof window !== 'undefined' && window.location.pathname.startsWith('/share/')) {
+    return <PublicSharePage />;
+  }
+
   return (
     <AuthProvider>
       <AppContent />
