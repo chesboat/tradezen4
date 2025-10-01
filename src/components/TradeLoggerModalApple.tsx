@@ -8,7 +8,8 @@ import {
   AlertCircle,
   Minus,
   ChevronDown,
-  Check
+  Check,
+  Info
 } from 'lucide-react';
 import { useTradeActions } from '@/store/useTradeStore';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
@@ -147,11 +148,11 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
           <motion.div
             className={cn(
               "fixed z-[100] bg-background flex flex-col",
-              // Desktop: Perfectly centered modal (Apple style)
-              "md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2",
-              "md:w-full md:max-w-md md:rounded-2xl md:border md:border-border/50 md:shadow-2xl",
               // Mobile: Bottom sheet
-              "inset-x-0 bottom-0 top-20 rounded-t-3xl"
+              "inset-x-0 bottom-0 top-20 rounded-t-3xl",
+              // Desktop: Perfectly centered modal (Apple style) - override mobile
+              "md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2",
+              "md:w-full md:max-w-md md:rounded-2xl md:border md:border-border/50 md:shadow-2xl"
             )}
             initial={{ 
               opacity: 0,
@@ -342,9 +343,12 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
                           step="0.01"
                         />
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1 px-1">
-                        Enter exact amount from broker (including fees)
-                      </p>
+                      <div className="flex items-center gap-1 mt-1 px-1">
+                        <Info className="w-3 h-3 text-muted-foreground" />
+                        <p className="text-xs text-muted-foreground">
+                          Enter net P&L after fees
+                        </p>
+                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
