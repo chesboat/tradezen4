@@ -320,17 +320,18 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
     const daysInMonth = lastDay.getDate();
     const startingDayOfWeek = firstDay.getDay();
     
-    // Get previous month's last few days
-    const prevMonth = new Date(year, month - 1, 0);
-    const prevMonthDays = prevMonth.getDate();
+    // Get previous month's last day properly
+    const prevMonthLastDay = new Date(year, month, 0);
+    const prevMonthDays = prevMonthLastDay.getDate();
     
     // Build calendar grid
     const calendarDays: CalendarDay[] = [];
     const weeks: CalendarDay[][] = [];
     
-    // Previous month days
+    // Previous month days (fill from the beginning of the week)
     for (let i = startingDayOfWeek - 1; i >= 0; i--) {
-      const date = new Date(year, month - 1, prevMonthDays - i);
+      const dayNum = prevMonthDays - i;
+      const date = new Date(year, month - 1, dayNum);
       calendarDays.push(createCalendarDay(date, true));
     }
     
