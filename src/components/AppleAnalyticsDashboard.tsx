@@ -718,10 +718,10 @@ const AnnotatedEquityCurve: React.FC<{
                                        activityLogExpanded ? 380 :
                                        todoExpanded ? 460 : 120;
               
-              // Need wider threshold when sidebars are present
-              // Use 70% as threshold instead of 85% to prevent overlap
+              // More aggressive threshold to prevent overlap with sidebars
+              // When sidebars present (even collapsed), flip much earlier
               const isNearLeftEdge = hoveredPoint.x < 15;
-              const isNearRightEdge = hoveredPoint.x > 70;
+              const isNearRightEdge = hoveredPoint.x > 55; // Flip at 55% instead of 70%
               
               let positionStyle: React.CSSProperties = {
                 left: `${hoveredPoint.x}%`,
