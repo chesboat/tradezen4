@@ -121,7 +121,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       priority: extras.priority || 'med',
       tags: [],
       category: extras.category,
-      accountId: (extras.accountId as string) || 'default',
+      accountId: (extras.accountId as string) || undefined, // Optional: journal-wide by default
       dueAt: normalizeDateLike(extras.dueAt),
       sourceReflectionId: extras.sourceReflectionId,
       completedAt: undefined,

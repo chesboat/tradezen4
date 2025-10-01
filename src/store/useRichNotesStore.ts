@@ -73,10 +73,14 @@ export const useRichNotesStore = create<RichNotesState>((set, get) => ({
         notes = (await service.getAll()).filter(n => n.accountId !== 'all' && !(String(n.accountId || '').startsWith('group:')));
         notes.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
       } else {
-        notes = await service.query([
-          where('accountId', '==', accountId),
-          orderBy('updatedAt', 'desc'),
-        ]);
+        // For a specific account: load both journal-wide notes (no accountId) and account-specific notes
+        const allNotes = await service.getAll();
+        notes = allNotes.filter(n => 
+          (!n.accountId || n.accountId === accountId) && 
+          n.accountId !== 'all' && 
+          !(String(n.accountId || '').startsWith('group:'))
+        );
+        notes.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
       }
       set({ notes, isLoading: false });
     } catch (error) {

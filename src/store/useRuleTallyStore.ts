@@ -148,7 +148,8 @@ export const useRuleTallyStore = create<RuleTallyState>()(
 
       getRulesByAccount: (accountId) => {
         const { rules } = get();
-        return rules.filter((rule) => rule.accountId === accountId && rule.isActive);
+        // Include journal-wide habits (no accountId) and account-specific habits
+        return rules.filter((rule) => (!rule.accountId || rule.accountId === accountId) && rule.isActive);
       },
 
       addTally: async (ruleId, accountId, dateOverride) => {
@@ -335,7 +336,8 @@ export const useRuleTallyStore = create<RuleTallyState>()(
 
       getTallyLog: (date, accountId) => {
         const { logs } = get();
-        return logs.filter((log) => log.date === date && log.accountId === accountId);
+        // Include journal-wide logs (no accountId) and account-specific logs
+        return logs.filter((log) => log.date === date && (!log.accountId || log.accountId === accountId));
       },
 
       getTallyCountForRule: (ruleId, date) => {
@@ -421,8 +423,9 @@ export const useRuleTallyStore = create<RuleTallyState>()(
           const rules = await rulesService.getAll();
           console.log('Loaded rules from Firebase:', rules.length, 'rules');
           
+          // Include journal-wide habits (no accountId) and account-specific habits
           const filteredRules = accountId 
-            ? rules.filter(rule => rule.accountId === accountId)
+            ? rules.filter(rule => !rule.accountId || rule.accountId === accountId)
             : rules;
           
           console.log('Filtered rules:', filteredRules.length, 'rules for account:', accountId);
@@ -448,7 +451,8 @@ export const useRuleTallyStore = create<RuleTallyState>()(
               totalLogs: filteredLogs.length,
               hitMacrosLogs: filteredLogs.filter(l => l.ruleId === 'ekWS96zlKqFcdBr2YJu8').map(l => ({ date: l.date, accountId: l.accountId, matchesFilter: l.accountId === accountId }))
             });
-            filteredLogs = filteredLogs.filter(log => log.accountId === accountId);
+            // Include journal-wide logs (no accountId) and account-specific logs
+            filteredLogs = filteredLogs.filter(log => !log.accountId || log.accountId === accountId);
             console.log('🔍 LoadLogs: After accountId filter', {
               filteredCount: filteredLogs.length,
               hitMacrosLogs: filteredLogs.filter(l => l.ruleId === 'ekWS96zlKqFcdBr2YJu8').map(l => ({ date: l.date, accountId: l.accountId }))

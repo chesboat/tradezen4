@@ -190,10 +190,10 @@ export const useQuestStore = create<QuestState>((set, get) => ({
     const currentQuests = get().quests;
     const today = new Date().toDateString();
     
-    // Find today's Daily Focus quests for this account
+    // Find today's Daily Focus quests for this account OR journal-wide quests
     const dailyFocusQuests = currentQuests.filter(quest => 
       quest.title === 'Daily Focus' &&
-      quest.accountId === accountId &&
+      (!quest.accountId || quest.accountId === accountId) &&
       quest.status !== 'completed' &&
       (typeof quest.createdAt === 'string' ? new Date(quest.createdAt) : quest.createdAt).toDateString() === today
     );
@@ -206,7 +206,7 @@ export const useQuestStore = create<QuestState>((set, get) => ({
     const currentQuests = get().quests;
     const consistencyQuests = currentQuests.filter(quest => 
       (quest.title === 'Consistency Builder' || quest.description.toLowerCase().includes('consecutive')) &&
-      (quest.accountId === accountId || quest.accountId === 'all') &&
+      (!quest.accountId || quest.accountId === accountId || quest.accountId === 'all') &&
       quest.status !== 'completed' &&
       quest.status !== 'cancelled' &&
       quest.status !== 'failed'

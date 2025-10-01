@@ -281,7 +281,8 @@ export const Dashboard: React.FC = () => {
       if (q.status === 'completed' || q.status === 'cancelled' || q.status === 'failed') return false;
       const createdAt = new Date(q.createdAt as any);
       const isToday = createdAt >= startOfToday && createdAt <= endOfToday;
-      const accountOk = !selectedAccountId || q.accountId === selectedAccountId || q.accountId === 'all';
+      // Show journal-wide quests (no accountId) or quests matching the selected account
+      const accountOk = !selectedAccountId || !q.accountId || q.accountId === selectedAccountId || q.accountId === 'all';
       return isToday && accountOk;
     });
   }, [quests, pinnedQuests, selectedAccountId]);

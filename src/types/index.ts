@@ -53,7 +53,7 @@ export interface RichNote extends FirestoreDocument {
   wordCount: number;
   readingTime: number; // estimated minutes
   lastViewedAt?: string;
-  accountId: string;
+  accountId?: string; // Optional: study notes are personal, not account-specific
 }
 
 export interface Quest extends FirestoreDocument {
@@ -66,7 +66,7 @@ export interface Quest extends FirestoreDocument {
   xpReward: number;
   dueDate?: Date | string;
   completedAt?: Date | string;
-  accountId: string;
+  accountId?: string; // Optional: journal-wide quests don't need an account
 }
 
 export interface WellnessAction extends FirestoreDocument {
@@ -76,7 +76,7 @@ export interface WellnessAction extends FirestoreDocument {
   duration?: number; // in minutes
   xpReward: number;
   completedAt: Date | string;
-  accountId: string;
+  accountId?: string; // Optional: wellness is personal, not account-specific
 }
 
 export interface XPLog extends FirestoreDocument {
@@ -84,7 +84,7 @@ export interface XPLog extends FirestoreDocument {
   source: 'trade' | 'quest' | 'wellness' | 'reflection' | 'streak' | 'todo';
   description: string;
   relatedId?: string; // ID of the related trade, quest, etc.
-  accountId: string;
+  accountId?: string; // Optional: can be journal-wide
 }
 
 export interface ActivityLogEntry extends FirestoreDocument {
@@ -93,7 +93,7 @@ export interface ActivityLogEntry extends FirestoreDocument {
   description?: string;
   xpEarned?: number;
   relatedId?: string;
-  accountId: string;
+  accountId?: string; // Optional: can be journal-wide
 }
 
 export interface DailyReflection extends FirestoreDocument {
@@ -319,7 +319,7 @@ export interface ImprovementTask extends FirestoreDocument {
   pinned?: boolean;
   order?: number;
   url?: string; // Optional URL for linking to resources
-  accountId: string;
+  accountId?: string; // Optional: todos are personal, not account-specific
 }
 
 export type HabitCategory = 'daily' | 'trading' | 'weekdays' | 'custom';
@@ -332,7 +332,7 @@ export interface HabitSchedule {
 export interface TallyRule extends FirestoreDocument {
   label: string;
   emoji: string;
-  accountId: string;
+  accountId?: string; // Optional: habits are personal, not account-specific
   isActive: boolean;
   category: HabitCategory;
   schedule?: HabitSchedule;
@@ -343,7 +343,7 @@ export interface TallyLog extends FirestoreDocument {
   ruleId: string;
   tallyCount: number;
   xpEarned: number;
-  accountId: string;
+  accountId?: string; // Optional: matches the rule's accountId
 }
 
 export interface TallyStreak {
