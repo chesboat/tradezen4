@@ -248,11 +248,29 @@ export const useDailyReflectionStore = create<DailyReflectionState>()(
                 : entry
             );
             
-            // Serialize dates for Firestore
-            const serializedTimeline = updatedMoodTimeline.map(entry => ({
-              ...entry,
-              timestamp: entry.timestamp instanceof Date ? entry.timestamp.toISOString() : entry.timestamp
-            }));
+            // Serialize dates for Firestore with validation
+            const serializedTimeline = updatedMoodTimeline.map(entry => {
+              let validTimestamp: string;
+              try {
+                if (entry.timestamp instanceof Date) {
+                  validTimestamp = entry.timestamp.toISOString();
+                } else if (typeof entry.timestamp === 'string') {
+                  // Validate the string is a valid date
+                  const testDate = new Date(entry.timestamp);
+                  if (isNaN(testDate.getTime())) {
+                    throw new Error('Invalid date string');
+                  }
+                  validTimestamp = entry.timestamp;
+                } else {
+                  // Fallback to current time if invalid
+                  validTimestamp = new Date().toISOString();
+                }
+              } catch (e) {
+                // If any error, use current time as fallback
+                validTimestamp = new Date().toISOString();
+              }
+              return { ...entry, timestamp: validTimestamp };
+            });
             
             get().updateReflection(reflection.id, { moodTimeline: serializedTimeline as any });
             return;
@@ -269,11 +287,29 @@ export const useDailyReflectionStore = create<DailyReflectionState>()(
 
         const updatedMoodTimeline = [...reflection.moodTimeline, newMoodEntry];
         
-        // Serialize dates for Firestore - convert Date objects to ISO strings
-        const serializedTimeline = updatedMoodTimeline.map(entry => ({
-          ...entry,
-          timestamp: entry.timestamp instanceof Date ? entry.timestamp.toISOString() : entry.timestamp
-        }));
+        // Serialize dates for Firestore with validation
+        const serializedTimeline = updatedMoodTimeline.map(entry => {
+          let validTimestamp: string;
+          try {
+            if (entry.timestamp instanceof Date) {
+              validTimestamp = entry.timestamp.toISOString();
+            } else if (typeof entry.timestamp === 'string') {
+              // Validate the string is a valid date
+              const testDate = new Date(entry.timestamp);
+              if (isNaN(testDate.getTime())) {
+                throw new Error('Invalid date string');
+              }
+              validTimestamp = entry.timestamp;
+            } else {
+              // Fallback to current time if invalid
+              validTimestamp = new Date().toISOString();
+            }
+          } catch (e) {
+            // If any error, use current time as fallback
+            validTimestamp = new Date().toISOString();
+          }
+          return { ...entry, timestamp: validTimestamp };
+        });
         
         get().updateReflection(reflection.id, { moodTimeline: serializedTimeline as any });
       },
@@ -286,7 +322,23 @@ export const useDailyReflectionStore = create<DailyReflectionState>()(
 
       getMoodTimeline: (date, accountId) => {
         const reflection = get().getReflectionByDate(date, accountId);
-        return reflection?.moodTimeline || [];
+        if (!reflection?.moodTimeline) return [];
+        
+        // Filter out any entries with invalid timestamps to prevent crashes
+        return reflection.moodTimeline.filter(entry => {
+          try {
+            if (entry.timestamp instanceof Date) {
+              return !isNaN(entry.timestamp.getTime());
+            }
+            if (typeof entry.timestamp === 'string') {
+              const testDate = new Date(entry.timestamp);
+              return !isNaN(testDate.getTime());
+            }
+            return false; // Invalid timestamp type
+          } catch (e) {
+            return false; // Filter out on any error
+          }
+        });
       },
 
       cleanupDuplicateMoodEntries: (date, accountId) => {
