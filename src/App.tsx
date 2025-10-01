@@ -11,7 +11,7 @@ import { CalendarView } from './components/CalendarView';
 import { QuestsView } from './components/QuestsView';
 import { WellnessView } from './components/WellnessView';
 import { TradesView } from './components/TradesView';
-import { CleanAnalyticsDashboard } from './components/CleanAnalyticsDashboard';
+import { AppleAnalyticsDashboard } from './components/AppleAnalyticsDashboard';
 import { CoachView } from './components/CoachView';
 import { JournalView } from './components/JournalView';
 import { NotesView } from './components/NotesView';
@@ -257,7 +257,7 @@ function AppContent() {
       case 'notes':
         return <NotesView />;
       case 'analytics':
-        return <CleanAnalyticsDashboard />;
+        return <AppleAnalyticsDashboard />;
       case 'quests':
         return <QuestsView />;
       case 'wellness':
