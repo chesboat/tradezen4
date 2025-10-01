@@ -1017,7 +1017,7 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                           onChange={(e) => setEditingRRValue(e.target.value)}
                           onBlur={() => handleRRSave(trade.id, trade)}
                           onKeyDown={(e) => handleRRKeyDown(e, trade.id, trade)}
-                          className="w-16 px-2 py-1 bg-primary/10 border border-primary rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                          className="w-16 px-2 py-1 bg-primary/10 border border-primary rounded text-base md:text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                           autoFocus
                         />
                       ) : (
@@ -1059,7 +1059,7 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                       
                       {/* Mood picker popover */}
                       {editingMoodId === trade.id && (
-                        <div className="absolute z-10 top-full mt-1 left-0 bg-card border border-border rounded-lg shadow-lg p-2 flex gap-2">
+                        <div className="absolute z-10 top-full mt-1 right-0 bg-card border border-border rounded-lg shadow-lg p-2 flex gap-2">
                           {moodOptions.map((mood) => (
                             <button
                               key={mood}
@@ -1216,9 +1216,24 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                   <span className="text-muted-foreground">Risk:</span>
                   <span className="ml-2">{formatCurrency(trade.riskAmount)}</span>
                 </div>
-                <div>
+                <div onClick={() => handleRRDoubleClick(trade)}>
                   <span className="text-muted-foreground">R:R:</span>
-                  <span className="ml-2">{trade.riskRewardRatio.toFixed(2)}</span>
+                  {editingRRId === trade.id ? (
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={editingRRValue}
+                      onChange={(e) => setEditingRRValue(e.target.value)}
+                      onBlur={() => handleRRSave(trade.id, trade)}
+                      onKeyDown={(e) => handleRRKeyDown(e, trade.id, trade)}
+                      className="ml-2 w-16 px-2 py-1 bg-primary/10 border border-primary rounded text-base focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      autoFocus
+                    />
+                  ) : (
+                    <span className="ml-2 cursor-pointer active:text-primary transition-colors">
+                      {trade.riskRewardRatio.toFixed(2)}
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -1253,7 +1268,7 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                   
                   {/* Mobile mood picker */}
                   {editingMoodId === trade.id && (
-                    <div className="absolute z-10 bottom-full mb-2 left-0 bg-card border border-border rounded-lg shadow-lg p-2 flex gap-2">
+                    <div className="absolute z-10 bottom-full mb-2 right-0 bg-card border border-border rounded-lg shadow-lg p-2 flex gap-2">
                       {moodOptions.map((mood) => (
                         <button
                           key={mood}
@@ -1278,7 +1293,7 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                         onChange={(e) => setEditingPnlValue(e.target.value)}
                         onBlur={() => handlePnlSave(trade.id, trade)}
                         onKeyDown={(e) => handlePnlKeyDown(e, trade.id, trade)}
-                        className="w-24 px-2 py-1 bg-primary/10 border border-primary rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        className="w-24 px-2 py-1 bg-primary/10 border border-primary rounded text-base md:text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                         autoFocus
                       />
                     ) : (
