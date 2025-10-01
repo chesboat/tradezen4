@@ -40,6 +40,8 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
   const [editingUrlId, setEditingUrlId] = useState<string | null>(null);
   const [editingUrl, setEditingUrl] = useState<string>('');
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
+  const [isAddingNew, setIsAddingNew] = useState(false);
+  const newTaskInputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     const init = async () => {
@@ -229,40 +231,6 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
         </motion.button>
       </div>
 
-      {/* Quick Add - Apple Reminders style */}
-      <AnimatePresence mode="wait">
-        {isExpanded && (
-          <motion.div className="p-3 border-b border-border/30" variants={contentVariants} initial="collapsed" animate="expanded" exit="collapsed">
-            <div className="flex items-center gap-2">
-              <textarea
-                ref={inputRef}
-                value={newText}
-                onChange={(e) => setNewText(e.target.value)}
-                placeholder="New Task"
-                className="flex-1 px-3 py-2 rounded-lg bg-background border border-border text-sm outline-none focus:ring-1 ring-primary resize-none overflow-hidden min-h-[36px]"
-                rows={1}
-                onInput={(e) => {
-                  const target = e.target as HTMLTextAreaElement;
-                  target.style.height = 'auto';
-                  target.style.height = Math.min(target.scrollHeight, 120) + 'px';
-                }}
-                onKeyDown={(e) => { 
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleAdd();
-                  }
-                }}
-              />
-              <button 
-                className="p-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors" 
-                onClick={handleAdd}
-              >
-                <Plus className="w-4 h-4" />
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Smart Lists - Apple Reminders style */}
       <AnimatePresence mode="wait">
@@ -842,13 +810,145 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
               </motion.div>
             ))}
 
-            {filtered.length === 0 && (
+            {filtered.length === 0 && !isAddingNew && (
               <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground text-sm">
                 No tasks yet
               </div>
             )}
+
+            {/* Inline New Task - Apple Reminders style */}
+            <AnimatePresence>
+              {isAddingNew && (
+                <motion.div
+                  className="group px-2 py-2 rounded-md hover:bg-accent/50 transition-all"
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                >
+                  <div className="flex items-start gap-2">
+                    {/* Empty checkbox */}
+                    <div className="flex-shrink-0 mt-0.5">
+                      <Circle className="w-[18px] h-[18px] text-muted-foreground/60" />
+                    </div>
+
+                    {/* New Task Input */}
+                    <div className="flex-1 min-w-0">
+                      <textarea
+                        ref={newTaskInputRef}
+                        value={newText}
+                        onChange={(e) => setNewText(e.target.value)}
+                        placeholder="New Task"
+                        className="w-full bg-transparent text-sm outline-none resize-none overflow-hidden leading-relaxed text-foreground"
+                        rows={1}
+                        autoFocus
+                        onInput={(e) => {
+                          const target = e.target as HTMLTextAreaElement;
+                          target.style.height = 'auto';
+                          target.style.height = target.scrollHeight + 'px';
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            if (newText.trim()) {
+                              handleAdd();
+                              setIsAddingNew(false);
+                            }
+                          }
+                          if (e.key === 'Escape') {
+                            setNewText('');
+                            setNewPriority('');
+                            setNewCategory('');
+                            setNewUrl('');
+                            setIsAddingNew(false);
+                          }
+                        }}
+                        onBlur={() => {
+                          if (!newText.trim()) {
+                            setIsAddingNew(false);
+                          }
+                        }}
+                      />
+
+                      {/* Quick details row */}
+                      <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                        <button
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-accent hover:bg-accent/70 text-xs transition-colors"
+                          onClick={() => setSchedulingTaskId('new')}
+                        >
+                          <Calendar className="w-3 h-3" />
+                          Schedule
+                        </button>
+
+                        <select
+                          className="px-2 py-1 rounded-md bg-accent hover:bg-accent/70 text-xs outline-none cursor-pointer transition-colors"
+                          value={newPriority}
+                          onChange={(e) => setNewPriority(e.target.value as any)}
+                        >
+                          <option value="">Priority</option>
+                          <option value="high">⚠ High</option>
+                          <option value="med">! Medium</option>
+                          <option value="low">Low</option>
+                        </select>
+
+                        <select
+                          className="px-2 py-1 rounded-md bg-accent hover:bg-accent/70 text-xs outline-none cursor-pointer transition-colors"
+                          value={newCategory}
+                          onChange={(e) => setNewCategory(e.target.value)}
+                        >
+                          <option value="">Category</option>
+                          <option value="risk">Risk</option>
+                          <option value="analysis">Analysis</option>
+                          <option value="execution">Execution</option>
+                          <option value="journal">Journal</option>
+                          <option value="learning">Learning</option>
+                          <option value="wellness">Wellness</option>
+                          <option value="mindset">Mindset</option>
+                        </select>
+                      </div>
+
+                      {/* URL input */}
+                      {newUrl || (
+                        <button
+                          className="mt-2 text-xs text-muted-foreground hover:text-foreground"
+                          onClick={() => newTaskInputRef.current?.focus()}
+                        >
+                          Add URL
+                        </button>
+                      )}
+                      {newUrl && (
+                        <input
+                          type="url"
+                          placeholder="Add URL"
+                          value={newUrl}
+                          onChange={(e) => setNewUrl(e.target.value)}
+                          className="w-full mt-2 px-2 py-1.5 text-xs bg-transparent border border-border/50 rounded-md outline-none focus:ring-1 focus:ring-primary"
+                        />
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
+      )}
+
+      {/* Floating Add Button - iOS style */}
+      {isExpanded && (
+        <motion.button
+          className="absolute bottom-4 right-4 w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-all flex items-center justify-center"
+          onClick={() => {
+            setIsAddingNew(true);
+            setTimeout(() => newTaskInputRef.current?.focus(), 100);
+          }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          initial={{ opacity: 0, scale: 0 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.2 }}
+        >
+          <Plus className="w-6 h-6" />
+        </motion.button>
       )}
 
       {/* Schedule Modal */}
