@@ -102,7 +102,8 @@ export const Tooltip: React.FC<TooltipProps> = ({
 
   const getTooltipClasses = () => {
     // Apple-style: Allow multi-line, centered text with proper spacing
-    const baseClasses = 'absolute z-[9999] px-3 py-2 text-xs font-medium text-white bg-dark-800 rounded-lg shadow-lg border border-dark-600 whitespace-pre-line text-center max-w-xs';
+    // pointer-events-none prevents tooltip from blocking hover on trigger element
+    const baseClasses = 'absolute z-[9999] px-3 py-2 text-xs font-medium text-white bg-dark-800 rounded-lg shadow-lg border border-dark-600 whitespace-pre-line text-center max-w-xs pointer-events-none';
     
     switch (position) {
       case 'top':
