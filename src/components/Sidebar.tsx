@@ -335,14 +335,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
             exit="collapsed"
           >
             <div className="flex items-center gap-3">
-              <div className="relative w-9 h-9 flex-shrink-0">
+              <div className="relative w-10 h-10 flex-shrink-0">
                 <ProgressRing 
                   progressPct={getLevelProgress(profile.xp.seasonXp)}
                   size="sm"
                   thickness={2}
                 />
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-xs font-semibold text-primary">
+                  <span className="text-[11px] font-bold text-primary leading-none">
                     {profile.xp.level}
                   </span>
                 </div>
