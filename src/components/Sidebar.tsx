@@ -324,11 +324,47 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
         </AnimatePresence>
       </div>
 
+      {/* XP Progress - Subtle, Apple Fitness style */}
+      <AnimatePresence mode="wait">
+        {isExpanded && profile?.xp && (
+          <motion.div
+            className="px-4 py-3 border-b border-border/30"
+            variants={contentVariants}
+            initial="collapsed"
+            animate="expanded"
+            exit="collapsed"
+          >
+            <div className="flex items-center gap-3">
+              <div className="relative w-9 h-9 flex-shrink-0">
+                <ProgressRing 
+                  progressPct={getLevelProgress(profile.xp.seasonXp)}
+                  size="sm"
+                  thickness={2}
+                />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-xs font-semibold text-primary">
+                    {profile.xp.level}
+                  </span>
+                </div>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-foreground">
+                  Level {profile.xp.level}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {(profile.xp.seasonXp || 0).toLocaleString()} XP
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Account Filter */}
       <AnimatePresence mode="wait">
         {isExpanded && (
           <motion.div
-            className="px-4 pt-4 pb-3"
+            className="px-4 pt-3 pb-2"
             variants={contentVariants}
             initial="collapsed"
             animate="expanded"
@@ -353,25 +389,25 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
           scrollbarColor: 'hsl(var(--border)) transparent'
         }}
       >
-        <div className={cn('px-4 py-2', isExpanded ? 'space-y-6' : 'space-y-4')}>
+        <div className={cn('px-4 py-2', isExpanded ? 'space-y-3' : 'space-y-4')}>
           {navGroups.map((group, groupIndex) => (
             <div key={group.title}>
               {/* Section Header - Only show when expanded */}
               {isExpanded && (
                 <motion.div
-                  className="px-3 mb-2"
+                  className="px-3 mb-1.5"
                   variants={contentVariants}
                   initial="collapsed"
                   animate="expanded"
                 >
-                  <h3 className="text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider">
+                  <h3 className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider">
                     {group.title}
                   </h3>
                 </motion.div>
               )}
               
               {/* Group Items */}
-              <div className={cn(isExpanded ? 'space-y-1' : 'space-y-3')}>
+              <div className={cn(isExpanded ? 'space-y-0.5' : 'space-y-3')}>
                 {group.items.map((item) => (
                   <div key={item.id} className={cn(!isExpanded && 'flex justify-center')}> 
                     <NavItem item={item} isExpanded={isExpanded} />
@@ -381,7 +417,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
 
               {/* Divider between groups - subtle */}
               {groupIndex < navGroups.length - 1 && isExpanded && (
-                <div className="mt-4 mx-3 border-t border-border/30" />
+                <div className="mt-2.5 mb-0.5 mx-3 border-t border-border/30" />
               )}
             </div>
           ))}
