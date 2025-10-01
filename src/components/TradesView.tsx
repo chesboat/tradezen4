@@ -27,7 +27,9 @@ import {
   AlertCircle,
   Minus,
   MinusCircle,
-  Archive
+  Archive,
+  MoreVertical,
+  Star
 } from 'lucide-react';
 import { useTradeStore } from '@/store/useTradeStore';
 import TradeImageImport from '@/components/TradeImageImport';
@@ -99,6 +101,15 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
   const [bulkMood, setBulkMood] = useState<MoodType | ''>('');
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const [includeArchived, setIncludeArchived] = useState(false);
+  
+  // Inline editing states (Apple-style)
+  const [editingRRId, setEditingRRId] = useState<string | null>(null);
+  const [editingRRValue, setEditingRRValue] = useState<string>('');
+  const [quickFilter, setQuickFilter] = useState<'all' | 'today' | 'week' | 'winners' | 'losers'>('all');
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [swipedTradeId, setSwipedTradeId] = useState<string | null>(null);
+  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
+  const [selectionMode, setSelectionMode] = useState(false);
 
   // Get unique symbols for filter dropdown
   const uniqueSymbols = useMemo(() => {
@@ -113,12 +124,91 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
     return Array.from(new Set(tags)).sort();
   }, [trades, selectedAccountId]);
 
+  // Inline R:R editing handlers (Apple-style)
+  const handleRRDoubleClick = (trade: Trade) => {
+    setEditingRRId(trade.id);
+    setEditingRRValue(trade.riskRewardRatio?.toString() || '1.00');
+  };
+
+  const handleRRSave = async (tradeId: string) => {
+    const newRR = parseFloat(editingRRValue);
+    if (!isNaN(newRR)) {
+      await updateTrade(tradeId, { riskRewardRatio: newRR });
+    }
+    setEditingRRId(null);
+    setEditingRRValue('');
+  };
+
+  const handleRRKeyDown = (e: React.KeyboardEvent, tradeId: string) => {
+    if (e.key === 'Enter') {
+      handleRRSave(tradeId);
+    } else if (e.key === 'Escape') {
+      setEditingRRId(null);
+      setEditingRRValue('');
+    }
+  };
+
+  // Long-press handlers (Apple-style bulk selection)
+  const handleLongPressStart = (tradeId: string) => {
+    const timer = setTimeout(() => {
+      setSelectionMode(true);
+      setSelectedTrades(new Set([tradeId]));
+      // Haptic feedback on mobile (if supported)
+      if (navigator.vibrate) {
+        navigator.vibrate(50);
+      }
+    }, 500); // 500ms long press
+    setLongPressTimer(timer);
+  };
+
+  const handleLongPressEnd = () => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      setLongPressTimer(null);
+    }
+  };
+
+  const handleTradeClick = (tradeId: string) => {
+    if (selectionMode) {
+      // Toggle selection
+      setSelectedTrades(prev => {
+        const newSet = new Set(prev);
+        if (newSet.has(tradeId)) {
+          newSet.delete(tradeId);
+        } else {
+          newSet.add(tradeId);
+        }
+        // Exit selection mode if no trades selected
+        if (newSet.size === 0) {
+          setSelectionMode(false);
+        }
+        return newSet;
+      });
+    }
+  };
+
   // Filter and sort trades
   const filteredTrades = useMemo(() => {
     let filtered = (() => {
       const ids = getAccountIdsForSelection(selectedAccountId || null, includeArchived);
       return trades.filter(t => ids.includes(t.accountId));
     })();
+
+    // Apply quick filters (Apple-style chips)
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - 7);
+
+    if (quickFilter === 'today') {
+      filtered = filtered.filter(trade => new Date(trade.entryTime) >= todayStart);
+    } else if (quickFilter === 'week') {
+      filtered = filtered.filter(trade => new Date(trade.entryTime) >= weekStart);
+    } else if (quickFilter === 'winners') {
+      filtered = filtered.filter(trade => (trade.pnl || 0) > 0);
+    } else if (quickFilter === 'losers') {
+      filtered = filtered.filter(trade => (trade.pnl || 0) < 0);
+    }
 
     // Apply filters
     if (filters.search) {
@@ -199,7 +289,7 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
     });
 
     return filtered;
-  }, [trades, filters, sortConfig]);
+  }, [trades, filters, sortConfig, quickFilter, selectedAccountId, includeArchived, activeTag]);
 
   // Calculate statistics (exclude scratches from win rate)
   const statistics = useMemo(() => {
@@ -244,6 +334,32 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
   }, [filteredTrades, currentPage]);
 
   const totalPages = Math.ceil(filteredTrades.length / ITEMS_PER_PAGE);
+
+  // Group trades by date (Apple-style)
+  const groupedTrades = useMemo(() => {
+    const groups: { [key: string]: Trade[] } = {};
+    paginatedTrades.forEach(trade => {
+      const date = new Date(trade.entryTime);
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      
+      let groupKey: string;
+      if (date.toDateString() === today.toDateString()) {
+        groupKey = 'Today';
+      } else if (date.toDateString() === yesterday.toDateString()) {
+        groupKey = 'Yesterday';
+      } else {
+        groupKey = date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+      }
+      
+      if (!groups[groupKey]) {
+        groups[groupKey] = [];
+      }
+      groups[groupKey].push(trade);
+    });
+    return groups;
+  }, [paginatedTrades]);
 
   const handleSort = (key: keyof Trade) => {
     setSortConfig(prev => ({
@@ -463,6 +579,31 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
           </button>
         </div>
 
+        {/* Quick Filter Chips (Apple-style) */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs text-muted-foreground">Quick filters:</span>
+          {(['all', 'today', 'week', 'winners', 'losers'] as const).map((filter) => (
+            <motion.button
+              key={filter}
+              onClick={() => setQuickFilter(filter)}
+              className={cn(
+                'px-3 py-1.5 rounded-full text-xs font-medium transition-all',
+                quickFilter === filter
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'bg-muted/50 text-muted-foreground hover:bg-muted/70'
+              )}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              {filter === 'all' ? 'All' :
+               filter === 'today' ? 'Today' :
+               filter === 'week' ? 'This Week' :
+               filter === 'winners' ? '✓ Winners' :
+               '✗ Losers'}
+            </motion.button>
+          ))}
+        </div>
+
         {/* Tag Filter Bar */}
         {uniqueTags.length > 0 && (
           <div className="flex items-center gap-2">
@@ -625,16 +766,27 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
 
       {/* Bulk Actions */}
       <AnimatePresence>
-        {selectedTrades.size > 0 && (
+        {selectedTrades.size > 0 && selectionMode && (
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             className="bg-primary/10 border border-primary/20 rounded-lg p-4 flex items-center justify-between gap-3 flex-wrap"
           >
-            <span className="text-sm text-foreground">
-              {selectedTrades.size} trades selected
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-foreground">
+                {selectedTrades.size} trades selected
+              </span>
+              <button
+                onClick={() => {
+                  setSelectionMode(false);
+                  setSelectedTrades(new Set());
+                }}
+                className="text-xs text-muted-foreground hover:text-foreground underline"
+              >
+                Exit Selection
+              </button>
+            </div>
             <div className="flex items-center gap-2">
               <select
                 value={bulkMood}
@@ -682,21 +834,21 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
             <table className="w-full">
               <thead className="bg-muted/50">
                 <tr>
-                  <th className="p-3 text-left">
-                    <input
-                      type="checkbox"
-                      checked={selectedTrades.size === paginatedTrades.length && paginatedTrades.length > 0}
-                      onChange={handleSelectAll}
-                      className="rounded"
-                    />
-                  </th>
+                  {selectionMode && (
+                    <th className="p-3 text-left w-12">
+                      <button
+                        onClick={handleSelectAll}
+                        className="text-xs text-primary hover:underline"
+                      >
+                        All
+                      </button>
+                    </th>
+                  )}
                   {[
                     { key: 'entryTime', label: 'Date' },
                     { key: 'symbol', label: 'Symbol' },
                     { key: 'direction', label: 'Side' },
-                    { key: 'riskAmount', label: 'Risk' },
-                    { key: 'entryPrice', label: 'Entry' },
-                    { key: 'exitPrice', label: 'Exit' },
+                    { key: 'entryPrice', label: 'Entry → Exit' },
                     { key: 'pnl', label: 'P&L' },
                     { key: 'riskRewardRatio', label: 'R:R' },
                     { key: 'result', label: 'Result' },
@@ -716,21 +868,44 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                 </tr>
               </thead>
               <tbody>
-                {paginatedTrades.map((trade) => (
+                {Object.entries(groupedTrades).map(([groupName, groupTrades]) => (
+                  <React.Fragment key={groupName}>
+                    {/* Group Header */}
+                    <tr className="bg-muted/20">
+                      <td colSpan={9} className="px-3 py-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-foreground">{groupName}</span>
+                          <span className="text-xs text-muted-foreground">({groupTrades.length} {groupTrades.length === 1 ? 'trade' : 'trades'})</span>
+                        </div>
+                      </td>
+                    </tr>
+                    {/* Group Trades */}
+                    {groupTrades.map((trade) => (
                   <motion.tr
                     key={trade.id}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="border-t border-border hover:bg-muted/20 transition-colors"
+                    className={cn(
+                      'border-t border-border hover:bg-muted/20 transition-colors cursor-pointer',
+                      selectedTrades.has(trade.id) && 'bg-primary/10'
+                    )}
+                    onMouseDown={() => handleLongPressStart(trade.id)}
+                    onMouseUp={handleLongPressEnd}
+                    onMouseLeave={handleLongPressEnd}
+                    onTouchStart={() => handleLongPressStart(trade.id)}
+                    onTouchEnd={handleLongPressEnd}
+                    onClick={() => handleTradeClick(trade.id)}
                   >
-                    <td className="p-3">
-                      <input
-                        type="checkbox"
-                        checked={selectedTrades.has(trade.id)}
-                        onChange={() => handleTradeSelect(trade.id)}
-                        className="rounded"
-                      />
-                    </td>
+                    {selectionMode && (
+                      <td className="p-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedTrades.has(trade.id)}
+                          onChange={() => handleTradeClick(trade.id)}
+                          className="rounded pointer-events-none"
+                        />
+                      </td>
+                    )}
                     <td className="p-3 text-sm">
                       <div>{new Date(trade.entryTime).toLocaleDateString()}</div>
                       <div className="text-muted-foreground">
@@ -746,9 +921,17 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                         {trade.direction?.toUpperCase() || 'N/A'}
                       </span>
                     </td>
-                    <td className="p-3">{formatCurrency(trade.riskAmount)}</td>
-                    <td className="p-3">{formatCurrency(trade.entryPrice)}</td>
-                    <td className="p-3">{trade.exitPrice ? formatCurrency(trade.exitPrice) : '-'}</td>
+                    <td className="p-3">
+                      <div className="text-sm">
+                        <span className="text-muted-foreground">{formatCurrency(trade.entryPrice)}</span>
+                        <span className="mx-1 text-muted-foreground/50">→</span>
+                        <span className={cn(
+                          trade.exitPrice ? '' : 'text-muted-foreground/60'
+                        )}>
+                          {trade.exitPrice ? formatCurrency(trade.exitPrice) : 'Open'}
+                        </span>
+                      </div>
+                    </td>
                     <td className="p-3">
                       <span className={cn(
                         'font-medium',
@@ -757,7 +940,27 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                         {formatCurrency(trade.pnl || 0)}
                       </span>
                     </td>
-                    <td className="p-3">{trade.riskRewardRatio.toFixed(2)}</td>
+                    <td 
+                      className="p-3"
+                      onDoubleClick={() => handleRRDoubleClick(trade)}
+                    >
+                      {editingRRId === trade.id ? (
+                        <input
+                          type="number"
+                          step="0.1"
+                          value={editingRRValue}
+                          onChange={(e) => setEditingRRValue(e.target.value)}
+                          onBlur={() => handleRRSave(trade.id)}
+                          onKeyDown={(e) => handleRRKeyDown(e, trade.id)}
+                          className="w-16 px-2 py-1 bg-primary/10 border border-primary rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                          autoFocus
+                        />
+                      ) : (
+                        <span className="cursor-pointer hover:text-primary transition-colors" title="Double-click to edit">
+                          {trade.riskRewardRatio.toFixed(2)}
+                        </span>
+                      )}
+                    </td>
                     <td className="p-3">
                       <div className="flex items-center gap-2">
                         {trade.result && getResultIcon(trade.result)}
@@ -785,27 +988,64 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                         {getMoodEmoji(trade.mood)}
                       </span>
                     </td>
-                    <td className="p-3">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => onOpenTradeModal && onOpenTradeModal(trade)}
-                          className="p-1 hover:bg-primary/20 rounded transition-colors"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (window.confirm('Are you sure you want to delete this trade?')) {
-                              deleteTrade(trade.id);
-                            }
-                          }}
-                          className="p-1 hover:bg-red-500/20 rounded transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                    <td className="p-3 relative">
+                      <button
+                        onClick={() => setOpenMenuId(openMenuId === trade.id ? null : trade.id)}
+                        className="p-2 hover:bg-muted/50 rounded-lg transition-colors"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
+                      
+                      {/* Action Menu Popover (Apple-style) */}
+                      <AnimatePresence>
+                        {openMenuId === trade.id && (
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                            className="absolute right-0 top-12 z-50 w-48 bg-popover border border-border rounded-lg shadow-lg overflow-hidden"
+                            onMouseLeave={() => setOpenMenuId(null)}
+                          >
+                            <button
+                              onClick={() => {
+                                onOpenTradeModal && onOpenTradeModal(trade);
+                                setOpenMenuId(null);
+                              }}
+                              className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-muted/50 transition-colors text-left"
+                            >
+                              <Edit className="w-4 h-4 text-primary" />
+                              <span className="text-sm">Edit Trade</span>
+                            </button>
+                            <button
+                              onClick={() => {
+                                // Add to favorites logic here
+                                setOpenMenuId(null);
+                              }}
+                              className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-muted/50 transition-colors text-left"
+                            >
+                              <Star className="w-4 h-4 text-yellow-500" />
+                              <span className="text-sm">Mark for Review</span>
+                            </button>
+                            <div className="h-px bg-border my-1" />
+                            <button
+                              onClick={() => {
+                                if (window.confirm('Are you sure you want to delete this trade?')) {
+                                  deleteTrade(trade.id);
+                                  setOpenMenuId(null);
+                                }
+                              }}
+                              className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-red-500/10 transition-colors text-left text-red-500"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              <span className="text-sm">Delete</span>
+                            </button>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </td>
                   </motion.tr>
+                    ))}
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>
@@ -818,16 +1058,52 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
               key={trade.id}
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-muted/30 rounded-lg p-4 space-y-3"
+              className="relative overflow-hidden"
             >
+              {/* Swipe Actions Background (Apple-style) */}
+              <motion.div
+                className="absolute inset-0 flex items-center justify-end gap-2 px-4 bg-gradient-to-l from-red-500/20 to-transparent"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: swipedTradeId === trade.id ? 1 : 0 }}
+              >
+                <button
+                  onClick={() => {
+                    onOpenTradeModal && onOpenTradeModal(trade);
+                    setSwipedTradeId(null);
+                  }}
+                  className="p-2 bg-primary rounded-lg"
+                >
+                  <Edit className="w-5 h-5 text-primary-foreground" />
+                </button>
+                <button
+                  onClick={() => {
+                    if (window.confirm('Delete this trade?')) {
+                      deleteTrade(trade.id);
+                    }
+                    setSwipedTradeId(null);
+                  }}
+                  className="p-2 bg-red-500 rounded-lg"
+                >
+                  <Trash2 className="w-5 h-5 text-white" />
+                </button>
+              </motion.div>
+
+              {/* Card Content */}
+              <motion.div
+                drag="x"
+                dragConstraints={{ left: -100, right: 0 }}
+                dragElastic={0.1}
+                onDragEnd={(e, { offset }) => {
+                  if (offset.x < -50) {
+                    setSwipedTradeId(trade.id);
+                  } else {
+                    setSwipedTradeId(null);
+                  }
+                }}
+                className="bg-muted/30 rounded-lg p-4 space-y-3 relative z-10"
+              >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={selectedTrades.has(trade.id)}
-                    onChange={() => handleTradeSelect(trade.id)}
-                    className="rounded"
-                  />
                   <span className="font-medium">{trade.symbol}</span>
                   <span className={cn(
                     'px-2 py-1 rounded text-xs font-medium',
@@ -836,24 +1112,7 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                     {trade.direction?.toUpperCase() || 'N/A'}
                   </span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => onOpenTradeModal && onOpenTradeModal(trade)}
-                    className="p-1 hover:bg-primary/20 rounded transition-colors"
-                  >
-                    <Edit className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (window.confirm('Are you sure you want to delete this trade?')) {
-                        deleteTrade(trade.id);
-                      }
-                    }}
-                    className="p-1 hover:bg-red-500/20 rounded transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
+                <span className="text-xs text-muted-foreground">← Swipe</span>
               </div>
 
               <div className="grid grid-cols-2 gap-2 text-sm">
@@ -918,6 +1177,7 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                   {trade.notes}
                 </div>
               )}
+              </motion.div>
             </motion.div>
           ))}
         </div>
