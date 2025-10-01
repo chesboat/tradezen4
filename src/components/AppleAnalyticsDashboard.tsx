@@ -467,7 +467,11 @@ const AtAGlanceWeekly: React.FC<{ trades: any[] }> = ({ trades }) => {
 // EQUITY CURVE WITH ANNOTATIONS
 // ===============================================
 
-const AnnotatedEquityCurve: React.FC<{ trades: any[] }> = ({ trades }) => {
+const AnnotatedEquityCurve: React.FC<{ 
+  trades: any[];
+  activityLogExpanded?: boolean;
+  todoExpanded?: boolean;
+}> = ({ trades, activityLogExpanded = false, todoExpanded = false }) => {
   const [hoveredPoint, setHoveredPoint] = React.useState<{ index: number; x: number; y: number; equity: number; date: Date; pnl: number; symbol: string } | null>(null);
   const svgRef = React.useRef<SVGSVGElement>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
@@ -708,9 +712,16 @@ const AnnotatedEquityCurve: React.FC<{ trades: any[] }> = ({ trades }) => {
           {/* Hover tooltip (Apple Stocks style with smart positioning) */}
           <AnimatePresence>
             {hoveredPoint && (() => {
-              // Smart positioning: flip to left if near right edge, flip to right if near left edge
+              // Calculate available space on right side
+              // Account for sidebars: both collapsed = 120px, activity = 380px, todo = 460px, both = 480px
+              const rightSidebarWidth = activityLogExpanded && todoExpanded ? 480 :
+                                       activityLogExpanded ? 380 :
+                                       todoExpanded ? 460 : 120;
+              
+              // Need wider threshold when sidebars are present
+              // Use 70% as threshold instead of 85% to prevent overlap
               const isNearLeftEdge = hoveredPoint.x < 15;
-              const isNearRightEdge = hoveredPoint.x > 85;
+              const isNearRightEdge = hoveredPoint.x > 70;
               
               let positionStyle: React.CSSProperties = {
                 left: `${hoveredPoint.x}%`,
@@ -719,6 +730,7 @@ const AnnotatedEquityCurve: React.FC<{ trades: any[] }> = ({ trades }) => {
               };
               
               if (isNearRightEdge) {
+                // Flip to left side of cursor
                 positionStyle = {
                   left: `${hoveredPoint.x}%`,
                   transform: 'translateX(-100%)',
@@ -726,6 +738,7 @@ const AnnotatedEquityCurve: React.FC<{ trades: any[] }> = ({ trades }) => {
                   marginLeft: '-0.5rem'
                 };
               } else if (isNearLeftEdge) {
+                // Flip to right side of cursor
                 positionStyle = {
                   left: `${hoveredPoint.x}%`,
                   transform: 'translateX(0%)',
@@ -1345,7 +1358,11 @@ export const AppleAnalyticsDashboard: React.FC = () => {
         <AtAGlanceWeekly trades={filteredTrades} />
 
         {/* Equity Curve */}
-        <AnnotatedEquityCurve trades={filteredTrades} />
+        <AnnotatedEquityCurve 
+          trades={filteredTrades}
+          activityLogExpanded={activityLogExpanded}
+          todoExpanded={todoExpanded}
+        />
 
         {/* Top Symbols */}
         <TopSymbolsSection 
