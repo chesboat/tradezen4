@@ -154,9 +154,9 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
             className={cn(
               "fixed z-[100] bg-background flex flex-col",
               // Mobile: Bottom sheet
-              "inset-x-0 bottom-0 top-20 rounded-t-3xl",
-              // Desktop: Perfectly centered modal (Apple style) - override mobile
-              "md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2",
+              "left-0 right-0 bottom-0 top-20 rounded-t-3xl",
+              // Desktop: Perfectly centered modal (Apple style)
+              "md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:bottom-auto md:right-auto",
               "md:w-full md:max-w-md md:rounded-2xl md:border md:border-border/50 md:shadow-2xl"
             )}
             initial={{ 
