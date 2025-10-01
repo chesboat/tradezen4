@@ -107,6 +107,7 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
   const [editingRRValue, setEditingRRValue] = useState<string>('');
   const [editingPnlId, setEditingPnlId] = useState<string | null>(null);
   const [editingPnlValue, setEditingPnlValue] = useState<string>('');
+  const [editingMoodId, setEditingMoodId] = useState<string | null>(null);
   const [quickFilter, setQuickFilter] = useState<'all' | 'today' | 'week' | 'winners' | 'losers'>('all');
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [swipedTradeId, setSwipedTradeId] = useState<string | null>(null);
@@ -132,18 +133,26 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
     setEditingRRValue(trade.riskRewardRatio?.toString() || '1.00');
   };
 
-  const handleRRSave = async (tradeId: string) => {
+  const handleRRSave = async (tradeId: string, trade: Trade) => {
     const newRR = parseFloat(editingRRValue);
-    if (!isNaN(newRR)) {
-      await updateTrade(tradeId, { riskRewardRatio: newRR });
+    if (!isNaN(newRR) && newRR > 0) {
+      // Recalculate risk amount based on P&L and new R:R
+      // If P&L = $343.52 and R:R = 2, then Risk = $343.52 / 2 = $171.76
+      const pnl = Math.abs(trade.pnl || 0);
+      const newRiskAmount = pnl / newRR;
+      
+      await updateTrade(tradeId, { 
+        riskRewardRatio: newRR,
+        riskAmount: newRiskAmount
+      });
     }
     setEditingRRId(null);
     setEditingRRValue('');
   };
 
-  const handleRRKeyDown = (e: React.KeyboardEvent, tradeId: string) => {
+  const handleRRKeyDown = (e: React.KeyboardEvent, tradeId: string, trade: Trade) => {
     if (e.key === 'Enter') {
-      handleRRSave(tradeId);
+      handleRRSave(tradeId, trade);
     } else if (e.key === 'Escape') {
       setEditingRRId(null);
       setEditingRRValue('');
@@ -174,6 +183,18 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
       setEditingPnlId(null);
       setEditingPnlValue('');
     }
+  };
+
+  // Mood inline editing handlers
+  const moodOptions: MoodType[] = ['excellent', 'good', 'neutral', 'poor', 'terrible'];
+  
+  const handleMoodClick = (tradeId: string) => {
+    setEditingMoodId(editingMoodId === tradeId ? null : tradeId);
+  };
+
+  const handleMoodSelect = async (tradeId: string, mood: MoodType) => {
+    await updateTrade(tradeId, { mood });
+    setEditingMoodId(null);
   };
 
   // Long-press handlers (Apple-style bulk selection)
@@ -962,7 +983,7 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                     </td>
                     <td 
                       className="p-3"
-                      onDoubleClick={() => handlePnlDoubleClick(trade)}
+                      onClick={() => handlePnlDoubleClick(trade)}
                     >
                       {editingPnlId === trade.id ? (
                         <input
@@ -979,14 +1000,14 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                         <span className={cn(
                           'font-medium cursor-pointer hover:text-primary transition-colors',
                           (trade.pnl || 0) >= 0 ? 'text-green-500' : 'text-red-500'
-                        )} title="Double-click to edit">
+                        )} title="Tap to edit">
                           {formatCurrency(trade.pnl || 0)}
                         </span>
                       )}
                     </td>
                     <td 
                       className="p-3"
-                      onDoubleClick={() => handleRRDoubleClick(trade)}
+                      onClick={() => handleRRDoubleClick(trade)}
                     >
                       {editingRRId === trade.id ? (
                         <input
@@ -994,13 +1015,13 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                           step="0.1"
                           value={editingRRValue}
                           onChange={(e) => setEditingRRValue(e.target.value)}
-                          onBlur={() => handleRRSave(trade.id)}
-                          onKeyDown={(e) => handleRRKeyDown(e, trade.id)}
+                          onBlur={() => handleRRSave(trade.id, trade)}
+                          onKeyDown={(e) => handleRRKeyDown(e, trade.id, trade)}
                           className="w-16 px-2 py-1 bg-primary/10 border border-primary rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                           autoFocus
                         />
                       ) : (
-                        <span className="cursor-pointer hover:text-primary transition-colors" title="Double-click to edit">
+                        <span className="cursor-pointer hover:text-primary transition-colors" title="Tap to edit">
                           {trade.riskRewardRatio.toFixed(2)}
                         </span>
                       )}
@@ -1027,10 +1048,33 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                         })()}
                       </div>
                     </td>
-                    <td className="p-3">
-                      <span className={cn('text-lg', getMoodColor(trade.mood))}>
+                    <td className="p-3 relative">
+                      <span 
+                        className={cn('text-lg cursor-pointer hover:scale-110 transition-transform', getMoodColor(trade.mood))}
+                        onClick={() => handleMoodClick(trade.id)}
+                        title="Tap to change mood"
+                      >
                         {getMoodEmoji(trade.mood)}
                       </span>
+                      
+                      {/* Mood picker popover */}
+                      {editingMoodId === trade.id && (
+                        <div className="absolute z-10 top-full mt-1 left-0 bg-card border border-border rounded-lg shadow-lg p-2 flex gap-2">
+                          {moodOptions.map((mood) => (
+                            <button
+                              key={mood}
+                              onClick={() => handleMoodSelect(trade.id, mood)}
+                              className={cn(
+                                'text-2xl p-2 rounded-lg hover:bg-muted transition-colors',
+                                getMoodColor(mood)
+                              )}
+                              title={mood}
+                            >
+                              {getMoodEmoji(mood)}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </td>
                     <td className="p-3 relative">
                       <button
@@ -1199,11 +1243,33 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                     return null;
                   })()}
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className={cn('text-lg', getMoodColor(trade.mood))}>
+                <div className="flex items-center gap-2 relative">
+                  <span 
+                    className={cn('text-lg cursor-pointer active:scale-110 transition-transform', getMoodColor(trade.mood))}
+                    onClick={() => handleMoodClick(trade.id)}
+                  >
                     {getMoodEmoji(trade.mood)}
                   </span>
-                  <div onDoubleClick={() => handlePnlDoubleClick(trade)}>
+                  
+                  {/* Mobile mood picker */}
+                  {editingMoodId === trade.id && (
+                    <div className="absolute z-10 bottom-full mb-2 left-0 bg-card border border-border rounded-lg shadow-lg p-2 flex gap-2">
+                      {moodOptions.map((mood) => (
+                        <button
+                          key={mood}
+                          onClick={() => handleMoodSelect(trade.id, mood)}
+                          className={cn(
+                            'text-2xl p-2 rounded-lg active:bg-muted transition-colors',
+                            getMoodColor(mood)
+                          )}
+                        >
+                          {getMoodEmoji(mood)}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  
+                  <div onClick={() => handlePnlDoubleClick(trade)}>
                     {editingPnlId === trade.id ? (
                       <input
                         type="number"
@@ -1217,9 +1283,9 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                       />
                     ) : (
                       <span className={cn(
-                        'font-medium cursor-pointer hover:text-primary transition-colors',
+                        'font-medium cursor-pointer active:text-primary transition-colors',
                         (trade.pnl || 0) >= 0 ? 'text-green-500' : 'text-red-500'
-                      )} title="Double-tap to edit">
+                      )} title="Tap to edit">
                         {formatCurrency(trade.pnl || 0)}
                       </span>
                     )}
