@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, Circle, ChevronLeft, ChevronRight, Clock, Tag, MoreVertical, Plus, X, Pin, Calendar, ExternalLink, Link } from 'lucide-react';
+import { CheckCircle2, Circle, ChevronLeft, ChevronRight, Clock, Tag, MoreVertical, Plus, X, Pin, Calendar, ExternalLink, Link, Inbox, CalendarDays, CheckSquare } from 'lucide-react';
 import { useTodoStore, initializeSampleTasks } from '@/store/useTodoStore';
 import { ImprovementTask } from '@/types';
 import { useActivityLogStore } from '@/store/useActivityLogStore';
@@ -269,38 +269,65 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
           >
             <div className="space-y-0.5">
               {[
-                { id: 'today', label: 'Today', icon: '🔵', count: tasks.filter(t => {
-                  if (t.status !== 'open') return false;
-                  if (!t.scheduledFor) return true;
-                  const today = new Date();
-                  today.setHours(0, 0, 0, 0);
-                  const tomorrow = new Date(today);
-                  tomorrow.setDate(tomorrow.getDate() + 1);
-                  const scheduledDate = new Date(t.scheduledFor as any);
-                  return scheduledDate < tomorrow;
-                }).length },
-                { id: 'open', label: 'All', icon: '📋', count: tasks.filter(t => t.status === 'open').length },
-                { id: 'snoozed', label: 'Scheduled', icon: '📅', count: tasks.filter(t => t.status === 'snoozed').length },
-                { id: 'done', label: 'Completed', icon: '✓', count: tasks.filter(t => t.status === 'done').length },
-              ].map((list) => (
-                <button
-                  key={list.id}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
-                    filter === list.id 
-                      ? 'bg-accent text-foreground font-medium' 
-                      : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
-                  }`}
-                  onClick={() => setFilter(list.id as any)}
-                >
-                  <span className="text-base">{list.icon}</span>
-                  <span className="flex-1 text-left">{list.label}</span>
-                  {list.count > 0 && (
-                    <span className={`text-xs ${filter === list.id ? 'text-foreground' : 'text-muted-foreground'}`}>
-                      {list.count}
-                    </span>
-                  )}
-                </button>
-              ))}
+                { 
+                  id: 'today', 
+                  label: 'Today', 
+                  icon: Circle,
+                  iconColor: 'text-blue-500',
+                  count: tasks.filter(t => {
+                    if (t.status !== 'open') return false;
+                    if (!t.scheduledFor) return true;
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const tomorrow = new Date(today);
+                    tomorrow.setDate(tomorrow.getDate() + 1);
+                    const scheduledDate = new Date(t.scheduledFor as any);
+                    return scheduledDate < tomorrow;
+                  }).length 
+                },
+                { 
+                  id: 'open', 
+                  label: 'All', 
+                  icon: Inbox,
+                  iconColor: 'text-muted-foreground',
+                  count: tasks.filter(t => t.status === 'open').length 
+                },
+                { 
+                  id: 'snoozed', 
+                  label: 'Scheduled', 
+                  icon: CalendarDays,
+                  iconColor: 'text-red-500',
+                  count: tasks.filter(t => t.status === 'snoozed').length 
+                },
+                { 
+                  id: 'done', 
+                  label: 'Completed', 
+                  icon: CheckSquare,
+                  iconColor: 'text-muted-foreground',
+                  count: tasks.filter(t => t.status === 'done').length 
+                },
+              ].map((list) => {
+                const IconComponent = list.icon;
+                return (
+                  <button
+                    key={list.id}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
+                      filter === list.id 
+                        ? 'bg-accent text-foreground font-medium' 
+                        : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+                    }`}
+                    onClick={() => setFilter(list.id as any)}
+                  >
+                    <IconComponent className={`w-4 h-4 ${filter === list.id ? list.iconColor : 'text-muted-foreground/60'}`} />
+                    <span className="flex-1 text-left">{list.label}</span>
+                    {list.count > 0 && (
+                      <span className={`text-xs ${filter === list.id ? 'text-foreground' : 'text-muted-foreground'}`}>
+                        {list.count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </motion.div>
         )}
