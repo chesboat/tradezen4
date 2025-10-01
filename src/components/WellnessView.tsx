@@ -24,7 +24,7 @@ import { useQuestStore } from '@/store/useQuestStore';
 import { WellnessActionType, MoodType } from '@/types';
 type Timeout = ReturnType<typeof setTimeout>;
 import { getMoodColor, getMoodEmoji, localStorage, STORAGE_KEYS } from '@/lib/localStorageUtils';
-import { cn } from '@/lib/utils';
+import { cn, formatLocalDate } from '@/lib/utils';
 
 interface WellnessActivity {
   id: WellnessActionType;
@@ -425,8 +425,8 @@ export const WellnessView: React.FC = () => {
       await XpService.addXp(5, { source: 'wellness', type: 'mood_update', from: oldMood, to: newMood });
     } catch {}
 
-    // Add to mood timeline
-    const today = new Date().toISOString().split('T')[0];
+    // Add to mood timeline - use local date to avoid timezone issues
+    const today = formatLocalDate(new Date()); // Local timezone YYYY-MM-DD
     const accountId = selectedAccountId || 'default';
     console.log('[WellnessView] Adding mood entry:', { 
       date: today, 
