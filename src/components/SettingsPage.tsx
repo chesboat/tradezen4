@@ -130,15 +130,16 @@ export const SettingsPage: React.FC = () => {
           `• ${result.updated.notes} notes\n` +
           `• ${result.updated.quests} quests\n` +
           `• ${result.updated.todos} todos\n\n` +
-          `Refreshing page...`,
-          { duration: 3000 }
+          `Refreshing page in 5 seconds...`,
+          { duration: 5000 }
         );
         setMigrationNeeded(false);
         
-        // Give user time to see the success message, then reload
+        // Give Firestore time to sync and propagate changes before reload
         setTimeout(() => {
-          window.location.reload();
-        }, 3000);
+          // Force a hard reload to clear all caches
+          window.location.href = window.location.href.split('#')[0];
+        }, 5000);
       } else {
         toast.error('Migration completed with errors. Check console for details.');
         console.error('Migration errors:', result.errors);

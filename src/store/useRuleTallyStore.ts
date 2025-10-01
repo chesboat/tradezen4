@@ -148,8 +148,13 @@ export const useRuleTallyStore = create<RuleTallyState>()(
 
       getRulesByAccount: (accountId) => {
         const { rules } = get();
+        console.log(`📊 getRulesByAccount called with accountId: ${accountId}`);
+        console.log(`📊 Total rules in store: ${rules.length}`);
+        console.log(`📊 Rules detail:`, rules.map(r => ({ label: r.label, accountId: r.accountId, isActive: r.isActive })));
         // Include journal-wide habits (no accountId) and account-specific habits
-        return rules.filter((rule) => (!rule.accountId || rule.accountId === accountId) && rule.isActive);
+        const filtered = rules.filter((rule) => (!rule.accountId || rule.accountId === accountId) && rule.isActive);
+        console.log(`📊 Filtered rules: ${filtered.length}`, filtered.map(r => r.label));
+        return filtered;
       },
 
       addTally: async (ruleId, accountId, dateOverride) => {
@@ -419,16 +424,20 @@ export const useRuleTallyStore = create<RuleTallyState>()(
       loadRules: async (accountId) => {
         set({ isLoading: true });
         try {
-          console.log('Loading tally rules...', { accountId });
+          console.log('🔄 Loading tally rules...', { accountId });
           const rules = await rulesService.getAll();
-          console.log('Loaded rules from Firebase:', rules.length, 'rules');
+          console.log(`🔄 Loaded ${rules.length} rules from Firebase`);
+          console.log('🔄 Rules with accountId breakdown:', 
+            rules.map(r => ({ label: r.label, hasAccountId: !!r.accountId, accountId: r.accountId }))
+          );
           
           // Include journal-wide habits (no accountId) and account-specific habits
           const filteredRules = accountId 
             ? rules.filter(rule => !rule.accountId || rule.accountId === accountId)
             : rules;
           
-          console.log('Filtered rules:', filteredRules.length, 'rules for account:', accountId);
+          console.log(`🔄 Filtered to ${filteredRules.length} rules for account:`, accountId);
+          console.log('🔄 Filtered rules:', filteredRules.map(r => r.label));
           set({ rules: filteredRules });
         } catch (error) {
           console.error('Failed to load tally rules:', error);
