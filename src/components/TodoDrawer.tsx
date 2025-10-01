@@ -43,6 +43,9 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
   const [isAddingNew, setIsAddingNew] = useState(false);
   const newTaskInputRef = useRef<HTMLTextAreaElement>(null);
   const [newNotes, setNewNotes] = useState('');
+  const [showNotesInput, setShowNotesInput] = useState(false);
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const [newTags, setNewTags] = useState<string[]>([]);
 
   useEffect(() => {
     const init = async () => {
@@ -107,6 +110,7 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
     if (newCategory) extras.category = newCategory;
     if (newUrl.trim()) extras.url = newUrl.trim();
     if (newNotes.trim()) extras.notes = newNotes.trim();
+    if (newTags.length > 0) extras.tags = newTags;
     
     // Set order to current timestamp for natural insertion order at bottom
     extras.order = -Date.now();
@@ -117,6 +121,9 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
     setNewCategory('');
     setNewUrl('');
     setNewNotes('');
+    setNewTags([]);
+    setShowNotesInput(false);
+    setShowUrlInput(false);
   };
 
   const handleToggleDone = async (taskId: string) => {
@@ -843,24 +850,38 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                         }}
                       />
 
-                      {/* Details panel - always visible */}
+                      {/* iOS-style toolbar */}
                       <div className="new-task-details mt-2 space-y-2">
-                        {/* Quick actions row */}
-                        <div className="flex items-center gap-1.5 flex-wrap">
+                        {/* Toolbar icons - iOS style */}
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
                           <button
-                            className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-accent hover:bg-accent/70 text-xs transition-colors"
+                            className="flex items-center gap-1 hover:text-foreground transition-colors"
                             onClick={(e) => {
                               e.preventDefault();
                               setSchedulingTaskId('new');
                             }}
                             type="button"
                           >
-                            <Calendar className="w-3 h-3" />
-                            Schedule
+                            <Calendar className="w-4 h-4" />
+                          </button>
+
+                          <button
+                            className="flex items-center gap-1 hover:text-foreground transition-colors"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              // Show tag input inline
+                              const tag = window.prompt('Add tag:');
+                              if (tag && tag.trim()) {
+                                setNewTags([...newTags, tag.trim()]);
+                              }
+                            }}
+                            type="button"
+                          >
+                            <Tag className="w-4 h-4" />
                           </button>
 
                           <select
-                            className="px-2 py-1 rounded-md bg-accent hover:bg-accent/70 text-xs outline-none cursor-pointer transition-colors"
+                            className="px-2 py-0.5 text-xs bg-transparent text-muted-foreground hover:text-foreground outline-none cursor-pointer transition-colors border-0"
                             value={newCategory}
                             onChange={(e) => setNewCategory(e.target.value)}
                           >
@@ -875,23 +896,77 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                           </select>
                         </div>
 
-                        {/* Notes input */}
-                        <textarea
-                          placeholder="Add Note"
-                          value={newNotes}
-                          onChange={(e) => setNewNotes(e.target.value)}
-                          className="w-full px-2 py-1.5 text-xs bg-transparent border border-border/50 rounded-md outline-none focus:ring-1 focus:ring-primary resize-none"
-                          rows={2}
-                        />
+                        {/* Tags display */}
+                        {newTags.length > 0 && (
+                          <div className="flex gap-1 flex-wrap">
+                            {newTags.map((tag, i) => (
+                              <span
+                                key={i}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-accent text-xs"
+                              >
+                                {tag}
+                                <button
+                                  onClick={() => setNewTags(newTags.filter((_, idx) => idx !== i))}
+                                  className="hover:text-foreground"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                        )}
 
-                        {/* URL input */}
-                        <input
-                          type="url"
-                          placeholder="Add URL"
-                          value={newUrl}
-                          onChange={(e) => setNewUrl(e.target.value)}
-                          className="w-full px-2 py-1.5 text-xs bg-transparent border border-border/50 rounded-md outline-none focus:ring-1 focus:ring-primary"
-                        />
+                        {/* Add Note button */}
+                        {!showNotesInput && !newNotes && (
+                          <button
+                            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setShowNotesInput(true);
+                            }}
+                            type="button"
+                          >
+                            Add Note
+                          </button>
+                        )}
+
+                        {/* Notes input - appears when activated */}
+                        {(showNotesInput || newNotes) && (
+                          <textarea
+                            placeholder="Note"
+                            value={newNotes}
+                            onChange={(e) => setNewNotes(e.target.value)}
+                            className="w-full px-0 py-1 text-xs bg-transparent text-muted-foreground outline-none resize-none"
+                            rows={2}
+                            autoFocus
+                          />
+                        )}
+
+                        {/* Add URL button */}
+                        {!showUrlInput && !newUrl && (
+                          <button
+                            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setShowUrlInput(true);
+                            }}
+                            type="button"
+                          >
+                            Add URL
+                          </button>
+                        )}
+
+                        {/* URL input - appears when activated */}
+                        {(showUrlInput || newUrl) && (
+                          <input
+                            type="url"
+                            placeholder="URL"
+                            value={newUrl}
+                            onChange={(e) => setNewUrl(e.target.value)}
+                            className="w-full px-0 py-1 text-xs bg-transparent text-blue-500 outline-none"
+                            autoFocus={showUrlInput && !newNotes}
+                          />
+                        )}
                       </div>
                     </div>
                   </div>
