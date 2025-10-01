@@ -146,16 +146,28 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
           {/* Modal */}
           <motion.div
             className={cn(
-              "fixed z-[100] bg-background flex flex-col overflow-hidden",
-              // Desktop: Centered card
+              "fixed z-[100] bg-background flex flex-col",
+              // Desktop: Perfectly centered modal (Apple style)
               "md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2",
               "md:w-full md:max-w-md md:rounded-2xl md:border md:border-border/50 md:shadow-2xl",
               // Mobile: Bottom sheet
               "inset-x-0 bottom-0 top-20 rounded-t-3xl"
             )}
-            initial={{ y: "100%", opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: "100%", opacity: 0 }}
+            initial={{ 
+              opacity: 0,
+              scale: 0.95,
+              y: window.innerWidth >= 768 ? 0 : "100%" // Only slide up on mobile
+            }}
+            animate={{ 
+              opacity: 1,
+              scale: 1,
+              y: 0
+            }}
+            exit={{ 
+              opacity: 0,
+              scale: 0.95,
+              y: window.innerWidth >= 768 ? 0 : "100%"
+            }}
             transition={{ type: "spring", damping: 30, stiffness: 300 }}
             onClick={(e) => e.stopPropagation()}
           >
