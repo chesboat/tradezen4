@@ -1841,6 +1841,20 @@ export const PublicSharePage: React.FC = () => {
     })();
   }, [id]);
 
+  // Timed signup prompt (one-time per session)
+  React.useEffect(() => {
+    if (!demoMode) return;
+    try {
+      const shown = sessionStorage.getItem('tz-demo-cta-shown');
+      if (shown) return;
+    } catch {}
+    const t = setTimeout(() => {
+      setShowSignupPrompt(true);
+      try { sessionStorage.setItem('tz-demo-cta-shown', '1'); } catch {}
+    }, 6000);
+    return () => clearTimeout(t);
+  }, [demoMode]);
+
   if (notFound) {
     return (
       <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
@@ -1886,20 +1900,6 @@ export const PublicSharePage: React.FC = () => {
       sessionStorage.setItem('tz-demo-mode', '1');
     } catch {}
   };
-
-  // Timed signup prompt (one-time per session)
-  React.useEffect(() => {
-    if (!demoMode) return;
-    try {
-      const shown = sessionStorage.getItem('tz-demo-cta-shown');
-      if (shown) return;
-    } catch {}
-    const t = setTimeout(() => {
-      setShowSignupPrompt(true);
-      try { sessionStorage.setItem('tz-demo-cta-shown', '1'); } catch {}
-    }, 6000);
-    return () => clearTimeout(t);
-  }, [demoMode]);
 
   const renderDemoView = () => {
     switch (currentDemoView) {
