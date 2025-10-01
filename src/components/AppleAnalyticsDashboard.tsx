@@ -255,7 +255,7 @@ const EdgeBar: React.FC<EdgeMetric & { onClick?: () => void }> = ({
 const YourEdgeAtAGlance: React.FC<{ trades: any[] }> = ({ trades }) => {
   const edge = React.useMemo(() => computeEdgeScore(trades), [trades]);
 
-  // Apple approach: 3 core metrics only, simple and clear
+  // Apple approach: 4 key metrics with visual health indicator
   const metrics: EdgeMetric[] = [
     {
       label: 'Win Rate',
@@ -277,17 +277,74 @@ const YourEdgeAtAGlance: React.FC<{ trades: any[] }> = ({ trades }) => {
       max: 100,
       status: edge.breakdown.maxDrawdown <= 15 ? 'excellent' : edge.breakdown.maxDrawdown <= 25 ? 'good' : edge.breakdown.maxDrawdown <= 35 ? 'warning' : 'danger',
       description: `Max drawdown ${edge.breakdown.maxDrawdown.toFixed(0)}%`
+    },
+    {
+      label: 'Consistency',
+      value: edge.breakdown.consistency,
+      max: 100,
+      status: edge.breakdown.consistency >= 70 ? 'excellent' : edge.breakdown.consistency >= 55 ? 'good' : edge.breakdown.consistency >= 40 ? 'warning' : 'danger',
+      description: 'Stability of returns'
     }
   ];
 
+  // Calculate overall health (like Apple Watch activity score)
+  const healthScore = edge.score;
+  const healthPercentage = (healthScore / 100) * 100;
+
   return (
     <div className="bg-card border border-border rounded-2xl p-6">
-      <div className="flex items-center gap-3 mb-6">
-        <Target className="w-4 h-4 text-muted-foreground" />
-        <h2 className="text-base font-medium text-foreground">Performance Metrics</h2>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <Activity className="w-5 h-5 text-muted-foreground" />
+          <h2 className="text-xl font-semibold text-foreground">Trading Health</h2>
+        </div>
+        
+        {/* Trading Health Ring (Apple Watch style) */}
+        <div className="relative">
+          <svg className="w-20 h-20 -rotate-90">
+            {/* Background ring */}
+            <circle
+              cx="40"
+              cy="40"
+              r="32"
+              stroke="currentColor"
+              strokeWidth="6"
+              fill="none"
+              className="text-muted/20"
+            />
+            {/* Progress ring */}
+            <motion.circle
+              cx="40"
+              cy="40"
+              r="32"
+              stroke="url(#healthGradient)"
+              strokeWidth="6"
+              fill="none"
+              strokeLinecap="round"
+              strokeDasharray={`${2 * Math.PI * 32}`}
+              initial={{ strokeDashoffset: 2 * Math.PI * 32 }}
+              animate={{ strokeDashoffset: 2 * Math.PI * 32 * (1 - healthPercentage / 100) }}
+              transition={{ duration: 1.5, ease: "easeOut" }}
+            />
+            <defs>
+              <linearGradient id="healthGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#3b82f6" />
+                <stop offset="50%" stopColor="#8b5cf6" />
+                <stop offset="100%" stopColor="#ec4899" />
+              </linearGradient>
+            </defs>
+          </svg>
+          {/* Center score */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-center">
+              <div className="text-xl font-bold text-foreground">{healthScore}</div>
+              <div className="text-[9px] text-muted-foreground uppercase tracking-wide">Health</div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div className="space-y-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {metrics.map((metric) => (
           <EdgeBar key={metric.label} {...metric} />
         ))}
