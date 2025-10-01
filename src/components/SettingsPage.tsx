@@ -102,6 +102,51 @@ export const SettingsPage: React.FC = () => {
     }
   };
 
+  const handleMigration = async () => {
+    if (!window.confirm('This will make ALL your habits, notes, quests, and todos visible across all accounts. Continue?')) {
+      return;
+    }
+
+    setIsMigrating(true);
+    const loadingToast = toast.loading('Migrating your data to journal-wide...');
+
+    try {
+      const result = await migratePersonalItemsToJournalWide();
+      
+      toast.dismiss(loadingToast);
+      
+      if (result.success) {
+        const totalUpdated = result.updated.habits + result.updated.notes + result.updated.quests + result.updated.todos;
+        toast.success(
+          `Migration complete! Updated ${totalUpdated} items:\n` +
+          `• ${result.updated.habits} habits\n` +
+          `• ${result.updated.notes} notes\n` +
+          `• ${result.updated.quests} quests\n` +
+          `• ${result.updated.todos} todos`,
+          { duration: 6000 }
+        );
+        setMigrationNeeded(false);
+        
+        // Reload the page to refresh all stores
+        setTimeout(() => window.location.reload(), 1500);
+      } else {
+        toast.error('Migration completed with errors. Check console for details.');
+        console.error('Migration errors:', result.errors);
+      }
+    } catch (error) {
+      toast.dismiss(loadingToast);
+      toast.error('Migration failed. Check console for details.');
+      console.error('Migration error:', error);
+    } finally {
+      setIsMigrating(false);
+    }
+  };
+
+  // Check if migration is needed on mount
+  useEffect(() => {
+    checkIfMigrationNeeded().then(setMigrationNeeded);
+  }, []);
+
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-4xl mx-auto space-y-8">
