@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 // Settings page for profile management and XP sync
 import { motion } from 'framer-motion';
 import { 
@@ -13,7 +13,8 @@ import {
   Moon,
   Bell,
   Shield,
-  Download
+  Download,
+  Layers
 } from 'lucide-react';
 import { useUserProfileStore } from '@/store/useUserProfileStore';
 import { useAuth } from '@/contexts/AuthContext';
@@ -21,6 +22,7 @@ import { useTheme } from '@/hooks/useTheme';
 import toast from 'react-hot-toast';
 import DisciplineModeToggle from '@/components/discipline/DisciplineModeToggle';
 import { setDisciplineMode } from '@/lib/discipline';
+import { migratePersonalItemsToJournalWide, checkIfMigrationNeeded } from '@/lib/migrations/migrateToJournalWide';
 
 export const SettingsPage: React.FC = () => {
   const { profile, updateProfile, updateDisplayName, refreshStats } = useUserProfileStore();
@@ -31,6 +33,8 @@ export const SettingsPage: React.FC = () => {
   const [displayName, setDisplayNameLocal] = useState(profile?.displayName || '');
   const [isUploading, setIsUploading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isMigrating, setIsMigrating] = useState(false);
+  const [migrationNeeded, setMigrationNeeded] = useState(false);
 
   const handleDisplayNameSave = () => {
     if (displayName.trim()) {
@@ -287,6 +291,50 @@ export const SettingsPage: React.FC = () => {
             </div>
           </div>
         </motion.div>
+
+        {/* Migration Section */}
+        {migrationNeeded && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+            className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-xl border border-blue-500/20 p-6 space-y-4"
+          >
+            <h2 className="text-xl font-semibold flex items-center gap-2">
+              <Layers className="w-5 h-5 text-blue-500" />
+              Restore Your Data from Archived Accounts
+            </h2>
+
+            <div className="space-y-4">
+              <div className="p-4 bg-card/50 rounded-lg">
+                <p className="text-sm mb-3">
+                  <strong>Good news!</strong> We found habits, notes, quests, and todos from your archived accounts. 
+                </p>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Click below to make them <strong>journal-wide</strong> so they appear across all accounts:
+                </p>
+                <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1 mb-4">
+                  <li>Your habits (exercise, meditation, etc.)</li>
+                  <li>Your study notes and research</li>
+                  <li>Your quests and personal goals</li>
+                  <li>Your todo list and improvement tasks</li>
+                </ul>
+                <p className="text-xs text-muted-foreground italic">
+                  This is safe and reversible. Your trading data will not be affected.
+                </p>
+              </div>
+
+              <button
+                onClick={handleMigration}
+                disabled={isMigrating}
+                className="w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all flex items-center justify-center gap-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Layers className={`w-5 h-5 ${isMigrating ? 'animate-pulse' : ''}`} />
+                {isMigrating ? 'Migrating Your Data...' : 'Restore My Data (Make Journal-Wide)'}
+              </button>
+            </div>
+          </motion.div>
+        )}
 
         {/* Preferences Section */}
         <motion.div
