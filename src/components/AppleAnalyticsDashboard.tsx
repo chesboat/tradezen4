@@ -712,16 +712,10 @@ const AnnotatedEquityCurve: React.FC<{
           {/* Hover tooltip (Apple Stocks style with smart positioning) */}
           <AnimatePresence>
             {hoveredPoint && (() => {
-              // Calculate available space on right side
-              // Account for sidebars: both collapsed = 120px, activity = 380px, todo = 460px, both = 480px
-              const rightSidebarWidth = activityLogExpanded && todoExpanded ? 480 :
-                                       activityLogExpanded ? 380 :
-                                       todoExpanded ? 460 : 120;
-              
               // More aggressive threshold to prevent overlap with sidebars
               // When sidebars present (even collapsed), flip much earlier
               const isNearLeftEdge = hoveredPoint.x < 15;
-              const isNearRightEdge = hoveredPoint.x > 55; // Flip at 55% instead of 70%
+              const isNearRightEdge = hoveredPoint.x > 50; // Even more aggressive: 50%
               
               let positionStyle: React.CSSProperties = {
                 left: `${hoveredPoint.x}%`,
@@ -730,12 +724,14 @@ const AnnotatedEquityCurve: React.FC<{
               };
               
               if (isNearRightEdge) {
-                // Flip to left side of cursor with extra clearance
+                // Flip to left side with MUCH more clearance to avoid sidebar
+                // Use calc() to ensure tooltip stays well clear of right edge
                 positionStyle = {
                   left: `${hoveredPoint.x}%`,
                   transform: 'translateX(-100%)',
                   marginTop: '-3rem',
-                  marginLeft: '-1rem' // Extra clearance to prevent cutoff
+                  marginRight: '2rem', // Push away from right edge
+                  maxWidth: 'calc(100vw - 200px)' // Ensure it never extends past viewport
                 };
               } else if (isNearLeftEdge) {
                 // Flip to right side of cursor
@@ -743,7 +739,7 @@ const AnnotatedEquityCurve: React.FC<{
                   left: `${hoveredPoint.x}%`,
                   transform: 'translateX(0%)',
                   marginTop: '-3rem',
-                  marginLeft: '1rem' // Extra clearance on left too
+                  marginLeft: '1rem'
                 };
               }
               
