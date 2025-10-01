@@ -1005,7 +1005,10 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                           getDayClassName(day),
                           'hidden lg:block' // Show only on desktop
                         )}
-                        onClick={() => setSelectedDay(day)}
+                        onClick={() => {
+                          setHoveredDay(null); // Clear tooltip on click
+                          setSelectedDay(day);
+                        }}
                         onMouseEnter={() => setHoveredDay(day)}
                         onMouseLeave={() => setHoveredDay(null)}
                         whileHover={{ scale: 1.02 }}
@@ -1086,7 +1089,10 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                 <motion.div
                   key={`${weekIndex}-${dayIndex}`}
                   className={getDayClassName(day)}
-                  onClick={() => setSelectedDay(day)}
+                  onClick={() => {
+                    setHoveredDay(null); // Clear tooltip on click
+                    setSelectedDay(day);
+                  }}
                   onMouseEnter={() => setHoveredDay(day)}
                   onMouseLeave={() => setHoveredDay(null)}
                   whileHover={{ scale: 1.02 }}

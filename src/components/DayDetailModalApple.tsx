@@ -118,11 +118,11 @@ export const DayDetailModalApple: React.FC<DayDetailModalAppleProps> = ({
           {/* Modal Content - Full screen on desktop, sheet on mobile */}
           <motion.div
             className={cn(
-              "fixed z-50 bg-background flex flex-col overflow-hidden",
-              // Desktop: Full screen with subtle border
-              "md:inset-4 md:rounded-2xl md:border md:border-border/50 md:shadow-2xl",
+              "fixed bg-background flex flex-col overflow-hidden",
+              // Desktop: Full screen with subtle border - higher z-index
+              "md:inset-4 md:rounded-2xl md:border md:border-border/50 md:shadow-2xl z-[60]",
               // Mobile: Bottom sheet
-              "inset-x-0 bottom-0 top-16 rounded-t-3xl"
+              "inset-x-0 bottom-0 top-16 rounded-t-3xl z-50"
             )}
             drag="y"
             dragConstraints={{ top: 0, bottom: 0 }}
@@ -177,7 +177,7 @@ export const DayDetailModalApple: React.FC<DayDetailModalAppleProps> = ({
 
             {/* Single Scroll Content - Apple Style */}
             <div className="flex-1 overflow-y-auto custom-scrollbar">
-              <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 space-y-8">
+              <div className="w-full md:max-w-3xl md:mx-auto px-4 md:px-6 py-6 space-y-8">
                 
                 {/* Hero Metrics - Large P&L with inline stats */}
                 <div className="space-y-4">
@@ -235,12 +235,10 @@ export const DayDetailModalApple: React.FC<DayDetailModalAppleProps> = ({
                   <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
                     Daily Reflection
                   </h3>
-                  <div className="bg-muted/20 rounded-xl p-1">
-                    <ReflectionHub 
-                      date={dateString}
-                      className=""
-                    />
-                  </div>
+                  <ReflectionHub 
+                    date={dateString}
+                    className=""
+                  />
                 </div>
 
                 {/* Trades Section */}
