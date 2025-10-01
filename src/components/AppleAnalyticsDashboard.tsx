@@ -724,22 +724,21 @@ const AnnotatedEquityCurve: React.FC<{
               };
               
               if (isNearRightEdge) {
-                // Flip to left side with MUCH more clearance to avoid sidebar
-                // Use calc() to ensure tooltip stays well clear of right edge
+                // Flip tooltip to the LEFT (towards center) to stay inside card
+                // translateX(-100%) aligns tooltip's right edge with cursor
                 positionStyle = {
                   left: `${hoveredPoint.x}%`,
                   transform: 'translateX(-100%)',
                   marginTop: '-3rem',
-                  marginRight: '2rem', // Push away from right edge
-                  maxWidth: 'calc(100vw - 200px)' // Ensure it never extends past viewport
+                  marginLeft: '-0.5rem' // Small gap from cursor
                 };
               } else if (isNearLeftEdge) {
-                // Flip to right side of cursor
+                // Flip tooltip to the RIGHT (towards center) to stay inside card
                 positionStyle = {
                   left: `${hoveredPoint.x}%`,
                   transform: 'translateX(0%)',
                   marginTop: '-3rem',
-                  marginLeft: '1rem'
+                  marginLeft: '0.5rem' // Small gap from cursor
                 };
               }
               
