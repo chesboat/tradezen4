@@ -54,7 +54,7 @@ interface UnifiedNote {
   tags: string[];
   createdAt: string;
   updatedAt: string;
-  accountId: string;
+  accountId?: string; // Optional: notes can be journal-wide
   
   // Quick note specific
   mood?: string;
