@@ -547,7 +547,7 @@ const AnnotatedEquityCurve: React.FC<{
   };
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-6">
+    <div className="bg-card border border-border rounded-2xl p-6 overflow-visible">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <TrendingUp className="w-5 h-5 text-muted-foreground" />
