@@ -39,6 +39,7 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
   const [schedulingTaskId, setSchedulingTaskId] = useState<string | null>(null);
   const [editingUrlId, setEditingUrlId] = useState<string | null>(null);
   const [editingUrl, setEditingUrl] = useState<string>('');
+  const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
 
   useEffect(() => {
     const init = async () => {
@@ -438,17 +439,120 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                   {/* Info button (hover only) - minimal icon */}
                   <button
                     className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-accent flex-shrink-0 mt-0.5"
-                    onClick={() => {
-                      if (window.confirm('Delete this task?')) {
-                        deleteTask(task.id);
-                      }
-                    }}
+                    onClick={() => setExpandedTaskId(expandedTaskId === task.id ? null : task.id)}
                     aria-label="info"
-                    title="Info"
+                    title="Details"
                   >
                     <MoreVertical className="w-[14px] h-[14px] text-muted-foreground/60" />
                   </button>
                 </div>
+
+                {/* Expanded Details Panel - Apple Reminders style */}
+                <AnimatePresence>
+                  {expandedTaskId === task.id && (
+                    <motion.div
+                      className="mt-2 pt-2 border-t border-border/50 space-y-2"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      {/* Notes section */}
+                      <div>
+                        <textarea
+                          placeholder="Add Note"
+                          className="w-full px-2 py-1.5 text-xs bg-transparent border border-border/50 rounded-md outline-none focus:ring-1 focus:ring-primary resize-none"
+                          rows={2}
+                          defaultValue={task.notes || ''}
+                          onBlur={(e) => {
+                            const notes = e.target.value.trim();
+                            updateTask(task.id, { notes: notes || undefined });
+                          }}
+                        />
+                      </div>
+
+                      {/* Details buttons row */}
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {/* Schedule button */}
+                        <button
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-accent hover:bg-accent/70 text-xs transition-colors"
+                          onClick={() => setSchedulingTaskId(task.id)}
+                        >
+                          <Calendar className="w-3 h-3" />
+                          {task.scheduledFor ? new Date(task.scheduledFor).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Schedule'}
+                        </button>
+
+                        {/* Priority button */}
+                        <select
+                          className="px-2 py-1 rounded-md bg-accent hover:bg-accent/70 text-xs outline-none cursor-pointer transition-colors"
+                          value={task.priority || ''}
+                          onChange={(e) => updateTask(task.id, { priority: e.target.value as 'low' | 'med' | 'high' || undefined })}
+                        >
+                          <option value="">Priority</option>
+                          <option value="high">⚠ High</option>
+                          <option value="med">! Medium</option>
+                          <option value="low">Low</option>
+                        </select>
+
+                        {/* Category button */}
+                        <select
+                          className="px-2 py-1 rounded-md bg-accent hover:bg-accent/70 text-xs outline-none cursor-pointer transition-colors"
+                          value={task.category || ''}
+                          onChange={(e) => setCategory(task.id, e.target.value || undefined)}
+                        >
+                          <option value="">Category</option>
+                          <option value="risk">Risk</option>
+                          <option value="analysis">Analysis</option>
+                          <option value="execution">Execution</option>
+                          <option value="journal">Journal</option>
+                          <option value="learning">Learning</option>
+                          <option value="wellness">Wellness</option>
+                          <option value="mindset">Mindset</option>
+                        </select>
+
+                        {/* Pin button */}
+                        <button
+                          className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs transition-colors ${
+                            task.pinned 
+                              ? 'bg-primary text-primary-foreground' 
+                              : 'bg-accent hover:bg-accent/70'
+                          }`}
+                          onClick={() => togglePin(task.id)}
+                        >
+                          <Pin className="w-3 h-3" />
+                          {task.pinned ? 'Pinned' : 'Pin'}
+                        </button>
+                      </div>
+
+                      {/* URL input */}
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="url"
+                          placeholder="Add URL"
+                          className="flex-1 px-2 py-1.5 text-xs bg-transparent border border-border/50 rounded-md outline-none focus:ring-1 focus:ring-primary"
+                          defaultValue={task.url || ''}
+                          onBlur={(e) => {
+                            const url = e.target.value.trim();
+                            updateTask(task.id, { url: url || undefined });
+                          }}
+                        />
+                      </div>
+
+                      {/* Delete button */}
+                      <button
+                        className="w-full px-2 py-1.5 text-xs text-red-600 dark:text-red-400 hover:bg-red-500/10 rounded-md transition-colors"
+                        onClick={() => {
+                          if (window.confirm('Delete this task?')) {
+                            deleteTask(task.id);
+                            setExpandedTaskId(null);
+                          }
+                        }}
+                      >
+                        Delete Task
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
             ))}
 
@@ -578,17 +682,120 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                   {/* Info button (hover only) - minimal icon */}
                   <button
                     className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-accent flex-shrink-0 mt-0.5"
-                    onClick={() => {
-                      if (window.confirm('Delete this task?')) {
-                        deleteTask(task.id);
-                      }
-                    }}
+                    onClick={() => setExpandedTaskId(expandedTaskId === task.id ? null : task.id)}
                     aria-label="info"
-                    title="Info"
+                    title="Details"
                   >
                     <MoreVertical className="w-[14px] h-[14px] text-muted-foreground/60" />
                   </button>
                 </div>
+
+                {/* Expanded Details Panel - Apple Reminders style */}
+                <AnimatePresence>
+                  {expandedTaskId === task.id && (
+                    <motion.div
+                      className="mt-2 pt-2 border-t border-border/50 space-y-2"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      {/* Notes section */}
+                      <div>
+                        <textarea
+                          placeholder="Add Note"
+                          className="w-full px-2 py-1.5 text-xs bg-transparent border border-border/50 rounded-md outline-none focus:ring-1 focus:ring-primary resize-none"
+                          rows={2}
+                          defaultValue={task.notes || ''}
+                          onBlur={(e) => {
+                            const notes = e.target.value.trim();
+                            updateTask(task.id, { notes: notes || undefined });
+                          }}
+                        />
+                      </div>
+
+                      {/* Details buttons row */}
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {/* Schedule button */}
+                        <button
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-accent hover:bg-accent/70 text-xs transition-colors"
+                          onClick={() => setSchedulingTaskId(task.id)}
+                        >
+                          <Calendar className="w-3 h-3" />
+                          {task.scheduledFor ? new Date(task.scheduledFor).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Schedule'}
+                        </button>
+
+                        {/* Priority button */}
+                        <select
+                          className="px-2 py-1 rounded-md bg-accent hover:bg-accent/70 text-xs outline-none cursor-pointer transition-colors"
+                          value={task.priority || ''}
+                          onChange={(e) => updateTask(task.id, { priority: e.target.value as 'low' | 'med' | 'high' || undefined })}
+                        >
+                          <option value="">Priority</option>
+                          <option value="high">⚠ High</option>
+                          <option value="med">! Medium</option>
+                          <option value="low">Low</option>
+                        </select>
+
+                        {/* Category button */}
+                        <select
+                          className="px-2 py-1 rounded-md bg-accent hover:bg-accent/70 text-xs outline-none cursor-pointer transition-colors"
+                          value={task.category || ''}
+                          onChange={(e) => setCategory(task.id, e.target.value || undefined)}
+                        >
+                          <option value="">Category</option>
+                          <option value="risk">Risk</option>
+                          <option value="analysis">Analysis</option>
+                          <option value="execution">Execution</option>
+                          <option value="journal">Journal</option>
+                          <option value="learning">Learning</option>
+                          <option value="wellness">Wellness</option>
+                          <option value="mindset">Mindset</option>
+                        </select>
+
+                        {/* Pin button */}
+                        <button
+                          className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs transition-colors ${
+                            task.pinned 
+                              ? 'bg-primary text-primary-foreground' 
+                              : 'bg-accent hover:bg-accent/70'
+                          }`}
+                          onClick={() => togglePin(task.id)}
+                        >
+                          <Pin className="w-3 h-3" />
+                          {task.pinned ? 'Pinned' : 'Pin'}
+                        </button>
+                      </div>
+
+                      {/* URL input */}
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="url"
+                          placeholder="Add URL"
+                          className="flex-1 px-2 py-1.5 text-xs bg-transparent border border-border/50 rounded-md outline-none focus:ring-1 focus:ring-primary"
+                          defaultValue={task.url || ''}
+                          onBlur={(e) => {
+                            const url = e.target.value.trim();
+                            updateTask(task.id, { url: url || undefined });
+                          }}
+                        />
+                      </div>
+
+                      {/* Delete button */}
+                      <button
+                        className="w-full px-2 py-1.5 text-xs text-red-600 dark:text-red-400 hover:bg-red-500/10 rounded-md transition-colors"
+                        onClick={() => {
+                          if (window.confirm('Delete this task?')) {
+                            deleteTask(task.id);
+                            setExpandedTaskId(null);
+                          }
+                        }}
+                      >
+                        Delete Task
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
             ))}
 
