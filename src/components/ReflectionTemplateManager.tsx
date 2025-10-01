@@ -612,31 +612,36 @@ export const ReflectionTemplateManager: React.FC<ReflectionTemplateManagerProps>
 
   return (
     <div className={cn("space-y-6 overflow-x-hidden max-w-full w-full", className)}>
-      {/* Header with stats and controls */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 bg-gradient-to-r from-primary/5 to-secondary/5 rounded-xl border border-border/50 overflow-x-hidden">
-        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-          <div className="flex items-center gap-2">
-            <Target className="w-5 h-5 text-primary" />
-            <h3 className="text-lg font-semibold">Insight Blocks</h3>
+      {/* Header with stats and controls - Mobile Optimized */}
+      <div className="flex flex-col gap-4 p-3 sm:p-4 bg-gradient-to-r from-primary/5 to-secondary/5 rounded-xl border border-border/50 overflow-x-hidden">
+        {/* Title Row */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <Target className="w-5 h-5 text-primary shrink-0" />
+            <h3 className="text-base sm:text-lg font-semibold truncate">Insight Blocks</h3>
           </div>
           
-          <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm text-muted-foreground min-w-0 flex-wrap">
-            <span className="truncate">{sortedBlocks.length} blocks</span>
-            <span className="truncate">{totalWordCount} words</span>
-            <div className="flex items-center gap-1">
-              <div className="w-14 sm:w-16 bg-muted rounded-full h-2">
-                <div 
-                  className="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all duration-500"
-                  style={{ width: `${completionScore}%` }}
-                />
-              </div>
-              <span className="whitespace-nowrap">{completionScore}%</span>
-            </div>
-
+          {/* Stats - Compact on mobile */}
+          <div className="flex items-center gap-2 text-xs text-muted-foreground shrink-0">
+            <span>{sortedBlocks.length} blocks</span>
+            <span>•</span>
+            <span>{totalWordCount} words</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+        {/* Progress Bar Row */}
+        <div className="flex items-center gap-2">
+          <div className="flex-1 bg-muted rounded-full h-2">
+            <div 
+              className="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all duration-500"
+              style={{ width: `${completionScore}%` }}
+            />
+          </div>
+          <span className="text-xs text-muted-foreground shrink-0">{completionScore}%</span>
+        </div>
+
+        {/* Action Buttons Row */}
+        <div className="flex items-center gap-2 w-full">
           {/* Debug Unify Button */}
           {debugUnifyButton && (
             <button
@@ -664,29 +669,29 @@ export const ReflectionTemplateManager: React.FC<ReflectionTemplateManagerProps>
           <motion.button
             onClick={handleGenerateAITemplate}
             disabled={isGeneratingAITemplate}
-            className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg text-sm font-medium hover:shadow-lg transition-all disabled:opacity-50 flex-1 sm:flex-initial"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
           >
             {isGeneratingAITemplate ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
-              <Sparkles className="w-4 h-4" />
+              <Sparkles className="w-4 h-4 shrink-0" />
             )}
-            <span className="hidden sm:inline">🪄 Generate</span>
+            <span className="whitespace-nowrap">Generate</span>
           </motion.button>
 
           {/* Add Block Button */}
-          <div className="relative">
+          <div className="relative flex-1 sm:flex-initial">
             <motion.button
               ref={dropdownTriggerRef}
               onClick={() => setShowTemplateSelector(!showTemplateSelector)}
-              className="flex items-center gap-2 px-3 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-muted/50 text-foreground rounded-lg text-sm font-medium hover:bg-muted transition-colors w-full"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
             >
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Add Block</span>
+              <Plus className="w-4 h-4 shrink-0" />
+              <span className="whitespace-nowrap">Add Block</span>
               <ChevronDown className={cn("w-4 h-4 transition-transform", showTemplateSelector && "rotate-180")} />
             </motion.button>
 

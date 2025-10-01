@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChevronLeft,
@@ -80,6 +80,15 @@ export const DayDetailModalApple: React.FC<DayDetailModalAppleProps> = ({
 
   const currentStreak = dailyReflection?.streakCount || 0;
 
+  // Force close any open tooltips when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      // Dispatch a global event to close all tooltips
+      const closeEvent = new Event('close-all-tooltips');
+      window.dispatchEvent(closeEvent);
+    }
+  }, [isOpen]);
+
   // Format currency
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -108,7 +117,7 @@ export const DayDetailModalApple: React.FC<DayDetailModalAppleProps> = ({
         <>
           {/* Backdrop */}
           <motion.div
-            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100]"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -118,11 +127,11 @@ export const DayDetailModalApple: React.FC<DayDetailModalAppleProps> = ({
           {/* Modal Content - Full screen on desktop, sheet on mobile */}
           <motion.div
             className={cn(
-              "fixed bg-background flex flex-col overflow-hidden",
-              // Desktop: Full screen with subtle border - higher z-index
-              "md:inset-4 md:rounded-2xl md:border md:border-border/50 md:shadow-2xl z-[60]",
+              "fixed bg-background flex flex-col overflow-hidden z-[100]",
+              // Desktop: Full screen with subtle border
+              "md:inset-4 md:rounded-2xl md:border md:border-border/50 md:shadow-2xl",
               // Mobile: Bottom sheet
-              "inset-x-0 bottom-0 top-16 rounded-t-3xl z-50"
+              "inset-x-0 bottom-0 top-16 rounded-t-3xl"
             )}
             drag="y"
             dragConstraints={{ top: 0, bottom: 0 }}

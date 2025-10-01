@@ -58,6 +58,17 @@ export const Tooltip: React.FC<TooltipProps> = ({
     }
   }, [isVisible, position]);
 
+  // Listen for global close event
+  useEffect(() => {
+    const handleCloseAll = () => {
+      setIsVisible(false);
+    };
+    window.addEventListener('close-all-tooltips', handleCloseAll);
+    return () => {
+      window.removeEventListener('close-all-tooltips', handleCloseAll);
+    };
+  }, []);
+
   const handleMouseEnter = () => {
     setIsVisible(true);
   };
