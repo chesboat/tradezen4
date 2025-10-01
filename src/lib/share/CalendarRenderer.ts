@@ -34,7 +34,7 @@ export interface RenderOptions {
 
 export async function renderCalendarToDataURL(data: CalendarRenderData, opts: RenderOptions): Promise<string> {
   const width = opts.width ?? 1200;
-  const height = opts.height ?? 1000;
+  const height = opts.height ?? 750;
 
   const canvas = document.createElement('canvas');
   canvas.width = width;
@@ -42,10 +42,7 @@ export async function renderCalendarToDataURL(data: CalendarRenderData, opts: Re
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas not supported');
 
-  // Colors - Apple-style, theme-aware
-  const bg1 = opts.theme === 'dark' ? '#1c1c1e' : '#f5f5f7';
-  const bg2 = opts.theme === 'dark' ? '#2c2c2e' : '#e8e8ed';
-  const bg3 = opts.theme === 'dark' ? '#3a3a3c' : '#d1d1d6';
+  // Colors - Apple-style with eye-catching gradients for social
   const cardBg = opts.theme === 'dark' ? '#0b0b0b' : '#ffffff';
   const border = opts.theme === 'dark' ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)';
   const muted = opts.theme === 'dark' ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)';
@@ -53,11 +50,19 @@ export async function renderCalendarToDataURL(data: CalendarRenderData, opts: Re
   const green = '#22c55e';
   const red = '#ef4444';
 
-  // Gradient background
+  // Eye-catching gradient background for social media
   const grad = ctx.createLinearGradient(0, 0, width, height);
-  grad.addColorStop(0, bg1);
-  grad.addColorStop(0.6, bg2);
-  grad.addColorStop(1, bg3);
+  if (opts.theme === 'dark') {
+    // Dark: Deep blue → purple → subtle pink
+    grad.addColorStop(0, '#1e1b4b');      // Deep indigo
+    grad.addColorStop(0.5, '#581c87');    // Deep purple
+    grad.addColorStop(1, '#831843');      // Deep pink
+  } else {
+    // Light: Soft blue → purple → pink
+    grad.addColorStop(0, '#dbeafe');      // Light blue
+    grad.addColorStop(0.5, '#e9d5ff');    // Light purple
+    grad.addColorStop(1, '#fce7f3');      // Light pink
+  }
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, width, height);
 
@@ -85,7 +90,7 @@ export async function renderCalendarToDataURL(data: CalendarRenderData, opts: Re
   const mp = formatCurrency(data.monthlyPnl);
   ctx.fillText(`Monthly: ${mp}`, cardX + cardW - 24 - ctx.measureText(`Monthly: ${mp}`).width, cardY + 60);
 
-  // Grid metrics
+  // Grid metrics - optimized for 6:5 aspect ratio tiles
   const cols = 8; // 7 days + week summary
   const rows = data.weeks.length; // typically 6
   const gridX = cardX + 16;
@@ -93,7 +98,7 @@ export async function renderCalendarToDataURL(data: CalendarRenderData, opts: Re
   const gridW = cardW - 32;
   const gridH = cardH - 128;
   const cellW = Math.floor(gridW / cols) - 6;
-  const cellH = Math.floor(gridH / rows) - 6;
+  const cellH = Math.floor((cellW * 5) / 6); // 6:5 aspect ratio (wider than tall)
 
   // Day headers
   const headers = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat','Week'];
@@ -131,28 +136,20 @@ export async function renderCalendarToDataURL(data: CalendarRenderData, opts: Re
         continue;
       }
 
-      // PnL
+      // Centered P&L (main metric)
       if (d.pnl !== 0) {
         const pnlText = formatCurrency(d.pnl);
         ctx.fillStyle = d.pnl > 0 ? green : red;
-        ctx.font = fitFont(ctx, pnlText, cellW - 16, 24, 30, 'bold');
-        centerText(ctx, pnlText, x, y - 6, cellW, cellH / 2);
+        ctx.font = fitFont(ctx, pnlText, cellW - 16, 16, 22, 'bold');
+        centerText(ctx, pnlText, x, y + cellH / 2 - 12, cellW, 20);
       }
 
-      // Trades
+      // Centered trade count below P&L
       if (d.tradesCount > 0) {
-        const t = `${d.tradesCount}T`;
-        ctx.fillStyle = muted;
-        ctx.font = '600 14px ui-sans-serif, -apple-system, BlinkMacSystemFont';
-        centerText(ctx, t, x, y + cellH / 4, cellW, cellH / 2);
-      }
-
-      // Metrics (small)
-      if (d.tradesCount > 0) {
-        const m = `${d.avgRR.toFixed(1)}:1R, ${Math.round(d.winRate)}%`;
+        const t = `${d.tradesCount} trade${d.tradesCount > 1 ? 's' : ''}`;
         ctx.fillStyle = muted;
         ctx.font = '12px ui-sans-serif, -apple-system, BlinkMacSystemFont';
-        centerText(ctx, m, x, y + cellH / 3 + 16, cellW, cellH / 2);
+        centerText(ctx, t, x, y + cellH / 2 + 8, cellW, 16);
       }
     }
 
@@ -169,12 +166,20 @@ export async function renderCalendarToDataURL(data: CalendarRenderData, opts: Re
     ctx.font = '600 14px ui-sans-serif, -apple-system, BlinkMacSystemFont';
     centerText(ctx, `W${ws.weekNumber}`, sx, sy + 2, cellW, 18);
     ctx.fillStyle = ws.totalPnl > 0 ? green : ws.totalPnl < 0 ? red : muted;
-    ctx.font = 'bold 16px ui-sans-serif, -apple-system, BlinkMacSystemFont';
-    centerText(ctx, formatCurrency(ws.totalPnl), sx, sy + cellH / 3 - 6, cellW, 20);
+    ctx.font = 'bold 14px ui-sans-serif, -apple-system, BlinkMacSystemFont';
+    centerText(ctx, formatCurrency(ws.totalPnl), sx, sy + cellH / 2 - 12, cellW, 20);
     ctx.fillStyle = muted;
-    ctx.font = '12px ui-sans-serif, -apple-system, BlinkMacSystemFont';
-    centerText(ctx, `${ws.activeDays}d`, sx, sy + cellH / 2, cellW, 16);
+    ctx.font = '11px ui-sans-serif, -apple-system, BlinkMacSystemFont';
+    centerText(ctx, `${ws.activeDays} days`, sx, sy + cellH / 2 + 8, cellW, 16);
   }
+
+  // Subtle branding - bottom center
+  const brandY = cardY + cardH - 28;
+  ctx.fillStyle = muted;
+  ctx.font = '600 14px ui-sans-serif, -apple-system, BlinkMacSystemFont';
+  const brandText = '⚡ Refine · refine.trading';
+  const brandW = ctx.measureText(brandText).width;
+  ctx.fillText(brandText, cardX + (cardW - brandW) / 2, brandY);
 
   return canvas.toDataURL('image/png');
 }

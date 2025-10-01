@@ -452,8 +452,8 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
               className={cn(
                 "relative p-8 rounded-2xl w-full max-w-5xl flex items-center justify-center",
                 theme === 'dark' 
-                  ? "bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-900" 
-                  : "bg-gradient-to-br from-neutral-100 via-neutral-50 to-neutral-100"
+                  ? "bg-gradient-to-br from-indigo-950 via-purple-900 to-pink-900" 
+                  : "bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100"
               )}
               style={{ aspectRatio: '16/10' }}
             >
@@ -607,8 +607,8 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
               className={cn(
                 "fixed left-0 top-0 rounded-2xl",
                 theme === 'dark' 
-                  ? "bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-900" 
-                  : "bg-gradient-to-br from-neutral-100 via-neutral-50 to-neutral-100"
+                  ? "bg-gradient-to-br from-indigo-950 via-purple-900 to-pink-900" 
+                  : "bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100"
               )}
               style={{ width: 1200, height: 1000, padding: 48, opacity: 0, zIndex: -1000, pointerEvents: 'none' }}
             >
