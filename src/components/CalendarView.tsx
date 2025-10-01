@@ -1184,13 +1184,15 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                           fullWidth
                         >
                           <div className="flex-1 flex flex-col items-center justify-center space-y-0.5 sm:space-y-1">
-                            {/* P&L - Mobile-optimized, then scales up */}
-                            <div className={cn(
-                              'text-xs sm:text-sm lg:text-lg 2xl:text-xl 3xl:text-2xl font-bold leading-tight tracking-tight',
-                              day.pnl > 0 ? 'text-green-500' : day.pnl < 0 ? 'text-red-500' : 'text-muted-foreground'
-                            )}>
-                              {formatPnLSmart(day.pnl)}
-                            </div>
+                            {/* P&L - Mobile-optimized, then scales up (only show if trades exist) */}
+                            {day.tradesCount > 0 && (
+                              <div className={cn(
+                                'text-xs sm:text-sm lg:text-lg 2xl:text-xl 3xl:text-2xl font-bold leading-tight tracking-tight',
+                                day.pnl > 0 ? 'text-green-500' : day.pnl < 0 ? 'text-red-500' : 'text-muted-foreground'
+                              )}>
+                                {formatPnLSmart(day.pnl)}
+                              </div>
+                            )}
                             
                             {/* Trade Count - Mobile-optimized */}
                             {day.tradesCount > 0 && (
