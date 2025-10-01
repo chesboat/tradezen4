@@ -34,7 +34,8 @@ import {
   MoreVertical,
   Pin,
   Archive,
-  Inbox
+  Inbox,
+  ChevronLeft
 } from 'lucide-react';
 import { NoteContent } from './NoteContent';
 import { SmartTagFilterBar } from './SmartTagFilterBar';
@@ -114,6 +115,9 @@ export const NotesView: React.FC = () => {
   const [selectedFolderName, setSelectedFolderName] = useState<string | null>(null);
   const [isEditingNote, setIsEditingNote] = useState(false);
   
+  // Mobile view state (Apple-style navigation)
+  const [mobileView, setMobileView] = useState<'folders' | 'list' | 'content'>('list');
+  
   // Long-press selection (Apple-style)
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
   const [selectionMode, setSelectionMode] = useState(false);
@@ -164,6 +168,8 @@ export const NotesView: React.FC = () => {
     } else {
       setSelectedNoteId(noteId);
       setIsEditingNote(false);
+      // On mobile, navigate to content view
+      setMobileView('content');
     }
   }, [selectionMode]);
 
@@ -480,8 +486,12 @@ export const NotesView: React.FC = () => {
       {/* 3-Column Layout (Apple Notes style) */}
       <div className="flex-1 flex overflow-hidden">
         
-        {/* LEFT COLUMN: Folders & Smart Folders */}
-        <div className="w-48 lg:w-56 border-r border-border bg-muted/30 flex flex-col overflow-hidden hidden md:flex">
+        {/* LEFT COLUMN: Folders & Smart Folders (Desktop only OR mobile folders view) */}
+        <div className={cn(
+          "w-full md:w-48 lg:w-56 border-r border-border bg-muted/30 flex flex-col overflow-hidden",
+          "md:flex", // Always show on desktop
+          mobileView === 'folders' ? "flex" : "hidden" // Show on mobile only when in folders view
+        )}>
           <div className="flex-1 overflow-y-auto p-3 space-y-1">
             {/* Smart Folders */}
             <div className="mb-4">
@@ -493,6 +503,7 @@ export const NotesView: React.FC = () => {
                 onClick={() => {
                   setSmartFolder('all');
                   setSelectedFolderName(null);
+                  setMobileView('list'); // Return to list on mobile
                 }}
                 className={cn(
                   "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors",
@@ -510,6 +521,7 @@ export const NotesView: React.FC = () => {
                 onClick={() => {
                   setSmartFolder('recent');
                   setSelectedFolderName(null);
+                  setMobileView('list');
                 }}
                 className={cn(
                   "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors",
@@ -526,6 +538,7 @@ export const NotesView: React.FC = () => {
                 onClick={() => {
                   setSmartFolder('favorites');
                   setSelectedFolderName(null);
+                  setMobileView('list');
                 }}
                 className={cn(
                   "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors",
@@ -551,6 +564,7 @@ export const NotesView: React.FC = () => {
                     onClick={() => {
                       setSmartFolder('all');
                       setSelectedFolderName(folder);
+                      setMobileView('list');
                     }}
                     className={cn(
                       "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors",
@@ -568,10 +582,21 @@ export const NotesView: React.FC = () => {
           </div>
         </div>
 
-        {/* MIDDLE COLUMN: Notes List */}
-        <div className="w-80 lg:w-96 border-r border-border flex flex-col overflow-hidden">
-          {/* Note count */}
-          <div className="px-4 py-2 border-b border-border bg-muted/20">
+        {/* MIDDLE COLUMN: Notes List (Desktop always OR mobile list view) */}
+        <div className={cn(
+          "w-full md:w-80 lg:w-96 border-r border-border flex flex-col overflow-hidden",
+          "md:flex", // Always show on desktop
+          mobileView === 'list' ? "flex" : "hidden md:flex" // Show on mobile only in list view
+        )}>
+          {/* Note count + Mobile Folders Button */}
+          <div className="px-4 py-2 border-b border-border bg-muted/20 flex items-center justify-between">
+            <button
+              onClick={() => setMobileView('folders')}
+              className="md:hidden flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Folder className="w-4 h-4" />
+              <span>Folders</span>
+            </button>
             <div className="text-sm font-medium text-foreground">
               {filteredNotes.length} {filteredNotes.length === 1 ? 'note' : 'notes'}
             </div>
@@ -654,12 +679,24 @@ export const NotesView: React.FC = () => {
           </div>
         </div>
 
-        {/* RIGHT COLUMN: Note Content */}
-        <div className="flex-1 flex flex-col overflow-hidden bg-background">
+        {/* RIGHT COLUMN: Note Content (Desktop always OR mobile content view) */}
+        <div className={cn(
+          "flex-1 flex flex-col overflow-hidden bg-background",
+          "md:flex", // Always show on desktop
+          mobileView === 'content' ? "flex" : "hidden md:flex" // Show on mobile only in content view
+        )}>
           {selectedNote ? (
             <>
               {/* Note Header */}
               <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+                {/* Mobile Back Button */}
+                <button
+                  onClick={() => setMobileView('list')}
+                  className="md:hidden mr-3 p-2 hover:bg-muted rounded-lg transition-colors"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                
                 <div className="flex-1">
                   <h1 className="text-2xl font-semibold text-foreground mb-1">
                     {selectedNote.title}
