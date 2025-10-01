@@ -315,18 +315,18 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
             {pinnedTasks.map((task) => (
               <motion.div
                 key={task.id}
-                className="group p-2.5 rounded-lg hover:bg-accent/50 transition-all"
+                className="group px-2 py-2 rounded-md hover:bg-accent/50 transition-all"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
               >
-                <div className="flex items-center gap-2.5">
-                  {/* Checkbox */}
+                <div className="flex items-start gap-2">
+                  {/* Checkbox - matches sidebar icons */}
                   <motion.button 
-                    className="flex-shrink-0" 
+                    className="flex-shrink-0 mt-0.5" 
                     onClick={() => handleToggleDone(task.id)} 
                     aria-label="toggle done"
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                   >
                     <AnimatePresence mode="wait">
                       {completingTasks.has(task.id) ? (
@@ -345,7 +345,7 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                             times: [0, 0.6, 1]
                           }}
                         >
-                          <CheckCircle2 className="w-5 h-5 text-green-500" />
+                          <CheckCircle2 className="w-[18px] h-[18px] text-primary" />
                         </motion.div>
                       ) : (
                         <motion.div
@@ -356,18 +356,19 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                           transition={{ duration: 0.2 }}
                         >
                           {task.status === 'done' ? 
-                            <CheckCircle2 className="w-5 h-5 text-green-500" /> : 
-                            <Circle className="w-5 h-5 text-muted-foreground" />
+                            <CheckCircle2 className="w-[18px] h-[18px] text-primary" /> : 
+                            <Circle className="w-[18px] h-[18px] text-muted-foreground/60" />
                           }
                         </motion.div>
                       )}
                     </AnimatePresence>
                   </motion.button>
 
-                  {/* Task Text + Metadata (One Line) */}
-                  <div className="flex-1 min-w-0 flex items-center gap-2">
+                  {/* Task Content */}
+                  <div className="flex-1 min-w-0">
+                    {/* Task Text - wraps naturally */}
                     <textarea
-                      className={`flex-1 bg-transparent text-sm outline-none resize-none overflow-hidden leading-snug py-0.5 ${
+                      className={`w-full bg-transparent text-sm outline-none resize-none overflow-hidden leading-relaxed ${
                         task.status === 'done' ? 'line-through text-muted-foreground' : 'text-foreground'
                       }`}
                       defaultValue={task.text}
@@ -384,31 +385,12 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                       }}
                     />
                     
-                    {/* Minimal metadata (only show what matters) */}
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
-                      {/* Priority flag (red/yellow only) */}
-                      {(task.priority === 'high' || task.priority === 'med') && (
-                        <span className="text-base" title={`${task.priority} priority`}>
-                          {task.priority === 'high' ? '🔴' : '🟡'}
-                        </span>
-                      )}
-                      
-                      {/* Pinned indicator */}
-                      {task.pinned && (
-                        <Pin className="w-3.5 h-3.5 text-primary" />
-                      )}
-                      
-                      {/* Schedule indicator */}
-                      {task.scheduledFor && (
-                        <span className="text-xs text-blue-500" title={`Scheduled: ${new Date(task.scheduledFor).toLocaleDateString()}`}>
-                          📅
-                        </span>
-                      )}
-                      
-                      {/* URL indicator */}
+                    {/* Metadata Row - Apple Reminders style */}
+                    <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                      {/* URL Pill */}
                       {task.url && (
                         <button
-                          className="text-xs text-blue-500 hover:text-blue-600"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 transition-colors text-xs"
                           onClick={(e) => {
                             e.stopPropagation();
                             if (parseWeeklyReviewUrl(task.url!)) {
@@ -417,33 +399,54 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                               window.open(task.url!, '_blank', 'noopener,noreferrer');
                             }
                           }}
-                          title={formatUrlForDisplay(task.url)}
                         >
-                          🔗
+                          <ExternalLink className="w-3 h-3" />
+                          <span className="max-w-[150px] truncate">{formatUrlForDisplay(task.url)}</span>
                         </button>
+                      )}
+                      
+                      {/* Schedule Pill */}
+                      {task.scheduledFor && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-accent text-foreground text-xs">
+                          <Calendar className="w-3 h-3" />
+                          {new Date(task.scheduledFor).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        </span>
+                      )}
+                      
+                      {/* Priority Pill */}
+                      {task.priority && task.priority !== 'low' && (
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs ${
+                          task.priority === 'high' 
+                            ? 'bg-red-500/10 text-red-600 dark:text-red-400' 
+                            : 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400'
+                        }`}>
+                          {task.priority === 'high' ? '⚠' : '!'}
+                          {task.priority === 'high' ? 'High' : 'Medium'}
+                        </span>
+                      )}
+                      
+                      {/* Category Tag */}
+                      {task.category && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-accent text-muted-foreground text-xs">
+                          <Tag className="w-3 h-3" />
+                          {task.category}
+                        </span>
                       )}
                     </div>
                   </div>
 
-                  {/* More menu (hover only) */}
+                  {/* Info button (hover only) - minimal icon */}
                   <button
-                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-accent flex-shrink-0"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-accent flex-shrink-0 mt-0.5"
                     onClick={() => {
-                      // Simple context menu (can be expanded later)
-                      const actions = [
-                        { label: task.pinned ? 'Unpin' : 'Pin', action: () => togglePin(task.id) },
-                        { label: 'Schedule', action: () => setSchedulingTaskId(task.id) },
-                        { label: 'Delete', action: () => deleteTask(task.id) },
-                      ];
-                      // For now, just show delete on click
                       if (window.confirm('Delete this task?')) {
                         deleteTask(task.id);
                       }
                     }}
-                    aria-label="more options"
-                    title="More"
+                    aria-label="info"
+                    title="Info"
                   >
-                    <MoreVertical className="w-4 h-4 text-muted-foreground" />
+                    <MoreVertical className="w-[14px] h-[14px] text-muted-foreground/60" />
                   </button>
                 </div>
               </motion.div>
@@ -452,18 +455,18 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
             {otherTasks.map((task) => (
               <motion.div
                 key={task.id}
-                className="group p-2.5 rounded-lg hover:bg-accent/50 transition-all"
+                className="group px-2 py-2 rounded-md hover:bg-accent/50 transition-all"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
               >
-                <div className="flex items-center gap-2.5">
-                  {/* Checkbox */}
+                <div className="flex items-start gap-2">
+                  {/* Checkbox - matches sidebar icons */}
                   <motion.button 
-                    className="flex-shrink-0" 
+                    className="flex-shrink-0 mt-0.5" 
                     onClick={() => handleToggleDone(task.id)} 
                     aria-label="toggle done"
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                   >
                     <AnimatePresence mode="wait">
                       {completingTasks.has(task.id) ? (
@@ -482,7 +485,7 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                             times: [0, 0.6, 1]
                           }}
                         >
-                          <CheckCircle2 className="w-5 h-5 text-green-500" />
+                          <CheckCircle2 className="w-[18px] h-[18px] text-primary" />
                         </motion.div>
                       ) : (
                         <motion.div
@@ -493,18 +496,19 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                           transition={{ duration: 0.2 }}
                         >
                           {task.status === 'done' ? 
-                            <CheckCircle2 className="w-5 h-5 text-green-500" /> : 
-                            <Circle className="w-5 h-5 text-muted-foreground" />
+                            <CheckCircle2 className="w-[18px] h-[18px] text-primary" /> : 
+                            <Circle className="w-[18px] h-[18px] text-muted-foreground/60" />
                           }
                         </motion.div>
                       )}
                     </AnimatePresence>
                   </motion.button>
 
-                  {/* Task Text + Metadata (One Line) */}
-                  <div className="flex-1 min-w-0 flex items-center gap-2">
+                  {/* Task Content */}
+                  <div className="flex-1 min-w-0">
+                    {/* Task Text - wraps naturally */}
                     <textarea
-                      className={`flex-1 bg-transparent text-sm outline-none resize-none overflow-hidden leading-snug py-0.5 ${
+                      className={`w-full bg-transparent text-sm outline-none resize-none overflow-hidden leading-relaxed ${
                         task.status === 'done' ? 'line-through text-muted-foreground' : 'text-foreground'
                       }`}
                       defaultValue={task.text}
@@ -521,31 +525,12 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                       }}
                     />
                     
-                    {/* Minimal metadata (only show what matters) */}
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
-                      {/* Priority flag (red/yellow only) */}
-                      {(task.priority === 'high' || task.priority === 'med') && (
-                        <span className="text-base" title={`${task.priority} priority`}>
-                          {task.priority === 'high' ? '🔴' : '🟡'}
-                        </span>
-                      )}
-                      
-                      {/* Pinned indicator */}
-                      {task.pinned && (
-                        <Pin className="w-3.5 h-3.5 text-primary" />
-                      )}
-                      
-                      {/* Schedule indicator */}
-                      {task.scheduledFor && (
-                        <span className="text-xs text-blue-500" title={`Scheduled: ${new Date(task.scheduledFor).toLocaleDateString()}`}>
-                          📅
-                        </span>
-                      )}
-                      
-                      {/* URL indicator */}
+                    {/* Metadata Row - Apple Reminders style */}
+                    <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                      {/* URL Pill */}
                       {task.url && (
                         <button
-                          className="text-xs text-blue-500 hover:text-blue-600"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 transition-colors text-xs"
                           onClick={(e) => {
                             e.stopPropagation();
                             if (parseWeeklyReviewUrl(task.url!)) {
@@ -554,26 +539,54 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                               window.open(task.url!, '_blank', 'noopener,noreferrer');
                             }
                           }}
-                          title={formatUrlForDisplay(task.url)}
                         >
-                          🔗
+                          <ExternalLink className="w-3 h-3" />
+                          <span className="max-w-[150px] truncate">{formatUrlForDisplay(task.url)}</span>
                         </button>
+                      )}
+                      
+                      {/* Schedule Pill */}
+                      {task.scheduledFor && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-accent text-foreground text-xs">
+                          <Calendar className="w-3 h-3" />
+                          {new Date(task.scheduledFor).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        </span>
+                      )}
+                      
+                      {/* Priority Pill */}
+                      {task.priority && task.priority !== 'low' && (
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs ${
+                          task.priority === 'high' 
+                            ? 'bg-red-500/10 text-red-600 dark:text-red-400' 
+                            : 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400'
+                        }`}>
+                          {task.priority === 'high' ? '⚠' : '!'}
+                          {task.priority === 'high' ? 'High' : 'Medium'}
+                        </span>
+                      )}
+                      
+                      {/* Category Tag */}
+                      {task.category && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-accent text-muted-foreground text-xs">
+                          <Tag className="w-3 h-3" />
+                          {task.category}
+                        </span>
                       )}
                     </div>
                   </div>
 
-                  {/* More menu (hover only) */}
+                  {/* Info button (hover only) - minimal icon */}
                   <button
-                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-accent flex-shrink-0"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-accent flex-shrink-0 mt-0.5"
                     onClick={() => {
                       if (window.confirm('Delete this task?')) {
                         deleteTask(task.id);
                       }
                     }}
-                    aria-label="more options"
-                    title="More"
+                    aria-label="info"
+                    title="Info"
                   >
-                    <MoreVertical className="w-4 h-4 text-muted-foreground" />
+                    <MoreVertical className="w-[14px] h-[14px] text-muted-foreground/60" />
                   </button>
                 </div>
               </motion.div>
