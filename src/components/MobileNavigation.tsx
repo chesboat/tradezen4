@@ -146,7 +146,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({ onAddTrade }
               <Zap className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-card-foreground">TradeFutura</h1>
+              <h1 className="text-lg font-bold text-card-foreground">Refine</h1>
             </div>
           </div>
 
