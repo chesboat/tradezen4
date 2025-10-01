@@ -11,7 +11,8 @@
  */
 
 import { FirestoreService } from '@/lib/firestore';
-import { deleteField } from 'firebase/firestore';
+import { deleteField, doc, updateDoc, collection } from 'firebase/firestore';
+import { db, auth } from '@/lib/firebase';
 import type { TallyRule, RichNote, Quest, ImprovementTask } from '@/types';
 
 interface MigrationResult {
@@ -27,6 +28,20 @@ interface MigrationResult {
 
 // Helper function to add delay between operations
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Helper to get user ID
+const getUserId = (): string => {
+  const user = auth.currentUser;
+  if (!user) throw new Error('User must be authenticated');
+  return user.uid;
+};
+
+// Helper to directly update Firestore doc (bypassing FirestoreService which strips deleteField)
+const directUpdate = async (collectionName: string, docId: string, data: any) => {
+  const userId = getUserId();
+  const docRef = doc(collection(db, `users/${userId}/${collectionName}`), docId);
+  await updateDoc(docRef, data);
+};
 
 export async function migratePersonalItemsToJournalWide(): Promise<MigrationResult> {
   const result: MigrationResult = {
@@ -45,7 +60,11 @@ export async function migratePersonalItemsToJournalWide(): Promise<MigrationResu
     for (const habit of allHabits) {
       if (habit.accountId) {
         try {
-          await habitsService.update(habit.id, { accountId: deleteField() } as any);
+          // Use direct update to properly handle deleteField() sentinel
+          await directUpdate('tallyRules', habit.id, { 
+            accountId: deleteField(),
+            updatedAt: new Date().toISOString()
+          });
           result.updated.habits++;
           console.log(`✅ Migrated habit: ${habit.label}`);
           await delay(100); // Small delay to avoid overwhelming Firestore
@@ -64,7 +83,11 @@ export async function migratePersonalItemsToJournalWide(): Promise<MigrationResu
       // Skip pseudo-account notes
       if (note.accountId && note.accountId !== 'all' && !String(note.accountId).startsWith('group:')) {
         try {
-          await notesService.update(note.id, { accountId: deleteField() } as any);
+          // Use direct update to properly handle deleteField() sentinel
+          await directUpdate('richNotes', note.id, { 
+            accountId: deleteField(),
+            updatedAt: new Date().toISOString()
+          });
           result.updated.notes++;
           console.log(`✅ Migrated note: ${note.title}`);
           await delay(100); // Small delay to avoid overwhelming Firestore
@@ -82,7 +105,11 @@ export async function migratePersonalItemsToJournalWide(): Promise<MigrationResu
     for (const quest of allQuests) {
       if (quest.accountId && quest.accountId !== 'all') {
         try {
-          await questsService.update(quest.id, { accountId: deleteField() } as any);
+          // Use direct update to properly handle deleteField() sentinel
+          await directUpdate('quests', quest.id, { 
+            accountId: deleteField(),
+            updatedAt: new Date().toISOString()
+          });
           result.updated.quests++;
           console.log(`✅ Migrated quest: ${quest.title}`);
           await delay(100); // Small delay to avoid overwhelming Firestore
@@ -100,7 +127,11 @@ export async function migratePersonalItemsToJournalWide(): Promise<MigrationResu
     for (const todo of allTodos) {
       if (todo.accountId && todo.accountId !== 'default') {
         try {
-          await todosService.update(todo.id, { accountId: deleteField() } as any);
+          // Use direct update to properly handle deleteField() sentinel
+          await directUpdate('tasks', todo.id, { 
+            accountId: deleteField(),
+            updatedAt: new Date().toISOString()
+          });
           result.updated.todos++;
           console.log(`✅ Migrated todo: ${todo.text}`);
           await delay(100); // Small delay to avoid overwhelming Firestore
