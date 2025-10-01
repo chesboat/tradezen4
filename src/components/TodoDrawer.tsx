@@ -916,57 +916,63 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                           </div>
                         )}
 
-                        {/* Add Note button */}
-                        {!showNotesInput && !newNotes && (
-                          <button
-                            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              setShowNotesInput(true);
-                            }}
-                            type="button"
-                          >
-                            Add Note
-                          </button>
-                        )}
+                        {/* Add Note button or input */}
+                        <div>
+                          {!showNotesInput && !newNotes ? (
+                            <button
+                              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setShowNotesInput(true);
+                                setTimeout(() => {
+                                  const textarea = document.querySelector('.notes-input') as HTMLTextAreaElement;
+                                  textarea?.focus();
+                                }, 50);
+                              }}
+                              type="button"
+                            >
+                              Add Note
+                            </button>
+                          ) : (
+                            <textarea
+                              placeholder="Note"
+                              value={newNotes}
+                              onChange={(e) => setNewNotes(e.target.value)}
+                              className="notes-input w-full px-0 py-1 text-xs bg-transparent text-muted-foreground outline-none resize-none"
+                              rows={2}
+                            />
+                          )}
+                        </div>
 
-                        {/* Notes input - appears when activated */}
-                        {(showNotesInput || newNotes) && (
-                          <textarea
-                            placeholder="Note"
-                            value={newNotes}
-                            onChange={(e) => setNewNotes(e.target.value)}
-                            className="w-full px-0 py-1 text-xs bg-transparent text-muted-foreground outline-none resize-none"
-                            rows={2}
-                            autoFocus
-                          />
-                        )}
-
-                        {/* Add URL button */}
-                        {!showUrlInput && !newUrl && (
-                          <button
-                            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              setShowUrlInput(true);
-                            }}
-                            type="button"
-                          >
-                            Add URL
-                          </button>
-                        )}
-
-                        {/* URL input - appears when activated */}
-                        {(showUrlInput || newUrl) && (
-                          <input
-                            type="url"
-                            placeholder="URL"
-                            value={newUrl}
-                            onChange={(e) => setNewUrl(e.target.value)}
-                            className="w-full px-0 py-1 text-xs bg-transparent text-blue-500 outline-none"
-                            autoFocus={showUrlInput && !newNotes}
-                          />
-                        )}
+                        {/* Add URL button or input */}
+                        <div>
+                          {!showUrlInput && !newUrl ? (
+                            <button
+                              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setShowUrlInput(true);
+                                setTimeout(() => {
+                                  const input = document.querySelector('.url-input') as HTMLInputElement;
+                                  input?.focus();
+                                }, 50);
+                              }}
+                              type="button"
+                            >
+                              Add URL
+                            </button>
+                          ) : (
+                            <input
+                              type="url"
+                              placeholder="URL"
+                              value={newUrl}
+                              onChange={(e) => setNewUrl(e.target.value)}
+                              className="url-input w-full px-0 py-1 text-xs bg-transparent text-blue-500 outline-none"
+                            />
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
