@@ -173,20 +173,14 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
     
     setIsGenerating(true);
     try {
-      // Prefer server-side screenshot of this modal preview for pixel-perfect output
+      // Use canvas renderer for consistent, beautiful output
       const payload = buildRenderData();
       const themeParam = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
-      const dataParam = encodeURIComponent(btoa(JSON.stringify(payload)));
-      const shareUrl = `${window.location.origin}/share/calendar?theme=${themeParam}&data=${dataParam}`;
-      const api = `/api/screenshot-calendar?url=${encodeURIComponent(shareUrl)}&width=1200&height=675&selector=${encodeURIComponent('[data-share-calendar-card]')}`;
-      const resp = await fetch(api);
-      if (!resp.ok) throw new Error('Screenshot API failed');
-      const blob = await resp.blob();
-      const dataUrl = URL.createObjectURL(blob);
+      const dataUrl = await renderCalendarToDataURL(payload, { theme: themeParam as 'light' | 'dark' });
+      
       const link = document.createElement('a');
       link.download = `Refine-Calendar-${currentMonth}-${currentYear}.png`;
       link.href = dataUrl;
-      link.rel = 'noopener';
       document.body.appendChild(link);
       link.click();
       setTimeout(() => link.remove(), 0);
