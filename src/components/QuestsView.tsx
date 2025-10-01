@@ -668,7 +668,7 @@ export const QuestsView: React.FC = () => {
               setIsGeneratingQuests(true);
               try {
                 // Get current mood from recent mood timeline
-                const todayMood = getMoodTimeline(new Date().toISOString().split('T')[0]);
+                const todayMood = getMoodTimeline(new Date().toISOString().split('T')[0], selectedAccountId || undefined);
                 const currentMood = todayMood.length > 0 ? todayMood[todayMood.length - 1].mood : 'neutral';
                 
                 // Generate AI-powered quests with current data (force regenerate)

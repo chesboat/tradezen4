@@ -55,8 +55,8 @@ interface DailyReflectionState {
   
   // Mood timeline actions
   addMoodEntry: (date: string, mood: MoodType, trigger?: string, relatedId?: string, timestamp?: Date, accountId?: string) => void;
-  getMoodTimeline: (date: string) => MoodEntry[];
-  cleanupDuplicateMoodEntries: (date: string) => void;
+  getMoodTimeline: (date: string, accountId?: string) => MoodEntry[];
+  cleanupDuplicateMoodEntries: (date: string, accountId?: string) => void;
   
   // Reflection queries
   getReflectionByDate: (date: string, accountId?: string) => DailyReflectionData | undefined;
@@ -268,13 +268,13 @@ export const useDailyReflectionStore = create<DailyReflectionState>()(
         ids.forEach((accountId) => get().addMoodEntry(date, mood, trigger, relatedId, timestamp, accountId));
       },
 
-      getMoodTimeline: (date) => {
-        const reflection = get().getReflectionByDate(date);
+      getMoodTimeline: (date, accountId) => {
+        const reflection = get().getReflectionByDate(date, accountId);
         return reflection?.moodTimeline || [];
       },
 
-      cleanupDuplicateMoodEntries: (date) => {
-        const reflection = get().getReflectionByDate(date);
+      cleanupDuplicateMoodEntries: (date, accountId) => {
+        const reflection = get().getReflectionByDate(date, accountId);
         if (!reflection) return;
 
         // Remove duplicates based on relatedId + trigger combination

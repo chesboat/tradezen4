@@ -174,12 +174,12 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
 
   // Get mood timeline
   const moodTimeline = useMemo(() => {
-    if (!day) return [];
+    if (!day || !selectedAccountId) return [];
     // Clean up duplicates first
-    cleanupDuplicateMoodEntries(dateString);
+    cleanupDuplicateMoodEntries(dateString, selectedAccountId);
     // Then get the cleaned timeline
-    return getMoodTimeline(dateString);
-  }, [day, dateString, reflections, dayTrades, dayNotes]); // Removed function references from dependencies
+    return getMoodTimeline(dateString, selectedAccountId);
+  }, [day, dateString, selectedAccountId, reflections, dayTrades, dayNotes]); // Removed function references from dependencies
 
   // Initialize current streak when modal opens
   useEffect(() => {
@@ -540,7 +540,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
       
       // Get current mood
       const dateString = day?.date || new Date().toISOString().split('T')[0];
-      const todayMood = getMoodTimeline(typeof dateString === 'string' ? dateString : dateString.toISOString().split('T')[0]);
+      const todayMood = getMoodTimeline(typeof dateString === 'string' ? dateString : dateString.toISOString().split('T')[0], selectedAccountId);
       const currentMood = todayMood.length > 0 ? todayMood[todayMood.length - 1].mood : 'neutral';
       
       // Get previous focus areas
