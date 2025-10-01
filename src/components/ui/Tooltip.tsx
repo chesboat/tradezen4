@@ -101,7 +101,8 @@ export const Tooltip: React.FC<TooltipProps> = ({
   };
 
   const getTooltipClasses = () => {
-    const baseClasses = 'absolute z-[9999] px-2 py-1 text-xs font-medium text-white bg-dark-800 rounded-lg shadow-lg border border-dark-600 whitespace-nowrap';
+    // Apple-style: Allow multi-line, centered text with proper spacing
+    const baseClasses = 'absolute z-[9999] px-3 py-2 text-xs font-medium text-white bg-dark-800 rounded-lg shadow-lg border border-dark-600 whitespace-pre-line text-center max-w-xs';
     
     switch (position) {
       case 'top':
