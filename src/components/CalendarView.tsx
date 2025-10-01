@@ -276,14 +276,23 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
       return ids.includes(note.accountId);
     });
     
-    // Check if a reflection exists for this day
+    // Check if a meaningful reflection exists for this day
+    // Only count as "has reflection" if there's actual written content
     const dateString = date.toISOString().split('T')[0];
-    const hasReflection = reflections.find(r => {
+    const reflection = reflections.find(r => {
       if (r.date !== dateString) return false;
       if (!selectedAccountId) return true;
       const ids = getAccountIdsForSelection(selectedAccountId);
       return ids.includes(r.accountId);
-    }) !== undefined;
+    });
+    
+    // Require actual written content to show the flame
+    const hasReflection = reflection && (
+      (reflection.reflection && reflection.reflection.trim().length > 0) ||
+      (reflection.keyFocus && reflection.keyFocus.trim().length > 0) ||
+      (reflection.goals && reflection.goals.trim().length > 0) ||
+      (reflection.lessons && reflection.lessons.trim().length > 0)
+    );
     
     return {
       date,
