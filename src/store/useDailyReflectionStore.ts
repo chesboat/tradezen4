@@ -215,11 +215,14 @@ export const useDailyReflectionStore = create<DailyReflectionState>()(
       },
 
       addMoodEntry: (date, mood, trigger, relatedId, timestamp, accountId) => {
+        console.log('[DailyReflectionStore] addMoodEntry called:', { date, mood, trigger, relatedId, accountId });
         let reflection = get().getReflectionByDate(date, accountId);
+        console.log('[DailyReflectionStore] Found reflection:', reflection ? reflection.id : 'NONE');
         
         // Create a minimal reflection if none exists (for wellness activities)
         if (!reflection) {
           const useAccountId = accountId || 'default';
+          console.log('[DailyReflectionStore] Creating new reflection for accountId:', useAccountId);
           reflection = get().addReflection({
             date,
             reflection: '',
@@ -231,6 +234,7 @@ export const useDailyReflectionStore = create<DailyReflectionState>()(
             reflectionTags: [],
             accountId: useAccountId,
           });
+          console.log('[DailyReflectionStore] New reflection created:', reflection.id);
         }
 
         // Check if mood entry already exists for this related item
@@ -239,6 +243,7 @@ export const useDailyReflectionStore = create<DailyReflectionState>()(
             entry => entry.relatedId === relatedId && entry.trigger === trigger
           );
           if (existingEntry) {
+            console.log('[DailyReflectionStore] Updating existing mood entry:', existingEntry.id);
             // Update existing entry mood only, preserve original timestamp
             const updatedMoodTimeline = reflection.moodTimeline.map(entry =>
               entry.id === existingEntry.id
@@ -258,8 +263,11 @@ export const useDailyReflectionStore = create<DailyReflectionState>()(
           relatedId,
         };
 
+        console.log('[DailyReflectionStore] Adding new mood entry:', newMoodEntry);
         const updatedMoodTimeline = [...reflection.moodTimeline, newMoodEntry];
+        console.log('[DailyReflectionStore] Updated timeline length:', updatedMoodTimeline.length);
         get().updateReflection(reflection.id, { moodTimeline: updatedMoodTimeline });
+        console.log('[DailyReflectionStore] Reflection updated');
       },
 
       // Add a mood entry to all accounts in the selection

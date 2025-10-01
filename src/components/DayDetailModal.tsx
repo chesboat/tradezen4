@@ -178,7 +178,9 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
     // Clean up duplicates first
     cleanupDuplicateMoodEntries(dateString, selectedAccountId);
     // Then get the cleaned timeline
-    return getMoodTimeline(dateString, selectedAccountId);
+    const timeline = getMoodTimeline(dateString, selectedAccountId);
+    console.log('[DayDetailModal] Mood timeline for', dateString, selectedAccountId, ':', timeline);
+    return timeline;
   }, [day, dateString, selectedAccountId, reflections, dayTrades, dayNotes]); // Removed function references from dependencies
 
   // Initialize current streak when modal opens
