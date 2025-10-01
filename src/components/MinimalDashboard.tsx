@@ -264,7 +264,10 @@ const HabitsCard: React.FC = () => {
   const { setCurrentView } = useNavigationStore();
   
   const today = formatLocalDate(new Date());
-  const accountRules = selectedAccountId ? rules.filter(r => r.accountId === selectedAccountId) : [];
+  // Include journal-wide habits (no accountId) and account-specific habits
+  const accountRules = rules.filter(r => 
+    (!r.accountId || r.accountId === selectedAccountId) && r.isActive !== false
+  );
   
   const completedHabits = accountRules.filter(rule => getTallyCountForRule(rule.id, today) > 0).length;
   const activeStreaks = accountRules.filter(rule => {
@@ -508,7 +511,10 @@ const AIInsights: React.FC = () => {
     
     // Filter data by account
     const accountTrades = selectedAccountId ? trades.filter(t => t.accountId === selectedAccountId) : trades;
-    const accountRules = selectedAccountId ? rules.filter(r => r.accountId === selectedAccountId) : rules;
+    // Include journal-wide habits (no accountId) and account-specific habits
+    const accountRules = rules.filter(r => 
+      (!r.accountId || r.accountId === selectedAccountId) && r.isActive !== false
+    );
     const accountReflections = selectedAccountId ? reflections.filter(r => r.accountId === selectedAccountId) : reflections;
     
     // Time-based analysis
@@ -596,10 +602,30 @@ const AIInsights: React.FC = () => {
       });
     }
     
+    // Add a catch-all positive insight if we have trades but no specific insights
+    if (insights.length === 0 && accountTrades.length > 0) {
+      const { winRateExclScratches: winRate } = summarizeWinLossScratch(accountTrades);
+      insights.push({
+        type: 'positive',
+        title: 'Trading Activity Detected',
+        text: `You have ${accountTrades.length} trades logged with a ${winRate.toFixed(0)}% win rate. Keep tracking to unlock deeper insights.`,
+        action: 'View Trades',
+        actionFn: () => setCurrentView('trades')
+      });
+    }
+    
     return insights.slice(0, 2); // Limit to top 2 most actionable
   };
   
   const insights = generateInsights();
+  
+  console.log('🧠 AI Insights Debug:', {
+    totalTrades: trades.length,
+    accountTrades: selectedAccountId ? trades.filter(t => t.accountId === selectedAccountId).length : trades.length,
+    selectedAccountId,
+    insightsGenerated: insights.length,
+    insights: insights.map(i => i.title)
+  });
 
   return (
     <motion.div 
@@ -612,8 +638,9 @@ const AIInsights: React.FC = () => {
         <Brain className="w-5 h-5 text-primary" />
         <h3 className="text-lg font-semibold text-foreground">AI Insights</h3>
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {insights.map((insight, index) => (
+      {insights.length > 0 ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {insights.map((insight, index) => (
           <motion.div
             key={index}
             className={cn(
@@ -650,8 +677,13 @@ const AIInsights: React.FC = () => {
               {insight.action} →
             </motion.button>
           </motion.div>
-        ))}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-8 text-muted-foreground">
+          <p>No insights available yet. Log more trades to unlock personalized analysis.</p>
+        </div>
+      )}
     </motion.div>
   );
 };
@@ -871,7 +903,7 @@ export const MinimalDashboard: React.FC = () => {
           whileHover={{ scale: 1.02 }}
         >
           <span className="text-sm font-medium">
-            {showBottomSection ? 'Hide' : 'Show'} Weekly Review & Activity
+            {showBottomSection ? 'Hide' : 'Show'} Recent Activity & Progress
           </span>
           {showBottomSection ? (
             <ChevronUp className="w-4 h-4" />
@@ -890,22 +922,24 @@ export const MinimalDashboard: React.FC = () => {
               transition={{ duration: 0.3 }}
               className="space-y-6"
             >
-              {/* Weekly Review - Moved to collapsible section */}
-              <div>
-                <h3 className="text-lg font-semibold text-foreground mb-4">This Week's Discipline</h3>
-                <WeeklyReviewCard days={(weekDays || []).map((d: any) => ({
-                  date: d.date,
-                  status: (d.status || 'open'),
-                  respectedLimit: d.respectedLimit,
-                  lateLogging: d.lateLogging,
-                  disciplineEnabled: !!(d.checkInAt || d.status === 'broken' || d.respectedLimit),
-                }))} />
-              </div>
-              
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                 <RecentActivity />
                 <GrowthCorner />
               </div>
+              
+              {/* Weekly Review - Only show if discipline mode is enabled */}
+              {disciplineEnabled && weekDays && weekDays.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-4">This Week's Discipline</h3>
+                  <WeeklyReviewCard days={(weekDays || []).map((d: any) => ({
+                    date: d.date,
+                    status: (d.status || 'open'),
+                    respectedLimit: d.respectedLimit,
+                    lateLogging: d.lateLogging,
+                    disciplineEnabled: !!(d.checkInAt || d.status === 'broken' || d.respectedLimit),
+                  }))} />
+                </div>
+              )}
             </motion.section>
           )}
         </AnimatePresence>
