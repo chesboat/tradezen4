@@ -16,7 +16,7 @@ import { useDailyReflectionStore } from '@/store/useDailyReflectionStore';
 // TYPES & UTILITIES
 // ===============================================
 
-type TimePeriod = 'all' | '1m' | '3m' | '6m' | '1y' | 'custom';
+type TimePeriod = 'all' | '7d' | '1m' | '3m' | '6m' | '1y' | 'custom';
 
 interface TimePeriodOption {
   value: TimePeriod;
@@ -26,6 +26,7 @@ interface TimePeriodOption {
 
 const timePeriodOptions: TimePeriodOption[] = [
   { value: 'all', label: 'All Time' },
+  { value: '7d', label: 'Last 7 Days', days: 7 },
   { value: '1m', label: 'Last 30 Days', days: 30 },
   { value: '3m', label: 'Last 90 Days', days: 90 },
   { value: '6m', label: 'Last 6 Months', days: 180 },
@@ -458,10 +459,17 @@ const TopSymbolsSection: React.FC<{
 
   return (
     <div className="bg-card border border-border rounded-2xl p-6">
-      <div className="flex items-center gap-3 mb-4">
-        <Trophy className="w-5 h-5 text-primary" />
-        <h2 className="text-xl font-semibold text-foreground">Top Performing Symbols</h2>
-        <span className="text-sm text-muted-foreground ml-auto">Click to filter →</span>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <Trophy className="w-5 h-5 text-primary" />
+          <h2 className="text-xl font-semibold text-foreground">Top Performing Symbols</h2>
+        </div>
+        {topSymbols.length > 0 && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span>Tap any symbol to filter</span>
+            <ChevronRight className="w-3 h-3" />
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -495,24 +503,27 @@ const TopSymbolsSection: React.FC<{
 // ===============================================
 
 const TradeHighlightsCard: React.FC<{ trades: any[] }> = ({ trades }) => {
-  const { getReflectionByDate } = useDailyReflectionStore();
-  const { selectedAccountId } = useAccountFilterStore();
-
   const recentHighlights = React.useMemo(() => {
     return trades
       .sort((a, b) => new Date(b.entryTime).getTime() - new Date(a.entryTime).getTime())
       .slice(0, 5)
       .map(trade => {
-        const dateStr = new Date(trade.entryTime).toISOString().split('T')[0];
-        const reflectionData = getReflectionByDate(dateStr, selectedAccountId || undefined);
+        // Apple's approach: Prioritize trade-specific notes over general reflections
+        // 1. Trade notes (most specific)
+        // 2. Trade tags (context clues)
+        // 3. Nothing (clean card)
+        let highlight = '';
         
-        // Extract key learning or summary
-        const highlight = reflectionData?.lessons || reflectionData?.reflection || reflectionData?.aiSummary || '';
-        const mood = reflectionData?.moodTimeline?.[0]?.mood;
+        if (trade.notes && trade.notes.trim()) {
+          highlight = trade.notes;
+        } else if (trade.tags && trade.tags.length > 0) {
+          // Show tags as context
+          highlight = trade.tags.slice(0, 3).join(' • ');
+        }
         
-        return { ...trade, highlight, mood };
+        return { ...trade, highlight };
       });
-  }, [trades, getReflectionByDate, selectedAccountId]);
+  }, [trades]);
 
   return (
     <div className="bg-card border border-border rounded-2xl p-6">
@@ -545,14 +556,29 @@ const TradeHighlightsCard: React.FC<{ trades: any[] }> = ({ trades }) => {
                 className="p-4 bg-muted/20 hover:bg-muted/30 rounded-xl border border-border transition-all duration-200"
               >
                 <div className="flex items-start justify-between mb-2">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    {/* Direction indicator */}
+                    <div className={cn(
+                      "px-2 py-0.5 rounded text-xs font-medium",
+                      trade.direction === 'long' 
+                        ? "bg-green-500/10 text-green-600" 
+                        : "bg-red-500/10 text-red-600"
+                    )}>
+                      {trade.direction === 'long' ? '↑ Long' : '↓ Short'}
+                    </div>
+                    
                     <div className="text-sm text-muted-foreground">
                       {new Date(trade.entryTime).toLocaleDateString('en-US', { 
                         month: 'short', 
-                        day: 'numeric',
-                        year: 'numeric'
+                        day: 'numeric'
+                      })}
+                      <span className="mx-1">•</span>
+                      {new Date(trade.entryTime).toLocaleTimeString('en-US', { 
+                        hour: 'numeric', 
+                        minute: '2-digit' 
                       })}
                     </div>
+                    
                     {status === 'scratch' && (
                       <div className="flex items-center gap-1 px-2 py-0.5 bg-yellow-500/10 rounded-full">
                         <MinusCircle className="w-3 h-3 text-yellow-500" />
@@ -561,7 +587,7 @@ const TradeHighlightsCard: React.FC<{ trades: any[] }> = ({ trades }) => {
                     )}
                   </div>
                   <div className={cn(
-                    "text-lg font-semibold",
+                    "text-lg font-semibold tabular-nums",
                     pnl > 0 ? "text-green-500" : pnl < 0 ? "text-red-500" : "text-muted-foreground"
                   )}>
                     {formatCurrency(pnl)}
@@ -569,16 +595,21 @@ const TradeHighlightsCard: React.FC<{ trades: any[] }> = ({ trades }) => {
                 </div>
 
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="font-semibold text-foreground">{trade.symbol}</span>
-                  {trade.rMultiple && (
-                    <span className="text-sm text-muted-foreground">
-                      {trade.rMultiple.toFixed(1)}R
+                  <span className="font-semibold text-foreground text-lg">{trade.symbol}</span>
+                  {trade.rMultiple !== undefined && (
+                    <span className={cn(
+                      "text-sm font-medium px-2 py-0.5 rounded",
+                      trade.rMultiple >= 0 
+                        ? "bg-green-500/10 text-green-600" 
+                        : "bg-red-500/10 text-red-600"
+                    )}>
+                      {trade.rMultiple > 0 ? '+' : ''}{trade.rMultiple.toFixed(1)}R
                     </span>
                   )}
                 </div>
 
                 {trade.highlight && (
-                  <div className="text-sm text-muted-foreground line-clamp-2">
+                  <div className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
                     {trade.highlight}
                   </div>
                 )}
@@ -675,24 +706,28 @@ export const AppleAnalyticsDashboard: React.FC = () => {
         onPeriodChange={setSelectedPeriod}
       />
 
-      {/* Symbol Filter Badge (if active) */}
-      {symbolFilter && (
-        <div className="max-w-7xl 2xl:max-w-[1800px] mx-auto px-6 2xl:px-8 pt-6">
+      {/* Symbol Filter Badge (Sticky, always visible when active) */}
+      <AnimatePresence>
+        {symbolFilter && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-xl border border-primary/20"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="fixed top-20 right-6 z-50"
           >
-            <span className="text-sm font-medium">Filtered by: {symbolFilter}</span>
-            <button
-              onClick={() => setSymbolFilter(null)}
-              className="p-1 hover:bg-primary/20 rounded-full transition-colors"
-            >
-              <X className="w-3 h-3" />
-            </button>
+            <div className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl shadow-xl border border-primary/20">
+              <span className="text-sm font-medium">Viewing: {symbolFilter}</span>
+              <button
+                onClick={() => setSymbolFilter(null)}
+                className="p-1 hover:bg-primary-foreground/20 rounded-full transition-colors"
+                aria-label="Clear filter"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </motion.div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
 
       {/* Main Content */}
       <div className="max-w-7xl 2xl:max-w-[1800px] mx-auto px-6 2xl:px-8 py-8 space-y-8">
