@@ -87,6 +87,11 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
     try {
       const pnlValue = result === 'breakeven' ? 0 : parseFloat(pnl);
       
+      // Calculate risk amount: If 2R profit = $343, then 1R = $343/2 = $171.50
+      // For now, we default to 1R (actual R:R can be edited inline in trades table)
+      const defaultRR = 1;
+      const calculatedRiskAmount = Math.abs(pnlValue) / defaultRR;
+      
       const tradeData = {
         symbol: symbol.toUpperCase(),
         direction,
@@ -95,8 +100,8 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
         entryPrice: 0,
         exitPrice: result === 'win' ? Math.abs(pnlValue) : 0,
         quantity: 1,
-        riskAmount: Math.abs(pnlValue),
-        riskRewardRatio: 1,
+        riskAmount: calculatedRiskAmount,
+        riskRewardRatio: defaultRR,
         entryTime: new Date().toISOString(),
         mood: 'neutral' as const,
         tags: [] as string[],

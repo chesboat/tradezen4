@@ -105,6 +105,8 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
   // Inline editing states (Apple-style)
   const [editingRRId, setEditingRRId] = useState<string | null>(null);
   const [editingRRValue, setEditingRRValue] = useState<string>('');
+  const [editingPnlId, setEditingPnlId] = useState<string | null>(null);
+  const [editingPnlValue, setEditingPnlValue] = useState<string>('');
   const [quickFilter, setQuickFilter] = useState<'all' | 'today' | 'week' | 'winners' | 'losers'>('all');
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [swipedTradeId, setSwipedTradeId] = useState<string | null>(null);
@@ -145,6 +147,32 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
     } else if (e.key === 'Escape') {
       setEditingRRId(null);
       setEditingRRValue('');
+    }
+  };
+
+  // P&L inline editing handlers
+  const handlePnlDoubleClick = (trade: Trade) => {
+    setEditingPnlId(trade.id);
+    setEditingPnlValue(Math.abs(trade.pnl || 0).toString());
+  };
+
+  const handlePnlSave = async (tradeId: string, trade: Trade) => {
+    const newPnl = parseFloat(editingPnlValue);
+    if (!isNaN(newPnl)) {
+      // Preserve the sign based on original result
+      const signedPnl = trade.result === 'loss' ? -Math.abs(newPnl) : trade.result === 'breakeven' ? 0 : Math.abs(newPnl);
+      await updateTrade(tradeId, { pnl: signedPnl });
+    }
+    setEditingPnlId(null);
+    setEditingPnlValue('');
+  };
+
+  const handlePnlKeyDown = (e: React.KeyboardEvent, tradeId: string, trade: Trade) => {
+    if (e.key === 'Enter') {
+      handlePnlSave(tradeId, trade);
+    } else if (e.key === 'Escape') {
+      setEditingPnlId(null);
+      setEditingPnlValue('');
     }
   };
 
@@ -932,13 +960,29 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                         </span>
                       </div>
                     </td>
-                    <td className="p-3">
-                      <span className={cn(
-                        'font-medium',
-                        (trade.pnl || 0) >= 0 ? 'text-green-500' : 'text-red-500'
-                      )}>
-                        {formatCurrency(trade.pnl || 0)}
-                      </span>
+                    <td 
+                      className="p-3"
+                      onDoubleClick={() => handlePnlDoubleClick(trade)}
+                    >
+                      {editingPnlId === trade.id ? (
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={editingPnlValue}
+                          onChange={(e) => setEditingPnlValue(e.target.value)}
+                          onBlur={() => handlePnlSave(trade.id, trade)}
+                          onKeyDown={(e) => handlePnlKeyDown(e, trade.id, trade)}
+                          className="w-24 px-2 py-1 bg-primary/10 border border-primary rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                          autoFocus
+                        />
+                      ) : (
+                        <span className={cn(
+                          'font-medium cursor-pointer hover:text-primary transition-colors',
+                          (trade.pnl || 0) >= 0 ? 'text-green-500' : 'text-red-500'
+                        )} title="Double-click to edit">
+                          {formatCurrency(trade.pnl || 0)}
+                        </span>
+                      )}
                     </td>
                     <td 
                       className="p-3"
@@ -1159,12 +1203,27 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                   <span className={cn('text-lg', getMoodColor(trade.mood))}>
                     {getMoodEmoji(trade.mood)}
                   </span>
-                  <span className={cn(
-                    'font-medium',
-                    (trade.pnl || 0) >= 0 ? 'text-green-500' : 'text-red-500'
-                  )}>
-                    {formatCurrency(trade.pnl || 0)}
-                  </span>
+                  <div onDoubleClick={() => handlePnlDoubleClick(trade)}>
+                    {editingPnlId === trade.id ? (
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={editingPnlValue}
+                        onChange={(e) => setEditingPnlValue(e.target.value)}
+                        onBlur={() => handlePnlSave(trade.id, trade)}
+                        onKeyDown={(e) => handlePnlKeyDown(e, trade.id, trade)}
+                        className="w-24 px-2 py-1 bg-primary/10 border border-primary rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        autoFocus
+                      />
+                    ) : (
+                      <span className={cn(
+                        'font-medium cursor-pointer hover:text-primary transition-colors',
+                        (trade.pnl || 0) >= 0 ? 'text-green-500' : 'text-red-500'
+                      )} title="Double-tap to edit">
+                        {formatCurrency(trade.pnl || 0)}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
 
