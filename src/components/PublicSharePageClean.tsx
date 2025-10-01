@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { 
   Calendar,
@@ -14,7 +14,75 @@ import {
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/localStorageUtils';
 import { cn } from '@/lib/utils';
-import { loadShareImages, loadShareBlocks, resolveInlineStorageLinksInHtml } from '@/lib/publicShare';
+
+// Helper functions for loading share data
+const loadShareImages = async (shareId: string): Promise<{ [blockId: string]: string[] }> => {
+  try {
+    const imagesCol = collection(db, 'publicShareImages');
+    const q = query(imagesCol, where('shareId', '==', shareId));
+    const snapshot = await getDocs(q);
+    
+    const imagesByBlock: { [blockId: string]: string[] } = {};
+    snapshot.docs.forEach(doc => {
+      const data = doc.data();
+      imagesByBlock[data.blockId] = data.images || [];
+    });
+    
+    return imagesByBlock;
+  } catch (error) {
+    console.error('Failed to load share images:', error);
+    return {};
+  }
+};
+
+const loadShareBlocks = async (shareId: string): Promise<{ [blockId: string]: any }> => {
+  try {
+    const blocksCol = collection(db, 'publicShareBlocks');
+    const q = query(blocksCol, where('shareId', '==', shareId));
+    const snapshot = await getDocs(q);
+    const docs = snapshot.docs.map(d => d.data()).sort((a: any, b: any) => (a.order ?? 0) - (b.order ?? 0));
+    const byId: { [blockId: string]: any } = {};
+    docs.forEach((data: any) => { byId[data.blockId] = data; });
+    return byId;
+  } catch (error) {
+    console.error('Failed to load share blocks:', error);
+    return {};
+  }
+};
+
+const resolveInlineStorageLinksInHtml = async (html: string): Promise<string> => {
+  if (!html || typeof html !== 'string' || html.indexOf('/o?name=') === -1) return html;
+  
+  const docEl = document.implementation.createHTMLDocument('tmp');
+  docEl.body.innerHTML = html;
+  const imgEls = Array.from(docEl.body.querySelectorAll('img')) as HTMLImageElement[];
+  
+  await Promise.all(imgEls.map(async (img) => {
+    const src = img.getAttribute('src') || '';
+    
+    if (/\/o\?name=/.test(src) && !/alt=media/.test(src)) {
+      try {
+        const u = new URL(src);
+        const pathParam = u.searchParams.get('name');
+        if (pathParam) {
+          const storagePath = decodeURIComponent(pathParam);
+          
+          const bucketName = import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 
+                            src.match(/\/b\/([^/]+)\//)?.[1];
+          
+          if (bucketName) {
+            const encodedPath = encodeURIComponent(storagePath);
+            const publicUrl = `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/${encodedPath}?alt=media`;
+            img.setAttribute('src', publicUrl);
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+  }));
+  return docEl.body.innerHTML;
+};
 
 export const PublicSharePageClean: React.FC = () => {
   const [id] = React.useState(() => {
@@ -335,7 +403,7 @@ export const PublicSharePageClean: React.FC = () => {
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="text-center sm:text-left">
                 <p className="text-sm text-muted-foreground mb-1">
-                  Shared from <span className="font-semibold text-foreground">TradZen</span>
+                  Shared from <span className="font-semibold text-foreground">Edge</span>
                 </p>
                 <p className="text-xs text-muted-foreground">
                   Your AI-powered trading journal
@@ -347,7 +415,7 @@ export const PublicSharePageClean: React.FC = () => {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity text-sm font-medium"
               >
-                Try TradZen Free
+                Try Edge Free
                 <ExternalLink className="w-4 h-4" />
               </a>
             </div>
