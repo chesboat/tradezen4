@@ -15,7 +15,7 @@ import { AppleAnalyticsDashboard } from './components/AppleAnalyticsDashboard';
 import { CoachView } from './components/CoachView';
 import { JournalViewApple as JournalView } from './components/JournalViewApple';
 import { NotesView } from './components/NotesView';
-import { TradeLoggerModal } from './components/TradeLoggerModal';
+import { TradeLoggerModalApple as TradeLoggerModal } from './components/TradeLoggerModalApple';
 import { QuickNoteModal } from './components/QuickNoteModal';
 import { CommandBar } from './components/CommandBar';
 import { AuthPage } from './components/auth/AuthPage';
