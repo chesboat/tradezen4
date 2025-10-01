@@ -15,16 +15,10 @@ export interface AppSettingsState {
     ignoreFeesForClassification: boolean;
   };
 
-  // Calendar display settings
-  calendar: {
-    showMoodRings: boolean; // Show mood-based border colors on day tiles
-  };
-
   load: () => void;
   save: () => void;
   setReflectionSettings: (updates: Partial<AppSettingsState['reflection']>) => void;
   setClassificationSettings: (updates: Partial<AppSettingsState['classification']>) => void;
-  setCalendarSettings: (updates: Partial<AppSettingsState['calendar']>) => void;
 }
 
 const DEFAULTS: AppSettingsState = {
@@ -37,14 +31,10 @@ const DEFAULTS: AppSettingsState = {
     breakevenBandUSD: 10,
     ignoreFeesForClassification: true,
   },
-  calendar: {
-    showMoodRings: false, // Opt-in feature
-  },
   load: () => {},
   save: () => {},
   setReflectionSettings: () => {},
   setClassificationSettings: () => {},
-  setCalendarSettings: () => {},
 };
 
 export const useAppSettingsStore = create<AppSettingsState>((set, get) => ({
@@ -58,8 +48,8 @@ export const useAppSettingsStore = create<AppSettingsState>((set, get) => ({
   },
   save: () => {
     try {
-      const { reflection, classification, calendar } = get();
-      localStorage.setItem(STORAGE_KEYS.APP_SETTINGS, { reflection, classification, calendar } as any);
+      const { reflection, classification } = get();
+      localStorage.setItem(STORAGE_KEYS.APP_SETTINGS, { reflection, classification } as any);
     } catch {}
   },
   setReflectionSettings: (updates) => {
@@ -68,10 +58,6 @@ export const useAppSettingsStore = create<AppSettingsState>((set, get) => ({
   },
   setClassificationSettings: (updates) => {
     set((state) => ({ classification: { ...state.classification, ...updates } }));
-    get().save();
-  },
-  setCalendarSettings: (updates) => {
-    set((state) => ({ calendar: { ...state.calendar, ...updates } }));
     get().save();
   },
 }));

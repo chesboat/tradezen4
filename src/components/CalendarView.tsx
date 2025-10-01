@@ -47,7 +47,6 @@ interface CalendarViewProps {
 
 export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
   const { selectedAccountId } = useAccountFilterStore();
-  const { calendar: { showMoodRings } } = useAppSettingsStore();
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isWeeklyReviewOpen, setIsWeeklyReviewOpen] = useState(false);
   const [weeklyReviewWeek, setWeeklyReviewWeek] = useState<string | undefined>(undefined);
@@ -421,19 +420,6 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
     // Mobile: match weekly summary tile (square). Desktop: slightly taller for readability
     const heightClasses = 'aspect-square lg:aspect-[7/6] min-h-0';
     
-    // Mood-based border colors (optional setting)
-    const getMoodBorderClass = () => {
-      if (!showMoodRings || !day.mood || day.isOtherMonth) return '';
-      switch (day.mood) {
-        case 'excellent': return 'ring-2 ring-emerald-400/60 border-emerald-400/50';
-        case 'good': return 'ring-2 ring-green-400/50 border-green-400/40';
-        case 'neutral': return 'ring-2 ring-yellow-400/50 border-yellow-400/40';
-        case 'poor': return 'ring-2 ring-orange-400/50 border-orange-400/40';
-        case 'terrible': return 'ring-2 ring-red-400/60 border-red-400/50';
-        default: return '';
-      }
-    };
-    
     return cn(
       'relative overflow-hidden rounded-lg sm:rounded-xl transition-all duration-300 cursor-pointer flex flex-col',
       paddingClasses,
@@ -452,9 +438,6 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
       day.tradesCount > 0 && 'bg-muted/30',
       day.pnl > 0 && 'border-green-500/30 bg-green-50/10',
       day.pnl < 0 && 'border-red-500/30 bg-red-50/10',
-      
-      // Mood rings override other border colors when enabled
-      getMoodBorderClass(),
     );
   };
 

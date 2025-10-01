@@ -18,7 +18,6 @@ import {
 import { useUserProfileStore } from '@/store/useUserProfileStore';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
-import { useAppSettingsStore } from '@/store/useAppSettingsStore';
 import toast from 'react-hot-toast';
 import DisciplineModeToggle from '@/components/discipline/DisciplineModeToggle';
 import { setDisciplineMode } from '@/lib/discipline';
@@ -27,7 +26,6 @@ export const SettingsPage: React.FC = () => {
   const { profile, updateProfile, updateDisplayName, refreshStats } = useUserProfileStore();
   const { currentUser } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const { calendar, setCalendarSettings } = useAppSettingsStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [displayName, setDisplayNameLocal] = useState(profile?.displayName || '');
@@ -238,33 +236,6 @@ export const SettingsPage: React.FC = () => {
                   {label}
                 </button>
               ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-3">Calendar Display</label>
-            <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
-              <div>
-                <h3 className="font-medium">Show Mood Rings</h3>
-                <p className="text-sm text-muted-foreground">
-                  Display colored borders on calendar tiles based on daily mood
-                </p>
-              </div>
-              <button
-                onClick={() => {
-                  setCalendarSettings({ showMoodRings: !calendar.showMoodRings });
-                  toast.success(calendar.showMoodRings ? 'Mood rings hidden' : 'Mood rings enabled');
-                }}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  calendar.showMoodRings ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    calendar.showMoodRings ? 'translate-x-6' : 'translate-x-1'
-                  }`}
-                />
-              </button>
             </div>
           </div>
         </motion.div>
