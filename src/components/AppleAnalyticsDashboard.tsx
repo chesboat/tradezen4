@@ -745,7 +745,7 @@ const AnnotatedEquityCurve: React.FC<{
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 10 }}
-                  className="absolute top-0 left-0 bg-background/95 backdrop-blur-sm border border-border rounded-lg px-3 py-2 shadow-xl pointer-events-none z-10"
+                  className="absolute top-0 left-0 bg-background/95 backdrop-blur-sm border border-border rounded-lg px-3 py-2 shadow-xl pointer-events-none z-[9999]"
                   style={positionStyle}
                 >
                   <div className="text-xs text-muted-foreground mb-1 whitespace-nowrap">
