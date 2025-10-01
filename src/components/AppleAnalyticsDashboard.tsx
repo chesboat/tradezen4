@@ -1316,7 +1316,7 @@ export const AppleAnalyticsDashboard: React.FC = () => {
               "fixed top-20 z-50 transition-all duration-300",
               activityLogExpanded && todoExpanded ? 'right-[500px]' :
               activityLogExpanded ? 'right-[400px]' :
-              todoExpanded ? 'right-[480px]' : 'right-6'
+              todoExpanded ? 'right-[480px]' : 'right-[140px]'
             )}
           >
             <div className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl shadow-xl border border-primary/20">
