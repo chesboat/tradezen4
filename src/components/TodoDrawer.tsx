@@ -73,6 +73,13 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
           const scheduledDate = new Date(t.scheduledFor as any);
           return scheduledDate < tomorrow; // Today or overdue
         }
+        if (filter === 'snoozed') {
+          // Show tasks scheduled for future dates (not today)
+          if (t.status !== 'open') return false;
+          if (!t.scheduledFor) return false;
+          const scheduledDate = new Date(t.scheduledFor as any);
+          return scheduledDate >= tomorrow; // Tomorrow or later
+        }
         return t.status === filter;
       })
       .filter((t) => categoryFilter === 'all' ? true : t.category === categoryFilter)
@@ -297,7 +304,16 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                   label: 'Scheduled', 
                   icon: CalendarDays,
                   iconColor: 'text-red-500',
-                  count: tasks.filter(t => t.status === 'snoozed').length 
+                  count: tasks.filter(t => {
+                    if (t.status !== 'open') return false;
+                    if (!t.scheduledFor) return false;
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const tomorrow = new Date(today);
+                    tomorrow.setDate(tomorrow.getDate() + 1);
+                    const scheduledDate = new Date(t.scheduledFor as any);
+                    return scheduledDate >= tomorrow; // Tomorrow or later
+                  }).length 
                 },
                 { 
                   id: 'done', 
