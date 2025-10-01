@@ -108,7 +108,7 @@ export const SettingsPage: React.FC = () => {
     }
 
     setIsMigrating(true);
-    const loadingToast = toast.loading('Migrating your data to journal-wide...');
+    const loadingToast = toast.loading('Migrating your data... This may take a moment.');
 
     try {
       const result = await migratePersonalItemsToJournalWide();
@@ -117,18 +117,28 @@ export const SettingsPage: React.FC = () => {
       
       if (result.success) {
         const totalUpdated = result.updated.habits + result.updated.notes + result.updated.quests + result.updated.todos;
+        
+        if (totalUpdated === 0) {
+          toast.success('No items needed migration. Your data is already journal-wide!');
+          setMigrationNeeded(false);
+          return;
+        }
+        
         toast.success(
           `Migration complete! Updated ${totalUpdated} items:\n` +
           `• ${result.updated.habits} habits\n` +
           `• ${result.updated.notes} notes\n` +
           `• ${result.updated.quests} quests\n` +
-          `• ${result.updated.todos} todos`,
-          { duration: 6000 }
+          `• ${result.updated.todos} todos\n\n` +
+          `Refreshing page...`,
+          { duration: 3000 }
         );
         setMigrationNeeded(false);
         
-        // Reload the page to refresh all stores
-        setTimeout(() => window.location.reload(), 1500);
+        // Give user time to see the success message, then reload
+        setTimeout(() => {
+          window.location.reload();
+        }, 3000);
       } else {
         toast.error('Migration completed with errors. Check console for details.');
         console.error('Migration errors:', result.errors);

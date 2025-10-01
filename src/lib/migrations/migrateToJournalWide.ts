@@ -25,6 +25,9 @@ interface MigrationResult {
   errors: string[];
 }
 
+// Helper function to add delay between operations
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 export async function migratePersonalItemsToJournalWide(): Promise<MigrationResult> {
   const result: MigrationResult = {
     success: true,
@@ -45,6 +48,7 @@ export async function migratePersonalItemsToJournalWide(): Promise<MigrationResu
           await habitsService.update(habit.id, { accountId: deleteField() } as any);
           result.updated.habits++;
           console.log(`✅ Migrated habit: ${habit.label}`);
+          await delay(100); // Small delay to avoid overwhelming Firestore
         } catch (error) {
           result.errors.push(`Failed to migrate habit ${habit.id}: ${error}`);
           console.error(`❌ Failed to migrate habit: ${habit.label}`, error);
@@ -63,6 +67,7 @@ export async function migratePersonalItemsToJournalWide(): Promise<MigrationResu
           await notesService.update(note.id, { accountId: deleteField() } as any);
           result.updated.notes++;
           console.log(`✅ Migrated note: ${note.title}`);
+          await delay(100); // Small delay to avoid overwhelming Firestore
         } catch (error) {
           result.errors.push(`Failed to migrate note ${note.id}: ${error}`);
           console.error(`❌ Failed to migrate note: ${note.title}`, error);
@@ -80,6 +85,7 @@ export async function migratePersonalItemsToJournalWide(): Promise<MigrationResu
           await questsService.update(quest.id, { accountId: deleteField() } as any);
           result.updated.quests++;
           console.log(`✅ Migrated quest: ${quest.title}`);
+          await delay(100); // Small delay to avoid overwhelming Firestore
         } catch (error) {
           result.errors.push(`Failed to migrate quest ${quest.id}: ${error}`);
           console.error(`❌ Failed to migrate quest: ${quest.title}`, error);
@@ -97,6 +103,7 @@ export async function migratePersonalItemsToJournalWide(): Promise<MigrationResu
           await todosService.update(todo.id, { accountId: deleteField() } as any);
           result.updated.todos++;
           console.log(`✅ Migrated todo: ${todo.text}`);
+          await delay(100); // Small delay to avoid overwhelming Firestore
         } catch (error) {
           result.errors.push(`Failed to migrate todo ${todo.id}: ${error}`);
           console.error(`❌ Failed to migrate todo: ${todo.text}`, error);
