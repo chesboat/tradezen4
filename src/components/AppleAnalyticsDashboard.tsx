@@ -715,7 +715,7 @@ const AnnotatedEquityCurve: React.FC<{
               // More aggressive threshold to prevent overlap with sidebars
               // When sidebars present (even collapsed), flip much earlier
               const isNearLeftEdge = hoveredPoint.x < 15;
-              const isNearRightEdge = hoveredPoint.x > 50; // Even more aggressive: 50%
+              const isNearRightEdge = hoveredPoint.x > 40; // Very aggressive: 40% (flips past midpoint)
               
               let positionStyle: React.CSSProperties = {
                 left: `${hoveredPoint.x}%`,
