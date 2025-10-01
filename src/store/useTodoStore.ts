@@ -118,7 +118,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     const base: Omit<ImprovementTask, 'id' | 'createdAt' | 'updatedAt'> = {
       text: text.trim(),
       status: 'open',
-      priority: extras.priority || 'med',
+      priority: extras.priority, // No default - only if explicitly set
       tags: [],
       category: extras.category,
       accountId: (extras.accountId as string) || undefined, // Optional: journal-wide by default

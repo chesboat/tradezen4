@@ -304,7 +304,7 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
               ].map((list) => {
                 const IconComponent = list.icon;
                 return (
-                  <button
+                <button
                     key={list.id}
                     className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
                       filter === list.id 
@@ -320,7 +320,7 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                         {list.count}
                       </span>
                     )}
-                  </button>
+                </button>
                 );
               })}
             </div>
@@ -344,118 +344,106 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
               >
                 <div className="flex items-start gap-2">
                   {/* Checkbox - matches sidebar icons */}
-                  <motion.button 
+                    <motion.button 
                     className="flex-shrink-0 mt-0.5" 
-                    onClick={() => handleToggleDone(task.id)} 
-                    aria-label="toggle done"
+                      onClick={() => handleToggleDone(task.id)} 
+                      aria-label="toggle done"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                  >
-                    <AnimatePresence mode="wait">
-                      {completingTasks.has(task.id) ? (
-                        <motion.div
-                          key="completing"
-                          initial={{ scale: 0.8, opacity: 0 }}
-                          animate={{ 
-                            scale: [0.8, 1.2, 1], 
-                            opacity: 1,
-                            rotate: [0, 360]
-                          }}
-                          exit={{ scale: 0, opacity: 0 }}
-                          transition={{ 
-                            duration: 0.6, 
-                            ease: "easeOut",
-                            times: [0, 0.6, 1]
-                          }}
-                        >
+                    >
+                      <AnimatePresence mode="wait">
+                        {completingTasks.has(task.id) ? (
+                          <motion.div
+                            key="completing"
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ 
+                              scale: [0.8, 1.2, 1], 
+                              opacity: 1,
+                              rotate: [0, 360]
+                            }}
+                            exit={{ scale: 0, opacity: 0 }}
+                            transition={{ 
+                              duration: 0.6, 
+                              ease: "easeOut",
+                              times: [0, 0.6, 1]
+                            }}
+                          >
                           <CheckCircle2 className="w-[18px] h-[18px] text-primary" />
-                        </motion.div>
-                      ) : (
-                        <motion.div
-                          key="normal"
-                          initial={{ scale: 0.8, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          exit={{ scale: 0.8, opacity: 0 }}
-                          transition={{ duration: 0.2 }}
-                        >
-                          {task.status === 'done' ? 
+                          </motion.div>
+                        ) : (
+                          <motion.div
+                            key="normal"
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.8, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            {task.status === 'done' ? 
                             <CheckCircle2 className="w-[18px] h-[18px] text-primary" /> : 
                             <Circle className="w-[18px] h-[18px] text-muted-foreground/60" />
-                          }
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </motion.button>
+                            }
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </motion.button>
 
                   {/* Task Content */}
                   <div className="flex-1 min-w-0">
                     {/* Task Text - wraps naturally */}
-                    <textarea
+                      <textarea
                       className={`w-full bg-transparent text-sm outline-none resize-none overflow-hidden leading-relaxed ${
                         task.status === 'done' ? 'line-through text-muted-foreground' : 'text-foreground'
                       }`}
-                      defaultValue={task.text}
-                      rows={1}
-                      onInput={(e) => {
-                        const target = e.target as HTMLTextAreaElement;
-                        target.style.height = 'auto';
-                        target.style.height = target.scrollHeight + 'px';
-                      }}
-                      onBlur={(e) => {
-                        const text = e.target.value.trim();
-                        if (text && text !== task.text) updateTask(task.id, { text });
-                        else e.target.value = task.text;
-                      }}
-                    />
+                        defaultValue={task.text}
+                        rows={1}
+                        onInput={(e) => {
+                          const target = e.target as HTMLTextAreaElement;
+                          target.style.height = 'auto';
+                          target.style.height = target.scrollHeight + 'px';
+                        }}
+                        onBlur={(e) => {
+                          const text = e.target.value.trim();
+                          if (text && text !== task.text) updateTask(task.id, { text });
+                          else e.target.value = task.text;
+                        }}
+                      />
                     
                     {/* Metadata Row - Apple Reminders style */}
                     <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                       {/* URL Pill */}
-                      {task.url && (
-                        <button
+                        {task.url && (
+                          <button
                           className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 transition-colors text-xs"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (parseWeeklyReviewUrl(task.url!)) {
-                              openWeeklyReviewFromUrl(task.url!);
-                            } else {
-                              window.open(task.url!, '_blank', 'noopener,noreferrer');
-                            }
-                          }}
-                        >
-                          <ExternalLink className="w-3 h-3" />
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (parseWeeklyReviewUrl(task.url!)) {
+                                openWeeklyReviewFromUrl(task.url!);
+                              } else {
+                                window.open(task.url!, '_blank', 'noopener,noreferrer');
+                              }
+                            }}
+                          >
+                            <ExternalLink className="w-3 h-3" />
                           <span className="max-w-[150px] truncate">{formatUrlForDisplay(task.url)}</span>
-                        </button>
-                      )}
+                          </button>
+                        )}
                       
                       {/* Schedule Pill */}
-                      {task.scheduledFor && (
+                        {task.scheduledFor && (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-accent text-foreground text-xs">
                           <Calendar className="w-3 h-3" />
                           {new Date(task.scheduledFor).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                         </span>
-                      )}
-                      
-                      {/* Priority Pill */}
-                      {task.priority && task.priority !== 'low' && (
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs ${
-                          task.priority === 'high' 
-                            ? 'bg-red-500/10 text-red-600 dark:text-red-400' 
-                            : 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400'
-                        }`}>
-                          {task.priority === 'high' ? '⚠' : '!'}
-                          {task.priority === 'high' ? 'High' : 'Medium'}
-                        </span>
-                      )}
+                        )}
                       
                       {/* Category Tag */}
-                      {task.category && (
+                        {task.category && (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-accent text-muted-foreground text-xs">
                           <Tag className="w-3 h-3" />
-                          {task.category}
-                        </span>
-                      )}
-                    </div>
+                            {task.category}
+                          </span>
+                        )}
+                      </div>
                   </div>
 
                   {/* Info button (hover only) - minimal icon */}
@@ -504,18 +492,6 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                           {task.scheduledFor ? new Date(task.scheduledFor).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Schedule'}
                         </button>
 
-                        {/* Priority button */}
-                        <select
-                          className="px-2 py-1 rounded-md bg-accent hover:bg-accent/70 text-xs outline-none cursor-pointer transition-colors"
-                          value={task.priority || ''}
-                          onChange={(e) => updateTask(task.id, { priority: e.target.value as 'low' | 'med' | 'high' || undefined })}
-                        >
-                          <option value="">Priority</option>
-                          <option value="high">⚠ High</option>
-                          <option value="med">! Medium</option>
-                          <option value="low">Low</option>
-                        </select>
-
                         {/* Category button */}
                         <select
                           className="px-2 py-1 rounded-md bg-accent hover:bg-accent/70 text-xs outline-none cursor-pointer transition-colors"
@@ -558,7 +534,7 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                             updateTask(task.id, { url: url || undefined });
                           }}
                         />
-                      </div>
+                    </div>
 
                       {/* Delete button */}
                       <button
@@ -587,118 +563,106 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
               >
                 <div className="flex items-start gap-2">
                   {/* Checkbox - matches sidebar icons */}
-                  <motion.button 
+                    <motion.button 
                     className="flex-shrink-0 mt-0.5" 
-                    onClick={() => handleToggleDone(task.id)} 
-                    aria-label="toggle done"
+                      onClick={() => handleToggleDone(task.id)} 
+                      aria-label="toggle done"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                  >
-                    <AnimatePresence mode="wait">
-                      {completingTasks.has(task.id) ? (
-                        <motion.div
-                          key="completing"
-                          initial={{ scale: 0.8, opacity: 0 }}
-                          animate={{ 
-                            scale: [0.8, 1.2, 1], 
-                            opacity: 1,
-                            rotate: [0, 360]
-                          }}
-                          exit={{ scale: 0, opacity: 0 }}
-                          transition={{ 
-                            duration: 0.6, 
-                            ease: "easeOut",
-                            times: [0, 0.6, 1]
-                          }}
-                        >
+                    >
+                      <AnimatePresence mode="wait">
+                        {completingTasks.has(task.id) ? (
+                          <motion.div
+                            key="completing"
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ 
+                              scale: [0.8, 1.2, 1], 
+                              opacity: 1,
+                              rotate: [0, 360]
+                            }}
+                            exit={{ scale: 0, opacity: 0 }}
+                            transition={{ 
+                              duration: 0.6, 
+                              ease: "easeOut",
+                              times: [0, 0.6, 1]
+                            }}
+                          >
                           <CheckCircle2 className="w-[18px] h-[18px] text-primary" />
-                        </motion.div>
-                      ) : (
-                        <motion.div
-                          key="normal"
-                          initial={{ scale: 0.8, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          exit={{ scale: 0.8, opacity: 0 }}
-                          transition={{ duration: 0.2 }}
-                        >
-                          {task.status === 'done' ? 
+                          </motion.div>
+                        ) : (
+                          <motion.div
+                            key="normal"
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.8, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            {task.status === 'done' ? 
                             <CheckCircle2 className="w-[18px] h-[18px] text-primary" /> : 
                             <Circle className="w-[18px] h-[18px] text-muted-foreground/60" />
-                          }
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </motion.button>
+                            }
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </motion.button>
 
                   {/* Task Content */}
                   <div className="flex-1 min-w-0">
                     {/* Task Text - wraps naturally */}
-                    <textarea
+                      <textarea
                       className={`w-full bg-transparent text-sm outline-none resize-none overflow-hidden leading-relaxed ${
                         task.status === 'done' ? 'line-through text-muted-foreground' : 'text-foreground'
                       }`}
-                      defaultValue={task.text}
-                      rows={1}
-                      onInput={(e) => {
-                        const target = e.target as HTMLTextAreaElement;
-                        target.style.height = 'auto';
-                        target.style.height = target.scrollHeight + 'px';
-                      }}
-                      onBlur={(e) => {
-                        const text = e.target.value.trim();
-                        if (text && text !== task.text) updateTask(task.id, { text });
-                        else e.target.value = task.text;
-                      }}
-                    />
+                        defaultValue={task.text}
+                        rows={1}
+                        onInput={(e) => {
+                          const target = e.target as HTMLTextAreaElement;
+                          target.style.height = 'auto';
+                          target.style.height = target.scrollHeight + 'px';
+                        }}
+                        onBlur={(e) => {
+                          const text = e.target.value.trim();
+                          if (text && text !== task.text) updateTask(task.id, { text });
+                          else e.target.value = task.text;
+                        }}
+                      />
                     
                     {/* Metadata Row - Apple Reminders style */}
                     <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                       {/* URL Pill */}
-                      {task.url && (
-                        <button
+                        {task.url && (
+                          <button
                           className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 transition-colors text-xs"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (parseWeeklyReviewUrl(task.url!)) {
-                              openWeeklyReviewFromUrl(task.url!);
-                            } else {
-                              window.open(task.url!, '_blank', 'noopener,noreferrer');
-                            }
-                          }}
-                        >
-                          <ExternalLink className="w-3 h-3" />
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (parseWeeklyReviewUrl(task.url!)) {
+                                openWeeklyReviewFromUrl(task.url!);
+                              } else {
+                                window.open(task.url!, '_blank', 'noopener,noreferrer');
+                              }
+                            }}
+                          >
+                            <ExternalLink className="w-3 h-3" />
                           <span className="max-w-[150px] truncate">{formatUrlForDisplay(task.url)}</span>
-                        </button>
-                      )}
+                          </button>
+                        )}
                       
                       {/* Schedule Pill */}
-                      {task.scheduledFor && (
+                        {task.scheduledFor && (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-accent text-foreground text-xs">
                           <Calendar className="w-3 h-3" />
                           {new Date(task.scheduledFor).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                         </span>
-                      )}
-                      
-                      {/* Priority Pill */}
-                      {task.priority && task.priority !== 'low' && (
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs ${
-                          task.priority === 'high' 
-                            ? 'bg-red-500/10 text-red-600 dark:text-red-400' 
-                            : 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400'
-                        }`}>
-                          {task.priority === 'high' ? '⚠' : '!'}
-                          {task.priority === 'high' ? 'High' : 'Medium'}
-                        </span>
-                      )}
+                        )}
                       
                       {/* Category Tag */}
-                      {task.category && (
+                        {task.category && (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-accent text-muted-foreground text-xs">
                           <Tag className="w-3 h-3" />
-                          {task.category}
-                        </span>
-                      )}
-                    </div>
+                            {task.category}
+                          </span>
+                        )}
+                      </div>
                   </div>
 
                   {/* Info button (hover only) - minimal icon */}
@@ -747,18 +711,6 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                           {task.scheduledFor ? new Date(task.scheduledFor).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Schedule'}
                         </button>
 
-                        {/* Priority button */}
-                        <select
-                          className="px-2 py-1 rounded-md bg-accent hover:bg-accent/70 text-xs outline-none cursor-pointer transition-colors"
-                          value={task.priority || ''}
-                          onChange={(e) => updateTask(task.id, { priority: e.target.value as 'low' | 'med' | 'high' || undefined })}
-                        >
-                          <option value="">Priority</option>
-                          <option value="high">⚠ High</option>
-                          <option value="med">! Medium</option>
-                          <option value="low">Low</option>
-                        </select>
-
                         {/* Category button */}
                         <select
                           className="px-2 py-1 rounded-md bg-accent hover:bg-accent/70 text-xs outline-none cursor-pointer transition-colors"
@@ -801,7 +753,7 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                             updateTask(task.id, { url: url || undefined });
                           }}
                         />
-                      </div>
+                    </div>
 
                       {/* Delete button */}
                       <button
@@ -840,7 +792,7 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                     {/* Empty checkbox */}
                     <div className="flex-shrink-0 mt-0.5">
                       <Circle className="w-[18px] h-[18px] text-muted-foreground/60" />
-                    </div>
+          </div>
 
                     {/* New Task Input */}
                     <div className="flex-1 min-w-0">
@@ -896,17 +848,6 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
 
                         <select
                           className="px-2 py-1 rounded-md bg-accent hover:bg-accent/70 text-xs outline-none cursor-pointer transition-colors"
-                          value={newPriority}
-                          onChange={(e) => setNewPriority(e.target.value as any)}
-                        >
-                          <option value="">Priority</option>
-                          <option value="high">⚠ High</option>
-                          <option value="med">! Medium</option>
-                          <option value="low">Low</option>
-                        </select>
-
-                        <select
-                          className="px-2 py-1 rounded-md bg-accent hover:bg-accent/70 text-xs outline-none cursor-pointer transition-colors"
                           value={newCategory}
                           onChange={(e) => setNewCategory(e.target.value)}
                         >
@@ -919,7 +860,7 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                           <option value="wellness">Wellness</option>
                           <option value="mindset">Mindset</option>
                         </select>
-                      </div>
+        </div>
 
                       {/* URL input */}
                       {newUrl || (
