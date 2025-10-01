@@ -382,7 +382,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
-          className="bg-background rounded-xl border max-w-5xl w-full max-h-[85vh] flex flex-col overflow-hidden"
+          className="bg-background rounded-xl border max-w-6xl w-full h-[90vh] flex flex-col overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Modal Header */}
@@ -445,17 +445,17 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
             </div>
           </div>
 
-          {/* Calendar Preview - Scrollable if needed */}
-          <div className="p-6 overflow-y-auto flex-1">
+          {/* Calendar Preview - No scroll, optimized sizing */}
+          <div className="p-6 flex-1 flex items-center justify-center overflow-hidden">
             <div
               ref={canvasRef}
               className={cn(
-                "relative p-12 rounded-2xl w-full flex items-center justify-center",
+                "relative p-8 rounded-2xl w-full max-w-5xl flex items-center justify-center",
                 theme === 'dark' 
                   ? "bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-900" 
                   : "bg-gradient-to-br from-neutral-100 via-neutral-50 to-neutral-100"
               )}
-              style={{ minHeight: '750px', aspectRatio: '6/5' }}
+              style={{ aspectRatio: '16/10' }}
             >
               {/* Calendar Content - Exact replica of CalendarView */}
               <div className="max-w-4xl w-[85%] relative" data-share-calendar-card>
@@ -518,7 +518,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
                         return (
                           <div
                             key={`${weekIndex}-${dayIndex}`}
-                            className={`${getDayClassName(day)} aspect-square w-full`}
+                            className={`${getDayClassName(day)} aspect-[6/5] w-full`}
                           >
                             <div className="flex flex-col h-full">
                               {/* Date - Top Left */}
@@ -563,7 +563,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
 
                       {/* Week Summary */}
                       <div className={cn(
-                        'relative p-3 rounded-xl border border-border/50 transition-all duration-200 cursor-pointer bg-card aspect-square w-full',
+                        'relative p-3 rounded-xl border border-border/50 transition-all duration-200 cursor-pointer bg-card aspect-[6/5] w-full',
                         weeklyData[weekIndex]?.totalPnl > 0 && 'border-green-500/30 bg-green-50/10',
                         weeklyData[weekIndex]?.totalPnl < 0 && 'border-red-500/30 bg-red-50/10',
                       )}>
@@ -651,7 +651,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
                           {week.map((day: any, dayIndex: number) => {
                             const isWeekend = day.date.getDay() === 0 || day.date.getDay() === 6;
                             return (
-                              <div key={`d-${weekIndex}-${dayIndex}`} className={`${getDayClassName(day)} aspect-square w-full`}>
+                              <div key={`d-${weekIndex}-${dayIndex}`} className={`${getDayClassName(day)} aspect-[6/5] w-full`}>
                                 <div className="flex flex-col h-full">
                                   <div className="flex items-center justify-between px-2 pt-2">
                                     <span className={cn('text-sm font-medium', day.isOtherMonth ? 'text-muted-foreground' : 'text-foreground')}>{day.date.getDate()}</span>
@@ -676,7 +676,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
                             );
                           })}
 
-                          <div className={cn('relative p-3 rounded-xl border border-border/50 bg-card aspect-square w-full',
+                          <div className={cn('relative p-3 rounded-xl border border-border/50 bg-card aspect-[6/5] w-full',
                               weeklyData[weekIndex]?.totalPnl > 0 && 'border-green-500/30 bg-green-50/10',
                               weeklyData[weekIndex]?.totalPnl < 0 && 'border-red-500/30 bg-red-50/10')}
                           >
