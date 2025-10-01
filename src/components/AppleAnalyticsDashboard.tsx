@@ -712,33 +712,31 @@ const AnnotatedEquityCurve: React.FC<{
           {/* Hover tooltip (Apple Stocks style with smart positioning) */}
           <AnimatePresence>
             {hoveredPoint && (() => {
-              // More aggressive threshold to prevent overlap with sidebars
-              // When sidebars present (even collapsed), flip much earlier
-              const isNearLeftEdge = hoveredPoint.x < 15;
-              const isNearRightEdge = hoveredPoint.x > 40; // Very aggressive: 40% (flips past midpoint)
+              // Ultra aggressive threshold - flip very early
+              const isNearLeftEdge = hoveredPoint.x < 20;
+              const isNearRightEdge = hoveredPoint.x > 60; // Flip after 60%
               
               let positionStyle: React.CSSProperties = {
                 left: `${hoveredPoint.x}%`,
                 transform: 'translateX(-50%)',
-                marginTop: '-3rem'
+                marginTop: '-3.5rem'
               };
               
               if (isNearRightEdge) {
-                // Flip tooltip to the LEFT (towards center) to stay inside card
-                // translateX(-100%) aligns tooltip's right edge with cursor
+                // Flip tooltip to the LEFT - keep it well within chart bounds
                 positionStyle = {
                   left: `${hoveredPoint.x}%`,
                   transform: 'translateX(-100%)',
-                  marginTop: '-3rem',
-                  marginLeft: '-0.5rem' // Small gap from cursor
+                  marginTop: '-3.5rem',
+                  marginLeft: '-1rem' // Extra space from cursor
                 };
               } else if (isNearLeftEdge) {
-                // Flip tooltip to the RIGHT (towards center) to stay inside card
+                // Flip tooltip to the RIGHT
                 positionStyle = {
                   left: `${hoveredPoint.x}%`,
                   transform: 'translateX(0%)',
-                  marginTop: '-3rem',
-                  marginLeft: '0.5rem' // Small gap from cursor
+                  marginTop: '-3.5rem',
+                  marginLeft: '1rem'
                 };
               }
               
@@ -758,21 +756,15 @@ const AnnotatedEquityCurve: React.FC<{
                       minute: '2-digit'
                     })}
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div>
-                      <div className={cn(
-                        "text-sm font-bold whitespace-nowrap",
-                        hoveredPoint.pnl > 0 ? "text-green-500" : hoveredPoint.pnl < 0 ? "text-red-500" : "text-muted-foreground"
-                      )}>
-                        {formatCurrency(hoveredPoint.pnl)}
-                      </div>
-                      <div className="text-xs text-muted-foreground">{hoveredPoint.symbol}</div>
+                  <div className="space-y-1">
+                    <div className={cn(
+                      "text-sm font-bold whitespace-nowrap",
+                      hoveredPoint.pnl > 0 ? "text-green-500" : hoveredPoint.pnl < 0 ? "text-red-500" : "text-muted-foreground"
+                    )}>
+                      {formatCurrency(hoveredPoint.pnl)} • {hoveredPoint.symbol}
                     </div>
-                    <div className="border-l border-border pl-3">
-                      <div className="text-xs text-muted-foreground whitespace-nowrap">Equity</div>
-                      <div className="text-sm font-semibold text-foreground whitespace-nowrap">
-                        {formatCurrency(hoveredPoint.equity)}
-                      </div>
+                    <div className="text-xs text-muted-foreground whitespace-nowrap">
+                      Equity: <span className="text-foreground font-semibold">{formatCurrency(hoveredPoint.equity)}</span>
                     </div>
                   </div>
                 </motion.div>
