@@ -42,6 +42,7 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
   const newTaskInputRef = useRef<HTMLTextAreaElement>(null);
+  const [newNotes, setNewNotes] = useState('');
 
   useEffect(() => {
     const init = async () => {
@@ -105,16 +106,17 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
     if (newPriority) extras.priority = newPriority;
     if (newCategory) extras.category = newCategory;
     if (newUrl.trim()) extras.url = newUrl.trim();
+    if (newNotes.trim()) extras.notes = newNotes.trim();
     
-    // Set order to put it at the bottom (lowest order value)
-    const lowestOrder = Math.min(...tasks.map(t => t.order || 0), 0);
-    extras.order = lowestOrder - 1;
+    // Set order to current timestamp for natural insertion order at bottom
+    extras.order = -Date.now();
     
     await addTask(text, extras);
     setNewText('');
     setNewPriority('');
     setNewCategory('');
     setNewUrl('');
+    setNewNotes('');
   };
 
   const handleToggleDone = async (taskId: string) => {
@@ -825,7 +827,12 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                             setIsAddingNew(false);
                           }
                         }}
-                        onBlur={() => {
+                        onBlur={(e) => {
+                          // Only save if not clicking on other form elements
+                          const relatedTarget = e.relatedTarget as HTMLElement;
+                          if (relatedTarget && relatedTarget.closest('.new-task-details')) {
+                            return; // Don't close if clicking within details panel
+                          }
                           // Save task if there's text, otherwise cancel
                           if (newText.trim()) {
                             handleAdd();
@@ -836,50 +843,56 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                         }}
                       />
 
-                      {/* Quick details row */}
-                      <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-                        <button
-                          className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-accent hover:bg-accent/70 text-xs transition-colors"
-                          onClick={() => setSchedulingTaskId('new')}
-                        >
-                          <Calendar className="w-3 h-3" />
-                          Schedule
-                        </button>
+                      {/* Details panel - always visible */}
+                      <div className="new-task-details mt-2 space-y-2">
+                        {/* Quick actions row */}
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <button
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-accent hover:bg-accent/70 text-xs transition-colors"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setSchedulingTaskId('new');
+                            }}
+                            type="button"
+                          >
+                            <Calendar className="w-3 h-3" />
+                            Schedule
+                          </button>
 
-                        <select
-                          className="px-2 py-1 rounded-md bg-accent hover:bg-accent/70 text-xs outline-none cursor-pointer transition-colors"
-                          value={newCategory}
-                          onChange={(e) => setNewCategory(e.target.value)}
-                        >
-                          <option value="">Category</option>
-                          <option value="risk">Risk</option>
-                          <option value="analysis">Analysis</option>
-                          <option value="execution">Execution</option>
-                          <option value="journal">Journal</option>
-                          <option value="learning">Learning</option>
-                          <option value="wellness">Wellness</option>
-                          <option value="mindset">Mindset</option>
-                        </select>
-        </div>
+                          <select
+                            className="px-2 py-1 rounded-md bg-accent hover:bg-accent/70 text-xs outline-none cursor-pointer transition-colors"
+                            value={newCategory}
+                            onChange={(e) => setNewCategory(e.target.value)}
+                          >
+                            <option value="">Category</option>
+                            <option value="risk">Risk</option>
+                            <option value="analysis">Analysis</option>
+                            <option value="execution">Execution</option>
+                            <option value="journal">Journal</option>
+                            <option value="learning">Learning</option>
+                            <option value="wellness">Wellness</option>
+                            <option value="mindset">Mindset</option>
+                          </select>
+                        </div>
 
-                      {/* URL input */}
-                      {newUrl || (
-                        <button
-                          className="mt-2 text-xs text-muted-foreground hover:text-foreground"
-                          onClick={() => newTaskInputRef.current?.focus()}
-                        >
-                          Add URL
-                        </button>
-                      )}
-                      {newUrl && (
+                        {/* Notes input */}
+                        <textarea
+                          placeholder="Add Note"
+                          value={newNotes}
+                          onChange={(e) => setNewNotes(e.target.value)}
+                          className="w-full px-2 py-1.5 text-xs bg-transparent border border-border/50 rounded-md outline-none focus:ring-1 focus:ring-primary resize-none"
+                          rows={2}
+                        />
+
+                        {/* URL input */}
                         <input
                           type="url"
                           placeholder="Add URL"
                           value={newUrl}
                           onChange={(e) => setNewUrl(e.target.value)}
-                          className="w-full mt-2 px-2 py-1.5 text-xs bg-transparent border border-border/50 rounded-md outline-none focus:ring-1 focus:ring-primary"
+                          className="w-full px-2 py-1.5 text-xs bg-transparent border border-border/50 rounded-md outline-none focus:ring-1 focus:ring-primary"
                         />
-                      )}
+                      </div>
                     </div>
                   </div>
                 </motion.div>
@@ -890,7 +903,7 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
       )}
 
       {/* Floating Add Button - iOS style */}
-      {isExpanded && (
+      {isExpanded && !isAddingNew && (
         <motion.button
           className="absolute bottom-4 right-4 w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-all flex items-center justify-center"
           onClick={() => {
@@ -901,6 +914,7 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
           whileTap={{ scale: 0.95 }}
           initial={{ opacity: 0, scale: 0 }}
           animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0 }}
           transition={{ delay: 0.2 }}
         >
           <Plus className="w-6 h-6" />
