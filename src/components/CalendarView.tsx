@@ -1044,23 +1044,32 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                                 <CalendarIcon className="w-2 h-2 sm:w-3 sm:h-3 lg:w-3 lg:h-3 2xl:w-4 2xl:h-4 3xl:w-5 3xl:h-5 text-primary" />
                               )}
                               {day.hasReflection && (
-                                <div className="relative">
-                                  <Flame 
-                                    className={cn(
-                                      "w-2 h-2 sm:w-3 sm:h-3 lg:w-3 lg:h-3 2xl:w-4 2xl:h-4 3xl:w-5 3xl:h-5",
-                                      currentStreak >= 7 
-                                        ? "text-orange-500 drop-shadow-[0_0_4px_rgba(249,115,22,0.6)]" 
-                                        : "text-orange-500"
-                                    )}
-                                  />
-                                  {currentStreak >= 7 && (
-                                    <motion.div
-                                      className="absolute inset-0 bg-orange-500/20 rounded-full blur-sm"
-                                      animate={{ opacity: [0.4, 0.7, 0.4] }}
-                                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                                <Tooltip
+                                  content={currentStreak >= 7 
+                                    ? `🔥 ${currentStreak} day streak! Keep it going!` 
+                                    : currentStreak > 1 
+                                    ? `🔥 ${currentStreak} day streak` 
+                                    : "Reflection completed"}
+                                  position="top"
+                                >
+                                  <div className="relative">
+                                    <Flame 
+                                      className={cn(
+                                        "w-2 h-2 sm:w-3 sm:h-3 lg:w-3 lg:h-3 2xl:w-4 2xl:h-4 3xl:w-5 3xl:h-5",
+                                        currentStreak >= 7 
+                                          ? "text-orange-500 drop-shadow-[0_0_4px_rgba(249,115,22,0.6)]" 
+                                          : "text-orange-500"
+                                      )}
                                     />
-                                  )}
-                                </div>
+                                    {currentStreak >= 7 && (
+                                      <motion.div
+                                        className="absolute inset-0 bg-orange-500/20 rounded-full blur-sm"
+                                        animate={{ opacity: [0.4, 0.7, 0.4] }}
+                                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                                      />
+                                    )}
+                                  </div>
+                                </Tooltip>
                               )}
                             </div>
                           </div>
@@ -1117,23 +1126,32 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                           <CalendarIcon className="w-2 h-2 sm:w-3 sm:h-3 lg:w-3 lg:h-3 2xl:w-4 2xl:h-4 3xl:w-5 3xl:h-5 text-primary" />
                         )}
                         {day.hasReflection && (
-                          <div className="relative">
-                            <Flame 
-                              className={cn(
-                                "w-2 h-2 sm:w-3 sm:h-3 lg:w-3 lg:h-3 2xl:w-4 2xl:h-4 3xl:w-5 3xl:h-5",
-                                currentStreak >= 7 
-                                  ? "text-orange-500 drop-shadow-[0_0_4px_rgba(249,115,22,0.6)]" 
-                                  : "text-orange-500"
-                              )}
-                            />
-                            {currentStreak >= 7 && (
-                              <motion.div
-                                className="absolute inset-0 bg-orange-500/20 rounded-full blur-sm"
-                                animate={{ opacity: [0.4, 0.7, 0.4] }}
-                                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                          <Tooltip
+                            content={currentStreak >= 7 
+                              ? `🔥 ${currentStreak} day streak! Keep it going!` 
+                              : currentStreak > 1 
+                              ? `🔥 ${currentStreak} day streak` 
+                              : "Reflection completed"}
+                            position="top"
+                          >
+                            <div className="relative">
+                              <Flame 
+                                className={cn(
+                                  "w-2 h-2 sm:w-3 sm:h-3 lg:w-3 lg:h-3 2xl:w-4 2xl:h-4 3xl:w-5 3xl:h-5",
+                                  currentStreak >= 7 
+                                    ? "text-orange-500 drop-shadow-[0_0_4px_rgba(249,115,22,0.6)]" 
+                                    : "text-orange-500"
+                                )}
                               />
-                            )}
-                          </div>
+                              {currentStreak >= 7 && (
+                                <motion.div
+                                  className="absolute inset-0 bg-orange-500/20 rounded-full blur-sm"
+                                  animate={{ opacity: [0.4, 0.7, 0.4] }}
+                                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                                />
+                              )}
+                            </div>
+                          </Tooltip>
                         )}
                       </div>
                     </div>
