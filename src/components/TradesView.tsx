@@ -108,6 +108,10 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
   const [editingPnlId, setEditingPnlId] = useState<string | null>(null);
   const [editingPnlValue, setEditingPnlValue] = useState<string>('');
   const [editingMoodId, setEditingMoodId] = useState<string | null>(null);
+  const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
+  const [editingEntryValue, setEditingEntryValue] = useState<string>('');
+  const [editingExitId, setEditingExitId] = useState<string | null>(null);
+  const [editingExitValue, setEditingExitValue] = useState<string>('');
   const [quickFilter, setQuickFilter] = useState<'all' | 'today' | 'week' | 'winners' | 'losers'>('all');
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [swipedTradeId, setSwipedTradeId] = useState<string | null>(null);
@@ -195,6 +199,54 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
   const handleMoodSelect = async (tradeId: string, mood: MoodType) => {
     await updateTrade(tradeId, { mood });
     setEditingMoodId(null);
+  };
+
+  // Entry price inline editing handlers
+  const handleEntryDoubleClick = (trade: Trade) => {
+    setEditingEntryId(trade.id);
+    setEditingEntryValue(trade.entryPrice?.toString() || '0');
+  };
+
+  const handleEntrySave = async (tradeId: string) => {
+    const newEntry = parseFloat(editingEntryValue);
+    if (!isNaN(newEntry) && newEntry >= 0) {
+      await updateTrade(tradeId, { entryPrice: newEntry });
+    }
+    setEditingEntryId(null);
+    setEditingEntryValue('');
+  };
+
+  const handleEntryKeyDown = (e: React.KeyboardEvent, tradeId: string) => {
+    if (e.key === 'Enter') {
+      handleEntrySave(tradeId);
+    } else if (e.key === 'Escape') {
+      setEditingEntryId(null);
+      setEditingEntryValue('');
+    }
+  };
+
+  // Exit price inline editing handlers
+  const handleExitDoubleClick = (trade: Trade) => {
+    setEditingExitId(trade.id);
+    setEditingExitValue(trade.exitPrice?.toString() || '0');
+  };
+
+  const handleExitSave = async (tradeId: string) => {
+    const newExit = parseFloat(editingExitValue);
+    if (!isNaN(newExit) && newExit >= 0) {
+      await updateTrade(tradeId, { exitPrice: newExit });
+    }
+    setEditingExitId(null);
+    setEditingExitValue('');
+  };
+
+  const handleExitKeyDown = (e: React.KeyboardEvent, tradeId: string) => {
+    if (e.key === 'Enter') {
+      handleExitSave(tradeId);
+    } else if (e.key === 'Escape') {
+      setEditingExitId(null);
+      setEditingExitValue('');
+    }
   };
 
   // Long-press handlers (Apple-style bulk selection)
@@ -971,14 +1023,51 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                       </span>
                     </td>
                     <td className="p-3">
-                      <div className="text-sm">
-                        <span className="text-muted-foreground">{formatCurrency(trade.entryPrice)}</span>
+                      <div className="text-sm flex items-center gap-1">
+                        {/* Entry Price - Inline Editable */}
+                        <div onClick={() => handleEntryDoubleClick(trade)}>
+                          {editingEntryId === trade.id ? (
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={editingEntryValue}
+                              onChange={(e) => setEditingEntryValue(e.target.value)}
+                              onBlur={() => handleEntrySave(trade.id)}
+                              onKeyDown={(e) => handleEntryKeyDown(e, trade.id)}
+                              className="w-24 px-2 py-1 bg-primary/10 border border-primary rounded text-base md:text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                              autoFocus
+                            />
+                          ) : (
+                            <span className="text-muted-foreground cursor-pointer hover:text-primary transition-colors" title="Tap to edit">
+                              {formatCurrency(trade.entryPrice)}
+                            </span>
+                          )}
+                        </div>
+                        
                         <span className="mx-1 text-muted-foreground/50">→</span>
-                        <span className={cn(
-                          trade.exitPrice ? '' : 'text-muted-foreground/60'
-                        )}>
-                          {trade.exitPrice ? formatCurrency(trade.exitPrice) : 'Open'}
-                        </span>
+                        
+                        {/* Exit Price - Inline Editable */}
+                        <div onClick={() => handleExitDoubleClick(trade)}>
+                          {editingExitId === trade.id ? (
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={editingExitValue}
+                              onChange={(e) => setEditingExitValue(e.target.value)}
+                              onBlur={() => handleExitSave(trade.id)}
+                              onKeyDown={(e) => handleExitKeyDown(e, trade.id)}
+                              className="w-24 px-2 py-1 bg-primary/10 border border-primary rounded text-base md:text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                              autoFocus
+                            />
+                          ) : (
+                            <span className={cn(
+                              'cursor-pointer hover:text-primary transition-colors',
+                              trade.exitPrice ? '' : 'text-muted-foreground/60'
+                            )} title="Tap to edit">
+                              {trade.exitPrice ? formatCurrency(trade.exitPrice) : 'Open'}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </td>
                     <td 
@@ -1204,13 +1293,43 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
               </div>
 
               <div className="grid grid-cols-2 gap-2 text-sm">
-                <div>
+                <div onClick={() => handleEntryDoubleClick(trade)}>
                   <span className="text-muted-foreground">Entry:</span>
-                  <span className="ml-2">{formatCurrency(trade.entryPrice)}</span>
+                  {editingEntryId === trade.id ? (
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={editingEntryValue}
+                      onChange={(e) => setEditingEntryValue(e.target.value)}
+                      onBlur={() => handleEntrySave(trade.id)}
+                      onKeyDown={(e) => handleEntryKeyDown(e, trade.id)}
+                      className="ml-2 w-24 px-2 py-1 bg-primary/10 border border-primary rounded text-base focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      autoFocus
+                    />
+                  ) : (
+                    <span className="ml-2 cursor-pointer active:text-primary transition-colors">
+                      {formatCurrency(trade.entryPrice)}
+                    </span>
+                  )}
                 </div>
-                <div>
+                <div onClick={() => handleExitDoubleClick(trade)}>
                   <span className="text-muted-foreground">Exit:</span>
-                  <span className="ml-2">{trade.exitPrice ? formatCurrency(trade.exitPrice) : '-'}</span>
+                  {editingExitId === trade.id ? (
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={editingExitValue}
+                      onChange={(e) => setEditingExitValue(e.target.value)}
+                      onBlur={() => handleExitSave(trade.id)}
+                      onKeyDown={(e) => handleExitKeyDown(e, trade.id)}
+                      className="ml-2 w-24 px-2 py-1 bg-primary/10 border border-primary rounded text-base focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      autoFocus
+                    />
+                  ) : (
+                    <span className="ml-2 cursor-pointer active:text-primary transition-colors">
+                      {trade.exitPrice ? formatCurrency(trade.exitPrice) : 'Open'}
+                    </span>
+                  )}
                 </div>
                 <div>
                   <span className="text-muted-foreground">Risk:</span>
