@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { useDailyReflectionStore } from '@/store/useDailyReflectionStore';
 import { useActivityLogStore } from '@/store/useActivityLogStore';
 import { useTodoStore } from '@/store/useTodoStore';
+import { useNavigationStore } from '@/store/useNavigationStore';
 
 // ===============================================
 // TYPES & UTILITIES
@@ -136,25 +137,20 @@ const HeroAnalyticsPnL: React.FC<{
               {formatCurrency(currentPnL)}
             </h1>
             
-            {/* Comparison vs Previous Period */}
+            {/* Comparison vs Previous Period - Apple subtle style */}
             {hasComparison && (
               <motion.div 
                 initial={{ opacity: 0, y: 5 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex items-center gap-2 mt-2"
+                className="flex items-center gap-1.5 mt-2"
               >
-                {percentChange >= 0 ? (
-                  <ArrowUp className="w-4 h-4 text-green-500" />
-                ) : (
-                  <ArrowDown className="w-4 h-4 text-red-500" />
-                )}
                 <span className={cn(
-                  "text-lg font-medium",
-                  percentChange >= 0 ? "text-green-500" : "text-red-500"
+                  "text-sm font-medium",
+                  percentChange >= 0 ? "text-green-500/80" : "text-red-500/80"
                 )}>
-                  {formatCurrency(Math.abs(currentPnL - previousPnL))} ({Math.abs(percentChange).toFixed(1)}%)
+                  {percentChange >= 0 ? '↑' : '↓'} {formatCurrency(Math.abs(currentPnL - previousPnL))}
                 </span>
-                <span className="text-sm text-muted-foreground">vs previous period</span>
+                <span className="text-sm text-muted-foreground/70">vs last period</span>
               </motion.div>
             )}
           </div>
@@ -259,6 +255,7 @@ const EdgeBar: React.FC<EdgeMetric & { onClick?: () => void }> = ({
 const YourEdgeAtAGlance: React.FC<{ trades: any[] }> = ({ trades }) => {
   const edge = React.useMemo(() => computeEdgeScore(trades), [trades]);
 
+  // Apple approach: 3 core metrics only, simple and clear
   const metrics: EdgeMetric[] = [
     {
       label: 'Win Rate',
@@ -272,38 +269,25 @@ const YourEdgeAtAGlance: React.FC<{ trades: any[] }> = ({ trades }) => {
       value: edge.breakdown.profitFactor,
       max: 3,
       status: edge.breakdown.profitFactor >= 2 ? 'excellent' : edge.breakdown.profitFactor >= 1.5 ? 'good' : edge.breakdown.profitFactor >= 1 ? 'warning' : 'danger',
-      description: 'Ratio of gross profit to gross loss'
+      description: 'Wins to losses ratio'
     },
     {
-      label: 'Risk Management',
+      label: 'Risk Control',
       value: 100 - edge.breakdown.maxDrawdown,
       max: 100,
       status: edge.breakdown.maxDrawdown <= 15 ? 'excellent' : edge.breakdown.maxDrawdown <= 25 ? 'good' : edge.breakdown.maxDrawdown <= 35 ? 'warning' : 'danger',
-      description: 'Lower drawdown = better risk control'
-    },
-    {
-      label: 'Consistency',
-      value: edge.breakdown.consistency,
-      max: 100,
-      status: edge.breakdown.consistency >= 70 ? 'excellent' : edge.breakdown.consistency >= 55 ? 'good' : edge.breakdown.consistency >= 40 ? 'warning' : 'danger',
-      description: 'Stability of returns over time'
+      description: `Max drawdown ${edge.breakdown.maxDrawdown.toFixed(0)}%`
     }
   ];
 
   return (
     <div className="bg-card border border-border rounded-2xl p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <Target className="w-5 h-5 text-primary" />
-          <h2 className="text-xl font-semibold text-foreground">Your Edge at a Glance</h2>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Overall Score:</span>
-          <span className="text-2xl font-bold text-primary">{edge.score}</span>
-        </div>
+      <div className="flex items-center gap-3 mb-6">
+        <Target className="w-4 h-4 text-muted-foreground" />
+        <h2 className="text-base font-medium text-foreground">Performance Metrics</h2>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+      <div className="space-y-3">
         {metrics.map((metric) => (
           <EdgeBar key={metric.label} {...metric} />
         ))}
@@ -1003,66 +987,62 @@ const SmartInsightsCard: React.FC<{ trades: any[] }> = ({ trades }) => {
       });
     }
 
-    return results.slice(0, 2); // Show max 2 insights
+    return results.slice(0, 1); // Apple approach: Show ONE most important insight
   }, [trades]);
 
   if (insights.length === 0) return null;
 
+  const insight = insights[0]; // Get the single most important insight
+
   const getInsightIcon = (type: SmartInsight['type']) => {
     switch (type) {
-      case 'pattern': return <Lightbulb className="w-5 h-5 text-blue-500" />;
-      case 'warning': return <AlertTriangle className="w-5 h-5 text-yellow-500" />;
-      case 'achievement': return <Trophy className="w-5 h-5 text-green-500" />;
-      case 'tip': return <Target className="w-5 h-5 text-purple-500" />;
+      case 'pattern': return '💡';
+      case 'warning': return '⚠️';
+      case 'achievement': return '✨';
+      case 'tip': return '🎯';
     }
   };
 
   const getInsightBg = (type: SmartInsight['type']) => {
     switch (type) {
-      case 'pattern': return 'bg-blue-500/10 border-blue-500/20';
-      case 'warning': return 'bg-yellow-500/10 border-yellow-500/20';
-      case 'achievement': return 'bg-green-500/10 border-green-500/20';
-      case 'tip': return 'bg-purple-500/10 border-purple-500/20';
+      case 'pattern': return 'from-blue-500/10 to-blue-500/5 border-blue-500/20';
+      case 'warning': return 'from-yellow-500/10 to-yellow-500/5 border-yellow-500/20';
+      case 'achievement': return 'from-green-500/10 to-green-500/5 border-green-500/20';
+      case 'tip': return 'from-purple-500/10 to-purple-500/5 border-purple-500/20';
     }
   };
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-6">
-      <div className="flex items-center gap-3 mb-4">
-        <Lightbulb className="w-5 h-5 text-primary" />
-        <h2 className="text-xl font-semibold text-foreground">Smart Insights</h2>
-      </div>
-
-      <div className="space-y-3">
-        {insights.map((insight, idx) => (
-          <motion.div
-            key={insight.id}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: idx * 0.1 }}
-            className={cn(
-              "p-4 rounded-xl border transition-all duration-200",
-              getInsightBg(insight.type)
-            )}
-          >
-            <div className="flex items-start gap-3">
-              {getInsightIcon(insight.type)}
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-foreground mb-1">{insight.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed mb-2">
-                  {insight.description}
-                </p>
-                {insight.metric && (
-                  <div className="text-xs font-medium text-foreground/70">
-                    {insight.metric}
-                  </div>
-                )}
-              </div>
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className={cn(
+        "bg-gradient-to-br border rounded-2xl p-6",
+        getInsightBg(insight.type)
+      )}
+    >
+      <div className="flex items-start gap-4">
+        <div className="text-4xl">{getInsightIcon(insight.type)}</div>
+        <div className="flex-1">
+          <div className="text-xs text-muted-foreground/60 uppercase tracking-wide mb-1">
+            {insight.type === 'pattern' ? 'Pattern Detected' :
+             insight.type === 'warning' ? 'Attention Needed' :
+             insight.type === 'achievement' ? 'Nice Work' : 'Tip'}
+          </div>
+          <h3 className="text-lg font-semibold text-foreground mb-2 leading-tight">
+            {insight.title.replace(/^[^\s]+\s/, '')} {/* Remove emoji from title */}
+          </h3>
+          <p className="text-sm text-muted-foreground leading-relaxed mb-3">
+            {insight.description}
+          </p>
+          {insight.metric && (
+            <div className="text-xs font-medium text-foreground/70 bg-background/50 rounded-lg px-3 py-2 inline-block">
+              {insight.metric}
             </div>
-          </motion.div>
-        ))}
+          )}
+        </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
@@ -1077,7 +1057,7 @@ const TradeHighlightsCard: React.FC<{ trades: any[] }> = ({ trades }) => {
   const recentHighlights = React.useMemo(() => {
     return trades
       .sort((a, b) => new Date(b.entryTime).getTime() - new Date(a.entryTime).getTime())
-      .slice(0, 5)
+      .slice(0, 3) // Apple approach: Show top 3 only
       .map(trade => {
         // Apple's approach: Prioritize trade-specific notes over general reflections
         // 1. Trade notes (most specific)
@@ -1216,6 +1196,101 @@ const TradeHighlightsCard: React.FC<{ trades: any[] }> = ({ trades }) => {
         )}
       </div>
     </div>
+  );
+};
+
+// ===============================================
+// WHAT'S NEXT (Actionable suggestions)
+// ===============================================
+
+const WhatsNextCard: React.FC<{ trades: any[] }> = ({ trades }) => {
+  const { setCurrentView } = useNavigationStore();
+  
+  const suggestion = React.useMemo(() => {
+    if (trades.length === 0) {
+      return {
+        title: "Log your first trade",
+        description: "Start tracking your performance to unlock insights and identify your edge.",
+        action: "Log Trade",
+        actionFn: () => setCurrentView('trades')
+      };
+    }
+
+    if (trades.length < 10) {
+      return {
+        title: "Build your sample size",
+        description: `You have ${trades.length} trades logged. Get to 20+ to see meaningful patterns emerge.`,
+        action: "Log More Trades",
+        actionFn: () => setCurrentView('trades')
+      };
+    }
+
+    // Check for recent trading (last 7 days)
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    const recentTrades = trades.filter(t => new Date(t.entryTime) >= weekAgo);
+
+    if (recentTrades.length === 0) {
+      return {
+        title: "Time to reflect",
+        description: "No trades in the past week. Review your performance and plan your next session.",
+        action: "View Journal",
+        actionFn: () => setCurrentView('journal')
+      };
+    }
+
+    // Check for notes/reflections
+    const tradesWithNotes = trades.filter(t => t.notes && t.notes.trim()).length;
+    const notesRatio = tradesWithNotes / trades.length;
+
+    if (notesRatio < 0.3) {
+      return {
+        title: "Add more context",
+        description: `Only ${(notesRatio * 100).toFixed(0)}% of your trades have notes. Capturing your thought process helps you improve faster.`,
+        action: "Review Trades",
+        actionFn: () => setCurrentView('trades')
+      };
+    }
+
+    // Default: Review and refine
+    return {
+      title: "Review your patterns",
+      description: "You have enough data. Look for what's working and double down on your edge.",
+      action: "View Analytics",
+      actionFn: () => {} // Already on analytics
+    };
+  }, [trades, setCurrentView]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20 rounded-2xl p-6"
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex-1">
+          <div className="text-xs text-muted-foreground/60 uppercase tracking-wide mb-1">
+            What's Next
+          </div>
+          <h3 className="text-lg font-semibold text-foreground mb-2">
+            {suggestion.title}
+          </h3>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            {suggestion.description}
+          </p>
+        </div>
+        {suggestion.actionFn && suggestion.action !== "View Analytics" && (
+          <motion.button
+            onClick={suggestion.actionFn}
+            className="ml-6 px-6 py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-colors whitespace-nowrap"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            {suggestion.action} →
+          </motion.button>
+        )}
+      </div>
+    </motion.div>
   );
 };
 
@@ -1359,6 +1434,9 @@ export const AppleAnalyticsDashboard: React.FC = () => {
 
         {/* Trade Highlights */}
         <TradeHighlightsCard trades={filteredTrades} />
+
+        {/* What's Next - Apple always tells you what to do */}
+        <WhatsNextCard trades={filteredTrades} />
       </div>
     </div>
   );
