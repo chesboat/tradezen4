@@ -492,6 +492,10 @@ const AtAGlanceWeekly: React.FC<{ trades: any[] }> = ({ trades }) => {
 // ===============================================
 
 const AnnotatedEquityCurve: React.FC<{ trades: any[] }> = ({ trades }) => {
+  const [hoveredPoint, setHoveredPoint] = React.useState<{ index: number; x: number; y: number; equity: number; date: Date; pnl: number; symbol: string } | null>(null);
+  const svgRef = React.useRef<SVGSVGElement>(null);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
   const equityData = React.useMemo(() => {
     if (trades.length === 0) return { data: [], annotations: { biggestWin: null, longestStreak: 0 } };
 
@@ -532,6 +536,36 @@ const AnnotatedEquityCurve: React.FC<{ trades: any[] }> = ({ trades }) => {
   const minEquity = Math.min(...equityData.data.map(d => d.equity), 0);
   const range = maxEquity - minEquity || 1;
 
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!containerRef.current || equityData.data.length === 0) return;
+
+    const rect = containerRef.current.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const percentX = (mouseX / rect.width) * 100;
+    
+    // Find nearest data point
+    const index = Math.round((percentX / 100) * (equityData.data.length - 1));
+    const clampedIndex = Math.max(0, Math.min(index, equityData.data.length - 1));
+    const point = equityData.data[clampedIndex];
+    
+    const x = (clampedIndex / (equityData.data.length - 1)) * 100;
+    const y = 40 - ((point.equity - minEquity) / range) * 38;
+    
+    setHoveredPoint({
+      index: clampedIndex,
+      x,
+      y,
+      equity: point.equity,
+      date: point.date,
+      pnl: point.pnl,
+      symbol: point.symbol
+    });
+  };
+
+  const handleMouseLeave = () => {
+    setHoveredPoint(null);
+  };
+
   return (
     <div className="bg-card border border-border rounded-2xl p-6">
       <div className="flex items-center justify-between mb-6">
@@ -550,17 +584,24 @@ const AnnotatedEquityCurve: React.FC<{ trades: any[] }> = ({ trades }) => {
         )}
       </div>
 
-      <div className="relative h-64 rounded-lg overflow-hidden">
+      <div 
+        ref={containerRef}
+        className="relative h-64 rounded-lg overflow-visible cursor-crosshair"
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+      >
         {equityData.data.length === 0 ? (
           <div className="absolute inset-0 flex items-center justify-center text-muted-foreground bg-muted/10 rounded-lg">
             No trades to display
           </div>
         ) : (
-          <svg 
-            viewBox="0 0 100 40" 
-            className="w-full h-full" 
-            preserveAspectRatio="none"
-          >
+          <>
+            <svg 
+              ref={svgRef}
+              viewBox="0 0 100 40" 
+              className="w-full h-full" 
+              preserveAspectRatio="none"
+            >
             {/* Subtle horizontal grid lines (Apple Health style) */}
             {[10, 20, 30].map(y => (
               <line
@@ -634,44 +675,103 @@ const AnnotatedEquityCurve: React.FC<{ trades: any[] }> = ({ trades }) => {
               className="drop-shadow-sm"
             />
             
-            {/* Biggest win annotation (Apple-style dot) */}
-            {equityData.annotations.biggestWin && (() => {
-              const winX = (equityData.annotations.biggestWin.index / (equityData.data.length - 1)) * 100;
-              const winY = 40 - ((equityData.annotations.biggestWin.equity - minEquity) / range) * 38;
-              
-              return (
-                <g>
-                  {/* Outer glow ring */}
-                  <circle
-                    cx={winX}
-                    cy={winY}
-                    r="4"
-                    fill="#22c55e"
-                    opacity="0.2"
-                    vectorEffect="non-scaling-stroke"
-                  />
-                  {/* Main dot */}
-                  <circle
-                    cx={winX}
-                    cy={winY}
-                    r="2.5"
-                    fill="#22c55e"
-                    vectorEffect="non-scaling-stroke"
-                    className="drop-shadow-sm"
-                  />
-                  {/* Inner white dot (Apple signature) */}
-                  <circle
-                    cx={winX}
-                    cy={winY}
-                    r="1"
-                    fill="white"
-                    opacity="0.8"
-                    vectorEffect="non-scaling-stroke"
-                  />
-                </g>
-              );
-            })()}
+            {/* Hover crosshair (Apple Stocks style) */}
+            {hoveredPoint && (
+              <line
+                x1={hoveredPoint.x}
+                y1="0"
+                x2={hoveredPoint.x}
+                y2="40"
+                stroke="hsl(var(--primary))"
+                strokeWidth="0.3"
+                opacity="0.5"
+                className="pointer-events-none"
+              />
+            )}
           </svg>
+
+          {/* Biggest win dot (HTML for perfect circle) */}
+          {equityData.annotations.biggestWin && (() => {
+            const winX = (equityData.annotations.biggestWin.index / (equityData.data.length - 1)) * 100;
+            const winY = 40 - ((equityData.annotations.biggestWin.equity - minEquity) / range) * 38;
+            const winYPercent = (winY / 40) * 100;
+            
+            return (
+              <div 
+                className="absolute pointer-events-none"
+                style={{
+                  left: `${winX}%`,
+                  top: `${winYPercent}%`,
+                  transform: 'translate(-50%, -50%)'
+                }}
+              >
+                {/* Outer glow ring */}
+                <div className="absolute inset-0 w-4 h-4 rounded-full bg-green-500 opacity-20 -translate-x-1/2 -translate-y-1/2 blur-sm" />
+                {/* Main dot */}
+                <div className="absolute w-2.5 h-2.5 rounded-full bg-green-500 -translate-x-1/2 -translate-y-1/2 shadow-sm" />
+                {/* Inner white dot (Apple signature) */}
+                <div className="absolute w-1 h-1 rounded-full bg-white opacity-80 -translate-x-1/2 -translate-y-1/2" />
+              </div>
+            );
+          })()}
+
+          {/* Hover dot (HTML for perfect circle) */}
+          {hoveredPoint && (
+            <div 
+              className="absolute pointer-events-none"
+              style={{
+                left: `${hoveredPoint.x}%`,
+                top: `${(hoveredPoint.y / 40) * 100}%`,
+                transform: 'translate(-50%, -50%)'
+              }}
+            >
+              <div className="w-3 h-3 rounded-full bg-primary border-2 border-background shadow-lg" />
+            </div>
+          )}
+
+          {/* Hover tooltip (Apple Stocks style) */}
+          <AnimatePresence>
+            {hoveredPoint && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                className="absolute top-0 left-0 bg-background/95 backdrop-blur-sm border border-border rounded-lg px-3 py-2 shadow-xl pointer-events-none"
+                style={{
+                  left: `${hoveredPoint.x}%`,
+                  transform: 'translateX(-50%)',
+                  marginTop: '-3rem'
+                }}
+              >
+                <div className="text-xs text-muted-foreground mb-1">
+                  {hoveredPoint.date.toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit'
+                  })}
+                </div>
+                <div className="flex items-center gap-3">
+                  <div>
+                    <div className={cn(
+                      "text-sm font-bold",
+                      hoveredPoint.pnl > 0 ? "text-green-500" : hoveredPoint.pnl < 0 ? "text-red-500" : "text-muted-foreground"
+                    )}>
+                      {formatCurrency(hoveredPoint.pnl)}
+                    </div>
+                    <div className="text-xs text-muted-foreground">{hoveredPoint.symbol}</div>
+                  </div>
+                  <div className="border-l border-border pl-3">
+                    <div className="text-xs text-muted-foreground">Equity</div>
+                    <div className="text-sm font-semibold text-foreground">
+                      {formatCurrency(hoveredPoint.equity)}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </>
         )}
       </div>
 
