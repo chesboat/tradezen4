@@ -55,61 +55,81 @@ interface NavItem {
   onClick?: () => void;
 }
 
-const navItems: NavItem[] = [
-  {
-    id: 'dashboard',
-    label: 'Dashboard',
-    icon: Home,
-    href: '/',
-  },
+// Apple-style grouped navigation
+interface NavGroup {
+  title: string;
+  items: NavItem[];
+}
 
+const navGroups: NavGroup[] = [
   {
-    id: 'habits',
-    label: 'Habits',
-    icon: Target,
-    href: '/habits',
+    title: 'TRADING',
+    items: [
+      {
+        id: 'dashboard',
+        label: 'Dashboard',
+        icon: Home,
+        href: '/',
+      },
+      {
+        id: 'calendar',
+        label: 'Calendar',
+        icon: Calendar,
+        href: '/calendar',
+      },
+      {
+        id: 'trades',
+        label: 'Trades',
+        icon: TrendingUp,
+        href: '/trades',
+      },
+    ],
   },
   {
-    id: 'calendar',
-    label: 'Calendar',
-    icon: Calendar,
-    href: '/calendar',
+    title: 'ANALYSIS',
+    items: [
+      {
+        id: 'analytics',
+        label: 'Analytics',
+        icon: BarChart3,
+        href: '/analytics',
+      },
+      {
+        id: 'journal',
+        label: 'Journal',
+        icon: BookOpen,
+        href: '/journal',
+      },
+      {
+        id: 'notes',
+        label: 'Notes',
+        icon: FileText,
+        href: '/notes',
+      },
+    ],
   },
   {
-    id: 'trades',
-    label: 'Trades',
-    icon: TrendingUp,
-    href: '/trades',
-  },
-  {
-    id: 'journal',
-    label: 'Journal',
-    icon: BookOpen,
-    href: '/journal',
-  },
-  {
-    id: 'notes',
-    label: 'Notes',
-    icon: FileText,
-    href: '/notes',
-  },
-  {
-    id: 'analytics',
-    label: 'Analytics',
-    icon: BarChart3,
-    href: '/analytics',
-  },
-  {
-    id: 'quests',
-    label: 'Quests',
-    icon: Trophy,
-    href: '/quests',
-  },
-  {
-    id: 'wellness',
-    label: 'Wellness',
-    icon: Heart,
-    href: '/wellness',
+    title: 'GROWTH',
+    items: [
+      {
+        id: 'habits',
+        label: 'Habits',
+        icon: Target,
+        href: '/habits',
+      },
+      {
+        id: 'quests',
+        label: 'Quests',
+        icon: Trophy,
+        href: '/quests',
+      },
+      {
+        id: 'wellness',
+        label: 'Wellness',
+        icon: Heart,
+        href: '/wellness',
+      },
+    ],
   },
 ];
 
@@ -217,20 +237,34 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
     const navItem = (
       <button
         className={cn(
-          'w-full flex items-center rounded-xl transition-colors duration-200 relative',
+          'w-full flex items-center rounded-lg transition-all duration-200 relative group',
           isActive
-            ? 'bg-primary text-primary-foreground hover:bg-primary'
-            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-          isExpanded ? 'justify-start px-4 py-2.5 gap-3' : 'justify-center px-0 py-2.5'
+            ? 'bg-accent/50 text-foreground'
+            : 'text-muted-foreground hover:bg-accent/30 hover:text-foreground',
+          isExpanded ? 'justify-start px-3 py-2 gap-3' : 'justify-center px-0 py-2'
         )}
         onClick={() => handleNavItemClick(item)}
       >
-        <Icon className={cn('w-5 h-5 flex-shrink-0', isActive ? 'text-primary-foreground' : 'text-foreground')} />
+        {/* Apple-style left accent bar */}
+        {isActive && (
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-primary rounded-r-full" />
+        )}
+        
+        <Icon className={cn(
+          'w-5 h-5 flex-shrink-0 transition-colors',
+          isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
+        )} />
+        
         {isExpanded && (
           <div className="flex items-center justify-between flex-1 min-w-0">
-            <span className="font-medium text-sm truncate">{item.label}</span>
+            <span className={cn(
+              "font-medium text-sm truncate transition-colors",
+              isActive ? 'text-foreground' : 'text-muted-foreground group-hover:text-foreground'
+            )}>
+              {item.label}
+            </span>
             {item.badge && (
-              <span className="bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full ml-2 flex-shrink-0">
+              <span className="bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-full ml-2 flex-shrink-0">
                 {item.badge}
               </span>
             )}
@@ -261,66 +295,40 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
       animate={isExpanded ? 'expanded' : 'collapsed'}
       initial={false}
     >
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border">
+      {/* Header - Minimal Apple-style */}
+      <div className="flex items-center p-4 border-b border-border/50">
         <AnimatePresence mode="wait">
-          {isExpanded && (
+          {isExpanded ? (
             <motion.div
-              className="flex items-center gap-3"
+              className="flex items-center gap-2.5 flex-1"
               variants={contentVariants}
               initial="collapsed"
               animate="expanded"
               exit="collapsed"
             >
-              <div className="w-8 h-8 bg-gradient-to-br from-primary-400 to-primary-600 rounded-lg flex items-center justify-center">
-                <Zap className="w-5 h-5 text-white" />
+              <div className="w-7 h-7 bg-gradient-to-br from-primary-400 to-primary-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Zap className="w-4 h-4 text-white" />
               </div>
-              <div>
-                <h1 className="text-lg font-bold text-card-foreground">Refine</h1>
-                <p className="text-xs text-muted-foreground">Refine your edge, daily</p>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-base font-semibold text-foreground">Refine</h1>
               </div>
+              <ThemeToggle size="sm" />
             </motion.div>
+          ) : (
+            <div className="w-full flex justify-center">
+              <div className="w-7 h-7 bg-gradient-to-br from-primary-400 to-primary-600 rounded-lg flex items-center justify-center">
+                <Zap className="w-4 h-4 text-white" />
+              </div>
+            </div>
           )}
         </AnimatePresence>
-        
-        <div className="flex items-center gap-2">
-          {isExpanded && <ThemeToggle size="sm" />}
-          
-          <motion.button
-            className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors"
-            onClick={toggleSidebar}
-            whileHover={hoverScale}
-            whileTap={tapScale}
-          >
-            {isExpanded ? (
-              <ChevronLeft className="w-5 h-5" />
-            ) : (
-              <ChevronRight className="w-5 h-5" />
-            )}
-          </motion.button>
-        </div>
       </div>
-
-      {/* Search Bar */}
-      <AnimatePresence mode="wait">
-        {isExpanded && (
-          <motion.div
-            className="p-4 border-b border-border"
-            variants={contentVariants}
-            initial="collapsed"
-            animate="expanded"
-            exit="collapsed"
-          >
-            <SearchBar />
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Account Filter */}
       <AnimatePresence mode="wait">
         {isExpanded && (
           <motion.div
-            className="p-4 border-b border-border"
+            className="px-4 pt-4 pb-3"
             variants={contentVariants}
             initial="collapsed"
             animate="expanded"
@@ -331,7 +339,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
         )}
       </AnimatePresence>
 
-      {/* Navigation */}
+      {/* Navigation - Apple-style grouped */}
       <nav 
         ref={navScroll.attach as any}
         className={cn(
@@ -345,10 +353,36 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
           scrollbarColor: 'hsl(var(--border)) transparent'
         }}
       >
-        <div className={cn('p-4', isExpanded ? 'space-y-2' : 'space-y-3')}>
-          {navItems.map((item) => (
-            <div key={item.id} className={cn(!isExpanded && 'flex justify-center')}> 
-              <NavItem item={item} isExpanded={isExpanded} />
+        <div className={cn('px-4 py-2', isExpanded ? 'space-y-6' : 'space-y-4')}>
+          {navGroups.map((group, groupIndex) => (
+            <div key={group.title}>
+              {/* Section Header - Only show when expanded */}
+              {isExpanded && (
+                <motion.div
+                  className="px-3 mb-2"
+                  variants={contentVariants}
+                  initial="collapsed"
+                  animate="expanded"
+                >
+                  <h3 className="text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider">
+                    {group.title}
+                  </h3>
+                </motion.div>
+              )}
+              
+              {/* Group Items */}
+              <div className={cn(isExpanded ? 'space-y-1' : 'space-y-3')}>
+                {group.items.map((item) => (
+                  <div key={item.id} className={cn(!isExpanded && 'flex justify-center')}> 
+                    <NavItem item={item} isExpanded={isExpanded} />
+                  </div>
+                ))}
+              </div>
+
+              {/* Divider between groups - subtle */}
+              {groupIndex < navGroups.length - 1 && isExpanded && (
+                <div className="mt-4 mx-3 border-t border-border/30" />
+              )}
             </div>
           ))}
         </div>
@@ -408,19 +442,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
         )}
       </AnimatePresence>
 
-      {/* User Profile */}
-      <AnimatePresence mode="wait">
-        {isExpanded && (
-          <motion.div
-            className="p-4 border-t border-border"
-            variants={contentVariants}
-            initial="collapsed"
-            animate="expanded"
-            exit="collapsed"
-          >
-            <div className="flex items-center gap-3 mb-3">
-              <div className="relative">
-                <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center overflow-hidden">
+      {/* User Profile - Minimal Apple-style */}
+      <div className="border-t border-border/50">
+        <AnimatePresence mode="wait">
+          {isExpanded ? (
+            <motion.div
+              className="p-3"
+              variants={contentVariants}
+              initial="collapsed"
+              animate="expanded"
+              exit="collapsed"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
                   {profile?.avatar ? (
                     <img 
                       src={profile.avatar} 
@@ -431,65 +465,79 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
                     <User className="w-4 h-4 text-white" />
                   )}
                 </div>
-                {/* XP Progress Ring around avatar */}
-                {FEATURE_XP_PRESTIGE && profile?.xp && (
-                  <div className="absolute -inset-0.5">
-                    <ProgressRing 
-                      progressPct={getLevelProgress(profile.xp.seasonXp)}
-                      size="sm"
-                      thickness={2}
-                    />
-                  </div>
-                )}
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-card-foreground">
-                  {profile?.displayName || getUserDisplayName()}
-                </p>
-                {FEATURE_XP_PRESTIGE && profile?.xp ? (
-                  <div className="space-y-1">
-                    <LevelBadge 
-                      level={profile.xp.level} 
-                      prestige={profile.xp.prestige}
-                      size="sm"
-                      showPrestigeText={false}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      {profile.xp.seasonXp.toLocaleString()} Season XP
-                    </p>
-                  </div>
-                ) : (
-                  <p className="text-xs text-muted-foreground">
-                    {profile ? `Level ${profile.xp?.level || 1} • ${profile.xp?.total?.toLocaleString() || '0'} XP` : getFormattedLevel()}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">
+                    {profile?.displayName || getUserDisplayName()}
                   </p>
-                )}
+                </div>
+                <div className="flex items-center gap-1">
+                  <Tooltip content="Settings" position="top">
+                    <motion.button
+                      className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+                      onClick={() => setCurrentView('settings')}
+                      whileHover={hoverScale}
+                      whileTap={tapScale}
+                    >
+                      <Settings className="w-4 h-4" />
+                    </motion.button>
+                  </Tooltip>
+                  <Tooltip content="Logout" position="top">
+                    <motion.button
+                      className="p-1.5 rounded-lg hover:bg-red-500/10 text-red-600 dark:text-red-400 transition-colors"
+                      onClick={handleSignOut}
+                      whileHover={hoverScale}
+                      whileTap={tapScale}
+                    >
+                      <LogOut className="w-4 h-4" />
+                    </motion.button>
+                  </Tooltip>
+                </div>
               </div>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <motion.button
-                className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors"
-                onClick={() => setCurrentView('settings')}
-                whileHover={hoverScale}
-                whileTap={tapScale}
-              >
-                <Settings className="w-4 h-4" />
-                <span className="text-sm">Settings</span>
-              </motion.button>
               
+              {/* Collapse button at bottom */}
               <motion.button
-                className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg hover:bg-red-500/10 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
-                onClick={handleSignOut}
+                className="w-full mt-2 flex items-center justify-center gap-2 py-1.5 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+                onClick={toggleSidebar}
                 whileHover={hoverScale}
                 whileTap={tapScale}
               >
-                <LogOut className="w-4 h-4" />
-                <span className="text-sm">Logout</span>
+                <ChevronLeft className="w-4 h-4" />
+                <span className="text-xs font-medium">Collapse</span>
               </motion.button>
+            </motion.div>
+          ) : (
+            <div className="p-3 space-y-2">
+              <Tooltip content={profile?.displayName || getUserDisplayName()} position="right">
+                <div className="flex justify-center">
+                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center overflow-hidden">
+                    {profile?.avatar ? (
+                      <img 
+                        src={profile.avatar} 
+                        alt="Profile" 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <User className="w-4 h-4 text-white" />
+                    )}
+                  </div>
+                </div>
+              </Tooltip>
+              
+              {/* Expand button */}
+              <Tooltip content="Expand sidebar" position="right">
+                <motion.button
+                  className="w-full flex items-center justify-center p-1.5 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={toggleSidebar}
+                  whileHover={hoverScale}
+                  whileTap={tapScale}
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </motion.button>
+              </Tooltip>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>
+      </div>
 
       {/* Collapsed State Indicators */}
       {!isExpanded && (
