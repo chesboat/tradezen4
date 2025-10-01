@@ -445,16 +445,16 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
             </div>
           </div>
 
-          {/* Calendar Preview - No scroll, optimized sizing */}
-          <div className="p-6 flex-1 flex items-center justify-center overflow-hidden">
+          {/* Calendar Preview - Apple-style gradient background */}
+          <div className={cn(
+            "p-6 flex-1 flex items-center justify-center overflow-hidden",
+            theme === 'dark' 
+              ? "bg-gradient-to-br from-indigo-950 via-purple-900 to-pink-900" 
+              : "bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100"
+          )}>
             <div
               ref={canvasRef}
-              className={cn(
-                "relative p-8 rounded-2xl w-full max-w-5xl flex items-center justify-center",
-                theme === 'dark' 
-                  ? "bg-gradient-to-br from-indigo-950 via-purple-900 to-pink-900" 
-                  : "bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100"
-              )}
+              className="relative p-8 w-full max-w-5xl flex items-center justify-center"
               style={{ aspectRatio: '16/10' }}
             >
               {/* Calendar Content - Exact replica of CalendarView */}
