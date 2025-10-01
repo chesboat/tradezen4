@@ -42,8 +42,10 @@ export async function renderCalendarToDataURL(data: CalendarRenderData, opts: Re
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas not supported');
 
-  // Colors
-  const bg1 = '#9333ea', bg2 = '#ec4899', bg3 = '#fb923c';
+  // Colors - Apple-style, theme-aware
+  const bg1 = opts.theme === 'dark' ? '#1c1c1e' : '#f5f5f7';
+  const bg2 = opts.theme === 'dark' ? '#2c2c2e' : '#e8e8ed';
+  const bg3 = opts.theme === 'dark' ? '#3a3a3c' : '#d1d1d6';
   const cardBg = opts.theme === 'dark' ? '#0b0b0b' : '#ffffff';
   const border = opts.theme === 'dark' ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)';
   const muted = opts.theme === 'dark' ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)';

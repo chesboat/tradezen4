@@ -183,7 +183,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
       const blob = await resp.blob();
       const dataUrl = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.download = `TradeFutura-Calendar-${currentMonth}-${currentYear}.png`;
+      link.download = `Refine-Calendar-${currentMonth}-${currentYear}.png`;
       link.href = dataUrl;
       link.rel = 'noopener';
       document.body.appendChild(link);
@@ -267,7 +267,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
               await navigator.clipboard.write([clipboardItem]);
               
               // Open X.com with pre-filled text
-              const text = `Check out my trading performance for ${currentMonth} ${currentYear}! 📊 Made ${formatCurrency(monthlyPnL)} with ${totalTrades} trades. Building my edge with TradeFutura 🚀 #TradingJournal #TradeFutura`;
+              const text = `${currentMonth} ${currentYear} trading recap 📊\n\nP&L: ${formatCurrency(monthlyPnL)}\nTrades: ${totalTrades}\n\nRefining my edge, daily.\n\nrefine.trading`;
               const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
               
               // Small delay to ensure clipboard write completes
@@ -282,13 +282,13 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
               
               // Fallback to download
               const link = document.createElement('a');
-              link.download = `TradeFutura-Calendar-${currentMonth}-${currentYear}.png`;
+              link.download = `Refine-Calendar-${currentMonth}-${currentYear}.png`;
               link.href = URL.createObjectURL(blob);
               document.body.appendChild(link);
               link.click();
               setTimeout(() => link.remove(), 0);
               
-              const text = `Check out my trading performance for ${currentMonth} ${currentYear}! 📊 Made ${formatCurrency(monthlyPnL)} with ${totalTrades} trades. Building my edge with TradeFutura 🚀 #TradingJournal #TradeFutura`;
+              const text = `${currentMonth} ${currentYear} trading recap 📊\n\nP&L: ${formatCurrency(monthlyPnL)}\nTrades: ${totalTrades}\n\nRefining my edge, daily.\n\nrefine.trading`;
               const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
               
               window.open(twitterUrl, '_blank', 'noopener,noreferrer');
@@ -300,7 +300,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
         
         // Direct download fallback
         const link = document.createElement('a');
-        link.download = `TradeFutura-Calendar-${currentMonth}-${currentYear}.png`;
+        link.download = `Refine-Calendar-${currentMonth}-${currentYear}.png`;
         const payload = buildRenderData();
         const themeParam = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
         const dataParam = encodeURIComponent(btoa(JSON.stringify(payload)));
@@ -341,14 +341,14 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
       if (!resp.ok) throw new Error('Screenshot API failed');
       const blob = await resp.blob();
       const link = document.createElement('a');
-      link.download = `TradeFutura-Calendar-${currentMonth}-${currentYear}.png`;
+      link.download = `Refine-Calendar-${currentMonth}-${currentYear}.png`;
       link.href = URL.createObjectURL(blob);
       link.click();
       
       toast.success('Calendar downloaded! Upload it to your Instagram story or post');
       
       // Optional: Try to copy suggested caption to clipboard
-      const caption = `Trading update for ${currentMonth} ${currentYear} 📊\n\nP&L: ${formatCurrency(monthlyPnL)}\nTrades: ${totalTrades}\n\nBuilding my edge day by day 💪\n\n#TradingJournal #TradeFutura #Trading #Consistency`;
+      const caption = `${currentMonth} ${currentYear} 📊\n\nP&L: ${formatCurrency(monthlyPnL)}\nTrades: ${totalTrades}\n\nRefining my edge, daily.\n\nrefine.trading`;
       
       if (navigator.clipboard) {
         try {
@@ -448,7 +448,12 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
           <div className="p-6">
             <div
               ref={canvasRef}
-              className="relative bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 p-12 rounded-2xl w-full flex items-center justify-center"
+              className={cn(
+                "relative p-12 rounded-2xl w-full flex items-center justify-center",
+                theme === 'dark' 
+                  ? "bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-900" 
+                  : "bg-gradient-to-br from-neutral-100 via-neutral-50 to-neutral-100"
+              )}
               style={{ minHeight: '750px', aspectRatio: '6/5' }}
             >
               {/* Calendar Content - Exact replica of CalendarView */}
@@ -594,16 +599,12 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
                   ))}
                 </div>
 
-                {/* TradeFutura Branding - Inside calendar content */}
+                {/* Refine Branding - Subtle, Apple-style */}
                 <div className="flex items-center justify-center mt-6">
-                  <div className="flex items-center gap-3 bg-accent/50 rounded-full px-6 py-3 border border-border/30">
-                    <div className="w-6 h-6 bg-gradient-to-br from-primary to-primary/70 rounded-lg flex items-center justify-center">
-                      <Zap className="w-4 h-4 text-primary-foreground" />
-                    </div>
-                    <div>
-                      <h3 className="text-base font-bold text-foreground">TradeFutura</h3>
-                      <p className="text-xs text-muted-foreground">Your edge, future-proofed</p>
-                    </div>
+                  <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-muted/30 backdrop-blur-sm">
+                    <Zap className="w-4 h-4 text-primary" />
+                    <span className="text-sm font-medium text-foreground">Refine</span>
+                    <span className="text-xs text-muted-foreground">· refine.trading</span>
                   </div>
                 </div>
                   </div>
@@ -615,7 +616,12 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
             <div
               ref={captureRef}
               id="calendar-share-capture"
-              className="fixed left-0 top-0 bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 rounded-2xl"
+              className={cn(
+                "fixed left-0 top-0 rounded-2xl",
+                theme === 'dark' 
+                  ? "bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-900" 
+                  : "bg-gradient-to-br from-neutral-100 via-neutral-50 to-neutral-100"
+              )}
               style={{ width: 1200, height: 1000, padding: 48, opacity: 0, zIndex: -1000, pointerEvents: 'none' }}
             >
               <div className="w-full h-full flex items-center justify-center">
