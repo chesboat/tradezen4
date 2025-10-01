@@ -718,6 +718,15 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
                         </div>
                       ))}
                     </div>
+
+                    {/* Refine Branding - Offscreen capture version */}
+                    <div className="flex items-center justify-center mt-6">
+                      <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-muted/30 backdrop-blur-sm">
+                        <Zap className="w-4 h-4 text-primary" />
+                        <span className="text-sm font-medium text-foreground">Refine</span>
+                        <span className="text-xs text-muted-foreground">· refine.trading</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
