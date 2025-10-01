@@ -1,5 +1,5 @@
 import React from 'react';
-import { PublicSharePage } from './components/PublicSharePage';
+import { PublicSharePageClean as PublicSharePage } from './components/PublicSharePageClean';
 import { SettingsPage } from './components/SettingsPage';
 import { Sidebar } from './components/Sidebar';
 import { MobileNavigation } from './components/MobileNavigation';
