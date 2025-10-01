@@ -30,7 +30,7 @@ import { useAppSettingsStore } from '@/store/useAppSettingsStore';
 import { CalendarDay, WeeklySummary, MoodType, WeeklyReview } from '@/types';
 import { formatCurrency, formatDate, getMoodColor } from '@/lib/localStorageUtils';
 import { cn } from '@/lib/utils';
-import { DayDetailModal } from './DayDetailModal';
+import { DayDetailModalApple as DayDetailModal } from './DayDetailModalApple';
 import { CalendarShareModal } from './CalendarShareModal';
 import { WeeklyReviewModal } from './WeeklyReviewModal';
 import { WeeklyReviewViewModal } from './WeeklyReviewViewModal';
