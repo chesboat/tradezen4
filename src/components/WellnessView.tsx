@@ -428,15 +428,7 @@ export const WellnessView: React.FC = () => {
     // Add to mood timeline - use local date to avoid timezone issues
     const today = formatLocalDate(new Date()); // Local timezone YYYY-MM-DD
     const accountId = selectedAccountId || 'default';
-    console.log('[WellnessView] Adding mood entry:', { 
-      date: today, 
-      mood: newMood, 
-      trigger: 'wellness-mood',
-      accountId,
-      selectedAccountId 
-    });
     addMoodEntry(today, newMood, 'wellness-mood', `wellness-${Date.now()}`, new Date(), accountId);
-    console.log('[WellnessView] Mood entry added');
 
     // Update wellness stats
     setWellnessStats(prev => {
