@@ -61,6 +61,69 @@ const getStreakText = (category: HabitCategory): string => {
   }
 };
 
+// Hero P&L Card Component (Apple-style - 2x size, prominent)
+const HeroPnLCard: React.FC<{ 
+  todayPnL: number; 
+  todayTrades: number; 
+  todayWinRate: number;
+  yesterdayPnL: number;
+}> = ({ todayPnL, todayTrades, todayWinRate, yesterdayPnL }) => {
+  const pnlChange = todayPnL - yesterdayPnL;
+  const pnlChangePercent = yesterdayPnL !== 0 ? ((pnlChange / Math.abs(yesterdayPnL)) * 100) : 0;
+  
+  return (
+    <motion.div
+      className="col-span-full bg-gradient-to-br from-card to-card/80 backdrop-blur-sm rounded-3xl p-6 sm:p-8 border border-border/50 shadow-xl"
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.5 }}
+      whileHover={{ scale: 1.01, y: -4 }}
+    >
+      <div className="flex items-start justify-between mb-6">
+        <div>
+          <p className="text-sm sm:text-base text-muted-foreground mb-2">Today's Session</p>
+          <div className={cn(
+            "text-4xl sm:text-6xl font-bold tracking-tight mb-2",
+            todayPnL > 0 ? "text-green-500" : todayPnL < 0 ? "text-red-500" : "text-muted-foreground"
+          )}>
+            {formatCurrency(todayPnL)}
+          </div>
+          {yesterdayPnL !== 0 && (
+            <div className="flex items-center gap-2">
+              <span className={cn(
+                "text-sm font-medium",
+                pnlChange > 0 ? "text-green-500" : pnlChange < 0 ? "text-red-500" : "text-muted-foreground"
+              )}>
+                {pnlChange > 0 ? '↑' : pnlChange < 0 ? '↓' : '→'} {formatCurrency(Math.abs(pnlChange))} vs yesterday
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-3 gap-4">
+        <div className="text-center p-4 rounded-2xl bg-muted/20">
+          <div className="text-2xl sm:text-3xl font-bold text-foreground mb-1">{todayTrades}</div>
+          <div className="text-xs sm:text-sm text-muted-foreground">Trades</div>
+        </div>
+        <div className="text-center p-4 rounded-2xl bg-muted/20">
+          <div className="text-2xl sm:text-3xl font-bold text-foreground mb-1">{todayWinRate.toFixed(0)}%</div>
+          <div className="text-xs sm:text-sm text-muted-foreground">Win Rate</div>
+        </div>
+        <div className="text-center p-4 rounded-2xl bg-muted/20">
+          <div className={cn(
+            "text-2xl sm:text-3xl font-bold mb-1",
+            todayPnL / todayTrades > 0 ? "text-green-500" : "text-red-500"
+          )}>
+            {todayTrades > 0 ? formatCurrency(todayPnL / todayTrades) : '$0'}
+          </div>
+          <div className="text-xs sm:text-sm text-muted-foreground">Avg P&L</div>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
 // Minimal KPI Card Component
 interface KPICardProps {
   title: string;
@@ -97,92 +160,92 @@ const MinimalKPICard: React.FC<KPICardProps> = ({ title, value, change, changeTy
   );
 };
 
-// Today's Focus Card Component
-const TodaysFocusCard: React.FC = () => {
+// Daily Intent Card (Apple-style - single focus)
+const DailyIntentCard: React.FC = () => {
+  const { getReflectionByDate } = useDailyReflectionStore();
+  const { setCurrentView } = useNavigationStore();
+  const today = formatLocalDate(new Date());
+  const todayReflection = getReflectionByDate(today);
+
+  return (
+    <motion.div
+      className="bg-gradient-to-br from-card to-card/80 backdrop-blur-sm rounded-2xl p-6 border border-border/50"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: 0.1 }}
+      whileHover={{ scale: 1.01, y: -2 }}
+    >
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
+          <Target className="w-5 h-5 text-primary" />
+        </div>
+        <h2 className="text-lg font-semibold text-foreground">Today's Edge</h2>
+      </div>
+
+      {todayReflection?.keyFocus ? (
+        <div className="p-4 rounded-xl bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
+          <p className="text-foreground italic leading-relaxed">
+            "{todayReflection.keyFocus}"
+          </p>
+        </div>
+      ) : (
+        <motion.button
+          onClick={() => setCurrentView('journal')}
+          className="w-full p-6 rounded-xl border-2 border-dashed border-primary/30 hover:border-primary/50 hover:bg-primary/5 transition-all group"
+          whileHover={{ scale: 1.02 }}
+        >
+          <p className="text-muted-foreground mb-3">What's your edge today?</p>
+          <div className="flex items-center justify-center gap-2 text-primary group-hover:text-primary/80">
+            <Plus className="w-4 h-4" />
+            <span className="text-sm font-medium">Set Your Focus</span>
+          </div>
+        </motion.button>
+      )}
+    </motion.div>
+  );
+};
+
+// Habits Card (Apple-style - focused on habits only)
+const HabitsCard: React.FC = () => {
   const { selectedAccountId } = useAccountFilterStore();
   const { rules, getTallyCountForRule, getStreakForRule } = useRuleTallyStore();
-  const { getReflectionByDate } = useDailyReflectionStore();
   const { setCurrentView } = useNavigationStore();
   
   const today = formatLocalDate(new Date());
-  const todayReflection = getReflectionByDate(today);
   const accountRules = selectedAccountId ? rules.filter(r => r.accountId === selectedAccountId) : [];
   
-  // Calculate habit overview stats
-  const totalTallies = accountRules.reduce((sum, rule) => sum + getTallyCountForRule(rule.id, today), 0);
+  const completedHabits = accountRules.filter(rule => getTallyCountForRule(rule.id, today) > 0).length;
   const activeStreaks = accountRules.filter(rule => {
     const streak = getStreakForRule(rule.id);
     return streak && streak.currentStreak > 0;
   }).length;
-  const completedHabits = accountRules.filter(rule => getTallyCountForRule(rule.id, today) > 0).length;
 
   return (
-    <motion.div 
-      className="bg-gradient-to-br from-card to-card/80 backdrop-blur-sm rounded-2xl sm:rounded-3xl p-4 sm:p-8 border border-border/50 shadow-lg"
+    <motion.div
+      className="bg-card/50 backdrop-blur-sm rounded-2xl p-6 border border-border/50"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
+      transition={{ duration: 0.5, delay: 0.2 }}
     >
-      <div className="flex items-center justify-between mb-4 sm:mb-6">
-        <div className="flex items-center gap-2 sm:gap-3">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-primary/10 flex items-center justify-center">
-            <Target className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-          </div>
-          <div>
-            <h2 className="text-lg sm:text-xl font-semibold text-foreground">Today's Focus</h2>
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              {new Date().toLocaleDateString('en-US', { 
-                weekday: 'long', 
-                month: 'short', 
-                day: 'numeric' 
-              })}
-            </p>
-          </div>
-        </div>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-foreground">Habits</h3>
+        <motion.button
+          onClick={() => setCurrentView('habits')}
+          className="text-sm text-primary hover:text-primary/80 font-medium"
+          whileHover={{ x: 2 }}
+        >
+          View All →
+        </motion.button>
       </div>
 
-      {/* Habit Overview */}
-      <div className="mb-6 sm:mb-8">
-        <div className="flex items-center justify-between mb-3 sm:mb-4">
-          <h3 className="text-base sm:text-lg font-medium text-foreground">Today's Habits</h3>
-          <motion.button
-            onClick={() => setCurrentView('habits')}
-            className="text-xs sm:text-sm text-primary hover:text-primary/80 font-medium flex items-center gap-1"
-            whileHover={{ x: 2 }}
-          >
-            View All <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
-          </motion.button>
-        </div>
-        
-        {/* Habit Stats Grid */}
-        <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4 sm:mb-6">
-          <motion.div
-            className="text-center p-2 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20"
-            whileHover={{ scale: 1.02 }}
-          >
-            <div className="text-lg sm:text-2xl font-bold text-primary mb-0.5 sm:mb-1">{totalTallies}</div>
-            <div className="text-xs text-muted-foreground">Tallies Today</div>
-          </motion.div>
-          
-          <motion.div
-            className="text-center p-2 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-orange-500/5 to-orange-500/10 border border-orange-500/20"
-            whileHover={{ scale: 1.02 }}
-          >
-            <div className="text-lg sm:text-2xl font-bold text-orange-500 mb-0.5 sm:mb-1">{activeStreaks}</div>
-            <div className="text-xs text-muted-foreground">Active Streaks</div>
-          </motion.div>
-          
-          <motion.div
-            className="text-center p-2 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-green-500/5 to-green-500/10 border border-green-500/20"
-            whileHover={{ scale: 1.02 }}
-          >
-            <div className="text-lg sm:text-2xl font-bold text-green-500 mb-0.5 sm:mb-1">{completedHabits}</div>
-            <div className="text-xs text-muted-foreground">Completed</div>
-          </motion.div>
-        </div>
+      {accountRules.length > 0 ? (
+        <>
+          <div className="flex items-center gap-4 mb-4 text-sm text-muted-foreground">
+            <span>{completedHabits} complete</span>
+            <span>•</span>
+            <span>{activeStreaks} active streak{activeStreaks !== 1 ? 's' : ''}</span>
+          </div>
 
-        {/* Quick Habit Preview */}
-        {accountRules.length > 0 ? (
           <div className="space-y-2">
             {accountRules.slice(0, 3).map((rule) => {
               const tallyCount = getTallyCountForRule(rule.id, today);
@@ -190,7 +253,7 @@ const TodaysFocusCard: React.FC = () => {
               return (
                 <motion.div
                   key={rule.id}
-                  className="flex items-center justify-between p-3 rounded-xl bg-muted/20 hover:bg-muted/30 transition-colors"
+                  className="flex items-center justify-between p-3 rounded-xl hover:bg-muted/20 transition-colors"
                   whileHover={{ x: 2 }}
                 >
                   <div className="flex items-center gap-3">
@@ -200,103 +263,31 @@ const TodaysFocusCard: React.FC = () => {
                       {streak && streak.currentStreak > 0 && (
                         <div className="flex items-center gap-1 text-xs text-orange-500">
                           <Flame className="w-3 h-3" />
-                          <span>{streak.currentStreak} {getStreakText(rule.category)} streak</span>
+                          <span>{streak.currentStreak} day streak</span>
                         </div>
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {tallyCount > 0 && (
-                      <div className="text-sm font-bold text-primary bg-primary/10 px-2 py-1 rounded-full">
-                        {tallyCount}
-                      </div>
-                    )}
-                    <CheckCircle2 className={cn(
-                      "w-5 h-5 transition-colors",
-                      tallyCount > 0 ? "text-green-500" : "text-muted-foreground"
-                    )} />
-                  </div>
+                  <CheckCircle2 className={cn(
+                    "w-5 h-5",
+                    tallyCount > 0 ? "text-green-500" : "text-muted-foreground"
+                  )} />
                 </motion.div>
               );
             })}
-            
-            {accountRules.length > 3 && (
-              <motion.button
-                onClick={() => setCurrentView('habits')}
-                className="w-full p-3 rounded-xl border-2 border-dashed border-primary/30 text-primary hover:border-primary/50 hover:bg-primary/5 transition-all text-sm font-medium"
-                whileHover={{ scale: 1.01 }}
-              >
-                +{accountRules.length - 3} more habits • View all in Habits
-              </motion.button>
-            )}
           </div>
-        ) : (
-          <motion.div
-            className="text-center py-6 rounded-2xl border-2 border-dashed border-muted/50"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-          >
-            <Target className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground mb-3">No habits yet</p>
-            <motion.button
-              onClick={() => setCurrentView('habits')}
-              className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 transition-colors"
-              whileHover={{ scale: 1.05 }}
-            >
-              Create First Habit
-            </motion.button>
-          </motion.div>
-        )}
-      </div>
-
-      {/* Daily Intention */}
-      <div className="mb-8">
-        <h3 className="text-lg font-medium text-foreground mb-3">Daily Intention</h3>
-        <div className="p-4 rounded-xl bg-muted/20 border border-border/30">
-          {todayReflection?.keyFocus ? (
-            <p className="text-foreground italic">
-              {todayReflection.keyFocus}
-            </p>
-          ) : (
-            <div className="flex items-center justify-between">
-              <p className="text-muted-foreground italic">
-                Set your daily trading intention
-              </p>
-              <motion.button
-                onClick={() => setCurrentView('journal')}
-                className="text-sm text-primary hover:text-primary/80 font-medium flex items-center gap-1"
-                whileHover={{ x: 2 }}
-              >
-                <Plus className="w-4 h-4" />
-                Add Focus
-              </motion.button>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Reflection Status */}
-      <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
-        <div className="flex items-center gap-3">
-          <Calendar className="w-5 h-5 text-primary" />
-          <div>
-            <p className="font-medium text-foreground">Reflection Status</p>
-            <p className="text-sm text-muted-foreground">
-              {todayReflection ? "✅ Complete" : "⚠️ Pending"}
-            </p>
-          </div>
-        </div>
-        {!todayReflection && (
-          <motion.button
-            onClick={() => setCurrentView('journal')}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-colors"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            Complete
-          </motion.button>
-        )}
-      </div>
+        </>
+      ) : (
+        <motion.button
+          onClick={() => setCurrentView('habits')}
+          className="w-full p-6 rounded-xl border-2 border-dashed border-muted/50 hover:border-primary/50 hover:bg-muted/20 transition-all"
+          whileHover={{ scale: 1.02 }}
+        >
+          <Target className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+          <p className="text-sm text-muted-foreground mb-2">No habits yet</p>
+          <span className="text-sm text-primary font-medium">Create First Habit</span>
+        </motion.button>
+      )}
     </motion.div>
   );
 };
@@ -381,49 +372,23 @@ const RecentActivity: React.FC = () => {
   );
 };
 
-// Growth Corner Component
+// Growth Corner Component (Simplified - Apple style)
 const GrowthCorner: React.FC = () => {
-  const { trades } = useTradeStore();
   const { selectedAccountId } = useAccountFilterStore();
   const { getReflectionStreak } = useDailyReflectionStore();
   const { profile } = useUserProfileStore();
   const { setCurrentView } = useNavigationStore();
-  const [showPrestigeModal, setShowPrestigeModal] = React.useState(false);
-  const [showXpModal, setShowXpModal] = React.useState(false);
-  
-  // Filter trades by account
-  const accountTrades = selectedAccountId ? trades.filter(t => t.accountId === selectedAccountId) : trades;
-  const { wins: winningTrades } = summarizeWinLossScratch(accountTrades);
   
   // Use new prestige system with defensive null checks
   const currentLevel = profile?.xp?.level || 1;
-  const prestige = profile?.xp?.prestige || 0;
-  const canPrestige = profile?.xp?.canPrestige ?? false;
   const seasonXp = profile?.xp?.seasonXp || 0;
-  const totalXp = profile?.xp?.total || 0;
   
   // Calculate XP progress for current level
   const xpToNext = xpToNextLevel(seasonXp);
   const progressPct = getLevelProgress(seasonXp);
   
-  // Debug logging for progress updates
-  React.useEffect(() => {
-    console.log('📊 GrowthCorner Progress Update:', {
-      seasonXp,
-      currentLevel,
-      progressPct,
-      xpToNext
-    });
-  }, [seasonXp, currentLevel, progressPct, xpToNext]);
-  
   // Get reflection streak for the selected account
   const reflectionStreak = selectedAccountId ? getReflectionStreak(selectedAccountId) : 0;
-  
-  // Calculate recent activity streak (trades in last 7 days)
-  const weekAgo = new Date();
-  weekAgo.setDate(weekAgo.getDate() - 7);
-  const recentTrades = accountTrades.filter(t => new Date(t.entryTime) >= weekAgo);
-  const activeDaysThisWeek = new Set(recentTrades.map(t => new Date(t.entryTime).toDateString())).size;
 
   return (
     <motion.div 
@@ -432,145 +397,70 @@ const GrowthCorner: React.FC = () => {
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.5, delay: 0.3 }}
     >
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-foreground">Growth Corner</h3>
-        <motion.button
-          onClick={() => setCurrentView('quests')}
-          className="text-sm text-primary hover:text-primary/80 font-medium flex items-center gap-1"
-          whileHover={{ x: 2 }}
-        >
-          Quests <ChevronRight className="w-4 h-4" />
-        </motion.button>
-      </div>
+      <h3 className="text-lg font-semibold text-foreground mb-6">Progress</h3>
       
-      {/* Level Progress with Prestige */}
+      {/* Level Progress - Simplified */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            {FEATURE_XP_PRESTIGE ? (
-              <LevelBadge 
-                level={currentLevel} 
-                prestige={prestige}
-                size="sm"
-              />
-            ) : (
-              <span className="text-sm font-medium text-foreground">Level {currentLevel} Trader</span>
-            )}
-            
-            {FEATURE_XP_PRESTIGE && (
-              <motion.button
-                className="p-1 rounded-full hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors"
-                onClick={() => setShowXpModal(true)}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                title="Learn about XP & Prestige"
-              >
-                <Info className="w-3 h-3" />
-              </motion.button>
-            )}
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <ProgressRing 
-              progressPct={progressPct}
-              size="sm"
-              showPercentage={true}
-            />
-          </div>
+          <span className="text-sm font-medium text-foreground">Level {currentLevel} Trader</span>
+          <ProgressRing 
+            progressPct={progressPct}
+            size="sm"
+            showPercentage={true}
+          />
         </div>
-        
         <p className="text-xs text-muted-foreground">
-          {seasonXp.toLocaleString()} Season XP • {xpToNext} XP to next level
+          {xpToNext.toLocaleString()} XP to next level
         </p>
-        
-        {FEATURE_XP_PRESTIGE && canPrestige && (
-          <motion.button
-            className="mt-2 w-full py-2 px-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-xs font-medium rounded-lg shadow-lg"
-            onClick={() => setShowPrestigeModal(true)}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            ✨ Prestige Available ✨
-          </motion.button>
-        )}
-        
-
       </div>
 
-      {/* Streaks & Activity */}
+      {/* Streaks - Simplified */}
       <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          <Flame className="w-4 h-4 text-orange-500" />
-          <span className="text-sm font-medium text-foreground">
-            {reflectionStreak}-day reflection streak
-          </span>
+        <div className="flex items-center justify-between p-3 rounded-xl bg-muted/20">
+          <div className="flex items-center gap-2">
+            <Flame className="w-4 h-4 text-orange-500" />
+            <span className="text-sm text-foreground">Reflection Streak</span>
+          </div>
+          <span className="text-sm font-bold text-foreground">{reflectionStreak} days</span>
         </div>
-        <div className="flex items-center gap-2">
-          <Calendar className="w-4 h-4 text-blue-500" />
-          <span className="text-sm font-medium text-foreground">
-            {activeDaysThisWeek} active trading days this week
-          </span>
-        </div>
+        
         <motion.button
           onClick={() => setCurrentView('quests')}
-          className="flex items-center gap-2 w-full p-2 rounded-lg bg-muted/20 hover:bg-muted/30 transition-colors"
+          className="w-full p-3 rounded-xl bg-primary/10 hover:bg-primary/20 transition-colors text-primary font-medium text-sm"
           whileHover={{ scale: 1.02 }}
         >
-          <Trophy className="w-4 h-4 text-yellow-500" />
-          <span className="text-sm font-medium text-foreground">View Active Quests</span>
+          View Quests →
         </motion.button>
       </div>
-      
-      {/* Modals */}
-      {FEATURE_XP_PRESTIGE && (
-        <>
-          <PrestigeModal
-            isOpen={showPrestigeModal}
-            onClose={() => setShowPrestigeModal(false)}
-          />
-          <XpSystemModal
-            isOpen={showXpModal}
-            onClose={() => setShowXpModal(false)}
-          />
-        </>
-      )}
     </motion.div>
   );
 };
 
-// AI Insights Component
+// AI Insights Component (Apple-style - actionable cards)
 const AIInsights: React.FC = () => {
   const { trades } = useTradeStore();
   const { selectedAccountId } = useAccountFilterStore();
   const { rules, getTallyCountForRule } = useRuleTallyStore();
   const { reflections } = useDailyReflectionStore();
+  const { setCurrentView } = useNavigationStore();
   
-  // Generate insights based on real data
+  // Generate actionable insights based on real data
   const generateInsights = () => {
-    const insights: Array<{ type: 'positive' | 'warning' | 'neutral', text: string }> = [];
+    const insights: Array<{ 
+      type: 'positive' | 'warning' | 'neutral';
+      title: string;
+      text: string;
+      action: string;
+      actionFn: () => void;
+    }> = [];
     
     // Filter data by account
     const accountTrades = selectedAccountId ? trades.filter(t => t.accountId === selectedAccountId) : trades;
     const accountRules = selectedAccountId ? rules.filter(r => r.accountId === selectedAccountId) : rules;
     const accountReflections = selectedAccountId ? reflections.filter(r => r.accountId === selectedAccountId) : reflections;
     
-    // Trading performance insights
+    // Time-based analysis
     if (accountTrades.length > 5) {
-      const { winRateExclScratches: winRate } = summarizeWinLossScratch(accountTrades);
-      
-      if (winRate > 60) {
-        insights.push({
-          type: 'positive',
-          text: `Strong ${winRate.toFixed(0)}% win rate across ${accountTrades.length} trades - keep following your process!`
-        });
-      } else if (winRate < 40) {
-        insights.push({
-          type: 'warning',
-          text: `Win rate at ${winRate.toFixed(0)}% - consider reviewing entry criteria and risk management`
-        });
-      }
-      
-      // Time-based analysis
       const morningTrades = accountTrades.filter(t => {
         const hour = new Date(t.entryTime).getHours();
         return hour >= 9 && hour <= 11;
@@ -578,34 +468,54 @@ const AIInsights: React.FC = () => {
       
       if (morningTrades.length > 3) {
         const { winRateExclScratches: morningWinRate } = summarizeWinLossScratch(morningTrades);
-        const overallWinRate = winRate;
+        const { winRateExclScratches: overallWinRate } = summarizeWinLossScratch(accountTrades);
         
-        if (morningWinRate > overallWinRate + 10) {
+        if (morningWinRate > overallWinRate + 15) {
           insights.push({
             type: 'positive',
-            text: `You're ${(morningWinRate - overallWinRate).toFixed(0)}% more successful in morning sessions (9-11 AM)`
+            title: 'Peak Performance Window',
+            text: `You're ${(morningWinRate - overallWinRate).toFixed(0)}% more successful trading between 9:00-11:00 AM`,
+            action: 'Review Trades',
+            actionFn: () => setCurrentView('trades')
+          });
+        }
+      }
+      
+      // Afternoon performance check
+      const afternoonTrades = accountTrades.filter(t => {
+        const hour = new Date(t.entryTime).getHours();
+        return hour >= 14;
+      });
+      
+      if (afternoonTrades.length > 3) {
+        const afternoonLosses = afternoonTrades.filter(t => (t.pnl || 0) < 0).length;
+        if (afternoonLosses / afternoonTrades.length > 0.6) {
+          insights.push({
+            type: 'warning',
+            title: 'Afternoon Performance Alert',
+            text: `${((afternoonLosses / afternoonTrades.length) * 100).toFixed(0)}% loss rate after 2PM. Consider setting a cutoff time.`,
+            action: 'Review Pattern',
+            actionFn: () => setCurrentView('trades')
           });
         }
       }
     }
     
-    // Habit tracking insights
+    // Habit consistency check
     const today = formatLocalDate(new Date());
     const todayTallies = accountRules.reduce((sum, rule) => sum + getTallyCountForRule(rule.id, today), 0);
     
-    if (todayTallies > 0) {
-      insights.push({
-        type: 'positive',
-        text: `${todayTallies} habits completed today - consistency builds excellence!`
-      });
-    } else if (accountRules.length > 0) {
+    if (todayTallies === 0 && accountRules.length > 0) {
       insights.push({
         type: 'warning',
-        text: `No habits tracked today - small consistent actions lead to big results`
+        title: 'Habit Reminder',
+        text: `No habits tracked today. Small consistent actions compound into mastery.`,
+        action: 'Track Habits',
+        actionFn: () => setCurrentView('habits')
       });
     }
     
-    // Reflection insights
+    // Reflection consistency
     const recentReflections = accountReflections.filter(r => {
       const reflectionDate = new Date(r.date);
       const weekAgo = new Date();
@@ -613,29 +523,35 @@ const AIInsights: React.FC = () => {
       return reflectionDate >= weekAgo;
     });
     
-    if (recentReflections.length >= 5) {
+    if (recentReflections.length < 3 && accountTrades.length > 5) {
       insights.push({
-        type: 'positive',
-        text: `${recentReflections.length} reflections this week - self-awareness is your trading edge`
+        type: 'warning',
+        title: 'Reflection Gap',
+        text: `Only ${recentReflections.length} reflections this week. Self-awareness is your edge.`,
+        action: 'Add Reflection',
+        actionFn: () => setCurrentView('journal')
       });
     }
     
     // Default insights if no data
-    if (insights.length === 0) {
+    if (insights.length === 0 && accountTrades.length === 0) {
       insights.push({
         type: 'neutral',
-        text: "Start logging trades and habits to unlock personalized AI insights"
+        title: 'Getting Started',
+        text: "Log your first trades to unlock personalized AI insights and pattern analysis.",
+        action: 'Log Trade',
+        actionFn: () => setCurrentView('trades')
       });
     }
     
-    return insights.slice(0, 3); // Limit to 3 insights
+    return insights.slice(0, 2); // Limit to top 2 most actionable
   };
   
   const insights = generateInsights();
 
   return (
     <motion.div 
-      className="bg-card/50 backdrop-blur-sm rounded-2xl p-6 border border-border/50 col-span-full"
+      className="col-span-full"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.4 }}
@@ -644,19 +560,43 @@ const AIInsights: React.FC = () => {
         <Brain className="w-5 h-5 text-primary" />
         <h3 className="text-lg font-semibold text-foreground">AI Insights</h3>
       </div>
-      <div className="space-y-3">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {insights.map((insight, index) => (
           <motion.div
             key={index}
-            className="flex items-start gap-3 p-3 rounded-xl bg-muted/20"
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
+            className={cn(
+              "p-6 rounded-2xl border-2 bg-card/50 backdrop-blur-sm",
+              insight.type === 'positive' ? "border-green-500/30 bg-green-500/5" :
+              insight.type === 'warning' ? "border-orange-500/30 bg-orange-500/5" :
+              "border-border/50"
+            )}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: 0.5 + index * 0.1 }}
+            whileHover={{ scale: 1.02, y: -2 }}
           >
-            <span className="text-lg">
-              {insight.type === 'positive' ? '💡' : insight.type === 'warning' ? '⚠️' : '🔍'}
-            </span>
-            <p className="text-sm text-foreground">{insight.text}</p>
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">
+                  {insight.type === 'positive' ? '💡' : insight.type === 'warning' ? '⚠️' : '🔍'}
+                </span>
+                <h4 className="font-semibold text-foreground">{insight.title}</h4>
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4 leading-relaxed">{insight.text}</p>
+            <motion.button
+              onClick={insight.actionFn}
+              className={cn(
+                "w-full py-2 px-4 rounded-xl font-medium transition-colors",
+                insight.type === 'positive' ? "bg-green-500 text-white hover:bg-green-600" :
+                insight.type === 'warning' ? "bg-orange-500 text-white hover:bg-orange-600" :
+                "bg-primary text-primary-foreground hover:bg-primary/90"
+              )}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              {insight.action} →
+            </motion.button>
           </motion.div>
         ))}
       </div>
@@ -732,6 +672,29 @@ export const MinimalDashboard: React.FC = () => {
   
   // Profit factor calculation matching other dashboards
   const profitFactor = avgLoss > 0 ? Math.abs(avgWin * winTrades.length) / Math.abs(avgLoss * lossTrades.length) : 0;
+  
+  // Calculate today's stats for Hero card
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const todayEnd = new Date();
+  todayEnd.setHours(23, 59, 59, 999);
+  const todayTrades = accountTrades.filter(t => {
+    const tradeDate = new Date(t.entryTime);
+    return tradeDate >= todayStart && tradeDate <= todayEnd;
+  });
+  const todayPnL = todayTrades.reduce((sum, t) => sum + (t.pnl || 0), 0);
+  const { winRateExclScratches: todayWinRate } = summarizeWinLossScratch(todayTrades);
+  
+  // Calculate yesterday's P&L for comparison
+  const yesterdayStart = new Date(todayStart);
+  yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+  const yesterdayEnd = new Date(todayStart);
+  yesterdayEnd.setMilliseconds(-1);
+  const yesterdayTrades = accountTrades.filter(t => {
+    const tradeDate = new Date(t.entryTime);
+    return tradeDate >= yesterdayStart && tradeDate <= yesterdayEnd;
+  });
+  const yesterdayPnL = yesterdayTrades.reduce((sum, t) => sum + (t.pnl || 0), 0);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
@@ -762,15 +725,30 @@ export const MinimalDashboard: React.FC = () => {
           </div>
         )}
         
-        {/* Performance Overview */}
+        {/* Hero P&L Card - Apple's "One Metric to Rule Them All" */}
         <motion.section
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground">Performance Overview</h1>
-            
+          <div className="grid grid-cols-1 gap-6">
+            <HeroPnLCard 
+              todayPnL={todayPnL}
+              todayTrades={todayTrades.length}
+              todayWinRate={todayWinRate}
+              yesterdayPnL={yesterdayPnL}
+            />
+          </div>
+        </motion.section>
+        
+        {/* Historical Performance - Secondary Metrics */}
+        <motion.section
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-foreground">Historical Performance</h2>
             {/* Time Period Filter */}
             <div className="flex items-center gap-1 p-1 bg-muted/30 rounded-xl overflow-x-auto">
               {TIME_PERIODS.map((period) => (
@@ -791,14 +769,7 @@ export const MinimalDashboard: React.FC = () => {
               ))}
             </div>
           </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-            <MinimalKPICard
-              title="Total P&L"
-              value={formatCurrency(totalPnL)}
-              change={selectedPeriod === 'lifetime' ? 'All time' : `${TIME_PERIODS.find(p => p.value === selectedPeriod)?.label}`}
-              changeType={totalPnL > 0 ? 'positive' : totalPnL < 0 ? 'negative' : 'neutral'}
-              icon={TrendingUp}
-            />
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             <MinimalKPICard
               title="Win Rate"
               value={`${winRate.toFixed(0)}%`}
@@ -808,7 +779,7 @@ export const MinimalDashboard: React.FC = () => {
             />
             <MinimalKPICard
               title="Profit Factor"
-              value={profitFactor.toFixed(1)}
+              value={profitFactor > 0 ? profitFactor.toFixed(1) : '0.0'}
               change={profitFactor > 1.5 ? 'Excellent' : profitFactor > 1 ? 'Good' : 'Poor'}
               changeType={profitFactor > 1.5 ? 'positive' : profitFactor > 1 ? 'neutral' : 'negative'}
               icon={Sparkles}
@@ -816,8 +787,8 @@ export const MinimalDashboard: React.FC = () => {
             <MinimalKPICard
               title="Total Trades"
               value={accountTrades.length.toString()}
-              change={scratchCount > 0 ? `${scratchCount} scratches` : `${winCount} wins`}
-              changeType={accountTrades.length > 0 ? 'positive' : 'neutral'}
+              change={`${formatCurrency(totalPnL)}`}
+              changeType={totalPnL > 0 ? 'positive' : totalPnL < 0 ? 'negative' : 'neutral'}
               icon={Trophy}
             />
           </div>
@@ -843,9 +814,10 @@ export const MinimalDashboard: React.FC = () => {
           }))} />
         </section>
 
-        {/* Today's Focus Card */}
-        <section>
-          <TodaysFocusCard />
+        {/* Daily Intent + Habits - Apple's focused cards */}
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          <DailyIntentCard />
+          <HabitsCard />
         </section>
 
         {/* Bottom Section Toggle */}
