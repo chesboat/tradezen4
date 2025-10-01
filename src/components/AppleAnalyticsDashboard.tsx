@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   DollarSign, TrendingUp, TrendingDown, Activity, Calendar, 
   Trophy, AlertTriangle, ChevronDown, ChevronRight, X, ArrowUp, ArrowDown,
-  Target, Zap, MinusCircle
+  Target, Zap, MinusCircle, Lightbulb, Clock, FileDown, Trash2
 } from 'lucide-react';
 import { useTradeStore } from '@/store/useTradeStore';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
@@ -17,6 +17,16 @@ import { useDailyReflectionStore } from '@/store/useDailyReflectionStore';
 // ===============================================
 
 type TimePeriod = 'all' | '7d' | '1m' | '3m' | '6m' | '1y' | 'custom';
+
+interface SmartInsight {
+  id: string;
+  type: 'pattern' | 'warning' | 'achievement' | 'tip';
+  title: string;
+  description: string;
+  metric?: string;
+  action?: string;
+  actionFn?: () => void;
+}
 
 interface TimePeriodOption {
   value: TimePeriod;
@@ -163,6 +173,22 @@ const HeroAnalyticsPnL: React.FC<{
             </div>
           </div>
         </div>
+
+        {/* Export Button */}
+        <div className="ml-auto">
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => {
+              // TODO: Implement PDF export
+              alert('PDF Export coming soon! This will generate a beautiful report with all your analytics.');
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors shadow-lg"
+          >
+            <FileDown className="w-4 h-4" />
+            <span className="text-sm font-medium">Export Report</span>
+          </motion.button>
+        </div>
       </div>
     </div>
   );
@@ -295,6 +321,167 @@ const YourEdgeAtAGlance: React.FC<{ trades: any[] }> = ({ trades }) => {
         {metrics.map((metric) => (
           <EdgeBar key={metric.label} {...metric} />
         ))}
+      </div>
+    </div>
+  );
+};
+
+// ===============================================
+// AT A GLANCE WEEKLY SUMMARY (iOS Battery style)
+// ===============================================
+
+const AtAGlanceWeekly: React.FC<{ trades: any[] }> = ({ trades }) => {
+  const weeklyData = React.useMemo(() => {
+    // Get last 7 days
+    const days: Array<{
+      date: Date;
+      dateStr: string;
+      dayName: string;
+      pnl: number;
+      trades: number;
+      wins: number;
+      losses: number;
+      isToday: boolean;
+    }> = [];
+    const today = new Date();
+    
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      
+      const dayTrades = trades.filter(t => {
+        const tradeDate = new Date(t.entryTime).toISOString().split('T')[0];
+        return tradeDate === dateStr;
+      });
+      
+      const dayPnL = dayTrades.reduce((sum, t) => sum + (t.pnl || 0), 0);
+      const dayWins = dayTrades.filter(t => (t.pnl || 0) > 0).length;
+      const dayLosses = dayTrades.filter(t => (t.pnl || 0) < 0).length;
+      
+      days.push({
+        date,
+        dateStr,
+        dayName: date.toLocaleDateString('en-US', { weekday: 'short' }),
+        pnl: dayPnL,
+        trades: dayTrades.length,
+        wins: dayWins,
+        losses: dayLosses,
+        isToday: dateStr === today.toISOString().split('T')[0]
+      });
+    }
+    
+    return days;
+  }, [trades]);
+
+  const maxAbsPnL = Math.max(...weeklyData.map(d => Math.abs(d.pnl)), 1);
+
+  return (
+    <div className="bg-card border border-border rounded-2xl p-6">
+      <div className="flex items-center gap-3 mb-6">
+        <Calendar className="w-5 h-5 text-primary" />
+        <h2 className="text-xl font-semibold text-foreground">Last 7 Days at a Glance</h2>
+      </div>
+
+      <div className="space-y-2">
+        {weeklyData.map((day, idx) => {
+          const barWidth = day.pnl !== 0 ? (Math.abs(day.pnl) / maxAbsPnL) * 100 : 0;
+          const isPositive = day.pnl > 0;
+          const isNegative = day.pnl < 0;
+          
+          return (
+            <motion.div
+              key={day.dateStr}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: idx * 0.05 }}
+              className={cn(
+                "flex items-center gap-4 p-3 rounded-lg transition-all duration-200",
+                day.isToday && "bg-primary/5 border border-primary/20"
+              )}
+            >
+              {/* Day label */}
+              <div className="w-12 flex-shrink-0">
+                <div className={cn(
+                  "text-sm font-medium",
+                  day.isToday ? "text-primary" : "text-muted-foreground"
+                )}>
+                  {day.dayName}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {day.date.getDate()}
+                </div>
+              </div>
+
+              {/* Bar chart */}
+              <div className="flex-1 flex items-center gap-2">
+                <div className="flex-1 h-8 bg-muted/30 rounded-lg overflow-hidden relative">
+                  {day.trades > 0 ? (
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${barWidth}%` }}
+                      transition={{ duration: 0.5, delay: idx * 0.05 }}
+                      className={cn(
+                        "h-full rounded-lg flex items-center justify-center",
+                        isPositive && "bg-green-500",
+                        isNegative && "bg-red-500",
+                        !isPositive && !isNegative && "bg-muted"
+                      )}
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-xs text-muted-foreground">No trades</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* P&L amount */}
+                <div className="w-24 text-right">
+                  {day.trades > 0 ? (
+                    <div className={cn(
+                      "text-sm font-semibold tabular-nums",
+                      isPositive && "text-green-500",
+                      isNegative && "text-red-500",
+                      !isPositive && !isNegative && "text-muted-foreground"
+                    )}>
+                      {formatCurrency(day.pnl)}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-muted-foreground">—</div>
+                  )}
+                </div>
+              </div>
+
+              {/* Win/Loss indicator */}
+              {day.trades > 0 && (
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  {day.wins > 0 && <span className="text-green-500">✓{day.wins}</span>}
+                  {day.losses > 0 && <span className="text-red-500">✗{day.losses}</span>}
+                </div>
+              )}
+            </motion.div>
+          );
+        })}
+      </div>
+
+      {/* Weekly summary */}
+      <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
+        <span className="text-sm text-muted-foreground">7-Day Total</span>
+        <div className="flex items-center gap-4">
+          <span className="text-xs text-muted-foreground">
+            {weeklyData.reduce((sum, d) => sum + d.trades, 0)} trades
+          </span>
+          <span className={cn(
+            "text-lg font-bold tabular-nums",
+            weeklyData.reduce((sum, d) => sum + d.pnl, 0) > 0 
+              ? "text-green-500" 
+              : weeklyData.reduce((sum, d) => sum + d.pnl, 0) < 0
+              ? "text-red-500"
+              : "text-muted-foreground"
+          )}>
+            {formatCurrency(weeklyData.reduce((sum, d) => sum + d.pnl, 0))}
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -499,10 +686,220 @@ const TopSymbolsSection: React.FC<{
 };
 
 // ===============================================
+// SMART INSIGHTS (Pattern Detection)
+// ===============================================
+
+const SmartInsightsCard: React.FC<{ trades: any[] }> = ({ trades }) => {
+  const insights = React.useMemo((): SmartInsight[] => {
+    if (trades.length < 5) return [];
+
+    const results: SmartInsight[] = [];
+
+    // Analyze time-of-day performance
+    const tradesByHour = new Map<number, { wins: number; losses: number; total: number; pnl: number }>();
+    trades.forEach(trade => {
+      const hour = new Date(trade.entryTime).getHours();
+      const existing = tradesByHour.get(hour) || { wins: 0, losses: 0, total: 0, pnl: 0 };
+      existing.total++;
+      existing.pnl += (trade.pnl || 0);
+      if ((trade.pnl || 0) > 0) existing.wins++;
+      if ((trade.pnl || 0) < 0) existing.losses++;
+      tradesByHour.set(hour, existing);
+    });
+
+    // Find best/worst time windows (morning vs afternoon)
+    const morningTrades = trades.filter(t => new Date(t.entryTime).getHours() < 12);
+    const afternoonTrades = trades.filter(t => new Date(t.entryTime).getHours() >= 14);
+    
+    if (morningTrades.length >= 3 && afternoonTrades.length >= 3) {
+      const morningWinRate = (morningTrades.filter(t => (t.pnl || 0) > 0).length / morningTrades.length) * 100;
+      const afternoonWinRate = (afternoonTrades.filter(t => (t.pnl || 0) > 0).length / afternoonTrades.length) * 100;
+      
+      if (Math.abs(morningWinRate - afternoonWinRate) > 20) {
+        const bestTime = morningWinRate > afternoonWinRate ? 'morning (before 12 PM)' : 'afternoon (after 2 PM)';
+        const bestRate = Math.max(morningWinRate, afternoonWinRate);
+        const worstTime = morningWinRate > afternoonWinRate ? 'afternoon' : 'morning';
+        const worstRate = Math.min(morningWinRate, afternoonWinRate);
+        
+        results.push({
+          id: 'time-pattern',
+          type: 'pattern',
+          title: '⏰ Time of Day Pattern Detected',
+          description: `You win ${bestRate.toFixed(0)}% of trades in the ${bestTime}, but only ${worstRate.toFixed(0)}% in the ${worstTime}`,
+          metric: `${(bestRate - worstRate).toFixed(0)}% difference`
+        });
+      }
+    }
+
+    // Analyze symbol consistency
+    const symbolStats = new Map<string, { wins: number; total: number; pnl: number }>();
+    trades.forEach(trade => {
+      const symbol = trade.symbol || 'Unknown';
+      const existing = symbolStats.get(symbol) || { wins: 0, total: 0, pnl: 0 };
+      existing.total++;
+      existing.pnl += (trade.pnl || 0);
+      if ((trade.pnl || 0) > 0) existing.wins++;
+      symbolStats.set(symbol, existing);
+    });
+
+    // Find symbols with high volume but poor performance
+    const symbolsArray = Array.from(symbolStats.entries()).map(([symbol, stats]) => ({
+      symbol,
+      winRate: (stats.wins / stats.total) * 100,
+      total: stats.total,
+      pnl: stats.pnl
+    }));
+
+    const problematicSymbol = symbolsArray.find(s => s.total >= 3 && s.winRate < 40 && s.pnl < 0);
+    if (problematicSymbol) {
+      results.push({
+        id: 'symbol-warning',
+        type: 'warning',
+        title: `⚠️ ${problematicSymbol.symbol} Underperforming`,
+        description: `You've traded ${problematicSymbol.symbol} ${problematicSymbol.total} times with only ${problematicSymbol.winRate.toFixed(0)}% win rate (${formatCurrency(problematicSymbol.pnl)} total)`,
+        metric: `Consider avoiding or refining your ${problematicSymbol.symbol} strategy`
+      });
+    }
+
+    // Analyze win/loss streaks
+    let currentStreak = 0;
+    let maxWinStreak = 0;
+    let maxLossStreak = 0;
+    const sortedTrades = [...trades].sort((a, b) => new Date(a.entryTime).getTime() - new Date(b.entryTime).getTime());
+    
+    sortedTrades.forEach(trade => {
+      if ((trade.pnl || 0) > 0) {
+        currentStreak = currentStreak > 0 ? currentStreak + 1 : 1;
+        maxWinStreak = Math.max(maxWinStreak, currentStreak);
+      } else if ((trade.pnl || 0) < 0) {
+        currentStreak = currentStreak < 0 ? currentStreak - 1 : -1;
+        maxLossStreak = Math.max(maxLossStreak, Math.abs(currentStreak));
+      } else {
+        currentStreak = 0;
+      }
+    });
+
+    if (maxWinStreak >= 5) {
+      results.push({
+        id: 'streak-achievement',
+        type: 'achievement',
+        title: '🔥 Impressive Win Streak',
+        description: `Your longest winning streak is ${maxWinStreak} trades in a row`,
+        metric: 'Keep the momentum going!'
+      });
+    }
+
+    // Analyze R-multiple consistency
+    const tradesWithR = trades.filter(t => t.rMultiple !== undefined);
+    if (tradesWithR.length >= 5) {
+      const avgR = tradesWithR.reduce((sum, t) => sum + (t.rMultiple || 0), 0) / tradesWithR.length;
+      const winningTrades = tradesWithR.filter(t => (t.pnl || 0) > 0);
+      const avgWinR = winningTrades.length > 0 
+        ? winningTrades.reduce((sum, t) => sum + (t.rMultiple || 0), 0) / winningTrades.length 
+        : 0;
+      
+      if (avgWinR > 2) {
+        results.push({
+          id: 'r-multiple-tip',
+          type: 'achievement',
+          title: '🎯 Excellent Risk Management',
+          description: `Your average winning trade is ${avgWinR.toFixed(1)}R - you're letting winners run`,
+          metric: 'This is professional-level discipline'
+        });
+      } else if (avgWinR < 1 && winningTrades.length > 3) {
+        results.push({
+          id: 'r-multiple-warning',
+          type: 'tip',
+          title: '💡 Room for Improvement',
+          description: `Your average winning trade is only ${avgWinR.toFixed(1)}R - consider letting winners run longer`,
+          metric: 'Target: 2R+ on winning trades'
+        });
+      }
+    }
+
+    // If no patterns found, show encouragement
+    if (results.length === 0 && trades.length >= 10) {
+      const winRate = (trades.filter(t => (t.pnl || 0) > 0).length / trades.length) * 100;
+      results.push({
+        id: 'consistency',
+        type: 'achievement',
+        title: '📊 Consistent Trading',
+        description: `You're maintaining a ${winRate.toFixed(0)}% win rate across ${trades.length} trades`,
+        metric: 'Keep analyzing and refining'
+      });
+    }
+
+    return results.slice(0, 2); // Show max 2 insights
+  }, [trades]);
+
+  if (insights.length === 0) return null;
+
+  const getInsightIcon = (type: SmartInsight['type']) => {
+    switch (type) {
+      case 'pattern': return <Lightbulb className="w-5 h-5 text-blue-500" />;
+      case 'warning': return <AlertTriangle className="w-5 h-5 text-yellow-500" />;
+      case 'achievement': return <Trophy className="w-5 h-5 text-green-500" />;
+      case 'tip': return <Target className="w-5 h-5 text-purple-500" />;
+    }
+  };
+
+  const getInsightBg = (type: SmartInsight['type']) => {
+    switch (type) {
+      case 'pattern': return 'bg-blue-500/10 border-blue-500/20';
+      case 'warning': return 'bg-yellow-500/10 border-yellow-500/20';
+      case 'achievement': return 'bg-green-500/10 border-green-500/20';
+      case 'tip': return 'bg-purple-500/10 border-purple-500/20';
+    }
+  };
+
+  return (
+    <div className="bg-card border border-border rounded-2xl p-6">
+      <div className="flex items-center gap-3 mb-4">
+        <Lightbulb className="w-5 h-5 text-primary" />
+        <h2 className="text-xl font-semibold text-foreground">Smart Insights</h2>
+      </div>
+
+      <div className="space-y-3">
+        {insights.map((insight, idx) => (
+          <motion.div
+            key={insight.id}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: idx * 0.1 }}
+            className={cn(
+              "p-4 rounded-xl border transition-all duration-200",
+              getInsightBg(insight.type)
+            )}
+          >
+            <div className="flex items-start gap-3">
+              {getInsightIcon(insight.type)}
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-foreground mb-1">{insight.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed mb-2">
+                  {insight.description}
+                </p>
+                {insight.metric && (
+                  <div className="text-xs font-medium text-foreground/70">
+                    {insight.metric}
+                  </div>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ===============================================
 // TRADE HIGHLIGHTS (Card-based, not table)
 // ===============================================
 
 const TradeHighlightsCard: React.FC<{ trades: any[] }> = ({ trades }) => {
+  const { deleteTrade } = useTradeStore();
+  const [hoveredTradeId, setHoveredTradeId] = React.useState<string | null>(null);
+
   const recentHighlights = React.useMemo(() => {
     return trades
       .sort((a, b) => new Date(b.entryTime).getTime() - new Date(a.entryTime).getTime())
@@ -524,6 +921,12 @@ const TradeHighlightsCard: React.FC<{ trades: any[] }> = ({ trades }) => {
         return { ...trade, highlight };
       });
   }, [trades]);
+
+  const handleDelete = (trade: any) => {
+    if (window.confirm(`Delete ${trade.symbol} trade (${formatCurrency(trade.pnl || 0)})?`)) {
+      deleteTrade(trade.id);
+    }
+  };
 
   return (
     <div className="bg-card border border-border rounded-2xl p-6">
@@ -553,8 +956,28 @@ const TradeHighlightsCard: React.FC<{ trades: any[] }> = ({ trades }) => {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.05 }}
-                className="p-4 bg-muted/20 hover:bg-muted/30 rounded-xl border border-border transition-all duration-200"
+                onMouseEnter={() => setHoveredTradeId(trade.id)}
+                onMouseLeave={() => setHoveredTradeId(null)}
+                className="relative group p-4 bg-muted/20 hover:bg-muted/30 rounded-xl border border-border transition-all duration-200"
               >
+                {/* Quick Action - Delete (shown on hover) */}
+                <AnimatePresence>
+                  {hoveredTradeId === trade.id && (
+                    <motion.button
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(trade);
+                      }}
+                      className="absolute top-3 right-3 p-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg transition-all duration-200 z-10"
+                      title="Delete trade"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </motion.button>
+                  )}
+                </AnimatePresence>
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center gap-2">
                     {/* Direction indicator */}
@@ -733,6 +1156,12 @@ export const AppleAnalyticsDashboard: React.FC = () => {
       <div className="max-w-7xl 2xl:max-w-[1800px] mx-auto px-6 2xl:px-8 py-8 space-y-8">
         {/* Your Edge at a Glance */}
         <YourEdgeAtAGlance trades={filteredTrades} />
+
+        {/* Smart Insights */}
+        <SmartInsightsCard trades={filteredTrades} />
+
+        {/* At a Glance Weekly */}
+        <AtAGlanceWeekly trades={filteredTrades} />
 
         {/* Equity Curve */}
         <AnnotatedEquityCurve trades={filteredTrades} />
