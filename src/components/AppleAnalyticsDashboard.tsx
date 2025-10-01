@@ -730,12 +730,12 @@ const AnnotatedEquityCurve: React.FC<{
               };
               
               if (isNearRightEdge) {
-                // Flip to left side of cursor
+                // Flip to left side of cursor with extra clearance
                 positionStyle = {
                   left: `${hoveredPoint.x}%`,
                   transform: 'translateX(-100%)',
                   marginTop: '-3rem',
-                  marginLeft: '-0.5rem'
+                  marginLeft: '-1rem' // Extra clearance to prevent cutoff
                 };
               } else if (isNearLeftEdge) {
                 // Flip to right side of cursor
@@ -743,7 +743,7 @@ const AnnotatedEquityCurve: React.FC<{
                   left: `${hoveredPoint.x}%`,
                   transform: 'translateX(0%)',
                   marginTop: '-3rem',
-                  marginLeft: '0.5rem'
+                  marginLeft: '1rem' // Extra clearance on left too
                 };
               }
               
