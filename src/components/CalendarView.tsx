@@ -15,7 +15,8 @@ import {
   Share2,
   FileText,
   CheckCircle2,
-  Clock
+  Clock,
+  Flame
 } from 'lucide-react';
 import { useTradeStore } from '@/store/useTradeStore';
 import { useAccountFilterStore, getAccountIdsForSelection } from '@/store/useAccountFilterStore';
@@ -54,8 +55,14 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
   const [isWeeklyReviewViewOpen, setIsWeeklyReviewViewOpen] = useState(false);
   const { trades } = useTradeStore();
   const { getNotesForDate } = useQuickNoteStore();
-  const { reflections, getReflectionByDate } = useDailyReflectionStore();
+  const { reflections, getReflectionByDate, getReflectionStreak } = useDailyReflectionStore();
   const { getMondayOfWeek, isWeekReviewAvailable, getCurrentWeekReview, getReviewByWeek } = useWeeklyReviewStore();
+  
+  // Calculate current reflection streak
+  const currentStreak = useMemo(() => {
+    if (!selectedAccountId) return 0;
+    return getReflectionStreak(selectedAccountId);
+  }, [selectedAccountId, reflections, getReflectionStreak]);
   
   // Sidebar state detection for dynamic layout
   const { isExpanded: sidebarExpanded } = useSidebarStore();
@@ -1028,7 +1035,23 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                                 <CalendarIcon className="w-2 h-2 sm:w-3 sm:h-3 lg:w-3 lg:h-3 2xl:w-4 2xl:h-4 3xl:w-5 3xl:h-5 text-primary" />
                               )}
                               {day.hasReflection && (
-                                <BookOpen className="w-2 h-2 sm:w-3 sm:h-3 lg:w-3 lg:h-3 2xl:w-4 2xl:h-4 3xl:w-5 3xl:h-5 text-green-500" />
+                                <div className="relative">
+                                  <Flame 
+                                    className={cn(
+                                      "w-2 h-2 sm:w-3 sm:h-3 lg:w-3 lg:h-3 2xl:w-4 2xl:h-4 3xl:w-5 3xl:h-5",
+                                      currentStreak >= 7 
+                                        ? "text-orange-500 drop-shadow-[0_0_4px_rgba(249,115,22,0.6)]" 
+                                        : "text-orange-500"
+                                    )}
+                                  />
+                                  {currentStreak >= 7 && (
+                                    <motion.div
+                                      className="absolute inset-0 bg-orange-500/20 rounded-full blur-sm"
+                                      animate={{ opacity: [0.4, 0.7, 0.4] }}
+                                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                                    />
+                                  )}
+                                </div>
                               )}
                             </div>
                           </div>
@@ -1085,7 +1108,23 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                           <CalendarIcon className="w-2 h-2 sm:w-3 sm:h-3 lg:w-3 lg:h-3 2xl:w-4 2xl:h-4 3xl:w-5 3xl:h-5 text-primary" />
                         )}
                         {day.hasReflection && (
-                          <BookOpen className="w-2 h-2 sm:w-3 sm:h-3 lg:w-3 lg:h-3 2xl:w-4 2xl:h-4 3xl:w-5 3xl:h-5 text-green-500" />
+                          <div className="relative">
+                            <Flame 
+                              className={cn(
+                                "w-2 h-2 sm:w-3 sm:h-3 lg:w-3 lg:h-3 2xl:w-4 2xl:h-4 3xl:w-5 3xl:h-5",
+                                currentStreak >= 7 
+                                  ? "text-orange-500 drop-shadow-[0_0_4px_rgba(249,115,22,0.6)]" 
+                                  : "text-orange-500"
+                              )}
+                            />
+                            {currentStreak >= 7 && (
+                              <motion.div
+                                className="absolute inset-0 bg-orange-500/20 rounded-full blur-sm"
+                                animate={{ opacity: [0.4, 0.7, 0.4] }}
+                                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                              />
+                            )}
+                          </div>
                         )}
                       </div>
                     </div>
