@@ -315,7 +315,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
         link.click();
         setTimeout(() => link.remove(), 0);
         
-        const text = `Check out my trading performance for ${currentMonth} ${currentYear}! 📊 Made ${formatCurrency(monthlyPnL)} with ${totalTrades} trades. Building my edge with TradeFutura 🚀 #TradingJournal #TradeFutura`;
+        const text = `${currentMonth} ${currentYear} trading recap 📊\n\nP&L: ${formatCurrencyApple(monthlyPnL, { forceSign: true })}\nTrades: ${totalTrades}\n\nRefining my edge, daily.\n\nrefine.trading`;
         const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
         
         window.open(twitterUrl, '_blank', 'noopener,noreferrer');
@@ -646,7 +646,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
                         <div className="px-4 py-2 bg-primary/10 text-primary rounded-lg">TODAY</div>
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        Monthly stats: <span className="font-semibold text-green-500">{formatCurrency(monthlyPnL)}</span>
+                        Monthly: <span className={cn("font-semibold", monthlyPnL > 0 ? "text-green-500" : monthlyPnL < 0 ? "text-red-500" : "text-muted-foreground")}>{formatCurrencyApple(monthlyPnL, { showSign: false })}</span>
                       </div>
                     </div>
 
