@@ -550,15 +550,15 @@ const AnnotatedEquityCurve: React.FC<{ trades: any[] }> = ({ trades }) => {
         )}
       </div>
 
-      <div className="relative h-64 bg-muted/10 rounded-lg overflow-hidden">
+      <div className="relative h-64 rounded-lg overflow-hidden">
         {equityData.data.length === 0 ? (
-          <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
+          <div className="absolute inset-0 flex items-center justify-center text-muted-foreground bg-muted/10">
             No trades to display
           </div>
         ) : (
           <svg viewBox={`0 0 ${equityData.data.length} 100`} className="w-full h-full" preserveAspectRatio="none">
-            {/* Grid lines */}
-            {[0, 25, 50, 75, 100].map(y => (
+            {/* Subtle horizontal grid lines (Apple Health style) */}
+            {[25, 50, 75].map(y => (
               <line
                 key={y}
                 x1="0"
@@ -566,23 +566,19 @@ const AnnotatedEquityCurve: React.FC<{ trades: any[] }> = ({ trades }) => {
                 x2={equityData.data.length}
                 y2={y}
                 stroke="currentColor"
-                strokeWidth="0.1"
-                className="text-border opacity-30"
+                strokeWidth="0.05"
+                className="text-muted-foreground opacity-20"
               />
             ))}
             
-            {/* Equity curve */}
-            <polyline
-              points={equityData.data.map((point, idx) => {
-                const x = idx;
-                const y = 100 - ((point.equity - minEquity) / range) * 100;
-                return `${x},${y}`;
-              }).join(' ')}
-              fill="none"
-              stroke="hsl(var(--primary))"
-              strokeWidth="0.5"
-              className="drop-shadow"
-            />
+            {/* Gradient fill under curve (Apple Stocks style) */}
+            <defs>
+              <linearGradient id="equityGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.3" />
+                <stop offset="50%" stopColor="hsl(var(--primary))" stopOpacity="0.1" />
+                <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0.0" />
+              </linearGradient>
+            </defs>
             
             {/* Fill under curve */}
             <polygon
@@ -591,23 +587,56 @@ const AnnotatedEquityCurve: React.FC<{ trades: any[] }> = ({ trades }) => {
                 const y = 100 - ((point.equity - minEquity) / range) * 100;
                 return `${x},${y}`;
               }).join(' ')} ${equityData.data.length},100`}
-              fill="hsl(var(--primary))"
-              opacity="0.1"
+              fill="url(#equityGradient)"
             />
             
-            {/* Biggest win annotation */}
+            {/* Equity curve line (thinner, Apple style) */}
+            <polyline
+              points={equityData.data.map((point, idx) => {
+                const x = idx;
+                const y = 100 - ((point.equity - minEquity) / range) * 100;
+                return `${x},${y}`;
+              }).join(' ')}
+              fill="none"
+              stroke="hsl(var(--primary))"
+              strokeWidth="0.3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="drop-shadow-sm"
+            />
+            
+            {/* Biggest win annotation (static dot, no pulse) */}
             {equityData.annotations.biggestWin && (
-              <circle
-                cx={equityData.annotations.biggestWin.index}
-                cy={100 - ((equityData.annotations.biggestWin.equity - minEquity) / range) * 100}
-                r="1"
-                fill="#22c55e"
-                className="drop-shadow-lg animate-pulse"
-              />
+              <g>
+                <circle
+                  cx={equityData.annotations.biggestWin.index}
+                  cy={100 - ((equityData.annotations.biggestWin.equity - minEquity) / range) * 100}
+                  r="0.8"
+                  fill="#22c55e"
+                  className="drop-shadow"
+                />
+                <circle
+                  cx={equityData.annotations.biggestWin.index}
+                  cy={100 - ((equityData.annotations.biggestWin.equity - minEquity) / range) * 100}
+                  r="1.5"
+                  fill="none"
+                  stroke="#22c55e"
+                  strokeWidth="0.15"
+                  opacity="0.5"
+                />
+              </g>
             )}
           </svg>
         )}
       </div>
+
+      {/* Y-axis labels (Apple style) */}
+      {equityData.data.length > 0 && (
+        <div className="flex justify-between mt-2 text-xs text-muted-foreground">
+          <span>{formatCurrency(minEquity)}</span>
+          <span>{formatCurrency(maxEquity)}</span>
+        </div>
+      )}
     </div>
   );
 };
