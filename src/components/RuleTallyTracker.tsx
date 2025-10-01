@@ -19,6 +19,7 @@ import { useRuleTallyStore } from '@/store/useRuleTallyStore';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
 import { Tooltip } from './ui/Tooltip';
 import { cn, formatLocalDate } from '@/lib/utils';
+import { getHabitXpDisplay } from '@/lib/xp/displayUtils';
 
 type ViewMode = 'week' | 'month';
 
@@ -661,7 +662,7 @@ export const RuleTallyTracker: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs text-muted-foreground mb-6 max-w-lg mx-auto">
               <div className="flex items-center gap-2 justify-center">
                 <Zap className="w-4 h-4 text-yellow-500" />
-                <span>+5 XP per tally</span>
+                <span>{getHabitXpDisplay().rangeDisplay} per tally</span>
               </div>
               <div className="flex items-center gap-2 justify-center">
                 <Flame className="w-4 h-4 text-orange-500" />

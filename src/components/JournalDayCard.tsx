@@ -502,8 +502,8 @@ export const JournalDayCard: React.FC<JournalDayCardProps> = ({
               className="mt-2 flex items-center justify-center"
             >
               <div className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1">
-                <Zap className="w-3 h-3" />
-                Note added +5 XP
+                <CheckCircle className="w-3 h-3" />
+                Note added
               </div>
             </motion.div>
           )}

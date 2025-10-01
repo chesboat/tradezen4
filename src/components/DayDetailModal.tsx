@@ -1645,7 +1645,6 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
                                     >
                                       <Pin className="w-4 h-4" />
                                       {isQuestPinned ? 'Pinned' : (isPinningQuest ? 'Pinning…' : 'Pin as Quest')}
-                                      <span className="px-2 py-0.5 bg-white/20 rounded-full text-xs">+25 XP</span>
                                     </motion.button>
                                     <motion.button
                                       onClick={async () => {

@@ -188,7 +188,7 @@ export const QuickNoteModal: React.FC<QuickNoteModalProps> = ({
             description: formData.content.length > 50 
               ? `${formData.content.substring(0, 50)}...`
               : formData.content,
-            xpEarned: 5,
+            // Quick notes don't award XP - remove misleading xpEarned field
             relatedId: newNote.id,
             accountId,
           });
@@ -625,7 +625,7 @@ export const QuickNoteModal: React.FC<QuickNoteModalProps> = ({
                         {editingNoteId ? 'Note Updated!' : 'Note Saved!'}
                       </h3>
                       <p className="text-sm text-muted-foreground">
-                        +5 XP earned
+                        Note saved successfully
                       </p>
                     </div>
                   </motion.div>

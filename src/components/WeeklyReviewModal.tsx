@@ -9,6 +9,7 @@ import { useAccountFilterStore } from '@/store/useAccountFilterStore';
 import { summarizeWinLossScratch } from '@/lib/utils';
 import { formatCurrency } from '@/lib/localStorageUtils';
 import { cn } from '@/lib/utils';
+import { getWeeklyReviewXpDisplay } from '@/lib/xp/displayUtils';
 
 interface WeeklyReviewModalProps {
   isOpen: boolean;
@@ -235,7 +236,7 @@ export const WeeklyReviewModal: React.FC<WeeklyReviewModalProps> = ({
                     exit={{ scale: 0.8, y: 20 }}
                   >
                     <CheckCircle2 className="w-6 h-6" />
-                    <span className="font-semibold">Weekly Review Complete! +150 XP</span>
+                    <span className="font-semibold">Weekly Review Complete! {getWeeklyReviewXpDisplay().display}</span>
                   </motion.div>
                 </motion.div>
               )}
@@ -399,7 +400,7 @@ export const WeeklyReviewModal: React.FC<WeeklyReviewModalProps> = ({
             {/* Footer */}
             <div className="flex items-center justify-between p-6 border-t border-border">
               <div className="text-xs text-muted-foreground">
-                * Required fields • Complete review to earn 150 XP
+                * Required fields • Complete review to earn {getWeeklyReviewXpDisplay().xp} XP
               </div>
               
               <div className="flex gap-3">
@@ -418,7 +419,7 @@ export const WeeklyReviewModal: React.FC<WeeklyReviewModalProps> = ({
                   disabled={isSubmitting || !isFormValid() || existingReview?.isComplete}
                   whileTap={{ scale: 0.98 }}
                 >
-                  {existingReview?.isComplete ? 'Completed' : 'Complete Review (+150 XP)'}
+                  {existingReview?.isComplete ? 'Completed' : `Complete Review (${getWeeklyReviewXpDisplay().display})`}
                 </motion.button>
               </div>
             </div>
