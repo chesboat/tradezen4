@@ -403,19 +403,19 @@ export const PublicSharePageClean: React.FC = () => {
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="text-center sm:text-left">
                 <p className="text-sm text-muted-foreground mb-1">
-                  Shared from <span className="font-semibold text-foreground">Edge</span>
+                  Shared from <span className="font-semibold text-foreground">Refine</span>
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Your AI-powered trading journal
+                  Refine your edge, daily
                 </p>
               </div>
               <a
-                href="https://tradezen.app"
+                href="https://refine.trading"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity text-sm font-medium"
               >
-                Try Edge Free
+                Try Refine Free
                 <ExternalLink className="w-4 h-4" />
               </a>
             </div>
