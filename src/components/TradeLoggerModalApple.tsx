@@ -37,8 +37,6 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
   const [direction, setDirection] = useState<TradeDirection>('long');
   const [result, setResult] = useState<TradeResult | null>(null);
   const [pnl, setPnl] = useState('');
-  const [note, setNote] = useState('');
-  const [showNote, setShowNote] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [recentSymbols, setRecentSymbols] = useState<string[]>([]);
@@ -64,8 +62,6 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
         setDirection('long');
         setResult(null);
         setPnl('');
-        setNote('');
-        setShowNote(false);
         setShowSymbolPicker(false);
       }, 300);
     }
@@ -77,25 +73,24 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
       setSymbol(editingTrade.symbol);
       setDirection(editingTrade.direction);
       setResult(editingTrade.result || null);
-      setPnl(editingTrade.pnl?.toString() || '');
-      setNote(editingTrade.notes || '');
-      setShowNote(!!editingTrade.notes);
+      setPnl(Math.abs(editingTrade.pnl || 0).toString());
     }
   }, [editingTrade, isOpen]);
 
   const handleSubmit = async () => {
-    if (!symbol || !result || !pnl || !selectedAccountId) return;
+    if (!symbol || !result || !selectedAccountId) return;
+    if (result !== 'breakeven' && !pnl) return;
     
     setIsSubmitting(true);
     
     try {
-      const pnlValue = parseFloat(pnl);
+      const pnlValue = result === 'breakeven' ? 0 : parseFloat(pnl);
       
       const tradeData = {
         symbol: symbol.toUpperCase(),
         direction,
         result,
-        pnl: result === 'loss' ? -Math.abs(pnlValue) : Math.abs(pnlValue),
+        pnl: result === 'loss' ? -Math.abs(pnlValue) : result === 'breakeven' ? 0 : Math.abs(pnlValue),
         entryPrice: 0,
         exitPrice: result === 'win' ? Math.abs(pnlValue) : 0,
         quantity: 1,
@@ -104,7 +99,7 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
         entryTime: new Date().toISOString(),
         mood: 'neutral' as const,
         tags: [] as string[],
-        notes: note,
+        notes: '',
         accountId: selectedAccountId,
       };
 
@@ -133,7 +128,7 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
     }
   };
 
-  const canSubmit = symbol && result && pnl && !isSubmitting;
+  const canSubmit = symbol && result && (result === 'breakeven' || pnl) && !isSubmitting;
 
   return (
     <AnimatePresence>
@@ -177,8 +172,8 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
               </button>
             </div>
 
-            {/* Content */}
-            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+            {/* Content - No scroll needed */}
+            <div className="p-4 md:p-6 space-y-5">
               
               {/* Symbol */}
               <div className="space-y-2">
@@ -254,16 +249,19 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
                 </div>
               </div>
 
-              {/* Outcome */}
+              {/* Outcome + P&L - Inline */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-muted-foreground">
                   Outcome
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   <button
-                    onClick={() => setResult('win')}
+                    onClick={() => {
+                      setResult('win');
+                      setTimeout(() => pnlInputRef.current?.focus(), 100);
+                    }}
                     className={cn(
-                      "flex flex-col items-center justify-center py-4 rounded-xl font-medium transition-all",
+                      "flex flex-col items-center justify-center py-3 rounded-xl font-medium transition-all",
                       result === 'win'
                         ? "bg-green-500 text-white"
                         : "bg-muted/30 text-foreground hover:bg-muted/50"
@@ -273,9 +271,12 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
                     <span className="text-sm">Win</span>
                   </button>
                   <button
-                    onClick={() => setResult('loss')}
+                    onClick={() => {
+                      setResult('loss');
+                      setTimeout(() => pnlInputRef.current?.focus(), 100);
+                    }}
                     className={cn(
-                      "flex flex-col items-center justify-center py-4 rounded-xl font-medium transition-all",
+                      "flex flex-col items-center justify-center py-3 rounded-xl font-medium transition-all",
                       result === 'loss'
                         ? "bg-red-500 text-white"
                         : "bg-muted/30 text-foreground hover:bg-muted/50"
@@ -285,9 +286,12 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
                     <span className="text-sm">Loss</span>
                   </button>
                   <button
-                    onClick={() => setResult('breakeven')}
+                    onClick={() => {
+                      setResult('breakeven');
+                      setPnl('0');
+                    }}
                     className={cn(
-                      "flex flex-col items-center justify-center py-4 rounded-xl font-medium transition-all",
+                      "flex flex-col items-center justify-center py-3 rounded-xl font-medium transition-all",
                       result === 'breakeven'
                         ? "bg-yellow-500 text-white"
                         : "bg-muted/30 text-foreground hover:bg-muted/50"
@@ -297,65 +301,41 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
                     <span className="text-sm">Scratch</span>
                   </button>
                 </div>
-              </div>
-
-              {/* P&L - Only show if result is selected */}
-              <AnimatePresence>
-                {result && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="space-y-2"
-                  >
-                    <label className="text-sm font-medium text-muted-foreground">
-                      P&L Amount
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-lg">
-                        $
-                      </span>
-                      <input
-                        ref={pnlInputRef}
-                        type="number"
-                        value={pnl}
-                        onChange={(e) => setPnl(e.target.value)}
-                        className="w-full pl-8 pr-4 py-3 bg-muted/30 border border-border/50 rounded-xl text-foreground font-medium text-lg focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-                        placeholder="0.00"
-                        step="0.01"
-                      />
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Quick Note - Optional */}
-              <div className="space-y-2">
-                {!showNote ? (
-                  <button
-                    onClick={() => setShowNote(true)}
-                    className="w-full py-2 text-sm text-primary hover:text-primary/80 transition-colors text-left"
-                  >
-                    + Add Note
-                  </button>
-                ) : (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    className="space-y-2"
-                  >
-                    <label className="text-sm font-medium text-muted-foreground">
-                      Note (Optional)
-                    </label>
-                    <textarea
-                      value={note}
-                      onChange={(e) => setNote(e.target.value)}
-                      className="w-full px-4 py-3 bg-muted/30 border border-border/50 rounded-xl text-foreground text-sm resize-none focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-                      placeholder="Quick thoughts about this trade..."
-                      rows={3}
-                    />
-                  </motion.div>
-                )}
+                
+                {/* P&L appears inline below outcome */}
+                <AnimatePresence>
+                  {result && result !== 'breakeven' && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="pt-2"
+                    >
+                      <div className="relative">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-lg">
+                          $
+                        </span>
+                        <input
+                          ref={pnlInputRef}
+                          type="number"
+                          value={pnl}
+                          onChange={(e) => setPnl(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && canSubmit) {
+                              handleSubmit();
+                            }
+                          }}
+                          className="w-full pl-8 pr-4 py-3 bg-muted/30 border border-border/50 rounded-xl text-foreground font-medium text-lg focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                          placeholder="Enter exact P&L"
+                          step="0.01"
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1 px-1">
+                        Enter exact amount from broker (including fees)
+                      </p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
 
