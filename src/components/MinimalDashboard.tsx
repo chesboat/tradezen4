@@ -639,7 +639,10 @@ const AIInsights: React.FC = () => {
         <h3 className="text-lg font-semibold text-foreground">AI Insights</h3>
       </div>
       {insights.length > 0 ? (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className={cn(
+          "grid gap-4",
+          insights.length === 1 ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-2"
+        )}>
           {insights.map((insight, index) => (
           <motion.div
             key={index}
