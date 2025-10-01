@@ -550,28 +550,27 @@ const AnnotatedEquityCurve: React.FC<{ trades: any[] }> = ({ trades }) => {
         )}
       </div>
 
-      <div className="relative h-64 rounded-lg overflow-visible px-2">
+      <div className="relative h-64 rounded-lg overflow-hidden">
         {equityData.data.length === 0 ? (
           <div className="absolute inset-0 flex items-center justify-center text-muted-foreground bg-muted/10 rounded-lg">
             No trades to display
           </div>
         ) : (
           <svg 
-            viewBox={`0 0 ${equityData.data.length + 4} 100`} 
+            viewBox="0 0 100 100" 
             className="w-full h-full" 
-            preserveAspectRatio="none"
-            style={{ overflow: 'visible' }}
+            preserveAspectRatio="xMidYMid meet"
           >
             {/* Subtle horizontal grid lines (Apple Health style) */}
             {[25, 50, 75].map(y => (
               <line
                 key={y}
-                x1="2"
+                x1="0"
                 y1={y}
-                x2={equityData.data.length + 2}
+                x2="100"
                 y2={y}
                 stroke="currentColor"
-                strokeWidth="0.05"
+                strokeWidth="0.1"
                 className="text-muted-foreground opacity-20"
               />
             ))}
@@ -587,11 +586,11 @@ const AnnotatedEquityCurve: React.FC<{ trades: any[] }> = ({ trades }) => {
             
             {/* Fill under curve */}
             <polygon
-              points={`2,100 ${equityData.data.map((point, idx) => {
-                const x = idx + 2;
-                const y = 100 - ((point.equity - minEquity) / range) * 100;
+              points={`0,100 ${equityData.data.map((point, idx) => {
+                const x = (idx / (equityData.data.length - 1)) * 100;
+                const y = 100 - ((point.equity - minEquity) / range) * 95; // Leave 5% padding
                 return `${x},${y}`;
-              }).join(' ')} ${equityData.data.length + 2},100`}
+              }).join(' ')} 100,100`}
               fill="url(#equityGradient)"
             />
             
@@ -602,8 +601,8 @@ const AnnotatedEquityCurve: React.FC<{ trades: any[] }> = ({ trades }) => {
                 
                 // Start point
                 const firstPoint = equityData.data[0];
-                const firstX = 2;
-                const firstY = 100 - ((firstPoint.equity - minEquity) / range) * 100;
+                const firstX = 0;
+                const firstY = 100 - ((firstPoint.equity - minEquity) / range) * 95;
                 let path = `M ${firstX},${firstY}`;
                 
                 // Create smooth curve using cubic bezier
@@ -611,12 +610,12 @@ const AnnotatedEquityCurve: React.FC<{ trades: any[] }> = ({ trades }) => {
                   const curr = equityData.data[i];
                   const prev = equityData.data[i - 1];
                   
-                  const currX = i + 2;
-                  const currY = 100 - ((curr.equity - minEquity) / range) * 100;
-                  const prevX = i - 1 + 2;
-                  const prevY = 100 - ((prev.equity - minEquity) / range) * 100;
+                  const currX = (i / (equityData.data.length - 1)) * 100;
+                  const currY = 100 - ((curr.equity - minEquity) / range) * 95;
+                  const prevX = ((i - 1) / (equityData.data.length - 1)) * 100;
+                  const prevY = 100 - ((prev.equity - minEquity) / range) * 95;
                   
-                  // Control points for smooth curve
+                  // Control points for smooth curve (Apple style)
                   const cp1x = prevX + (currX - prevX) * 0.5;
                   const cp1y = prevY;
                   const cp2x = prevX + (currX - prevX) * 0.5;
@@ -629,40 +628,49 @@ const AnnotatedEquityCurve: React.FC<{ trades: any[] }> = ({ trades }) => {
               })()}
               fill="none"
               stroke="hsl(var(--primary))"
-              strokeWidth="0.4"
+              strokeWidth="2"
               strokeLinecap="round"
+              vectorEffect="non-scaling-stroke"
               className="drop-shadow-sm"
             />
             
             {/* Biggest win annotation (Apple-style dot) */}
-            {equityData.annotations.biggestWin && (
-              <g>
-                {/* Outer glow ring */}
-                <circle
-                  cx={equityData.annotations.biggestWin.index + 2}
-                  cy={100 - ((equityData.annotations.biggestWin.equity - minEquity) / range) * 100}
-                  r="1.2"
-                  fill="#22c55e"
-                  opacity="0.2"
-                />
-                {/* Main dot */}
-                <circle
-                  cx={equityData.annotations.biggestWin.index + 2}
-                  cy={100 - ((equityData.annotations.biggestWin.equity - minEquity) / range) * 100}
-                  r="0.6"
-                  fill="#22c55e"
-                  className="drop-shadow-sm"
-                />
-                {/* Inner white dot (Apple signature) */}
-                <circle
-                  cx={equityData.annotations.biggestWin.index + 2}
-                  cy={100 - ((equityData.annotations.biggestWin.equity - minEquity) / range) * 100}
-                  r="0.2"
-                  fill="white"
-                  opacity="0.8"
-                />
-              </g>
-            )}
+            {equityData.annotations.biggestWin && (() => {
+              const winX = (equityData.annotations.biggestWin.index / (equityData.data.length - 1)) * 100;
+              const winY = 100 - ((equityData.annotations.biggestWin.equity - minEquity) / range) * 95;
+              
+              return (
+                <g>
+                  {/* Outer glow ring */}
+                  <circle
+                    cx={winX}
+                    cy={winY}
+                    r="4"
+                    fill="#22c55e"
+                    opacity="0.2"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                  {/* Main dot */}
+                  <circle
+                    cx={winX}
+                    cy={winY}
+                    r="2.5"
+                    fill="#22c55e"
+                    vectorEffect="non-scaling-stroke"
+                    className="drop-shadow-sm"
+                  />
+                  {/* Inner white dot (Apple signature) */}
+                  <circle
+                    cx={winX}
+                    cy={winY}
+                    r="1"
+                    fill="white"
+                    opacity="0.8"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                </g>
+              );
+            })()}
           </svg>
         )}
       </div>
