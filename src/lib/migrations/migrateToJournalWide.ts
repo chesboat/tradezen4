@@ -11,6 +11,7 @@
  */
 
 import { FirestoreService } from '@/lib/firestore';
+import { deleteField } from 'firebase/firestore';
 import type { TallyRule, RichNote, Quest, ImprovementTask } from '@/types';
 
 interface MigrationResult {
@@ -41,7 +42,7 @@ export async function migratePersonalItemsToJournalWide(): Promise<MigrationResu
     for (const habit of allHabits) {
       if (habit.accountId) {
         try {
-          await habitsService.update(habit.id, { accountId: undefined } as any);
+          await habitsService.update(habit.id, { accountId: deleteField() } as any);
           result.updated.habits++;
           console.log(`✅ Migrated habit: ${habit.label}`);
         } catch (error) {
@@ -59,7 +60,7 @@ export async function migratePersonalItemsToJournalWide(): Promise<MigrationResu
       // Skip pseudo-account notes
       if (note.accountId && note.accountId !== 'all' && !String(note.accountId).startsWith('group:')) {
         try {
-          await notesService.update(note.id, { accountId: undefined } as any);
+          await notesService.update(note.id, { accountId: deleteField() } as any);
           result.updated.notes++;
           console.log(`✅ Migrated note: ${note.title}`);
         } catch (error) {
@@ -76,7 +77,7 @@ export async function migratePersonalItemsToJournalWide(): Promise<MigrationResu
     for (const quest of allQuests) {
       if (quest.accountId && quest.accountId !== 'all') {
         try {
-          await questsService.update(quest.id, { accountId: undefined } as any);
+          await questsService.update(quest.id, { accountId: deleteField() } as any);
           result.updated.quests++;
           console.log(`✅ Migrated quest: ${quest.title}`);
         } catch (error) {
@@ -93,7 +94,7 @@ export async function migratePersonalItemsToJournalWide(): Promise<MigrationResu
     for (const todo of allTodos) {
       if (todo.accountId && todo.accountId !== 'default') {
         try {
-          await todosService.update(todo.id, { accountId: undefined } as any);
+          await todosService.update(todo.id, { accountId: deleteField() } as any);
           result.updated.todos++;
           console.log(`✅ Migrated todo: ${todo.text}`);
         } catch (error) {
