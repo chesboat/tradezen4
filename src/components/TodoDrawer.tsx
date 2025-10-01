@@ -65,7 +65,13 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
     
     return tasks
       .slice()
-      .sort((a, b) => (Number(!!b.pinned) - Number(!!a.pinned)) || ((b.order || 0) - (a.order || 0)))
+      .sort((a, b) => {
+        // Pinned tasks always at top
+        if (a.pinned && !b.pinned) return -1;
+        if (!a.pinned && b.pinned) return 1;
+        // Within same pinned status, sort by order (descending = newer at top)
+        return (b.order || 0) - (a.order || 0);
+      })
       .filter((t) => {
         if (filter === 'all') return true;
         if (filter === 'today') {
@@ -99,6 +105,11 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
     if (newPriority) extras.priority = newPriority;
     if (newCategory) extras.category = newCategory;
     if (newUrl.trim()) extras.url = newUrl.trim();
+    
+    // Set order to put it at the bottom (lowest order value)
+    const lowestOrder = Math.min(...tasks.map(t => t.order || 0), 0);
+    extras.order = lowestOrder - 1;
+    
     await addTask(text, extras);
     setNewText('');
     setNewPriority('');
@@ -863,7 +874,11 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                           }
                         }}
                         onBlur={() => {
-                          if (!newText.trim()) {
+                          // Save task if there's text, otherwise cancel
+                          if (newText.trim()) {
+                            handleAdd();
+                            setIsAddingNew(false);
+                          } else {
                             setIsAddingNew(false);
                           }
                         }}
