@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FileText, 
@@ -30,7 +30,11 @@ import {
   Settings,
   Check,
   MoreHorizontal,
-  ChevronDown
+  ChevronDown,
+  MoreVertical,
+  Pin,
+  Archive,
+  Inbox
 } from 'lucide-react';
 import { NoteContent } from './NoteContent';
 import { SmartTagFilterBar } from './SmartTagFilterBar';
@@ -104,15 +108,71 @@ export const NotesView: React.FC = () => {
   const [isRichNoteEditorOpen, setIsRichNoteEditorOpen] = useState(false);
   const [editingRichNoteId, setEditingRichNoteId] = useState<string | undefined>();
   
+  // Apple-style 3-column layout state
+  const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
+  const [smartFolder, setSmartFolder] = useState<'all' | 'recent' | 'favorites' | 'untagged'>('all');
+  const [selectedFolderName, setSelectedFolderName] = useState<string | null>(null);
+  const [isEditingNote, setIsEditingNote] = useState(false);
+  
+  // Long-press selection (Apple-style)
+  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedNotes, setSelectedNotes] = useState<Set<string>>(new Set());
+  
+  // Menu states
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [showFolderMenu, setShowFolderMenu] = useState<string | null>(null);
+  
   // Folder management state
   const [editingFolder, setEditingFolder] = useState<string | null>(null);
   const [editingFolderName, setEditingFolderName] = useState('');
-  const [showFolderMenu, setShowFolderMenu] = useState<string | null>(null);
   const folderNavRef = useRef<HTMLDivElement | null>(null);
-  
-  // Filter dropdown state
-  const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
-  const filterDropdownRef = useRef<HTMLDivElement | null>(null);
+
+  // Long-press handlers (Apple-style)
+  const handleLongPressStart = useCallback((noteId: string) => {
+    const timer = setTimeout(() => {
+      setSelectionMode(true);
+      setSelectedNotes(new Set([noteId]));
+      if (navigator.vibrate) {
+        navigator.vibrate(50);
+      }
+    }, 500);
+    setLongPressTimer(timer);
+  }, []);
+
+  const handleLongPressEnd = useCallback(() => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      setLongPressTimer(null);
+    }
+  }, [longPressTimer]);
+
+  const handleNoteClick = useCallback((noteId: string) => {
+    if (selectionMode) {
+      setSelectedNotes(prev => {
+        const newSet = new Set(prev);
+        if (newSet.has(noteId)) {
+          newSet.delete(noteId);
+        } else {
+          newSet.add(noteId);
+        }
+        if (newSet.size === 0) {
+          setSelectionMode(false);
+        }
+        return newSet;
+      });
+    } else {
+      setSelectedNoteId(noteId);
+      setIsEditingNote(false);
+    }
+  }, [selectionMode]);
+
+  const handleNoteDoubleClick = useCallback((noteId: string) => {
+    if (!selectionMode) {
+      setSelectedNoteId(noteId);
+      setIsEditingNote(true);
+    }
+  }, [selectionMode]);
 
   // Load rich notes when account changes
   useEffect(() => {
@@ -179,14 +239,25 @@ export const NotesView: React.FC = () => {
     );
   }, [quickNotes, richNotes, selectedAccountId]);
 
-  // Filter notes
+  // Filter notes (with Smart Folders - Apple style)
   const filteredNotes = useMemo(() => {
-    return unifiedNotes.filter(note => {
+    let filtered = unifiedNotes.filter(note => {
       // Type filter
       if (filterType !== 'all' && note.type !== filterType) return false;
 
-      // Folder filter (only applies to rich notes)
-      if (selectedFolder && note.type === 'rich' && note.folder !== selectedFolder) return false;
+      // Smart Folder filter
+      if (smartFolder === 'recent') {
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        if (new Date(note.updatedAt) < sevenDaysAgo) return false;
+      } else if (smartFolder === 'favorites') {
+        if (!note.isFavorite) return false;
+      } else if (smartFolder === 'untagged') {
+        if (note.tags.length > 0) return false;
+      }
+
+      // Folder filter (only applies to rich notes when not in smart folder mode)
+      if (selectedFolderName && note.type === 'rich' && note.folder !== selectedFolderName) return false;
 
       // Tag filter
       if (selectedTagFilter && !note.tags.includes(selectedTagFilter)) return false;
@@ -218,9 +289,44 @@ export const NotesView: React.FC = () => {
 
       return true;
     });
-  }, [unifiedNotes, filterType, selectedTagFilter, query, startDate, endDate, selectedFolder]);
+
+    return filtered;
+  }, [unifiedNotes, filterType, selectedTagFilter, query, startDate, endDate, selectedFolderName, smartFolder]);
 
   const selectedIds = useMemo(() => Object.keys(selected).filter(id => selected[id]), [selected]);
+
+  // Get the currently selected note for the right panel
+  const selectedNote = useMemo(() => {
+    return filteredNotes.find(n => n.id === selectedNoteId) || null;
+  }, [filteredNotes, selectedNoteId]);
+
+  // Group notes by date (Apple style)
+  const groupedNotes = useMemo(() => {
+    const groups: { [key: string]: UnifiedNote[] } = {};
+    filteredNotes.forEach(note => {
+      const date = new Date(note.updatedAt);
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      
+      let groupKey: string;
+      if (date.toDateString() === today.toDateString()) {
+        groupKey = 'Today';
+      } else if (date.toDateString() === yesterday.toDateString()) {
+        groupKey = 'Yesterday';
+      } else if (date > new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)) {
+        groupKey = 'This Week';
+      } else {
+        groupKey = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      }
+      
+      if (!groups[groupKey]) {
+        groups[groupKey] = [];
+      }
+      groups[groupKey].push(note);
+    });
+    return groups;
+  }, [filteredNotes]);
 
   // Handlers
   const handleCreateRichNote = () => {
@@ -348,469 +454,308 @@ export const NotesView: React.FC = () => {
   };
 
   return (
-    <div className="h-full flex flex-col">
-      <SmartTagFilterBar />
-
-      {/* Header with New Note button */}
-      <div className="px-6 py-4 border-b bg-card/80 backdrop-blur-sm sticky top-0 z-10">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-semibold">Notes</h1>
-            <span className="text-sm text-muted-foreground">
-              ({filteredNotes.length} {filteredNotes.length === 1 ? 'note' : 'notes'})
-            </span>
+    <div className="h-full flex flex-col bg-background">
+      {/* Top Search Bar (Apple-style - always visible) */}
+      <div className="border-b border-border bg-card/50 backdrop-blur-sm">
+        <div className="px-4 py-3 flex items-center gap-3">
+          <div className="flex-1 relative">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search notes..."
+              className="w-full pl-9 pr-3 py-2 bg-muted/50 border-0 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 placeholder:text-muted-foreground"
+            />
           </div>
-
           <button
             onClick={handleCreateRichNote}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2"
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2 text-sm font-medium"
           >
             <Plus className="w-4 h-4" />
-            New Note
+            <span className="hidden sm:inline">New</span>
           </button>
         </div>
+      </div>
 
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="relative w-full sm:max-w-md">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search notes..."
-                className="w-full pl-9 pr-3 py-2 bg-muted rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
-            
-            <div className="relative" ref={filterDropdownRef}>
+      {/* 3-Column Layout (Apple Notes style) */}
+      <div className="flex-1 flex overflow-hidden">
+        
+        {/* LEFT COLUMN: Folders & Smart Folders */}
+        <div className="w-48 lg:w-56 border-r border-border bg-muted/30 flex flex-col overflow-hidden hidden md:flex">
+          <div className="flex-1 overflow-y-auto p-3 space-y-1">
+            {/* Smart Folders */}
+            <div className="mb-4">
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-2 mb-2">
+                Smart Folders
+              </div>
+              
               <button
-                type="button"
-                onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
-                className="px-3 py-2 bg-muted rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary hover:bg-accent transition-colors flex items-center gap-2 min-w-[140px]"
+                onClick={() => {
+                  setSmartFolder('all');
+                  setSelectedFolderName(null);
+                }}
+                className={cn(
+                  "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors",
+                  smartFolder === 'all' && !selectedFolderName
+                    ? "bg-primary/10 text-primary font-medium"
+                    : "text-muted-foreground hover:bg-muted/50"
+                )}
               >
-                <span className="flex items-center gap-1.5">
-                  {filterType === 'quick' && <StickyNote className="w-3 h-3" />}
-                  {filterType === 'rich' && <FileEdit className="w-3 h-3" />}
-                  {filterType === 'all' && <FileText className="w-3 h-3" />}
-                  {filterType === 'all' ? 'All Notes' : filterType === 'quick' ? 'Quick Notes' : 'Rich Notes'}
-                </span>
-                <ChevronDown className={cn(
-                  "w-3 h-3 text-muted-foreground transition-transform ml-auto",
-                  isFilterDropdownOpen && "rotate-180"
-                )} />
+                <Inbox className="w-4 h-4" />
+                <span>All Notes</span>
+                <span className="ml-auto text-xs">{unifiedNotes.length}</span>
               </button>
-
-              {isFilterDropdownOpen && (
-                <div className="absolute z-[100] w-full min-w-max mt-1 bg-popover border border-border rounded-md shadow-lg">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFilterType('all');
-                      setIsFilterDropdownOpen(false);
-                    }}
-                    className={cn(
-                      "w-full px-3 py-2 text-left flex items-center gap-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors",
-                      filterType === 'all' && "bg-muted"
-                    )}
-                  >
-                    <FileText className="w-3 h-3" />
-                    <span>All Notes</span>
-                    {filterType === 'all' && (
-                      <span className="ml-auto text-primary">✓</span>
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFilterType('quick');
-                      setIsFilterDropdownOpen(false);
-                    }}
-                    className={cn(
-                      "w-full px-3 py-2 text-left flex items-center gap-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors",
-                      filterType === 'quick' && "bg-muted"
-                    )}
-                  >
-                    <StickyNote className="w-3 h-3 text-yellow-500" />
-                    <span>Quick Notes</span>
-                    {filterType === 'quick' && (
-                      <span className="ml-auto text-primary">✓</span>
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFilterType('rich');
-                      setIsFilterDropdownOpen(false);
-                    }}
-                    className={cn(
-                      "w-full px-3 py-2 text-left flex items-center gap-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors",
-                      filterType === 'rich' && "bg-muted"
-                    )}
-                  >
-                    <FileEdit className="w-3 h-3 text-violet-500" />
-                    <span>Rich Notes</span>
-                    {filterType === 'rich' && (
-                      <span className="ml-auto text-primary">✓</span>
-                    )}
-                  </button>
-                </div>
-              )}
+              
+              <button
+                onClick={() => {
+                  setSmartFolder('recent');
+                  setSelectedFolderName(null);
+                }}
+                className={cn(
+                  "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors",
+                  smartFolder === 'recent'
+                    ? "bg-primary/10 text-primary font-medium"
+                    : "text-muted-foreground hover:bg-muted/50"
+                )}
+              >
+                <Clock className="w-4 h-4" />
+                <span>Recent</span>
+              </button>
+              
+              <button
+                onClick={() => {
+                  setSmartFolder('favorites');
+                  setSelectedFolderName(null);
+                }}
+                className={cn(
+                  "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors",
+                  smartFolder === 'favorites'
+                    ? "bg-primary/10 text-primary font-medium"
+                    : "text-muted-foreground hover:bg-muted/50"
+                )}
+              >
+                <Star className="w-4 h-4" />
+                <span>Favorites</span>
+              </button>
             </div>
 
-            {/* Folder Navigation */}
+            {/* User Folders */}
             {getFolders().length > 0 && (
-              <div ref={folderNavRef} className="flex items-center gap-1 bg-muted rounded-lg p-1">
-                <button
-                  onClick={() => setSelectedFolder(null)}
-                  className={cn(
-                    "px-2 py-1 text-xs rounded transition-colors flex items-center gap-1",
-                    !selectedFolder 
-                      ? "bg-background text-foreground shadow-sm" 
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  <FileText className="w-3 h-3" />
-                  All
-                </button>
+              <div>
+                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-2 mb-2">
+                  Folders
+                </div>
                 {getFolders().map(folder => (
-                  <div key={folder} className="relative flex items-center">
-                    {editingFolder === folder ? (
-                      <div className="flex items-center gap-1 bg-background rounded px-2 py-1">
-                        <input
-                          type="text"
-                          value={editingFolderName}
-                          onChange={(e) => setEditingFolderName(e.target.value)}
-                          className="text-xs bg-transparent border-none outline-none w-20"
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleSaveFolder();
-                            if (e.key === 'Escape') handleCancelEditFolder();
-                          }}
-                          onBlur={handleSaveFolder}
-                          autoFocus
-                        />
-                        <button
-                          onClick={handleSaveFolder}
-                          className="text-green-500 hover:text-green-600"
-                        >
-                          <Check className="w-3 h-3" />
-                        </button>
-                        <button
-                          onClick={handleCancelEditFolder}
-                          className="text-muted-foreground hover:text-foreground"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => setSelectedFolder(folder)}
-                          className={cn(
-                            "px-2 py-1 text-xs rounded transition-colors flex items-center gap-1 max-w-[100px] truncate",
-                            selectedFolder === folder 
-                              ? "bg-background text-foreground shadow-sm" 
-                              : "text-muted-foreground hover:text-foreground"
-                          )}
-                          title={folder}
-                        >
-                          {selectedFolder === folder ? (
-                            <FolderOpen className="w-3 h-3 flex-shrink-0" />
-                          ) : (
-                            <Folder className="w-3 h-3 flex-shrink-0" />
-                          )}
-                          <span className="truncate">{folder}</span>
-                        </button>
-                        
-                        <div className="relative">
-                          <button
-                            onClick={() => setShowFolderMenu(showFolderMenu === folder ? null : folder)}
-                            className="ml-1 p-0.5 text-muted-foreground hover:text-foreground rounded transition-colors"
-                          >
-                            <MoreHorizontal className="w-3 h-3" />
-                          </button>
-                          
-                          {showFolderMenu === folder && (
-                            <div className="absolute top-full right-0 mt-1 bg-popover border border-border rounded-md shadow-lg z-50 min-w-[120px]">
-                              <button
-                                onClick={() => handleStartEditFolder(folder)}
-                                className="w-full px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors flex items-center gap-2"
-                              >
-                                <Edit2 className="w-3 h-3" />
-                                Rename
-                              </button>
-                              <button
-                                onClick={() => handleDeleteFolder(folder)}
-                                className="w-full px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors flex items-center gap-2 text-red-500 hover:text-red-600"
-                              >
-                                <Trash2 className="w-3 h-3" />
-                                Delete
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </>
+                  <button
+                    key={folder}
+                    onClick={() => {
+                      setSmartFolder('all');
+                      setSelectedFolderName(folder);
+                    }}
+                    className={cn(
+                      "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors",
+                      selectedFolderName === folder
+                        ? "bg-primary/10 text-primary font-medium"
+                        : "text-muted-foreground hover:bg-muted/50"
                     )}
-                  </div>
+                  >
+                    <Folder className="w-4 h-4" />
+                    <span className="truncate">{folder}</span>
+                  </button>
                 ))}
               </div>
             )}
           </div>
+        </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <div className="flex items-center gap-2">
-              <label className="text-xs text-muted-foreground">From</label>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="px-2 py-1 bg-muted rounded-md text-sm"
-              />
+        {/* MIDDLE COLUMN: Notes List */}
+        <div className="w-80 lg:w-96 border-r border-border flex flex-col overflow-hidden">
+          {/* Note count */}
+          <div className="px-4 py-2 border-b border-border bg-muted/20">
+            <div className="text-sm font-medium text-foreground">
+              {filteredNotes.length} {filteredNotes.length === 1 ? 'note' : 'notes'}
             </div>
-            <div className="flex items-center gap-2">
-              <label className="text-xs text-muted-foreground">To</label>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="px-2 py-1 bg-muted rounded-md text-sm"
-              />
-            </div>
-            <button
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-muted hover:bg-muted/80 text-xs"
-              onClick={saveCurrentAsFilter}
-              title="Save current filters"
-            >
-              <Bookmark className="w-3.5 h-3.5" /> Save
-            </button>
+          </div>
+
+          {/* Notes List */}
+          <div className="flex-1 overflow-y-auto">
+            {filteredNotes.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full px-6 text-center">
+                <FileText className="w-12 h-12 text-muted-foreground/30 mb-3" />
+                <p className="text-sm text-muted-foreground">No notes found</p>
+              </div>
+            ) : (
+              Object.entries(groupedNotes).map(([groupName, groupNotes]) => (
+                <div key={groupName}>
+                  {/* Date Group Header */}
+                  <div className="sticky top-0 z-10 bg-muted/50 backdrop-blur-sm px-4 py-2 border-b border-border">
+                    <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                      {groupName}
+                    </div>
+                  </div>
+                  
+                  {/* Notes in Group */}
+                  {groupNotes.map(note => (
+                    <motion.div
+                      key={note.id}
+                      onMouseDown={() => handleLongPressStart(note.id)}
+                      onMouseUp={handleLongPressEnd}
+                      onMouseLeave={handleLongPressEnd}
+                      onTouchStart={() => handleLongPressStart(note.id)}
+                      onTouchEnd={handleLongPressEnd}
+                      onClick={() => handleNoteClick(note.id)}
+                      onDoubleClick={() => handleNoteDoubleClick(note.id)}
+                      className={cn(
+                        "px-4 py-3 border-b border-border cursor-pointer transition-colors relative",
+                        selectedNoteId === note.id && "bg-primary/5 border-l-2 border-l-primary",
+                        selectedNotes.has(note.id) && selectionMode && "bg-primary/10",
+                        selectedNoteId !== note.id && !selectedNotes.has(note.id) && "hover:bg-muted/30"
+                      )}
+                    >
+                      {selectionMode && (
+                        <div className="absolute left-2 top-3">
+                          <input
+                            type="checkbox"
+                            checked={selectedNotes.has(note.id)}
+                            className="rounded pointer-events-none"
+                            readOnly
+                          />
+                        </div>
+                      )}
+                      
+                      <div className={cn("space-y-1", selectionMode && "ml-6")}>
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 className="font-medium text-sm line-clamp-1 text-foreground">
+                            {note.title}
+                          </h3>
+                          {note.isFavorite && (
+                            <Star className="w-3 h-3 text-yellow-500 fill-current flex-shrink-0 mt-0.5" />
+                          )}
+                        </div>
+                        
+                        <p className="text-xs text-muted-foreground line-clamp-2">
+                          {note.content.replace(/<[^>]*>/g, '').substring(0, 100)}
+                        </p>
+                        
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span>{new Date(note.updatedAt).toLocaleDateString()}</span>
+                          {note.type === 'rich' ? (
+                            <FileEdit className="w-3 h-3 text-violet-500" />
+                          ) : (
+                            <StickyNote className="w-3 h-3 text-yellow-500" />
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              ))
+            )}
           </div>
         </div>
 
-        {/* Saved Filters */}
-        {notesFilters.saved.length > 0 && (
-          <div className="pt-3 flex gap-2 flex-wrap">
-            {notesFilters.saved.map(f => (
-              <button
-                key={f.id}
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted text-xs hover:bg-muted/80"
-                onClick={() => {
-                  setQuery(f.query);
-                  setStartDate(f.startDate || '');
-                  setEndDate(f.endDate || '');
-                }}
-              >
-                <Hash className="w-3 h-3" /> {f.name}
-                <X className="w-3 h-3 opacity-70 hover:opacity-100"
-                   onClick={(e) => { e.stopPropagation(); notesFilters.removeFilter(f.id); }} />
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Notes List */}
-      <div className="flex-1 overflow-auto px-6 py-4">
-        <AnimatePresence>
-          {filteredNotes.length === 0 ? (
-            <motion.div 
-              initial={{ opacity: 0 }} 
-              animate={{ opacity: 1 }} 
-              className="text-center py-12"
-            >
-              <FileText className="w-16 h-16 text-muted-foreground/30 mx-auto mb-6" />
-              <h3 className="text-lg font-semibold text-foreground mb-2">No notes found</h3>
-              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                Create your first note to start capturing your thoughts and ideas.
-              </p>
-              <button
-                onClick={handleCreateRichNote}
-                className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2 mx-auto"
-              >
-                <Plus className="w-5 h-5" />
-                Create your first note
-              </button>
-            </motion.div>
-          ) : (
-            <div className="space-y-3">
-              {/* Bulk Actions */}
-              {selectedIds.length > 0 && (
-                <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/40 border">
-                  <span className="text-sm text-muted-foreground">
-                    {selectedIds.length} selected
-                  </span>
-                  <button 
-                    className="px-3 py-1.5 rounded-md bg-destructive/10 text-destructive text-xs hover:bg-destructive/20 transition-colors" 
-                    onClick={bulkDelete}
-                  >
-                    <Trash2 className="w-3.5 h-3.5 inline mr-1" /> Delete
-                  </button>
+        {/* RIGHT COLUMN: Note Content */}
+        <div className="flex-1 flex flex-col overflow-hidden bg-background">
+          {selectedNote ? (
+            <>
+              {/* Note Header */}
+              <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+                <div className="flex-1">
+                  <h1 className="text-2xl font-semibold text-foreground mb-1">
+                    {selectedNote.title}
+                  </h1>
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                    <span>{new Date(selectedNote.updatedAt).toLocaleString()}</span>
+                    {selectedNote.wordCount && <span>• {selectedNote.wordCount} words</span>}
+                    {selectedNote.readingTime && <span>• {selectedNote.readingTime} min read</span>}
+                  </div>
                 </div>
-              )}
-
-              {/* Notes */}
-              {filteredNotes.map((note) => (
-                <motion.div
-                  key={note.id}
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  className="bg-card border rounded-xl p-4 hover:shadow-md transition-all"
+                
+                <button
+                  onClick={() => setOpenMenuId(openMenuId === selectedNote.id ? null : selectedNote.id)}
+                  className="p-2 hover:bg-muted rounded-lg transition-colors"
                 >
-                  <div className="flex items-start gap-3">
-                    {/* Selection checkbox */}
-                    <button
-                      onClick={() => toggleSelect(note.id)}
-                      className="mt-1 text-muted-foreground hover:text-foreground transition-colors"
+                  <MoreVertical className="w-4 h-4" />
+                </button>
+                
+                {/* Actions Menu */}
+                <AnimatePresence>
+                  {openMenuId === selectedNote.id && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                      className="absolute right-6 top-16 z-50 w-48 bg-popover border border-border rounded-lg shadow-lg overflow-hidden"
+                      onMouseLeave={() => setOpenMenuId(null)}
                     >
-                      {selected[note.id] ? 
-                        <CheckSquare className="w-4 h-4 text-primary" /> : 
-                        <Square className="w-4 h-4" />
-                      }
-                    </button>
-
-                    {/* Note content */}
-                    <div className="flex-1 min-w-0">
-                      {/* Header with type indicator */}
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="flex items-center gap-1.5">
-                          {note.type === 'rich' ? (
-                            <>
-                              <FileEdit className="w-4 h-4 text-violet-500" />
-                              <span className="text-xs font-medium text-violet-600 bg-violet-50 dark:bg-violet-950/30 px-2 py-0.5 rounded-full">
-                                Rich Note
-                              </span>
-                              {note.category && categoryIcons[note.category] && (
-                                <span className="text-muted-foreground">
-                                  {categoryIcons[note.category]}
-                                </span>
-                              )}
-                              {note.isFavorite && (
-                                <Star className="w-3 h-3 text-yellow-500 fill-current" />
-                              )}
-                            </>
-                          ) : (
-                            <>
-                              <StickyNote className="w-4 h-4 text-yellow-500" />
-                              <span className="text-xs font-medium text-yellow-600 bg-yellow-50 dark:bg-yellow-950/30 px-2 py-0.5 rounded-full">
-                                Quick Note
-                              </span>
-                            </>
-                          )}
-                        </div>
-
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground ml-auto">
-                          <CalendarIcon className="w-3 h-3" />
-                          <span>{new Date(note.updatedAt).toLocaleDateString()}</span>
-                          {note.wordCount && (
-                            <>
-                              <span>•</span>
-                              <span>{note.wordCount} words</span>
-                            </>
-                          )}
-                          {note.readingTime && (
-                            <>
-                              <span>•</span>
-                              <span>{note.readingTime} min read</span>
-                            </>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Title for rich notes */}
-                      {note.type === 'rich' && (
-                        <h3 className="font-semibold text-foreground mb-2 line-clamp-1">
-                          {note.title}
-                        </h3>
-                      )}
-
-                      {/* Content preview */}
-                      <div className="mb-3">
-                        {note.type === 'rich' ? (
-                          <div 
-                            className="text-sm text-muted-foreground line-clamp-3"
-                            dangerouslySetInnerHTML={{ 
-                              __html: note.content.replace(/<[^>]*>/g, '').substring(0, 200) + (note.content.length > 200 ? '...' : '')
-                            }}
-                          />
-                        ) : (
-                          <div className="text-sm text-muted-foreground">
-                            <div className="whitespace-pre-wrap line-clamp-3">
-                              {note.content}
-                            </div>
-                            {note.mood && (
-                              <div className="flex items-center gap-1 mt-2 text-xs">
-                                <span className="text-muted-foreground">Mood:</span>
-                                <span className="capitalize font-medium">{note.mood}</span>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Tags */}
-                      {note.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mb-2">
-                          {note.tags.slice(0, 4).map(tag => (
-                            <span key={tag} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-muted text-muted-foreground">
-                              <Hash className="w-3 h-3" />
-                              {tag}
-                            </span>
-                          ))}
-                          {note.tags.length > 4 && (
-                            <span className="text-xs text-muted-foreground px-2 py-0.5">
-                              +{note.tags.length - 4} more
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-1 flex-shrink-0">
-                      {note.type === 'quick' && (
-                        <button
-                          onClick={() => handleConvertToRich(note)}
-                          className="p-2 text-muted-foreground hover:text-violet-500 rounded-lg hover:bg-muted transition-colors"
-                          title="Convert to Rich Note"
-                        >
-                          <ArrowUpRight className="w-4 h-4" />
-                        </button>
-                      )}
-                      
                       <button
                         onClick={() => {
-                          const sel = window.getSelection?.()?.toString?.().trim();
-                          const text = sel || note.content.replace(/<[^>]*>/g, '').trim();
-                          if (text) addTask(text.slice(0, 280), { sourceReflectionId: note.id, accountId: note.accountId }).catch(()=>{});
+                          handleEditNote(selectedNote);
+                          setOpenMenuId(null);
                         }}
-                        className="p-2 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition-colors"
-                        title="Add as Task"
-                      >
-                        <Save className="w-4 h-4" />
-                      </button>
-                      
-                      <button
-                        onClick={() => handleEditNote(note)}
-                        className="p-2 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition-colors"
-                        title="Edit"
+                        className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-muted/50 transition-colors text-left"
                       >
                         <Edit2 className="w-4 h-4" />
+                        <span className="text-sm">Edit</span>
                       </button>
-                      
                       <button
-                        onClick={() => handleDeleteNote(note)}
-                        className="p-2 text-muted-foreground hover:text-destructive rounded-lg hover:bg-muted transition-colors"
-                        title="Delete"
+                        onClick={() => {
+                          // Toggle favorite
+                          setOpenMenuId(null);
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-muted/50 transition-colors text-left"
+                      >
+                        <Star className="w-4 h-4" />
+                        <span className="text-sm">Favorite</span>
+                      </button>
+                      <div className="h-px bg-border my-1" />
+                      <button
+                        onClick={() => {
+                          handleDeleteNote(selectedNote);
+                          setOpenMenuId(null);
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-red-500/10 transition-colors text-left text-red-500"
                       >
                         <Trash2 className="w-4 h-4" />
+                        <span className="text-sm">Delete</span>
                       </button>
-                    </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+              
+              {/* Note Content */}
+              <div className="flex-1 overflow-y-auto px-6 py-4">
+                <div 
+                  className="prose prose-sm max-w-none dark:prose-invert"
+                  dangerouslySetInnerHTML={{ __html: selectedNote.content }}
+                />
+                
+                {/* Tags */}
+                {selectedNote.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-6 pt-6 border-t border-border">
+                    {selectedNote.tags.map(tag => (
+                      <span
+                        key={tag}
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-muted text-muted-foreground"
+                      >
+                        <Hash className="w-3 h-3" />
+                        {tag}
+                      </span>
+                    ))}
                   </div>
-                </motion.div>
-              ))}
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="flex-1 flex items-center justify-center text-center px-6">
+              <div>
+                <FileText className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
+                <p className="text-muted-foreground">Select a note to view</p>
+              </div>
             </div>
           )}
-        </AnimatePresence>
+        </div>
       </div>
 
       {/* Rich Note Editor Modal */}
