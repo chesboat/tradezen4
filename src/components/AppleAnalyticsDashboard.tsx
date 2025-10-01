@@ -378,101 +378,18 @@ const AtAGlanceWeekly: React.FC<{ trades: any[] }> = ({ trades }) => {
 
   return (
     <div className="bg-card border border-border rounded-2xl p-6">
-      <div className="flex items-center gap-3 mb-6">
-        <Calendar className="w-5 h-5 text-primary" />
-        <h2 className="text-xl font-semibold text-foreground">Last 7 Days at a Glance</h2>
-      </div>
-
-      <div className="space-y-2">
-        {weeklyData.map((day, idx) => {
-          const barWidth = day.pnl !== 0 ? (Math.abs(day.pnl) / maxAbsPnL) * 100 : 0;
-          const isPositive = day.pnl > 0;
-          const isNegative = day.pnl < 0;
-          
-          return (
-            <motion.div
-              key={day.dateStr}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: idx * 0.05 }}
-              className={cn(
-                "flex items-center gap-4 p-3 rounded-lg transition-all duration-200",
-                day.isToday && "bg-primary/5 border border-primary/20"
-              )}
-            >
-              {/* Day label */}
-              <div className="w-12 flex-shrink-0">
-                <div className={cn(
-                  "text-sm font-medium",
-                  day.isToday ? "text-primary" : "text-muted-foreground"
-                )}>
-                  {day.dayName}
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {day.date.getDate()}
-                </div>
-              </div>
-
-              {/* Bar chart */}
-              <div className="flex-1 flex items-center gap-2">
-                <div className="flex-1 h-8 bg-muted/30 rounded-lg overflow-hidden relative">
-                  {day.trades > 0 ? (
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${barWidth}%` }}
-                      transition={{ duration: 0.5, delay: idx * 0.05 }}
-                      className={cn(
-                        "h-full rounded-lg flex items-center justify-center",
-                        isPositive && "bg-green-500",
-                        isNegative && "bg-red-500",
-                        !isPositive && !isNegative && "bg-muted"
-                      )}
-                    />
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-xs text-muted-foreground">No trades</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* P&L amount */}
-                <div className="w-24 text-right">
-                  {day.trades > 0 ? (
-                    <div className={cn(
-                      "text-sm font-semibold tabular-nums",
-                      isPositive && "text-green-500",
-                      isNegative && "text-red-500",
-                      !isPositive && !isNegative && "text-muted-foreground"
-                    )}>
-                      {formatCurrency(day.pnl)}
-                    </div>
-                  ) : (
-                    <div className="text-sm text-muted-foreground">—</div>
-                  )}
-                </div>
-              </div>
-
-              {/* Win/Loss indicator */}
-              {day.trades > 0 && (
-                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                  {day.wins > 0 && <span className="text-green-500">✓{day.wins}</span>}
-                  {day.losses > 0 && <span className="text-red-500">✗{day.losses}</span>}
-                </div>
-              )}
-            </motion.div>
-          );
-        })}
-      </div>
-
-      {/* Weekly summary */}
-      <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
-        <span className="text-sm text-muted-foreground">7-Day Total</span>
-        <div className="flex items-center gap-4">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <Calendar className="w-4 h-4 text-muted-foreground" />
+          <h2 className="text-base font-medium text-foreground">Last 7 Days</h2>
+        </div>
+        {/* Weekly summary inline */}
+        <div className="flex items-center gap-3">
           <span className="text-xs text-muted-foreground">
             {weeklyData.reduce((sum, d) => sum + d.trades, 0)} trades
           </span>
           <span className={cn(
-            "text-lg font-bold tabular-nums",
+            "text-sm font-semibold tabular-nums",
             weeklyData.reduce((sum, d) => sum + d.pnl, 0) > 0 
               ? "text-green-500" 
               : weeklyData.reduce((sum, d) => sum + d.pnl, 0) < 0
@@ -482,6 +399,79 @@ const AtAGlanceWeekly: React.FC<{ trades: any[] }> = ({ trades }) => {
             {formatCurrency(weeklyData.reduce((sum, d) => sum + d.pnl, 0))}
           </span>
         </div>
+      </div>
+
+      <div className="space-y-1.5">
+        {weeklyData.map((day, idx) => {
+          const barWidth = day.pnl !== 0 ? (Math.abs(day.pnl) / maxAbsPnL) * 100 : 0;
+          const isPositive = day.pnl > 0;
+          const isNegative = day.pnl < 0;
+          
+          return (
+            <motion.div
+              key={day.dateStr}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: idx * 0.03, duration: 0.3 }}
+              className="flex items-center gap-3"
+            >
+              {/* Day label - minimal */}
+              <div className="w-10 flex-shrink-0">
+                <div className={cn(
+                  "text-xs",
+                  day.isToday ? "text-foreground font-medium" : "text-muted-foreground"
+                )}>
+                  {day.dayName}
+                </div>
+              </div>
+
+              {/* Bar chart - thin and subtle */}
+              <div className="flex-1 flex items-center gap-2">
+                <div className="flex-1 h-2 bg-muted/20 rounded-full overflow-hidden relative">
+                  {day.trades > 0 ? (
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${barWidth}%` }}
+                      transition={{ duration: 0.4, delay: idx * 0.03, ease: "easeOut" }}
+                      className={cn(
+                        "h-full rounded-full",
+                        isPositive && "bg-green-500/60",
+                        isNegative && "bg-red-500/60",
+                        !isPositive && !isNegative && "bg-muted/40"
+                      )}
+                    />
+                  ) : (
+                    <div className="absolute inset-0 bg-muted/10 rounded-full" />
+                  )}
+                </div>
+
+                {/* P&L amount - subtle */}
+                <div className="w-20 text-right">
+                  {day.trades > 0 ? (
+                    <div className={cn(
+                      "text-xs font-medium tabular-nums",
+                      isPositive && "text-green-500/80",
+                      isNegative && "text-red-500/80",
+                      !isPositive && !isNegative && "text-muted-foreground"
+                    )}>
+                      {formatCurrency(day.pnl)}
+                    </div>
+                  ) : (
+                    <div className="text-xs text-muted-foreground/50">—</div>
+                  )}
+                </div>
+              </div>
+
+              {/* Win/Loss indicator - minimal */}
+              {day.trades > 0 && (
+                <div className="w-12 flex items-center justify-end gap-1 text-[10px] text-muted-foreground/60">
+                  {day.wins > 0 && <span className="text-green-500/70">{day.wins}W</span>}
+                  {day.losses > 0 && <span className="text-red-500/70">{day.losses}L</span>}
+                </div>
+              )}
+            </motion.div>
+          );
+        })}
       </div>
     </div>
   );
@@ -729,47 +719,71 @@ const AnnotatedEquityCurve: React.FC<{ trades: any[] }> = ({ trades }) => {
             </div>
           )}
 
-          {/* Hover tooltip (Apple Stocks style) */}
+          {/* Hover tooltip (Apple Stocks style with smart positioning) */}
           <AnimatePresence>
-            {hoveredPoint && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                className="absolute top-0 left-0 bg-background/95 backdrop-blur-sm border border-border rounded-lg px-3 py-2 shadow-xl pointer-events-none"
-                style={{
+            {hoveredPoint && (() => {
+              // Smart positioning: flip to left if near right edge, flip to right if near left edge
+              const isNearLeftEdge = hoveredPoint.x < 15;
+              const isNearRightEdge = hoveredPoint.x > 85;
+              
+              let positionStyle: React.CSSProperties = {
+                left: `${hoveredPoint.x}%`,
+                transform: 'translateX(-50%)',
+                marginTop: '-3rem'
+              };
+              
+              if (isNearRightEdge) {
+                positionStyle = {
                   left: `${hoveredPoint.x}%`,
-                  transform: 'translateX(-50%)',
-                  marginTop: '-3rem'
-                }}
-              >
-                <div className="text-xs text-muted-foreground mb-1">
-                  {hoveredPoint.date.toLocaleDateString('en-US', { 
-                    month: 'short', 
-                    day: 'numeric',
-                    hour: 'numeric',
-                    minute: '2-digit'
-                  })}
-                </div>
-                <div className="flex items-center gap-3">
-                  <div>
-                    <div className={cn(
-                      "text-sm font-bold",
-                      hoveredPoint.pnl > 0 ? "text-green-500" : hoveredPoint.pnl < 0 ? "text-red-500" : "text-muted-foreground"
-                    )}>
-                      {formatCurrency(hoveredPoint.pnl)}
-                    </div>
-                    <div className="text-xs text-muted-foreground">{hoveredPoint.symbol}</div>
+                  transform: 'translateX(-100%)',
+                  marginTop: '-3rem',
+                  marginLeft: '-0.5rem'
+                };
+              } else if (isNearLeftEdge) {
+                positionStyle = {
+                  left: `${hoveredPoint.x}%`,
+                  transform: 'translateX(0%)',
+                  marginTop: '-3rem',
+                  marginLeft: '0.5rem'
+                };
+              }
+              
+              return (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  className="absolute top-0 left-0 bg-background/95 backdrop-blur-sm border border-border rounded-lg px-3 py-2 shadow-xl pointer-events-none z-10"
+                  style={positionStyle}
+                >
+                  <div className="text-xs text-muted-foreground mb-1 whitespace-nowrap">
+                    {hoveredPoint.date.toLocaleDateString('en-US', { 
+                      month: 'short', 
+                      day: 'numeric',
+                      hour: 'numeric',
+                      minute: '2-digit'
+                    })}
                   </div>
-                  <div className="border-l border-border pl-3">
-                    <div className="text-xs text-muted-foreground">Equity</div>
-                    <div className="text-sm font-semibold text-foreground">
-                      {formatCurrency(hoveredPoint.equity)}
+                  <div className="flex items-center gap-3">
+                    <div>
+                      <div className={cn(
+                        "text-sm font-bold whitespace-nowrap",
+                        hoveredPoint.pnl > 0 ? "text-green-500" : hoveredPoint.pnl < 0 ? "text-red-500" : "text-muted-foreground"
+                      )}>
+                        {formatCurrency(hoveredPoint.pnl)}
+                      </div>
+                      <div className="text-xs text-muted-foreground">{hoveredPoint.symbol}</div>
+                    </div>
+                    <div className="border-l border-border pl-3">
+                      <div className="text-xs text-muted-foreground whitespace-nowrap">Equity</div>
+                      <div className="text-sm font-semibold text-foreground whitespace-nowrap">
+                        {formatCurrency(hoveredPoint.equity)}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </motion.div>
-            )}
+                </motion.div>
+              );
+            })()}
           </AnimatePresence>
         </>
         )}
