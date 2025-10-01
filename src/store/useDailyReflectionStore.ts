@@ -324,23 +324,103 @@ export const useDailyReflectionStore = create<DailyReflectionState>()(
         const reflections = get().getReflectionsByAccount(accountId);
         if (reflections.length === 0) return 0;
 
-        const sortedReflections = reflections
-          .filter(r => r.isComplete)
-          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
+        // Get trades for this account to identify trading days
+        const { useTradeStore } = require('@/store/useTradeStore');
+        const allTrades = useTradeStore.getState().trades.filter((t: any) => t.accountId === accountId);
+        
+        // Get weekly reviews for this account
+        const { useWeeklyReviewStore } = require('@/store/useWeeklyReviewStore');
+        const weeklyReviews = useWeeklyReviewStore.getState().reviews.filter(
+          (r: any) => r.accountId === accountId && r.isComplete
+        );
+        
+        // Helper: Get Monday of week for a date
+        const getMondayOfWeek = (date: Date): string => {
+          const d = new Date(date);
+          const day = d.getDay();
+          const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+          d.setDate(diff);
+          return d.toISOString().split('T')[0];
+        };
+        
+        // Helper: Check if date has a trade
+        const hasTrade = (dateStr: string): boolean => {
+          return allTrades.some((t: any) => {
+            const tradeDate = new Date(t.entryTime).toISOString().split('T')[0];
+            return tradeDate === dateStr;
+          });
+        };
+        
+        // Helper: Check if date has meaningful reflection
+        const hasReflection = (dateStr: string): boolean => {
+          const reflection = reflections.find(r => r.date === dateStr);
+          return Boolean(reflection && (
+            (reflection.reflection && reflection.reflection.trim().length > 0) ||
+            (reflection.keyFocus && reflection.keyFocus.trim().length > 0) ||
+            (reflection.goals && reflection.goals.trim().length > 0) ||
+            (reflection.lessons && reflection.lessons.trim().length > 0)
+          ));
+        };
+        
+        // Helper: Check if week has completed weekly review
+        const hasWeeklyReview = (weekStart: string): boolean => {
+          return weeklyReviews.some((r: any) => r.weekOf === weekStart);
+        };
+        
         let streak = 0;
         const today = new Date();
+        let currentDate = new Date(today);
         
-        for (let i = 0; i < sortedReflections.length; i++) {
-          const reflectionDate = new Date(sortedReflections[i].date);
-          const expectedDate = new Date(today);
-          expectedDate.setDate(today.getDate() - i);
+        // Track weekly periods to give credit for weekly reviews
+        let currentWeekStart = getMondayOfWeek(currentDate);
+        let weekHasTrades = false;
+        let weekHasReflection = false;
+        
+        // Walk backwards day by day
+        for (let i = 0; i < 365; i++) { // Max 1 year lookback
+          const dateStr = currentDate.toISOString().split('T')[0];
+          const weekStart = getMondayOfWeek(currentDate);
           
-          if (reflectionDate.toDateString() === expectedDate.toDateString()) {
-            streak++;
-          } else {
-            break;
+          // If we've moved to a new week, check if previous week qualifies
+          if (weekStart !== currentWeekStart && i > 0) {
+            // Previous week validation
+            if (weekHasTrades && !weekHasReflection) {
+              // Traded but didn't reflect at all that week
+              // Check if they at least did a weekly review
+              if (!hasWeeklyReview(currentWeekStart)) {
+                break; // Streak broken
+              }
+            } else if (!weekHasTrades && !weekHasReflection) {
+              // No trades and no reflections - check for weekly review
+              if (!hasWeeklyReview(currentWeekStart)) {
+                break; // Streak broken (inactive week without review)
+              }
+            }
+            // Reset for new week
+            currentWeekStart = weekStart;
+            weekHasTrades = false;
+            weekHasReflection = false;
           }
+          
+          const tradedToday = hasTrade(dateStr);
+          const reflectedToday = hasReflection(dateStr);
+          
+          if (tradedToday) {
+            weekHasTrades = true;
+            if (reflectedToday) {
+              weekHasReflection = true;
+              streak++;
+            } else {
+              // Traded but no reflection - streak in jeopardy
+              // Will check at week end if weekly review saves it
+            }
+          } else if (reflectedToday) {
+            // Reflection on non-trading day still counts
+            weekHasReflection = true;
+            streak++;
+          }
+          
+          currentDate.setDate(currentDate.getDate() - 1);
         }
 
         return streak;
