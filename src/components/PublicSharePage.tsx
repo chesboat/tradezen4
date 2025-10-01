@@ -1752,7 +1752,12 @@ const DemoTradesView: React.FC = () => {
 };
 
 export const PublicSharePage: React.FC = () => {
-  const id = window.location.pathname.split('/').pop()!;
+  const [id] = React.useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.location.pathname.split('/').pop() || '';
+    }
+    return '';
+  });
   const [data, setData] = React.useState<any | null>(null);
   const [notFound, setNotFound] = React.useState(false);
   const [imagesByBlock, setImagesByBlock] = React.useState<{ [blockId: string]: string[] }>({});
