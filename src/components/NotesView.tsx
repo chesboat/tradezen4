@@ -180,7 +180,7 @@ export const NotesView: React.FC = () => {
     loadRichNotes(selectedAccountId || null);
   }, [selectedAccountId, loadRichNotes]);
 
-  // Close dropdowns when clicking outside
+  // Close menus when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
@@ -190,15 +190,15 @@ export const NotesView: React.FC = () => {
         setShowFolderMenu(null);
       }
       
-      // Close filter dropdown
-      if (isFilterDropdownOpen && filterDropdownRef.current && !filterDropdownRef.current.contains(target)) {
-        setIsFilterDropdownOpen(false);
+      // Close action menu
+      if (openMenuId) {
+        setOpenMenuId(null);
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showFolderMenu, isFilterDropdownOpen]);
+  }, [showFolderMenu, openMenuId]);
 
   // Convert notes to unified format
   const unifiedNotes = useMemo((): UnifiedNote[] => {
