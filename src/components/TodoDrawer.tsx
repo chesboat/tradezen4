@@ -315,453 +315,267 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
             {pinnedTasks.map((task) => (
               <motion.div
                 key={task.id}
-                className={`p-2 rounded-xl hover:bg-accent/60 transition-colors group relative ${task.pinned ? 'border-l-2 border-primary/60' : ''}`}
+                className="group p-2.5 rounded-lg hover:bg-accent/50 transition-all"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                draggable
-                onDragStartCapture={(e: React.DragEvent<HTMLDivElement>) => {
-                  e.dataTransfer.setData('text/plain', task.id);
-                  e.dataTransfer.effectAllowed = 'move';
-                }}
-                onDropCapture={(e: React.DragEvent<HTMLDivElement>) => {
-                  e.preventDefault();
-                  const draggedId = e.dataTransfer.getData('text/plain');
-                  if (!draggedId || draggedId === task.id) return;
-                  const ids = sectionOrder.slice();
-                  const from = ids.indexOf(draggedId);
-                  const to = ids.indexOf(task.id);
-                  if (from === -1 || to === -1) return;
-                  const [moved] = ids.splice(from, 1);
-                  ids.splice(to, 0, moved);
-                  useTodoStore.getState().reorder(ids);
-                }}
               >
-                <div className="flex items-start gap-3 min-h-[44px]">
-                  <div className="flex items-center gap-2 mt-1">
-                    <motion.button 
-                      className="p-1 rounded-full hover:bg-accent relative" 
-                      onClick={() => handleToggleDone(task.id)} 
-                      aria-label="toggle done"
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                    >
-                      <AnimatePresence mode="wait">
-                        {completingTasks.has(task.id) ? (
-                          <motion.div
-                            key="completing"
-                            initial={{ scale: 0.8, opacity: 0 }}
-                            animate={{ 
-                              scale: [0.8, 1.2, 1], 
-                              opacity: 1,
-                              rotate: [0, 360]
-                            }}
-                            exit={{ scale: 0, opacity: 0 }}
-                            transition={{ 
-                              duration: 0.6, 
-                              ease: "easeOut",
-                              times: [0, 0.6, 1]
-                            }}
-                          >
-                            <CheckCircle2 className="w-4 h-4 text-green-500" />
-                          </motion.div>
-                        ) : (
-                          <motion.div
-                            key="normal"
-                            initial={{ scale: 0.8, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.8, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                          >
-                            {task.status === 'done' ? 
-                              <CheckCircle2 className="w-4 h-4 text-green-500" /> : 
-                              <Circle className="w-4 h-4 text-muted-foreground" />
-                            }
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </motion.button>
-                    {/* Priority indicator dot */}
-                    {task.priority && (
-                      <div className={`w-2 h-2 rounded-full ${
-                        task.priority === 'high' ? 'bg-red-500' :
-                        task.priority === 'med' ? 'bg-yellow-500' :
-                        'bg-green-500'
-                      }`} title={`${task.priority} priority`} />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <textarea
-                        className="flex-1 bg-transparent text-sm text-card-foreground outline-none min-w-0 leading-relaxed py-1 resize-none overflow-hidden"
-                        defaultValue={task.text}
-                        rows={1}
-                        onInput={(e) => {
-                          // Auto-resize textarea
-                          const target = e.target as HTMLTextAreaElement;
-                          target.style.height = 'auto';
-                          target.style.height = target.scrollHeight + 'px';
-                        }}
-                        onBlur={(e) => {
-                          const text = e.target.value.trim();
-                          if (text && text !== task.text) updateTask(task.id, { text });
-                          else e.target.value = task.text;
-                        }}
-                      />
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        <button
-                          className={`${task.pinned ? 'opacity-100 text-primary' : 'opacity-0 group-hover:opacity-100 text-muted-foreground'} transition-opacity p-1 rounded hover:bg-accent`}
-                          onClick={() => togglePin(task.id)}
-                          aria-label="pin"
-                          title="Pin"
-                        >
-                          <Pin className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-accent"
-                          onClick={() => setSnoozeForId((prev) => (prev === task.id ? null : task.id))}
-                          aria-label="snooze"
-                          title="Snooze"
-                        >
-                          <Clock className="w-3.5 h-3.5 text-muted-foreground" />
-                        </button>
-                        <button
-                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-accent"
-                          onClick={() => setSchedulingTaskId(task.id)}
-                          aria-label="schedule"
-                          title="Schedule for date"
-                        >
-                          <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
-                        </button>
-                        <button
-                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-accent"
-                          onClick={() => {
-                            setEditingUrlId(task.id);
-                            setEditingUrl(task.url || '');
+                <div className="flex items-center gap-2.5">
+                  {/* Checkbox */}
+                  <motion.button 
+                    className="flex-shrink-0" 
+                    onClick={() => handleToggleDone(task.id)} 
+                    aria-label="toggle done"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                  >
+                    <AnimatePresence mode="wait">
+                      {completingTasks.has(task.id) ? (
+                        <motion.div
+                          key="completing"
+                          initial={{ scale: 0.8, opacity: 0 }}
+                          animate={{ 
+                            scale: [0.8, 1.2, 1], 
+                            opacity: 1,
+                            rotate: [0, 360]
                           }}
-                          aria-label="edit url"
-                          title="Add/Edit URL"
+                          exit={{ scale: 0, opacity: 0 }}
+                          transition={{ 
+                            duration: 0.6, 
+                            ease: "easeOut",
+                            times: [0, 0.6, 1]
+                          }}
                         >
-                          <Link className="w-3.5 h-3.5 text-muted-foreground" />
+                          <CheckCircle2 className="w-5 h-5 text-green-500" />
+                        </motion.div>
+                      ) : (
+                        <motion.div
+                          key="normal"
+                          initial={{ scale: 0.8, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0.8, opacity: 0 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          {task.status === 'done' ? 
+                            <CheckCircle2 className="w-5 h-5 text-green-500" /> : 
+                            <Circle className="w-5 h-5 text-muted-foreground" />
+                          }
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.button>
+
+                  {/* Task Text + Metadata (One Line) */}
+                  <div className="flex-1 min-w-0 flex items-center gap-2">
+                    <textarea
+                      className={`flex-1 bg-transparent text-sm outline-none resize-none overflow-hidden leading-snug py-0.5 ${
+                        task.status === 'done' ? 'line-through text-muted-foreground' : 'text-foreground'
+                      }`}
+                      defaultValue={task.text}
+                      rows={1}
+                      onInput={(e) => {
+                        const target = e.target as HTMLTextAreaElement;
+                        target.style.height = 'auto';
+                        target.style.height = target.scrollHeight + 'px';
+                      }}
+                      onBlur={(e) => {
+                        const text = e.target.value.trim();
+                        if (text && text !== task.text) updateTask(task.id, { text });
+                        else e.target.value = task.text;
+                      }}
+                    />
+                    
+                    {/* Minimal metadata (only show what matters) */}
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      {/* Priority flag (red/yellow only) */}
+                      {(task.priority === 'high' || task.priority === 'med') && (
+                        <span className="text-base" title={`${task.priority} priority`}>
+                          {task.priority === 'high' ? '🔴' : '🟡'}
+                        </span>
+                      )}
+                      
+                      {/* Pinned indicator */}
+                      {task.pinned && (
+                        <Pin className="w-3.5 h-3.5 text-primary" />
+                      )}
+                      
+                      {/* Schedule indicator */}
+                      {task.scheduledFor && (
+                        <span className="text-xs text-blue-500" title={`Scheduled: ${new Date(task.scheduledFor).toLocaleDateString()}`}>
+                          📅
+                        </span>
+                      )}
+                      
+                      {/* URL indicator */}
+                      {task.url && (
+                        <button
+                          className="text-xs text-blue-500 hover:text-blue-600"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (parseWeeklyReviewUrl(task.url!)) {
+                              openWeeklyReviewFromUrl(task.url!);
+                            } else {
+                              window.open(task.url!, '_blank', 'noopener,noreferrer');
+                            }
+                          }}
+                          title={formatUrlForDisplay(task.url)}
+                        >
+                          🔗
                         </button>
-                        <button className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-accent" onClick={() => deleteTask(task.id)} aria-label="delete" title="Delete">
-                          <X className="w-3.5 h-3.5 text-muted-foreground" />
-                        </button>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between mt-2 text-xs gap-2">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {task.url && (
-                          <button
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 border border-blue-500/20 hover:bg-blue-500/20 transition-colors text-[10px] font-medium"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (parseWeeklyReviewUrl(task.url!)) {
-                                openWeeklyReviewFromUrl(task.url!);
-                              } else {
-                                window.open(task.url!, '_blank', 'noopener,noreferrer');
-                              }
-                            }}
-                          >
-                            <ExternalLink className="w-3 h-3" />
-                            {formatUrlForDisplay(task.url)}
-                          </button>
-                        )}
-                        {task.dueAt && (
-                          <span className="inline-flex items-center gap-1 text-muted-foreground"><Clock className="w-3 h-3" /> {new Date(task.dueAt).toLocaleDateString()}</span>
-                        )}
-                        {task.scheduledFor && (
-                          <span className="inline-flex items-center gap-1 text-blue-500"><Calendar className="w-3 h-3" /> {new Date(task.scheduledFor).toLocaleDateString()}</span>
-                        )}
-                        {/* Colorful category tag */}
-                        {task.category && (
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
-                            task.category === 'risk' ? 'bg-red-500/10 text-red-500 border border-red-500/20' :
-                            task.category === 'analysis' ? 'bg-blue-500/10 text-blue-500 border border-blue-500/20' :
-                            task.category === 'journal' ? 'bg-green-500/10 text-green-500 border border-green-500/20' :
-                            task.category === 'wellness' ? 'bg-purple-500/10 text-purple-500 border border-purple-500/20' :
-                            task.category === 'execution' ? 'bg-orange-500/10 text-orange-500 border border-orange-500/20' :
-                            task.category === 'learning' ? 'bg-indigo-500/10 text-indigo-500 border border-indigo-500/20' :
-                            task.category === 'mindset' ? 'bg-pink-500/10 text-pink-500 border border-pink-500/20' :
-                            'bg-gray-500/10 text-gray-500 border border-gray-500/20'
-                          }`}>
-                            {task.category}
-                          </span>
-                        )}
-                        {(task.tags && task.tags.length > 0) && (
-                          <span className="inline-flex items-center gap-1 text-muted-foreground"><Tag className="w-3 h-3" /> {task.tags.join(', ')}</span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        {/* Priority selector */}
-                        <select
-                          className="px-1.5 py-0.5 rounded text-[10px] bg-muted border border-border/30 outline-none appearance-none cursor-pointer hover:bg-accent transition-colors"
-                          style={{ WebkitAppearance: 'none', MozAppearance: 'none' }}
-                          defaultValue={task.priority || ''}
-                          onChange={(e) => updateTask(task.id, { priority: e.target.value as 'low' | 'med' | 'high' || undefined })}
-                          title="Priority"
-                        >
-                          <option value="">Priority</option>
-                          <option value="low">Low</option>
-                          <option value="med">Med</option>
-                          <option value="high">High</option>
-                        </select>
-                        {/* Category selector */}
-                        <select
-                          className="px-1.5 py-0.5 rounded text-[10px] bg-muted border border-border/30 outline-none appearance-none cursor-pointer hover:bg-accent transition-colors"
-                          style={{ WebkitAppearance: 'none', MozAppearance: 'none' }}
-                          defaultValue={task.category || ''}
-                          onChange={(e) => setCategory(task.id, e.target.value || undefined)}
-                          title="Category"
-                        >
-                          <option value="">Category</option>
-                          <option value="risk">Risk</option>
-                          <option value="analysis">Analysis</option>
-                          <option value="execution">Execution</option>
-                          <option value="journal">Journal</option>
-                          <option value="learning">Learning</option>
-                          <option value="wellness">Wellness</option>
-                          <option value="mindset">Mindset</option>
-                        </select>
-                      </div>
+                      )}
                     </div>
                   </div>
+
+                  {/* More menu (hover only) */}
+                  <button
+                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-accent flex-shrink-0"
+                    onClick={() => {
+                      // Simple context menu (can be expanded later)
+                      const actions = [
+                        { label: task.pinned ? 'Unpin' : 'Pin', action: () => togglePin(task.id) },
+                        { label: 'Schedule', action: () => setSchedulingTaskId(task.id) },
+                        { label: 'Delete', action: () => deleteTask(task.id) },
+                      ];
+                      // For now, just show delete on click
+                      if (window.confirm('Delete this task?')) {
+                        deleteTask(task.id);
+                      }
+                    }}
+                    aria-label="more options"
+                    title="More"
+                  >
+                    <MoreVertical className="w-4 h-4 text-muted-foreground" />
+                  </button>
                 </div>
-                {snoozeForId === task.id && (
-                  <div className="absolute right-2 top-9 z-50 bg-popover text-popover-foreground border border-border rounded-lg shadow px-2 py-1 flex items-center gap-1">
-                    <button className="text-xs px-2 py-1 hover:bg-accent rounded" onClick={() => { snoozeTask(task.id, 15); setSnoozeForId(null); }}>15m</button>
-                    <button className="text-xs px-2 py-1 hover:bg-accent rounded" onClick={() => { snoozeTask(task.id, 60); setSnoozeForId(null); }}>1h</button>
-                    <button className="text-xs px-2 py-1 hover:bg-accent rounded" onClick={() => { snoozeTask(task.id, 60 * 24); setSnoozeForId(null); }}>1d</button>
-                    <button className="text-xs px-2 py-1 hover:bg-accent rounded" onClick={() => setSnoozeForId(null)}>Close</button>
-                  </div>
-                )}
               </motion.div>
             ))}
 
-            {pinnedTasks.length > 0 && otherTasks.length > 0 && (
-              <div className="px-1 pt-3 text-[10px] uppercase tracking-wide text-muted-foreground/80">Others</div>
-            )}
             {otherTasks.map((task) => (
               <motion.div
                 key={task.id}
-                className="p-2 rounded-xl hover:bg-accent/60 transition-colors group relative"
+                className="group p-2.5 rounded-lg hover:bg-accent/50 transition-all"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                draggable
-                onDragStartCapture={(e: React.DragEvent<HTMLDivElement>) => {
-                  e.dataTransfer.setData('text/plain', task.id);
-                  e.dataTransfer.effectAllowed = 'move';
-                }}
-                onDropCapture={(e: React.DragEvent<HTMLDivElement>) => {
-                  e.preventDefault();
-                  const draggedId = e.dataTransfer.getData('text/plain');
-                  if (!draggedId || draggedId === task.id) return;
-                  const ids = sectionOrder.slice();
-                  const from = ids.indexOf(draggedId);
-                  const to = ids.indexOf(task.id);
-                  if (from === -1 || to === -1) return;
-                  const [moved] = ids.splice(from, 1);
-                  ids.splice(to, 0, moved);
-                  useTodoStore.getState().reorder(ids);
-                }}
               >
-                <div className="flex items-start gap-3 min-h-[44px]">
-                  <div className="flex items-center gap-2 mt-1">
-                    <motion.button 
-                      className="p-1 rounded-full hover:bg-accent relative" 
-                      onClick={() => handleToggleDone(task.id)} 
-                      aria-label="toggle done"
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                    >
-                      <AnimatePresence mode="wait">
-                        {completingTasks.has(task.id) ? (
-                          <motion.div
-                            key="completing"
-                            initial={{ scale: 0.8, opacity: 0 }}
-                            animate={{ 
-                              scale: [0.8, 1.2, 1], 
-                              opacity: 1,
-                              rotate: [0, 360]
-                            }}
-                            exit={{ scale: 0, opacity: 0 }}
-                            transition={{ 
-                              duration: 0.6, 
-                              ease: "easeOut",
-                              times: [0, 0.6, 1]
-                            }}
-                          >
-                            <CheckCircle2 className="w-4 h-4 text-green-500" />
-                          </motion.div>
-                        ) : (
-                          <motion.div
-                            key="normal"
-                            initial={{ scale: 0.8, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.8, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                          >
-                            {task.status === 'done' ? 
-                              <CheckCircle2 className="w-4 h-4 text-green-500" /> : 
-                              <Circle className="w-4 h-4 text-muted-foreground" />
-                            }
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </motion.button>
-                    {/* Priority indicator dot */}
-                    {task.priority && (
-                      <div className={`w-2 h-2 rounded-full ${
-                        task.priority === 'high' ? 'bg-red-500' :
-                        task.priority === 'med' ? 'bg-yellow-500' :
-                        'bg-green-500'
-                      }`} title={`${task.priority} priority`} />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <textarea
-                        className="flex-1 bg-transparent text-sm text-card-foreground outline-none min-w-0 leading-relaxed py-1 resize-none overflow-hidden"
-                        defaultValue={task.text}
-                        rows={1}
-                        onInput={(e) => {
-                          // Auto-resize textarea
-                          const target = e.target as HTMLTextAreaElement;
-                          target.style.height = 'auto';
-                          target.style.height = target.scrollHeight + 'px';
-                        }}
-                        onBlur={(e) => {
-                          const text = e.target.value.trim();
-                          if (text && text !== task.text) updateTask(task.id, { text });
-                          else e.target.value = task.text;
-                        }}
-                      />
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        <button
-                          className={`${task.pinned ? 'opacity-100 text-primary' : 'opacity-0 group-hover:opacity-100 text-muted-foreground'} transition-opacity p-1 rounded hover:bg-accent`}
-                          onClick={() => togglePin(task.id)}
-                          aria-label="pin"
-                          title="Pin"
-                        >
-                          <Pin className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-accent"
-                          onClick={() => setSnoozeForId((prev) => (prev === task.id ? null : task.id))}
-                          aria-label="snooze"
-                          title="Snooze"
-                        >
-                          <Clock className="w-3.5 h-3.5 text-muted-foreground" />
-                        </button>
-                        <button
-                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-accent"
-                          onClick={() => setSchedulingTaskId(task.id)}
-                          aria-label="schedule"
-                          title="Schedule for date"
-                        >
-                          <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
-                        </button>
-                        <button
-                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-accent"
-                          onClick={() => {
-                            setEditingUrlId(task.id);
-                            setEditingUrl(task.url || '');
+                <div className="flex items-center gap-2.5">
+                  {/* Checkbox */}
+                  <motion.button 
+                    className="flex-shrink-0" 
+                    onClick={() => handleToggleDone(task.id)} 
+                    aria-label="toggle done"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                  >
+                    <AnimatePresence mode="wait">
+                      {completingTasks.has(task.id) ? (
+                        <motion.div
+                          key="completing"
+                          initial={{ scale: 0.8, opacity: 0 }}
+                          animate={{ 
+                            scale: [0.8, 1.2, 1], 
+                            opacity: 1,
+                            rotate: [0, 360]
                           }}
-                          aria-label="edit url"
-                          title="Add/Edit URL"
+                          exit={{ scale: 0, opacity: 0 }}
+                          transition={{ 
+                            duration: 0.6, 
+                            ease: "easeOut",
+                            times: [0, 0.6, 1]
+                          }}
                         >
-                          <Link className="w-3.5 h-3.5 text-muted-foreground" />
+                          <CheckCircle2 className="w-5 h-5 text-green-500" />
+                        </motion.div>
+                      ) : (
+                        <motion.div
+                          key="normal"
+                          initial={{ scale: 0.8, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0.8, opacity: 0 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          {task.status === 'done' ? 
+                            <CheckCircle2 className="w-5 h-5 text-green-500" /> : 
+                            <Circle className="w-5 h-5 text-muted-foreground" />
+                          }
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.button>
+
+                  {/* Task Text + Metadata (One Line) */}
+                  <div className="flex-1 min-w-0 flex items-center gap-2">
+                    <textarea
+                      className={`flex-1 bg-transparent text-sm outline-none resize-none overflow-hidden leading-snug py-0.5 ${
+                        task.status === 'done' ? 'line-through text-muted-foreground' : 'text-foreground'
+                      }`}
+                      defaultValue={task.text}
+                      rows={1}
+                      onInput={(e) => {
+                        const target = e.target as HTMLTextAreaElement;
+                        target.style.height = 'auto';
+                        target.style.height = target.scrollHeight + 'px';
+                      }}
+                      onBlur={(e) => {
+                        const text = e.target.value.trim();
+                        if (text && text !== task.text) updateTask(task.id, { text });
+                        else e.target.value = task.text;
+                      }}
+                    />
+                    
+                    {/* Minimal metadata (only show what matters) */}
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      {/* Priority flag (red/yellow only) */}
+                      {(task.priority === 'high' || task.priority === 'med') && (
+                        <span className="text-base" title={`${task.priority} priority`}>
+                          {task.priority === 'high' ? '🔴' : '🟡'}
+                        </span>
+                      )}
+                      
+                      {/* Pinned indicator */}
+                      {task.pinned && (
+                        <Pin className="w-3.5 h-3.5 text-primary" />
+                      )}
+                      
+                      {/* Schedule indicator */}
+                      {task.scheduledFor && (
+                        <span className="text-xs text-blue-500" title={`Scheduled: ${new Date(task.scheduledFor).toLocaleDateString()}`}>
+                          📅
+                        </span>
+                      )}
+                      
+                      {/* URL indicator */}
+                      {task.url && (
+                        <button
+                          className="text-xs text-blue-500 hover:text-blue-600"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (parseWeeklyReviewUrl(task.url!)) {
+                              openWeeklyReviewFromUrl(task.url!);
+                            } else {
+                              window.open(task.url!, '_blank', 'noopener,noreferrer');
+                            }
+                          }}
+                          title={formatUrlForDisplay(task.url)}
+                        >
+                          🔗
                         </button>
-                        <button className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-accent" onClick={() => deleteTask(task.id)} aria-label="delete" title="Delete">
-                          <X className="w-3.5 h-3.5 text-muted-foreground" />
-                        </button>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between mt-2 text-xs gap-2">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {task.url && (
-                          <button
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 border border-blue-500/20 hover:bg-blue-500/20 transition-colors text-[10px] font-medium"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (parseWeeklyReviewUrl(task.url!)) {
-                                openWeeklyReviewFromUrl(task.url!);
-                              } else {
-                                window.open(task.url!, '_blank', 'noopener,noreferrer');
-                              }
-                            }}
-                          >
-                            <ExternalLink className="w-3 h-3" />
-                            {formatUrlForDisplay(task.url)}
-                          </button>
-                        )}
-                        {task.dueAt && (
-                          <span className="inline-flex items-center gap-1 text-muted-foreground"><Clock className="w-3 h-3" /> {new Date(task.dueAt).toLocaleDateString()}</span>
-                        )}
-                        {task.scheduledFor && (
-                          <span className="inline-flex items-center gap-1 text-blue-500"><Calendar className="w-3 h-3" /> {new Date(task.scheduledFor).toLocaleDateString()}</span>
-                        )}
-                        {/* Colorful category tag */}
-                        {task.category && (
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
-                            task.category === 'risk' ? 'bg-red-500/10 text-red-500 border border-red-500/20' :
-                            task.category === 'analysis' ? 'bg-blue-500/10 text-blue-500 border border-blue-500/20' :
-                            task.category === 'journal' ? 'bg-green-500/10 text-green-500 border border-green-500/20' :
-                            task.category === 'wellness' ? 'bg-purple-500/10 text-purple-500 border border-purple-500/20' :
-                            task.category === 'execution' ? 'bg-orange-500/10 text-orange-500 border border-orange-500/20' :
-                            task.category === 'learning' ? 'bg-indigo-500/10 text-indigo-500 border border-indigo-500/20' :
-                            task.category === 'mindset' ? 'bg-pink-500/10 text-pink-500 border border-pink-500/20' :
-                            'bg-gray-500/10 text-gray-500 border border-gray-500/20'
-                          }`}>
-                            {task.category}
-                          </span>
-                        )}
-                        {(task.tags && task.tags.length > 0) && (
-                          <span className="inline-flex items-center gap-1 text-muted-foreground"><Tag className="w-3 h-3" /> {task.tags.join(', ')}</span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        {/* Priority selector */}
-                        <select
-                          className="px-1.5 py-0.5 rounded text-[10px] bg-muted border border-border/30 outline-none appearance-none cursor-pointer hover:bg-accent transition-colors"
-                          style={{ WebkitAppearance: 'none', MozAppearance: 'none' }}
-                          defaultValue={task.priority || ''}
-                          onChange={(e) => updateTask(task.id, { priority: e.target.value as 'low' | 'med' | 'high' || undefined })}
-                          title="Priority"
-                        >
-                          <option value="">Priority</option>
-                          <option value="low">Low</option>
-                          <option value="med">Med</option>
-                          <option value="high">High</option>
-                        </select>
-                        {/* Category selector */}
-                        <select
-                          className="px-1.5 py-0.5 rounded text-[10px] bg-muted border border-border/30 outline-none appearance-none cursor-pointer hover:bg-accent transition-colors"
-                          style={{ WebkitAppearance: 'none', MozAppearance: 'none' }}
-                          defaultValue={task.category || ''}
-                          onChange={(e) => setCategory(task.id, e.target.value || undefined)}
-                          title="Category"
-                        >
-                          <option value="">Category</option>
-                          <option value="risk">Risk</option>
-                          <option value="analysis">Analysis</option>
-                          <option value="execution">Execution</option>
-                          <option value="journal">Journal</option>
-                          <option value="learning">Learning</option>
-                          <option value="wellness">Wellness</option>
-                          <option value="mindset">Mindset</option>
-                        </select>
-                      </div>
+                      )}
                     </div>
                   </div>
+
+                  {/* More menu (hover only) */}
+                  <button
+                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-accent flex-shrink-0"
+                    onClick={() => {
+                      if (window.confirm('Delete this task?')) {
+                        deleteTask(task.id);
+                      }
+                    }}
+                    aria-label="more options"
+                    title="More"
+                  >
+                    <MoreVertical className="w-4 h-4 text-muted-foreground" />
+                  </button>
                 </div>
-                {snoozeForId === task.id && (
-                  <div className="absolute right-2 top-9 z-50 bg-popover text-popover-foreground border border-border rounded-lg shadow px-2 py-1 flex items-center gap-1">
-                    <button className="text-xs px-2 py-1 hover:bg-accent rounded" onClick={() => { snoozeTask(task.id, 15); setSnoozeForId(null); }}>15m</button>
-                    <button className="text-xs px-2 py-1 hover:bg-accent rounded" onClick={() => { snoozeTask(task.id, 60); setSnoozeForId(null); }}>1h</button>
-                    <button className="text-xs px-2 py-1 hover:bg-accent rounded" onClick={() => { snoozeTask(task.id, 60 * 24); setSnoozeForId(null); }}>1d</button>
-                    <button className="text-xs px-2 py-1 hover:bg-accent rounded" onClick={() => setSnoozeForId(null)}>Close</button>
-                  </div>
-                )}
               </motion.div>
             ))}
 
