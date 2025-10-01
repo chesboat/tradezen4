@@ -13,7 +13,7 @@ import { WellnessView } from './components/WellnessView';
 import { TradesView } from './components/TradesView';
 import { AppleAnalyticsDashboard } from './components/AppleAnalyticsDashboard';
 import { CoachView } from './components/CoachView';
-import { JournalView } from './components/JournalView';
+import { JournalViewApple as JournalView } from './components/JournalViewApple';
 import { NotesView } from './components/NotesView';
 import { TradeLoggerModal } from './components/TradeLoggerModal';
 import { QuickNoteModal } from './components/QuickNoteModal';
