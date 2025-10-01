@@ -36,13 +36,13 @@ export const DayDetailModalApple: React.FC<DayDetailModalAppleProps> = ({
   const { trades } = useTradeStore();
   const { notes } = useQuickNoteStore();
   const { selectedAccountId } = useAccountFilterStore();
-  const { dailyReflections } = useDailyReflectionStore();
+  const { reflections } = useDailyReflectionStore();
 
   // Filter trades and notes for this day
   const dayTrades = useMemo(() => {
     if (!dateString) return [];
     return trades.filter(t => {
-      const tradeDate = new Date(t.date).toISOString().split('T')[0];
+      const tradeDate = new Date(t.entryTime).toISOString().split('T')[0];
       const matchesDate = tradeDate === dateString;
       const matchesAccount = !selectedAccountId || selectedAccountId === 'all' || t.accountId === selectedAccountId;
       return matchesDate && matchesAccount;
@@ -75,8 +75,8 @@ export const DayDetailModalApple: React.FC<DayDetailModalAppleProps> = ({
   }, [dayTrades]);
 
   const dailyReflection = useMemo(() => {
-    return dailyReflections.find(r => r.date === dateString);
-  }, [dailyReflections, dateString]);
+    return reflections.find(r => r.date === dateString);
+  }, [reflections, dateString]);
 
   const currentStreak = dailyReflection?.streakCount || 0;
 
@@ -281,9 +281,9 @@ export const DayDetailModalApple: React.FC<DayDetailModalAppleProps> = ({
                           </div>
                           
                           <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <span>Entry: {formatCurrency(trade.entry || 0)}</span>
+                            <span>Entry: {formatCurrency(trade.entryPrice || 0)}</span>
                             <span>→</span>
-                            <span>Exit: {formatCurrency(trade.exit || 0)}</span>
+                            <span>Exit: {formatCurrency(trade.exitPrice || 0)}</span>
                             {trade.riskRewardRatio && (
                               <>
                                 <span>•</span>

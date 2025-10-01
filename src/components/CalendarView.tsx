@@ -1283,6 +1283,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
       {/* Day Detail Modal */}
       <DayDetailModal
         day={selectedDay}
+        dateString={typeof selectedDay?.date === 'string' ? selectedDay.date : (selectedDay?.date ? new Date(selectedDay.date).toISOString().split('T')[0] : '')}
         isOpen={!!selectedDay}
         onClose={() => setSelectedDay(null)}
       />
