@@ -287,12 +287,12 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
     });
     
     // Require actual written content to show the flame
-    const hasReflection = reflection && (
+    const hasReflection = Boolean(reflection && (
       (reflection.reflection && reflection.reflection.trim().length > 0) ||
       (reflection.keyFocus && reflection.keyFocus.trim().length > 0) ||
       (reflection.goals && reflection.goals.trim().length > 0) ||
       (reflection.lessons && reflection.lessons.trim().length > 0)
-    );
+    ));
     
     return {
       date,
