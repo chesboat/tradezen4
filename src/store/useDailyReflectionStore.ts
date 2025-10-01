@@ -250,7 +250,14 @@ export const useDailyReflectionStore = create<DailyReflectionState>()(
                 ? { ...entry, mood }
                 : entry
             );
-            get().updateReflection(reflection.id, { moodTimeline: updatedMoodTimeline });
+            
+            // Serialize dates for Firestore
+            const serializedTimeline = updatedMoodTimeline.map(entry => ({
+              ...entry,
+              timestamp: entry.timestamp instanceof Date ? entry.timestamp.toISOString() : entry.timestamp
+            }));
+            
+            get().updateReflection(reflection.id, { moodTimeline: serializedTimeline as any });
             return;
           }
         }
@@ -266,7 +273,14 @@ export const useDailyReflectionStore = create<DailyReflectionState>()(
         console.log('[DailyReflectionStore] Adding new mood entry:', newMoodEntry);
         const updatedMoodTimeline = [...reflection.moodTimeline, newMoodEntry];
         console.log('[DailyReflectionStore] Updated timeline length:', updatedMoodTimeline.length);
-        get().updateReflection(reflection.id, { moodTimeline: updatedMoodTimeline });
+        
+        // Serialize dates for Firestore - convert Date objects to ISO strings
+        const serializedTimeline = updatedMoodTimeline.map(entry => ({
+          ...entry,
+          timestamp: entry.timestamp instanceof Date ? entry.timestamp.toISOString() : entry.timestamp
+        }));
+        
+        get().updateReflection(reflection.id, { moodTimeline: serializedTimeline as any });
         console.log('[DailyReflectionStore] Reflection updated');
       },
 
