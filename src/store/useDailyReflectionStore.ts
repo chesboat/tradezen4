@@ -4,6 +4,8 @@ import { MoodType } from '@/types';
 import { localStorage, STORAGE_KEYS, generateId } from '@/lib/localStorageUtils';
 import { FirestoreService } from '@/lib/firestore';
 import { getGroupIdsFromAnySelection } from '@/store/useAccountFilterStore';
+import type { Trade } from '@/types';
+import type { WeeklyReview } from '@/types';
 
 interface MoodEntry {
   id: string;
@@ -324,103 +326,44 @@ export const useDailyReflectionStore = create<DailyReflectionState>()(
         const reflections = get().getReflectionsByAccount(accountId);
         if (reflections.length === 0) return 0;
 
-        // Get trades for this account to identify trading days
-        const { useTradeStore } = require('@/store/useTradeStore');
-        const allTrades = useTradeStore.getState().trades.filter((t: any) => t.accountId === accountId);
+        // For now, use a simplified streak calculation that doesn't depend on trades/reviews
+        // This avoids circular dependency issues with require() in browser bundles
+        // The streak is based on consecutive days with meaningful reflections
         
-        // Get weekly reviews for this account
-        const { useWeeklyReviewStore } = require('@/store/useWeeklyReviewStore');
-        const weeklyReviews = useWeeklyReviewStore.getState().reviews.filter(
-          (r: any) => r.accountId === accountId && r.isComplete
-        );
-        
-        // Helper: Get Monday of week for a date
-        const getMondayOfWeek = (date: Date): string => {
-          const d = new Date(date);
-          const day = d.getDay();
-          const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-          d.setDate(diff);
-          return d.toISOString().split('T')[0];
-        };
-        
-        // Helper: Check if date has a trade
-        const hasTrade = (dateStr: string): boolean => {
-          return allTrades.some((t: any) => {
-            const tradeDate = new Date(t.entryTime).toISOString().split('T')[0];
-            return tradeDate === dateStr;
-          });
-        };
-        
-        // Helper: Check if date has meaningful reflection
-        const hasReflection = (dateStr: string): boolean => {
-          const reflection = reflections.find(r => r.date === dateStr);
-          return Boolean(reflection && (
-            (reflection.reflection && reflection.reflection.trim().length > 0) ||
-            (reflection.keyFocus && reflection.keyFocus.trim().length > 0) ||
-            (reflection.goals && reflection.goals.trim().length > 0) ||
-            (reflection.lessons && reflection.lessons.trim().length > 0)
-          ));
-        };
-        
-        // Helper: Check if week has completed weekly review
-        const hasWeeklyReview = (weekStart: string): boolean => {
-          return weeklyReviews.some((r: any) => r.weekOf === weekStart);
-        };
-        
+        const sortedReflections = reflections
+          .filter(r => 
+            // Only count reflections with actual written content
+            (r.reflection && r.reflection.trim().length > 0) ||
+            (r.keyFocus && r.keyFocus.trim().length > 0) ||
+            (r.goals && r.goals.trim().length > 0) ||
+            (r.lessons && r.lessons.trim().length > 0)
+          )
+          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+        if (sortedReflections.length === 0) return 0;
+
         let streak = 0;
         const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        // Start from today and count backwards
         let currentDate = new Date(today);
         
-        // Track weekly periods to give credit for weekly reviews
-        let currentWeekStart = getMondayOfWeek(currentDate);
-        let weekHasTrades = false;
-        let weekHasReflection = false;
-        
-        // Walk backwards day by day
-        for (let i = 0; i < 365; i++) { // Max 1 year lookback
-          const dateStr = currentDate.toISOString().split('T')[0];
-          const weekStart = getMondayOfWeek(currentDate);
+        for (let i = 0; i < sortedReflections.length && i < 365; i++) {
+          const reflectionDate = new Date(sortedReflections[i].date + 'T00:00:00');
           
-          // If we've moved to a new week, check if previous week qualifies
-          if (weekStart !== currentWeekStart && i > 0) {
-            // Previous week validation
-            if (weekHasTrades && !weekHasReflection) {
-              // Traded but didn't reflect at all that week
-              // Check if they at least did a weekly review
-              if (!hasWeeklyReview(currentWeekStart)) {
-                break; // Streak broken
-              }
-            } else if (!weekHasTrades && !weekHasReflection) {
-              // No trades and no reflections - check for weekly review
-              if (!hasWeeklyReview(currentWeekStart)) {
-                break; // Streak broken (inactive week without review)
-              }
-            }
-            // Reset for new week
-            currentWeekStart = weekStart;
-            weekHasTrades = false;
-            weekHasReflection = false;
-          }
+          // Check if this reflection matches our expected date (today - i days)
+          const expectedDate = new Date(today);
+          expectedDate.setDate(today.getDate() - streak);
+          expectedDate.setHours(0, 0, 0, 0);
           
-          const tradedToday = hasTrade(dateStr);
-          const reflectedToday = hasReflection(dateStr);
-          
-          if (tradedToday) {
-            weekHasTrades = true;
-            if (reflectedToday) {
-              weekHasReflection = true;
-              streak++;
-            } else {
-              // Traded but no reflection - streak in jeopardy
-              // Will check at week end if weekly review saves it
-            }
-          } else if (reflectedToday) {
-            // Reflection on non-trading day still counts
-            weekHasReflection = true;
+          if (reflectionDate.getTime() === expectedDate.getTime()) {
             streak++;
+          } else if (reflectionDate.getTime() < expectedDate.getTime()) {
+            // Gap in reflections, streak is broken
+            break;
           }
-          
-          currentDate.setDate(currentDate.getDate() - 1);
+          // If reflectionDate > expectedDate, skip this reflection (from the future somehow)
         }
 
         return streak;
