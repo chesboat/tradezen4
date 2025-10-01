@@ -162,10 +162,20 @@ const MinimalKPICard: React.FC<KPICardProps> = ({ title, value, change, changeTy
 
 // Daily Intent Card (Apple-style - single focus)
 const DailyIntentCard: React.FC = () => {
-  const { getReflectionByDate } = useDailyReflectionStore();
-  const { setCurrentView } = useNavigationStore();
+  const { getReflectionByDate, upsertReflectionForSelection } = useDailyReflectionStore();
+  const { selectedAccountId } = useAccountFilterStore();
   const today = formatLocalDate(new Date());
-  const todayReflection = getReflectionByDate(today);
+  const todayReflection = getReflectionByDate(today, selectedAccountId || undefined);
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [focusText, setFocusText] = React.useState('');
+
+  const handleSave = async () => {
+    if (focusText.trim()) {
+      await upsertReflectionForSelection(today, { keyFocus: focusText.trim() }, selectedAccountId || 'default');
+      setIsEditing(false);
+      setFocusText('');
+    }
+  };
 
   return (
     <motion.div
@@ -182,15 +192,57 @@ const DailyIntentCard: React.FC = () => {
         <h2 className="text-lg font-semibold text-foreground">Today's Edge</h2>
       </div>
 
-      {todayReflection?.keyFocus ? (
-        <div className="p-4 rounded-xl bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
-          <p className="text-foreground italic leading-relaxed">
+      {!isEditing && todayReflection?.keyFocus ? (
+        <motion.div 
+          className="p-4 rounded-xl bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 cursor-pointer group hover:border-primary/30 transition-colors"
+          onClick={() => {
+            setFocusText(todayReflection.keyFocus || '');
+            setIsEditing(true);
+          }}
+          whileHover={{ scale: 1.01 }}
+        >
+          <p className="text-foreground italic leading-relaxed group-hover:text-primary transition-colors">
             "{todayReflection.keyFocus}"
           </p>
+          <p className="text-xs text-muted-foreground mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            Click to edit
+          </p>
+        </motion.div>
+      ) : isEditing ? (
+        <div className="space-y-3">
+          <textarea
+            value={focusText}
+            onChange={(e) => setFocusText(e.target.value)}
+            placeholder="e.g., Wait for the 9:45 pullback. No FOMO on the open."
+            className="w-full min-h-[100px] p-3 rounded-xl bg-muted/30 border border-border/50 focus:border-primary/50 focus:outline-none text-foreground placeholder:text-muted-foreground resize-none"
+            autoFocus
+          />
+          <div className="flex items-center gap-2">
+            <motion.button
+              onClick={handleSave}
+              disabled={!focusText.trim()}
+              className="flex-1 py-2 px-4 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              Save
+            </motion.button>
+            <motion.button
+              onClick={() => {
+                setIsEditing(false);
+                setFocusText('');
+              }}
+              className="py-2 px-4 bg-muted text-muted-foreground rounded-xl font-medium hover:bg-muted/80 transition-colors"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              Cancel
+            </motion.button>
+          </div>
         </div>
       ) : (
         <motion.button
-          onClick={() => setCurrentView('journal')}
+          onClick={() => setIsEditing(true)}
           className="w-full p-6 rounded-xl border-2 border-dashed border-primary/30 hover:border-primary/50 hover:bg-primary/5 transition-all group"
           whileHover={{ scale: 1.02 }}
         >
@@ -803,22 +855,14 @@ export const MinimalDashboard: React.FC = () => {
           )
         )}
 
-        {/* Weekly Review always mounted */}
-        <section>
-          <WeeklyReviewCard days={(weekDays || []).map((d: any) => ({
-            date: d.date,
-            status: (d.status || 'open'),
-            respectedLimit: d.respectedLimit,
-            lateLogging: d.lateLogging,
-            disciplineEnabled: !!(d.checkInAt || d.status === 'broken' || d.respectedLimit),
-          }))} />
-        </section>
-
         {/* Daily Intent + Habits - Apple's focused cards */}
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           <DailyIntentCard />
           <HabitsCard />
         </section>
+
+        {/* AI Insights - Always visible */}
+        <AIInsights />
 
         {/* Bottom Section Toggle */}
         <motion.button
@@ -827,7 +871,7 @@ export const MinimalDashboard: React.FC = () => {
           whileHover={{ scale: 1.02 }}
         >
           <span className="text-sm font-medium">
-            {showBottomSection ? 'Hide' : 'Show'} Context & Growth
+            {showBottomSection ? 'Hide' : 'Show'} Weekly Review & Activity
           </span>
           {showBottomSection ? (
             <ChevronUp className="w-4 h-4" />
@@ -846,11 +890,22 @@ export const MinimalDashboard: React.FC = () => {
               transition={{ duration: 0.3 }}
               className="space-y-6"
             >
+              {/* Weekly Review - Moved to collapsible section */}
+              <div>
+                <h3 className="text-lg font-semibold text-foreground mb-4">This Week's Discipline</h3>
+                <WeeklyReviewCard days={(weekDays || []).map((d: any) => ({
+                  date: d.date,
+                  status: (d.status || 'open'),
+                  respectedLimit: d.respectedLimit,
+                  lateLogging: d.lateLogging,
+                  disciplineEnabled: !!(d.checkInAt || d.status === 'broken' || d.respectedLimit),
+                }))} />
+              </div>
+              
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                 <RecentActivity />
                 <GrowthCorner />
               </div>
-              <AIInsights />
             </motion.section>
           )}
         </AnimatePresence>
