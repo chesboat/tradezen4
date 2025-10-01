@@ -206,6 +206,16 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
                     value={symbol}
                     onChange={(e) => setSymbol(e.target.value.toUpperCase())}
                     onFocus={() => setShowSymbolPicker(true)}
+                    onBlur={() => {
+                      // Delay to allow clicking on dropdown items
+                      setTimeout(() => setShowSymbolPicker(false), 150);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        setShowSymbolPicker(false);
+                        symbolInputRef.current?.blur();
+                      }
+                    }}
                     className="w-full px-4 py-3 bg-muted/30 border border-border/50 rounded-xl text-foreground font-medium text-lg focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
                     placeholder="AAPL"
                   />
@@ -215,21 +225,25 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
                     <motion.div
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
+                      onMouseDown={(e) => e.preventDefault()} // Prevent blur when clicking dropdown
                       className="absolute top-full mt-2 w-full bg-card border border-border rounded-xl shadow-lg overflow-hidden z-10"
                     >
-                      {recentSymbols.slice(0, 5).map((sym) => (
-                        <button
-                          key={sym}
-                          onClick={() => {
-                            setSymbol(sym);
-                            setShowSymbolPicker(false);
-                            symbolInputRef.current?.blur();
-                          }}
-                          className="w-full px-4 py-2 text-left hover:bg-muted/50 transition-colors text-sm"
-                        >
-                          {sym}
-                        </button>
-                      ))}
+                      {recentSymbols
+                        .filter(sym => sym.includes(symbol) || symbol === '') // Filter based on input
+                        .slice(0, 5)
+                        .map((sym) => (
+                          <button
+                            key={sym}
+                            onClick={() => {
+                              setSymbol(sym);
+                              setShowSymbolPicker(false);
+                              symbolInputRef.current?.blur();
+                            }}
+                            className="w-full px-4 py-2 text-left hover:bg-muted/50 transition-colors text-sm"
+                          >
+                            {sym}
+                          </button>
+                        ))}
                     </motion.div>
                   )}
                 </div>
