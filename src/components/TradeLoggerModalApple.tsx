@@ -91,18 +91,19 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
     try {
       const pnlValue = parseFloat(pnl);
       
-      const tradeData: Partial<Trade> = {
+      const tradeData = {
         symbol: symbol.toUpperCase(),
         direction,
         result,
         pnl: result === 'loss' ? -Math.abs(pnlValue) : Math.abs(pnlValue),
-        entryPrice: 0, // Will be set by backend or defaults
+        entryPrice: 0,
+        exitPrice: result === 'win' ? Math.abs(pnlValue) : 0,
         quantity: 1,
         riskAmount: Math.abs(pnlValue),
         riskRewardRatio: 1,
         entryTime: new Date().toISOString(),
-        mood: 'neutral',
-        tags: [],
+        mood: 'neutral' as const,
+        tags: [] as string[],
         notes: note,
         accountId: selectedAccountId,
       };
