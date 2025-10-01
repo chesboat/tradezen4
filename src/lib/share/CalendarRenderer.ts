@@ -216,9 +216,19 @@ function fitFont(ctx: CanvasRenderingContext2D, text: string, maxW: number, min:
 }
 
 function formatCurrency(n: number): string {
-  const sign = n > 0 ? '' : n < 0 ? '-' : '';
+  const sign = n > 0 ? '+' : n < 0 ? '-' : '';
   const v = Math.abs(n);
-  return `${sign}$${v.toFixed(2)}`;
+  
+  // Apple-style: abbreviate large numbers, round to whole numbers
+  if (v >= 1000000) {
+    return `${sign}$${(v / 1000000).toFixed(1)}M`;
+  }
+  if (v >= 1000) {
+    return `${sign}$${(v / 1000).toFixed(1)}k`;
+  }
+  
+  // Round to whole number (no cents)
+  return `${sign}$${Math.round(v)}`;
 }
 
 

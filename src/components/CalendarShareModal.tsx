@@ -11,7 +11,8 @@ import {
   ChevronRight,
   Share
 } from 'lucide-react';
-import { formatCurrency, formatDate } from '@/lib/localStorageUtils';
+import { formatDate } from '@/lib/localStorageUtils';
+import { formatCurrencyApple } from '@/lib/appleFormatters';
 import { renderCalendarToDataURL } from '@/lib/share/CalendarRenderer';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
@@ -71,7 +72,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
         'text-sm font-bold',
         pnl > 0 ? 'text-green-500' : 'text-red-500'
       )}>
-        {formatCurrency(pnl)}
+        {formatCurrencyApple(pnl, { showSign: false })}
       </div>
     );
   };
@@ -267,7 +268,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
               await navigator.clipboard.write([clipboardItem]);
               
               // Open X.com with pre-filled text
-              const text = `${currentMonth} ${currentYear} trading recap 📊\n\nP&L: ${formatCurrency(monthlyPnL)}\nTrades: ${totalTrades}\n\nRefining my edge, daily.\n\nrefine.trading`;
+              const text = `${currentMonth} ${currentYear} trading recap 📊\n\nP&L: ${formatCurrencyApple(monthlyPnL, { forceSign: true })}\nTrades: ${totalTrades}\n\nRefining my edge, daily.\n\nrefine.trading`;
               const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
               
               // Small delay to ensure clipboard write completes
@@ -288,7 +289,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
               link.click();
               setTimeout(() => link.remove(), 0);
               
-              const text = `${currentMonth} ${currentYear} trading recap 📊\n\nP&L: ${formatCurrency(monthlyPnL)}\nTrades: ${totalTrades}\n\nRefining my edge, daily.\n\nrefine.trading`;
+              const text = `${currentMonth} ${currentYear} trading recap 📊\n\nP&L: ${formatCurrencyApple(monthlyPnL, { forceSign: true })}\nTrades: ${totalTrades}\n\nRefining my edge, daily.\n\nrefine.trading`;
               const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
               
               window.open(twitterUrl, '_blank', 'noopener,noreferrer');
@@ -348,7 +349,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
       toast.success('Calendar downloaded! Upload it to your Instagram story or post');
       
       // Optional: Try to copy suggested caption to clipboard
-      const caption = `${currentMonth} ${currentYear} 📊\n\nP&L: ${formatCurrency(monthlyPnL)}\nTrades: ${totalTrades}\n\nRefining my edge, daily.\n\nrefine.trading`;
+      const caption = `${currentMonth} ${currentYear} 📊\n\nP&L: ${formatCurrencyApple(monthlyPnL, { forceSign: true })}\nTrades: ${totalTrades}\n\nRefining my edge, daily.\n\nrefine.trading`;
       
       if (navigator.clipboard) {
         try {
@@ -488,7 +489,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
 
                   <div className="flex items-center gap-4">
                     <div className="text-sm text-muted-foreground">
-                      Monthly stats: <span className="font-semibold text-green-500">{formatCurrency(monthlyPnL)}</span>
+                      Monthly: <span className={cn("font-semibold", monthlyPnL > 0 ? "text-green-500" : monthlyPnL < 0 ? "text-red-500" : "text-muted-foreground")}>{formatCurrencyApple(monthlyPnL, { showSign: false })}</span>
                     </div>
                   </div>
                 </div>
@@ -588,7 +589,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
                             weeklyData[weekIndex]?.totalPnl > 0 ? 'text-green-500' : 
                             weeklyData[weekIndex]?.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
                           )}>
-                            {formatCurrency(weeklyData[weekIndex]?.totalPnl || 0)}
+                            {formatCurrencyApple(weeklyData[weekIndex]?.totalPnl || 0, { showSign: false })}
                           </div>
                           <div className="text-xs text-muted-foreground">
                             {weeklyData[weekIndex]?.activeDays || 0} days
@@ -696,7 +697,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
                             <div className="flex flex-col items-center justify-center h-full text-center space-y-1">
                               <div className="text-xs font-medium text-muted-foreground">Week {weeklyData[weekIndex]?.weekNumber}</div>
                               <div className={cn('text-sm font-bold', weeklyData[weekIndex]?.totalPnl > 0 ? 'text-green-500' : weeklyData[weekIndex]?.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground')}>
-                                {formatCurrency(weeklyData[weekIndex]?.totalPnl || 0)}
+                                {formatCurrencyApple(weeklyData[weekIndex]?.totalPnl || 0, { showSign: false })}
                               </div>
                               <div className="text-xs text-muted-foreground">{weeklyData[weekIndex]?.activeDays || 0} days</div>
                             </div>
