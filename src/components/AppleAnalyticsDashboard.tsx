@@ -557,12 +557,12 @@ const AnnotatedEquityCurve: React.FC<{ trades: any[] }> = ({ trades }) => {
           </div>
         ) : (
           <svg 
-            viewBox="0 0 100 100" 
+            viewBox="0 0 100 40" 
             className="w-full h-full" 
-            preserveAspectRatio="xMidYMid meet"
+            preserveAspectRatio="none"
           >
             {/* Subtle horizontal grid lines (Apple Health style) */}
-            {[25, 50, 75].map(y => (
+            {[10, 20, 30].map(y => (
               <line
                 key={y}
                 x1="0"
@@ -586,11 +586,11 @@ const AnnotatedEquityCurve: React.FC<{ trades: any[] }> = ({ trades }) => {
             
             {/* Fill under curve */}
             <polygon
-              points={`0,100 ${equityData.data.map((point, idx) => {
+              points={`0,40 ${equityData.data.map((point, idx) => {
                 const x = (idx / (equityData.data.length - 1)) * 100;
-                const y = 100 - ((point.equity - minEquity) / range) * 95; // Leave 5% padding
+                const y = 40 - ((point.equity - minEquity) / range) * 38; // Leave 2 units padding (5%)
                 return `${x},${y}`;
-              }).join(' ')} 100,100`}
+              }).join(' ')} 100,40`}
               fill="url(#equityGradient)"
             />
             
@@ -602,7 +602,7 @@ const AnnotatedEquityCurve: React.FC<{ trades: any[] }> = ({ trades }) => {
                 // Start point
                 const firstPoint = equityData.data[0];
                 const firstX = 0;
-                const firstY = 100 - ((firstPoint.equity - minEquity) / range) * 95;
+                const firstY = 40 - ((firstPoint.equity - minEquity) / range) * 38;
                 let path = `M ${firstX},${firstY}`;
                 
                 // Create smooth curve using cubic bezier
@@ -611,9 +611,9 @@ const AnnotatedEquityCurve: React.FC<{ trades: any[] }> = ({ trades }) => {
                   const prev = equityData.data[i - 1];
                   
                   const currX = (i / (equityData.data.length - 1)) * 100;
-                  const currY = 100 - ((curr.equity - minEquity) / range) * 95;
+                  const currY = 40 - ((curr.equity - minEquity) / range) * 38;
                   const prevX = ((i - 1) / (equityData.data.length - 1)) * 100;
-                  const prevY = 100 - ((prev.equity - minEquity) / range) * 95;
+                  const prevY = 40 - ((prev.equity - minEquity) / range) * 38;
                   
                   // Control points for smooth curve (Apple style)
                   const cp1x = prevX + (currX - prevX) * 0.5;
@@ -637,7 +637,7 @@ const AnnotatedEquityCurve: React.FC<{ trades: any[] }> = ({ trades }) => {
             {/* Biggest win annotation (Apple-style dot) */}
             {equityData.annotations.biggestWin && (() => {
               const winX = (equityData.annotations.biggestWin.index / (equityData.data.length - 1)) * 100;
-              const winY = 100 - ((equityData.annotations.biggestWin.equity - minEquity) / range) * 95;
+              const winY = 40 - ((equityData.annotations.biggestWin.equity - minEquity) / range) * 38;
               
               return (
                 <g>
