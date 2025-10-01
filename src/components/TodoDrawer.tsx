@@ -178,19 +178,29 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
         animate={isExpanded ? 'expanded' : 'collapsed'}
         initial={false}
       >
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border cursor-ew-resize"
-           onMouseDown={(e) => {
-             // Allow resizing by dragging header area horizontally
-             const startX = e.clientX;
-             const startW = railWidth;
-             const onMove = (ev: MouseEvent) => setRailWidth(startW + (ev.clientX - startX));
-             const onUp = () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
-             window.addEventListener('mousemove', onMove);
-             window.addEventListener('mouseup', onUp);
-           }}>
+      {/* Header - Apple-style minimal */}
+      <div className="flex items-center justify-between p-4 border-b border-border/50">
+        <AnimatePresence mode="wait">
+          {isExpanded ? (
+            <motion.div 
+              className="flex items-center gap-2 flex-1"
+              variants={contentVariants} 
+              initial="collapsed" 
+              animate="expanded" 
+              exit="collapsed"
+            >
+              <h2 className="text-base font-semibold text-foreground">Todo</h2>
+              <div className="flex items-center gap-1 px-1.5 py-0.5 bg-muted rounded-md">
+                <span className="text-xs font-medium text-muted-foreground">{tasks.filter(t => t.status === 'open').length}</span>
+              </div>
+            </motion.div>
+          ) : (
+            <div className="flex-1" />
+          )}
+        </AnimatePresence>
+
         <motion.button
-          className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors relative"
+          className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors relative"
           onClick={toggleDrawer}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
@@ -199,7 +209,7 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
           {/* Badge count for collapsed state */}
           {!isExpanded && tasks.filter(t => t.status === 'open').length > 0 && (
             <motion.div
-              className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1"
+              className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] font-bold rounded-full min-w-[16px] h-[16px] flex items-center justify-center px-1"
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               exit={{ scale: 0 }}
@@ -209,142 +219,87 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
             </motion.div>
           )}
         </motion.button>
-
-        <AnimatePresence mode="wait">
-          {isExpanded && (
-            <motion.div className="flex items-center gap-3" variants={contentVariants} initial="collapsed" animate="expanded" exit="collapsed">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5 text-primary" />
-                <h2 className="text-lg font-semibold text-card-foreground">Improvement Tasks</h2>
-              </div>
-              <div className="flex items-center gap-1 px-2 py-1 bg-primary rounded-full">
-                <span className="text-xs font-medium text-primary-foreground">{tasks.length}</span>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
 
-      {/* Quick Add */}
+      {/* Quick Add - Apple Reminders style */}
       <AnimatePresence mode="wait">
         {isExpanded && (
-          <motion.div className="p-3 border-b border-border" variants={contentVariants} initial="collapsed" animate="expanded" exit="collapsed">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <textarea
-                  ref={inputRef}
-                  value={newText}
-                  onChange={(e) => setNewText(e.target.value)}
-                  placeholder="Add a task to improve your trading..."
-                  className="flex-1 px-3 py-2 rounded-lg bg-muted text-sm outline-none focus:ring-2 ring-primary/40 resize-none overflow-hidden min-h-[40px]"
-                  rows={1}
-                  onInput={(e) => {
-                    // Auto-resize textarea
-                    const target = e.target as HTMLTextAreaElement;
-                    target.style.height = 'auto';
-                    target.style.height = Math.min(target.scrollHeight, 120) + 'px';
-                  }}
-                  onKeyDown={(e) => { 
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleAdd();
-                    }
-                  }}
-                />
-                <button className="p-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90" onClick={handleAdd}>
-                  <Plus className="w-4 h-4" />
-                </button>
-              </div>
-              {/* URL input field */}
-              <div className="flex items-center gap-2">
-                <div className="relative flex-1">
-                  <Link className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <input
-                    type="url"
-                    value={newUrl}
-                    onChange={(e) => setNewUrl(e.target.value)}
-                    placeholder="Add URL (optional)"
-                    className="w-full pl-10 pr-3 py-2 rounded-lg bg-muted text-sm outline-none focus:ring-2 ring-primary/40"
-                  />
-                </div>
-              </div>
-              {/* Priority and Category selectors for new tasks */}
-              <div className="flex items-center gap-2">
-                <CustomSelect
-                  value={newPriority}
-                  onChange={(value) => setNewPriority(value as 'low' | 'med' | 'high' | '')}
-                  options={[
-                    { value: '', label: 'Priority' },
-                    { value: 'high', label: 'High', emoji: '🔴' },
-                    { value: 'med', label: 'Medium', emoji: '🟡' },
-                    { value: 'low', label: 'Low', emoji: '🟢' }
-                  ]}
-                  placeholder="Priority"
-                  size="md"
-                  className="min-w-[100px]"
-                />
-                <CustomSelect
-                  value={newCategory}
-                  onChange={(value) => setNewCategory(value)}
-                  options={[
-                    { value: '', label: 'Category' },
-                    { value: 'risk', label: 'Risk', emoji: '🔴' },
-                    { value: 'analysis', label: 'Analysis', emoji: '🔵' },
-                    { value: 'journal', label: 'Journal', emoji: '🟢' },
-                    { value: 'wellness', label: 'Wellness', emoji: '🟣' },
-                    { value: 'execution', label: 'Execution', emoji: '🟠' },
-                    { value: 'learning', label: 'Learning', emoji: '🔷' },
-                    { value: 'mindset', label: 'Mindset', emoji: '🩷' }
-                  ]}
-                  placeholder="Category"
-                  size="md"
-                  className="min-w-[110px]"
-                />
-              </div>
+          <motion.div className="p-3 border-b border-border/30" variants={contentVariants} initial="collapsed" animate="expanded" exit="collapsed">
+            <div className="flex items-center gap-2">
+              <textarea
+                ref={inputRef}
+                value={newText}
+                onChange={(e) => setNewText(e.target.value)}
+                placeholder="New Task"
+                className="flex-1 px-3 py-2 rounded-lg bg-background border border-border text-sm outline-none focus:ring-1 ring-primary resize-none overflow-hidden min-h-[36px]"
+                rows={1}
+                onInput={(e) => {
+                  const target = e.target as HTMLTextAreaElement;
+                  target.style.height = 'auto';
+                  target.style.height = Math.min(target.scrollHeight, 120) + 'px';
+                }}
+                onKeyDown={(e) => { 
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleAdd();
+                  }
+                }}
+              />
+              <button 
+                className="p-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors" 
+                onClick={handleAdd}
+              >
+                <Plus className="w-4 h-4" />
+              </button>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Filters */}
+      {/* Smart Lists - Apple Reminders style */}
       <AnimatePresence mode="wait">
         {isExpanded && (
-          <motion.div className="p-3 border-b border-border" variants={contentVariants} initial="collapsed" animate="expanded" exit="collapsed">
-            <div className="flex items-center gap-2 flex-wrap">
-              {(['today', 'all', 'open', 'done', 'snoozed'] as const).map((f) => (
+          <motion.div 
+            className="px-3 pt-3 pb-2" 
+            variants={contentVariants} 
+            initial="collapsed" 
+            animate="expanded" 
+            exit="collapsed"
+          >
+            <div className="space-y-0.5">
+              {[
+                { id: 'today', label: 'Today', icon: '🔵', count: tasks.filter(t => {
+                  if (t.status !== 'open') return false;
+                  if (!t.scheduledFor) return true;
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  const tomorrow = new Date(today);
+                  tomorrow.setDate(tomorrow.getDate() + 1);
+                  const scheduledDate = new Date(t.scheduledFor as any);
+                  return scheduledDate < tomorrow;
+                }).length },
+                { id: 'open', label: 'All', icon: '📋', count: tasks.filter(t => t.status === 'open').length },
+                { id: 'snoozed', label: 'Scheduled', icon: '📅', count: tasks.filter(t => t.status === 'snoozed').length },
+                { id: 'done', label: 'Completed', icon: '✓', count: tasks.filter(t => t.status === 'done').length },
+              ].map((list) => (
                 <button
-                  key={f}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${filter === f ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground'}`}
-                  onClick={() => setFilter(f)}
+                  key={list.id}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
+                    filter === list.id 
+                      ? 'bg-accent text-foreground font-medium' 
+                      : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+                  }`}
+                  onClick={() => setFilter(list.id as any)}
                 >
-                  {f[0].toUpperCase() + f.slice(1)}
+                  <span className="text-base">{list.icon}</span>
+                  <span className="flex-1 text-left">{list.label}</span>
+                  {list.count > 0 && (
+                    <span className={`text-xs ${filter === list.id ? 'text-foreground' : 'text-muted-foreground'}`}>
+                      {list.count}
+                    </span>
+                  )}
                 </button>
               ))}
-              <CustomSelect
-                value={categoryFilter}
-                onChange={(value) => setCategoryFilter(value as any)}
-                options={[
-                  { value: 'all', label: 'All categories', emoji: '✓' },
-                  { value: 'risk', label: 'Risk', emoji: '🔴' },
-                  { value: 'analysis', label: 'Analysis', emoji: '🔵' },
-                  { value: 'execution', label: 'Execution', emoji: '🟠' },
-                  { value: 'journal', label: 'Journal', emoji: '🟢' },
-                  { value: 'learning', label: 'Learning', emoji: '🔷' },
-                  { value: 'wellness', label: 'Wellness', emoji: '🟣' },
-                  { value: 'mindset', label: 'Mindset', emoji: '🩷' }
-                ]}
-                placeholder="All categories"
-                size="lg"
-                className="min-w-[160px]"
-              />
-              <div className="ml-auto relative">
-                <input
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search"
-                  className="px-3 py-1.5 rounded-lg bg-muted text-xs outline-none focus:ring-2 ring-primary/40"
-                />
-              </div>
             </div>
           </motion.div>
         )}
