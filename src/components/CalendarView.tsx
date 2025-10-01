@@ -594,17 +594,24 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
   }, [tileSize, spaceLevel, computedDailyPnlFont]);
 
   // Helper function to generate tooltip content for compact day tiles
+  // Apple's approach: Minimal, glanceable preview. Details live in the modal.
   const getDayTooltipContent = (day: CalendarDay) => {
-    const parts: string[] = [];
+    const lines: string[] = [];
     
-    // Date
-    parts.push(`${day.date.toLocaleDateString('en-US', { 
+    // Line 1: Date
+    lines.push(day.date.toLocaleDateString('en-US', { 
       weekday: 'long', 
       month: 'short', 
       day: 'numeric' 
-    })}`);
+    }));
     
-    // Mood
+    // Line 2: P&L + Trades (if any trading activity)
+    if (day.tradesCount > 0) {
+      const pnlFormatted = formatCurrency(day.pnl);
+      lines.push(`${pnlFormatted} • ${day.tradesCount} trade${day.tradesCount > 1 ? 's' : ''}`);
+    }
+    
+    // Line 3: Mood (if set)
     if (day.mood) {
       const moodEmoji = {
         'excellent': '🤩',
@@ -613,36 +620,11 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
         'poor': '😞',
         'terrible': '😡'
       }[day.mood];
-      parts.push(`Mood: ${moodEmoji} ${day.mood.charAt(0).toUpperCase() + day.mood.slice(1)}`);
+      const moodLabel = day.mood.charAt(0).toUpperCase() + day.mood.slice(1);
+      lines.push(`${moodEmoji} ${moodLabel}`);
     }
     
-    // XP
-    if (day.xpEarned && day.xpEarned > 0) {
-      parts.push(`XP: +${day.xpEarned}`);
-    }
-    
-    // P&L
-    if (day.pnl !== 0) {
-      parts.push(`P&L: ${formatCurrency(day.pnl)}`);
-    }
-    
-    // Trades
-    if (day.tradesCount > 0) {
-      parts.push(`${day.tradesCount} trade${day.tradesCount > 1 ? 's' : ''}`);
-      parts.push(`Win Rate: ${day.winRate.toFixed(1)}%`);
-      parts.push(`Avg R:R: ${day.avgRR.toFixed(2)}:1`);
-    }
-    
-    // Notes and reflections
-    if (day.quickNotesCount > 0) {
-      parts.push(`${day.quickNotesCount} note${day.quickNotesCount > 1 ? 's' : ''}`);
-    }
-    
-    if (day.hasReflection) {
-      parts.push('Has reflection');
-    }
-    
-    return parts.join(' • ');
+    return lines.join('\n');
   };
 
   // Helper function to generate tooltip content for compact weekly tiles
