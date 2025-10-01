@@ -336,8 +336,8 @@ export const useDailyReflectionStore = create<DailyReflectionState>()(
         const reflection = get().reflections.find(r => r.id === id);
         if (!reflection) return;
 
-        const xpEarned = 50; // Base XP for completing reflection
-        const streakBonus = reflection.streakCount * 5; // Bonus XP for streaks
+        const xpEarned = 75; // Base XP for completing reflection (matches XpRewards.DAILY_REFLECTION)
+        const streakBonus = reflection.streakCount * 10; // Streak bonus (matches XpRewards.REFLECTION_STREAK)
         const totalXP = xpEarned + streakBonus;
 
         get().updateReflection(id, {
@@ -351,6 +351,13 @@ export const useDailyReflectionStore = create<DailyReflectionState>()(
         set(() => ({
           currentStreak: newStreak,
         }));
+
+        // Award XP through the prestige system
+        import('@/lib/xp/XpService').then(({ awardXp }) => {
+          awardXp.dailyReflection().catch((e) => {
+            console.error('❌ Failed to award daily reflection XP:', e);
+          });
+        });
       },
 
       extractKeyFocus: (aiSummary) => {

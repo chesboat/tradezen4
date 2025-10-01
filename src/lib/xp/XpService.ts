@@ -17,25 +17,65 @@ export class XpService {
     const xpDocRef = doc(db, 'userProfiles', profile.id, 'xp', 'status');
     const now = new Date();
 
-    // Ensure doc exists
-    const snap = await getDoc(xpDocRef);
-    if (!snap.exists()) {
-      await setDoc(xpDocRef, {
-        total: 0,
-        seasonXp: 0,
-        level: 1,
-        prestige: 0,
-        updatedAt: serverTimestamp(),
-      });
-    }
+    try {
+      // Ensure doc exists
+      const snap = await getDoc(xpDocRef);
+      if (!snap.exists()) {
+        await setDoc(xpDocRef, {
+          total: 0,
+          seasonXp: 0,
+          level: 1,
+          prestige: 0,
+          updatedAt: serverTimestamp(),
+        });
+      }
 
-    // Atomic increments in Firestore
-    await updateDoc(xpDocRef, {
-      total: increment(delta),
-      seasonXp: increment(delta),
-      updatedAt: serverTimestamp(),
-      lastMeta: meta || null,
-    });
+      // Atomic increments in Firestore
+      await updateDoc(xpDocRef, {
+        total: increment(delta),
+        seasonXp: increment(delta),
+        updatedAt: serverTimestamp(),
+        lastMeta: meta || null,
+      });
+
+      // Read back the updated values and recalculate level
+      const updatedSnap = await getDoc(xpDocRef);
+      if (updatedSnap.exists()) {
+        const data = updatedSnap.data();
+        const newSeasonXp = Number(data.seasonXp || 0);
+        
+        // Calculate new level from season XP
+        const { levelFromTotalXp, canPrestige } = await import('./math');
+        const { level: newLevel } = levelFromTotalXp(newSeasonXp);
+        const canPrestigeNow = canPrestige(newSeasonXp);
+        
+        // Update level in Firestore if it changed
+        if (data.level !== newLevel || data.canPrestige !== canPrestigeNow) {
+          await updateDoc(xpDocRef, {
+            level: newLevel,
+            canPrestige: canPrestigeNow,
+            updatedAt: serverTimestamp(),
+          });
+          console.log('✨ XP awarded and level updated:', { 
+            delta, 
+            newSeasonXp, 
+            newLevel,
+            canPrestige: canPrestigeNow,
+            source: meta?.source 
+          });
+        } else {
+          console.log('✨ XP awarded:', { 
+            delta, 
+            newSeasonXp, 
+            level: newLevel,
+            source: meta?.source 
+          });
+        }
+      }
+    } catch (error) {
+      console.error('❌ Failed to add XP:', error);
+      throw error;
+    }
   }
 
   static subscribe(onChange: (xp: { total: number; seasonXp: number; level: number; prestige: number }) => void) {

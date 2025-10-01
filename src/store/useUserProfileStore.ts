@@ -99,33 +99,38 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
       if (cachedProfile) set({ profile: cachedProfile });
 
       // 2) Attach realtime subscription to the canonical profile doc
+      // NOTE: Do NOT read XP from this doc - XP is handled by separate subscription to xp/status
       try {
         const profileDocRef = doc(db, 'userProfiles', userId);
         const unsubProfile = onSnapshot(profileDocRef, (snap) => {
           const data = snap.data();
           if (!data) return;
-          const rawXp: any = (data as any).xp || {};
-          const seasonXp = Number(rawXp.seasonXp || 0);
-          const totalXp = Number(rawXp.total || 0);
-          const prestige = Number(rawXp.prestige || 0);
-          const level = Number(rawXp.level || levelFromTotalXp(seasonXp).level);
-
+          
+          const current = get().profile;
+          
+          // Preserve existing XP from state - do NOT overwrite with profile doc's stale xp field
+          // XP is managed exclusively by the xp/status subscription below
           const nextProfile: UserProfile = {
             ...(data as any),
             joinedAt: (data as any).joinedAt ? new Date((data as any).joinedAt) : new Date(),
-            xp: {
-              total: totalXp,
-              seasonXp: seasonXp,
-              level: level,
-              prestige: prestige,
-              canPrestige: canPrestige(seasonXp),
-              history: rawXp.history || [],
-              lastLevelUpAt: rawXp.lastLevelUpAt ? new Date(rawXp.lastLevelUpAt) : undefined,
-              lastPrestigedAt: rawXp.lastPrestigedAt ? new Date(rawXp.lastPrestigedAt) : undefined,
+            xp: current?.xp || {
+              total: 0,
+              seasonXp: 0,
+              level: 1,
+              prestige: 0,
+              canPrestige: false,
+              history: [],
             },
           } as UserProfile;
+          
           set({ profile: nextProfile });
           get().saveToStorage();
+          
+          console.log('📡 Profile subscription update (XP preserved from state):', {
+            displayName: nextProfile.displayName,
+            stats: nextProfile.stats,
+            preservedXp: nextProfile.xp.seasonXp
+          });
         });
         (window as any).__profileUnsub = unsubProfile;
       } catch (e) {
@@ -159,16 +164,35 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
       // 5) Ensure XP realtime subscription is active
       try {
         const { XpService } = await import('@/lib/xp/XpService');
+        console.log('🔗 Setting up XP subscription...');
         const unsub = XpService.subscribe(({ total, seasonXp, level, prestige }) => {
           const current = get().profile;
-          if (!current) return;
+          if (!current) {
+            console.warn('⚠️ XP update received but no profile loaded');
+            return;
+          }
+          
+          // Trust Firestore's level value (it's calculated by XpService.addXp now)
+          // But recalculate locally as backup in case Firestore is stale
+          const calculatedLevel = levelFromTotalXp(seasonXp).level;
+          const finalLevel = level || calculatedLevel; // Prefer Firestore value
+          
+          console.log('📊 XP update received:', { 
+            total, 
+            seasonXp, 
+            firestoreLevel: level,
+            calculatedLevel,
+            finalLevel,
+            prestige 
+          });
+          
           const updated: UserProfile = {
             ...current,
             xp: {
               ...current.xp,
               total,
               seasonXp,
-              level: levelFromTotalXp(seasonXp).level,
+              level: finalLevel,
               prestige,
               canPrestige: canPrestige(seasonXp),
             },
@@ -177,8 +201,11 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
           get().saveToStorage();
         });
         (window as any).__xpUnsub = unsub;
+        console.log('✅ XP subscription active');
       } catch (e) {
-        console.warn('XP subscribe failed (will still use local xp):', e);
+        console.error('❌ XP subscribe failed - XP updates will not sync:', e);
+        // This is critical - if subscription fails, user won't see XP updates
+        // Consider showing a notification to the user
       }
 
       // 6) Sync lightweight profile fields to Firestore (merge)
@@ -454,32 +481,29 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
     
     if (docSnap.exists()) {
       const data = docSnap.data();
-      console.log('🧲 loadFromFirestore read XP:', {
-        seasonXp: (data as any)?.xp?.seasonXp,
-        totalXp: (data as any)?.xp?.total,
-        level: (data as any)?.xp?.level,
-        prestige: (data as any)?.xp?.prestige,
-      });
       
-      const rawXp = (data as any)?.xp || {};
-      const seasonXp = rawXp.seasonXp || 0;
-      const totalXp = rawXp.total || 0;
-      const prestige = rawXp.prestige || 0;
-      const level = rawXp.level || levelFromTotalXp(seasonXp).level;
+      // NOTE: Do NOT read XP from parent document - it's stale!
+      // XP is loaded exclusively by the xp/status subscription
+      // Use cached XP or default values that will be overwritten by subscription
+      const current = get().profile;
+      const cachedXp = current?.xp || {
+        total: 0,
+        seasonXp: 0,
+        level: 1,
+        prestige: 0,
+        canPrestige: false,
+        history: [],
+      };
+      
+      console.log('🧲 loadFromFirestore (XP will be loaded by subscription):', {
+        usingCachedXp: !!current?.xp,
+        cachedSeasonXp: cachedXp.seasonXp,
+      });
       
       const profile: UserProfile = {
         ...data,
         joinedAt: (data as any).joinedAt ? new Date((data as any).joinedAt) : new Date(),
-        xp: {
-          total: totalXp,
-          seasonXp: seasonXp,
-          level: level,
-          prestige: prestige,
-          canPrestige: canPrestige(seasonXp),
-          history: rawXp.history || [],
-          lastLevelUpAt: rawXp.lastLevelUpAt ? new Date(rawXp.lastLevelUpAt) : undefined,
-          lastPrestigedAt: rawXp.lastPrestigedAt ? new Date(rawXp.lastPrestigedAt) : undefined,
-        }
+        xp: cachedXp  // Use cached or default, will be updated by XP subscription
       } as UserProfile;
       
       set({ profile });

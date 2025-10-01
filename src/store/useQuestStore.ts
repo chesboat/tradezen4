@@ -82,6 +82,15 @@ export const useQuestStore = create<QuestState>((set, get) => ({
     set({ quests: updatedQuests, pinnedQuests: updatedPinnedQuests });
     localStorage.setItem(STORAGE_KEYS.QUESTS, updatedQuests);
     localStorage.setItem(STORAGE_KEYS.PINNED_QUESTS, updatedPinnedQuests);
+
+    // Award XP through the prestige system
+    try {
+      const { awardXp } = await import('@/lib/xp/XpService');
+      await awardXp.questComplete(id);
+      console.log('✅ Quest completion XP awarded');
+    } catch (e) {
+      console.error('❌ Failed to award quest XP:', e);
+    }
   },
 
   // Cancel quest (user-initiated)

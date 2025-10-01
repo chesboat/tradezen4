@@ -35,6 +35,7 @@ import { ImageGallery } from './ImageGallery';
 import { EnhancedRichTextEditor } from './EnhancedRichTextEditor';
 import { BlockTagPicker } from './BlockTagPicker';
 import { FavoritesManager } from './FavoritesManager';
+import { XpCelebration } from './XpCelebration';
 
 interface ReflectionTemplateManagerProps {
   date: string; // YYYY-MM-DD format
@@ -197,6 +198,8 @@ export const ReflectionTemplateManager: React.FC<ReflectionTemplateManagerProps>
   const [totalWordCount, setTotalWordCount] = useState(0);
   const [isInitializing, setIsInitializing] = useState(true);
   const [currentReflection, setCurrentReflection] = useState<any>(null);
+  const [showXpCelebration, setShowXpCelebration] = useState(false);
+  const [celebrationXp, setCelebrationXp] = useState(0);
 
   // Calculate dropdown position when it opens
   useEffect(() => {
@@ -594,8 +597,9 @@ export const ReflectionTemplateManager: React.FC<ReflectionTemplateManagerProps>
         console.error('Failed to award reflection XP:', e);
       }
 
-      // Lightweight visual feedback
-      alert(`Reflection completed! +${totalXP + bonusXP} XP awarded.`);
+      // Show celebration
+      setCelebrationXp(totalXP + bonusXP);
+      setShowXpCelebration(true);
     } catch (e) {
       console.error('Failed to complete reflection:', e);
     }
@@ -1132,7 +1136,7 @@ export const ReflectionTemplateManager: React.FC<ReflectionTemplateManagerProps>
               <CheckCircle className="w-5 h-5" />
               Complete Reflection
               <span className="bg-white/20 px-2 py-1 rounded-lg text-sm">
-                +{calculateTotalXP(sortedBlocks)} XP
+                +{calculateTotalXP(sortedBlocks) + (completionScore >= 90 ? 25 : completionScore >= 80 ? 15 : 10)} XP
               </span>
             </motion.button>
           )}
@@ -1144,6 +1148,16 @@ export const ReflectionTemplateManager: React.FC<ReflectionTemplateManagerProps>
         isOpen={showFavoritesManager}
         onClose={() => setShowFavoritesManager(false)}
       />
+
+      {/* XP Celebration */}
+      {showXpCelebration && (
+        <XpCelebration
+          xpAmount={celebrationXp}
+          message="Reflection Complete!"
+          onComplete={() => setShowXpCelebration(false)}
+          variant={celebrationXp >= 80 ? 'big' : 'default'}
+        />
+      )}
     </div>
   );
 };
