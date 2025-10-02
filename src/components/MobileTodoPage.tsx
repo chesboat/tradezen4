@@ -23,9 +23,11 @@ import { ImprovementTask } from '@/types';
 import { cn } from '@/lib/utils';
 import { CalendarPicker } from './CalendarPicker';
 import { checkAndAddWeeklyReviewTodo, openWeeklyReviewFromUrl, parseWeeklyReviewUrl } from '@/lib/weeklyReviewTodo';
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 export const MobileTodoPage: React.FC = () => {
   const { tasks, toggleDone, addTask, deleteTask, updateTask, scheduleTask, togglePin, setCategory, initialize } = useTodoStore();
+  const { accentColor } = useAccentColor();
   const [filter, setFilter] = useState<'today' | 'all' | 'open' | 'done' | 'snoozed'>('today');
   const [selectedTagFilter, setSelectedTagFilter] = useState<string | null>(null);
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
@@ -44,6 +46,7 @@ export const MobileTodoPage: React.FC = () => {
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
   const [editingTagsTaskId, setEditingTagsTaskId] = useState<string | null>(null);
   const [newTagForTask, setNewTagForTask] = useState('');
+  const [completingTaskId, setCompletingTaskId] = useState<string | null>(null);
   const newTaskFormRef = useRef<HTMLDivElement>(null);
   const newTaskInputRef = useRef<HTMLInputElement>(null);
 
@@ -126,6 +129,22 @@ export const MobileTodoPage: React.FC = () => {
     setNewFlagged(false);
     setShowTagInput(false);
     setIsAddingNew(false);
+  };
+
+  const handleToggleComplete = async (taskId: string) => {
+    // Start the completion animation
+    setCompletingTaskId(taskId);
+    
+    // Wait for circle fill animation to complete (400ms)
+    await new Promise(resolve => setTimeout(resolve, 400));
+    
+    // Then toggle the task and fade out (handled by AnimatePresence)
+    toggleDone(taskId);
+    
+    // Clear the completing state after fade out
+    setTimeout(() => {
+      setCompletingTaskId(null);
+    }, 300);
   };
 
   const formatUrlForDisplay = (url: string) => {
@@ -331,8 +350,16 @@ export const MobileTodoPage: React.FC = () => {
             <motion.div
               key={task.id}
               initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, x: -100 }}
+              animate={{ 
+                opacity: completingTaskId === task.id && task.status === 'open' ? 0.5 : 1, 
+                y: 0 
+              }}
+              exit={{ 
+                opacity: 0, 
+                height: 0,
+                transition: { duration: 0.3, ease: [0.4, 0.0, 0.2, 1] }
+              }}
+              transition={{ duration: 0.2 }}
               className="relative overflow-hidden"
             >
               {/* Swipe action backgrounds */}
@@ -367,21 +394,47 @@ export const MobileTodoPage: React.FC = () => {
                   className="flex items-center gap-3 px-4 py-3 active:bg-muted/30 transition-colors"
                   onClick={() => setExpandedTaskId(expandedTaskId === task.id ? null : task.id)}
                 >
-                  {/* Circular checkbox */}
+                  {/* Circular checkbox with Apple-style animation */}
                   <button
                   className={cn(
-                      'flex-shrink-0 w-5 h-5 rounded-full border-2 transition-all flex items-center justify-center',
+                      'relative flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center overflow-hidden',
                     task.status === 'done'
-                        ? 'bg-primary border-primary'
-                        : 'border-muted-foreground/40 active:border-primary active:scale-110'
+                        ? 'border-transparent'
+                        : 'border-muted-foreground/40 active:border-primary active:scale-110 transition-all'
                     )}
                     onClick={(e) => {
                       e.stopPropagation();
-                      toggleDone(task.id);
+                      if (task.status === 'open') {
+                        handleToggleComplete(task.id);
+                      } else {
+                        toggleDone(task.id); // Uncompleting is instant
+                      }
                     }}
-                >
-                  {task.status === 'done' && (
-                      <div className="w-2 h-2 bg-primary-foreground rounded-full" />
+                    style={{
+                      backgroundColor: task.status === 'done' || completingTaskId === task.id 
+                        ? `var(--accent-${accentColor})` 
+                        : 'transparent'
+                    }}
+                  >
+                    {/* Fill animation */}
+                    {completingTaskId === task.id && task.status === 'open' && (
+                      <motion.div
+                        className="absolute inset-0 rounded-full"
+                        style={{ backgroundColor: `var(--accent-${accentColor})` }}
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ duration: 0.4, ease: [0.4, 0.0, 0.2, 1] }}
+                      />
+                    )}
+                    
+                    {/* Checkmark dot */}
+                    {(task.status === 'done' || completingTaskId === task.id) && (
+                      <motion.div 
+                        className="w-2 h-2 bg-white rounded-full relative z-10"
+                        initial={completingTaskId === task.id ? { scale: 0, opacity: 0 } : false}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ duration: 0.2, delay: 0.3, ease: [0.4, 0.0, 0.2, 1] }}
+                      />
                     )}
                   </button>
 
