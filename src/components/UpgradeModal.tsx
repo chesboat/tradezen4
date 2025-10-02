@@ -1,261 +1,181 @@
-import React, { useState } from 'react';
+/**
+ * Upgrade Modal - Apple-style premium upgrade prompt
+ * Clean, persuasive, beautiful
+ */
+
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Check, Zap, Crown, Sparkles } from 'lucide-react';
-import { SUBSCRIPTION_PLANS } from '@/types/subscription';
-import { formatPrice, formatAnnualMonthly, getSavingsPercentage } from '@/lib/subscription';
+import { X, Check, Sparkles, Zap, TrendingUp, Clock, Calendar, Tag } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface UpgradeModalProps {
   isOpen: boolean;
   onClose: () => void;
-  currentTier?: 'trial' | 'basic' | 'premium';
+  feature?: string; // Specific feature that triggered the modal
 }
 
-export const UpgradeModal: React.FC<UpgradeModalProps> = ({ 
-  isOpen, 
-  onClose,
-  currentTier = 'trial'
-}) => {
-  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>('annual');
-  
-  const basicPlan = SUBSCRIPTION_PLANS.basic;
-  const premiumPlan = SUBSCRIPTION_PLANS.premium;
+const PREMIUM_FEATURES = [
+  {
+    icon: Tag,
+    title: 'Setup Analytics',
+    description: 'Track which trading setups work best for you',
+  },
+  {
+    icon: Calendar,
+    title: 'Calendar Heatmap',
+    description: 'Visualize your daily P&L at a glance',
+  },
+  {
+    icon: Clock,
+    title: 'Time Intelligence',
+    description: 'Discover your most profitable hours and days',
+  },
+  {
+    icon: TrendingUp,
+    title: 'Custom Date Ranges',
+    description: 'Analyze any date range you want',
+  },
+  {
+    icon: Zap,
+    title: 'Unlimited History',
+    description: 'Access all your trades, forever',
+  },
+  {
+    icon: Sparkles,
+    title: 'Unlimited AI Insights',
+    description: 'Get unlimited AI-powered analysis',
+  },
+];
 
-  const handleUpgrade = (tier: 'basic' | 'premium', period: 'monthly' | 'annual') => {
-    // TODO: Implement Stripe checkout
-    console.log('Upgrade to:', tier, period);
-    // For now, just close modal
-    onClose();
-  };
-
-  if (!isOpen) return null;
-
+export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, feature }) => {
   return (
     <AnimatePresence>
-      <motion.div
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        onClick={onClose}
-      >
+      {isOpen && (
         <motion.div
-          className="bg-background rounded-2xl border border-border shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto"
-          initial={{ scale: 0.9, opacity: 0, y: 20 }}
-          animate={{ scale: 1, opacity: 1, y: 0 }}
-          exit={{ scale: 0.9, opacity: 0, y: 20 }}
-          onClick={(e) => e.stopPropagation()}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
+          onClick={onClose}
         >
-          {/* Header */}
-          <div className="sticky top-0 bg-background/95 backdrop-blur-sm border-b border-border px-6 py-4 flex items-center justify-between z-10">
-            <div>
-              <h2 className="text-2xl font-semibold text-foreground">Upgrade Your Plan</h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                Choose the plan that fits your trading journey
-              </p>
-            </div>
-            <button
-              onClick={onClose}
-              className="p-2 rounded-lg hover:bg-muted/50 transition-colors"
-            >
-              <X className="w-5 h-5 text-muted-foreground" />
-            </button>
-          </div>
-
-          {/* Billing Toggle */}
-          <div className="px-6 pt-6 pb-4">
-            <div className="flex items-center justify-center gap-3">
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            onClick={(e) => e.stopPropagation()}
+            className="bg-card border border-border rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden"
+          >
+            {/* Header */}
+            <div className="relative p-8 bg-gradient-to-br from-primary/10 via-purple-500/5 to-background border-b border-border">
               <button
-                onClick={() => setBillingPeriod('monthly')}
-                className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                  billingPeriod === 'monthly'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
+                onClick={onClose}
+                className="absolute top-4 right-4 p-2 hover:bg-muted rounded-lg transition-colors"
               >
-                Monthly
+                <X className="w-5 h-5" />
               </button>
-              <button
-                onClick={() => setBillingPeriod('annual')}
-                className={`px-4 py-2 rounded-lg font-medium transition-all relative ${
-                  billingPeriod === 'annual'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                Annual
-                <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full">
-                  Save {getSavingsPercentage(basicPlan.monthlyPrice, basicPlan.annualPrice)}%
-                </span>
-              </button>
-            </div>
-          </div>
 
-          {/* Plans */}
-          <div className="px-6 pb-6 grid md:grid-cols-2 gap-6">
-            {/* Basic Plan */}
-            <motion.div
-              className={`relative rounded-xl border-2 p-6 transition-all ${
-                currentTier === 'basic'
-                  ? 'border-green-500 bg-green-500/5'
-                  : 'border-border hover:border-primary/30'
-              }`}
-              whileHover={{ y: -4 }}
-            >
-              {currentTier === 'basic' && (
-                <div className="absolute top-4 right-4">
-                  <span className="text-xs px-3 py-1 rounded-full bg-green-500 text-white font-medium">
-                    Current Plan
-                  </span>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center">
+                  <Sparkles className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold">Upgrade to Premium</h2>
+                  <p className="text-sm text-muted-foreground">Unlock your full trading potential</p>
+                </div>
+              </div>
+
+              {feature && (
+                <div className="mt-4 p-3 bg-primary/10 border border-primary/20 rounded-lg">
+                  <p className="text-sm text-foreground">
+                    <strong>{feature}</strong> is a Premium feature
+                  </p>
                 </div>
               )}
+            </div>
 
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                  <Zap className="w-5 h-5 text-blue-500" />
+            {/* Content */}
+            <div className="p-8 overflow-y-auto max-h-[60vh]">
+              {/* Pricing */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                {/* Monthly */}
+                <div className="p-6 border border-border rounded-xl hover:border-primary/50 transition-colors cursor-pointer">
+                  <div className="text-sm text-muted-foreground mb-2">Monthly</div>
+                  <div className="text-3xl font-bold mb-1">$29<span className="text-lg text-muted-foreground">/mo</span></div>
+                  <div className="text-sm text-muted-foreground">Billed monthly</div>
                 </div>
-                <h3 className="text-xl font-semibold">{basicPlan.name}</h3>
+
+                {/* Annual (Recommended) */}
+                <div className="relative p-6 border-2 border-primary rounded-xl bg-primary/5 cursor-pointer">
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-primary text-primary-foreground text-xs font-bold rounded-full">
+                    SAVE 30%
+                  </div>
+                  <div className="text-sm text-muted-foreground mb-2">Annual</div>
+                  <div className="text-3xl font-bold mb-1">$20<span className="text-lg text-muted-foreground">/mo</span></div>
+                  <div className="text-sm text-muted-foreground">$240/year (save $108)</div>
+                </div>
               </div>
 
-              <p className="text-sm text-muted-foreground mb-4">
-                {basicPlan.description}
-              </p>
-
-              <div className="mb-6">
-                {billingPeriod === 'monthly' ? (
-                  <div>
-                    <div className="text-3xl font-bold">
-                      {formatPrice(basicPlan.monthlyPrice)}
-                      <span className="text-lg text-muted-foreground font-normal">/month</span>
-                    </div>
-                  </div>
-                ) : (
-                  <div>
-                    <div className="text-3xl font-bold">
-                      {formatAnnualMonthly(basicPlan.annualPrice)}
-                      <span className="text-lg text-muted-foreground font-normal">/month</span>
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {formatPrice(basicPlan.annualPrice)} billed annually
-                    </div>
-                  </div>
-                )}
+              {/* Features List */}
+              <div className="space-y-4 mb-8">
+                <h3 className="text-lg font-semibold">Everything in Premium:</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {PREMIUM_FEATURES.map((feature, index) => {
+                    const Icon = feature.icon;
+                    return (
+                      <div key={index} className="flex items-start gap-3">
+                        <div className="p-2 bg-primary/10 rounded-lg flex-shrink-0">
+                          <Icon className="w-4 h-4 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-sm">{feature.title}</div>
+                          <div className="text-xs text-muted-foreground">{feature.description}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
-              <ul className="space-y-3 mb-6">
-                {basicPlan.features.map((feature, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm">
-                    <Check className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                    <span>{feature}</span>
-                  </li>
-                ))}
-              </ul>
+              {/* Trust Signals */}
+              <div className="border-t border-border pt-6">
+                <div className="flex items-center justify-center gap-8 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-green-500" />
+                    <span>Cancel anytime</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-green-500" />
+                    <span>7-day free trial</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-green-500" />
+                    <span>Secure checkout</span>
+                  </div>
+                </div>
+              </div>
+            </div>
 
+            {/* Footer */}
+            <div className="p-6 border-t border-border bg-muted/20">
               <button
-                onClick={() => handleUpgrade('basic', billingPeriod)}
-                disabled={currentTier === 'basic'}
-                className={`w-full py-3 px-4 rounded-lg font-medium transition-all ${
-                  currentTier === 'basic'
-                    ? 'bg-muted text-muted-foreground cursor-not-allowed'
-                    : 'bg-primary text-primary-foreground hover:bg-primary/90'
-                }`}
+                onClick={() => {
+                  // TODO: Open Stripe checkout
+                  console.log('Open Stripe checkout');
+                }}
+                className="w-full py-3 bg-gradient-to-r from-primary to-purple-600 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
               >
-                {currentTier === 'basic' ? 'Current Plan' : 'Upgrade to Basic'}
+                <Sparkles className="w-5 h-5" />
+                Start Free Trial
               </button>
-            </motion.div>
-
-            {/* Premium Plan */}
-            <motion.div
-              className={`relative rounded-xl border-2 p-6 transition-all ${
-                currentTier === 'premium'
-                  ? 'border-green-500 bg-green-500/5'
-                  : 'border-primary bg-primary/5'
-              }`}
-              whileHover={{ y: -4 }}
-            >
-              {!currentTier || currentTier === 'trial' ? (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <span className="text-xs px-3 py-1 rounded-full bg-gradient-to-r from-orange-500 to-red-500 text-white font-medium shadow-lg flex items-center gap-1">
-                    <Sparkles className="w-3 h-3" />
-                    Most Popular
-                  </span>
-                </div>
-              ) : currentTier === 'premium' ? (
-                <div className="absolute top-4 right-4">
-                  <span className="text-xs px-3 py-1 rounded-full bg-green-500 text-white font-medium">
-                    Current Plan
-                  </span>
-                </div>
-              ) : null}
-
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center">
-                  <Crown className="w-5 h-5 text-white" />
-                </div>
-                <h3 className="text-xl font-semibold">{premiumPlan.name}</h3>
-              </div>
-
-              <p className="text-sm text-muted-foreground mb-4">
-                {premiumPlan.description}
+              <p className="text-xs text-center text-muted-foreground mt-3">
+                No credit card required for trial
               </p>
-
-              <div className="mb-6">
-                {billingPeriod === 'monthly' ? (
-                  <div>
-                    <div className="text-3xl font-bold">
-                      {formatPrice(premiumPlan.monthlyPrice)}
-                      <span className="text-lg text-muted-foreground font-normal">/month</span>
-                    </div>
-                  </div>
-                ) : (
-                  <div>
-                    <div className="text-3xl font-bold">
-                      {formatAnnualMonthly(premiumPlan.annualPrice)}
-                      <span className="text-lg text-muted-foreground font-normal">/month</span>
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {formatPrice(premiumPlan.annualPrice)} billed annually
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <ul className="space-y-3 mb-6">
-                {premiumPlan.features.slice(0, 10).map((feature, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm">
-                    <Check className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                    <span className="font-medium">{feature}</span>
-                  </li>
-                ))}
-                {premiumPlan.features.length > 10 && (
-                  <li className="text-sm text-muted-foreground pl-6">
-                    + {premiumPlan.features.length - 10} more features
-                  </li>
-                )}
-              </ul>
-
-              <button
-                onClick={() => handleUpgrade('premium', billingPeriod)}
-                disabled={currentTier === 'premium'}
-                className={`w-full py-3 px-4 rounded-lg font-medium transition-all ${
-                  currentTier === 'premium'
-                    ? 'bg-muted text-muted-foreground cursor-not-allowed'
-                    : 'bg-gradient-to-r from-orange-500 to-red-500 text-white hover:opacity-90'
-                }`}
-              >
-                {currentTier === 'premium' ? 'Current Plan' : 'Upgrade to Premium'}
-              </button>
-            </motion.div>
-          </div>
-
-          {/* Footer */}
-          <div className="border-t border-border px-6 py-4 bg-muted/30">
-            <p className="text-xs text-center text-muted-foreground">
-              ✓ Cancel anytime • ✓ No hidden fees • ✓ Secure payment with Stripe
-            </p>
-          </div>
+            </div>
+          </motion.div>
         </motion.div>
-      </motion.div>
+      )}
     </AnimatePresence>
   );
 };
 
+export default UpgradeModal;

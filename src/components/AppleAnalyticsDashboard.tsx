@@ -19,6 +19,7 @@ import { SetupAnalytics } from './SetupAnalytics';
 import { CalendarHeatmap } from './CalendarHeatmap';
 import { CustomDateRangePicker } from './CustomDateRangePicker';
 import { TimeIntelligence } from './TimeIntelligence';
+import { UpgradeModal } from './UpgradeModal';
 import { hasFeature } from '@/lib/tierLimits';
 
 // ===============================================
@@ -163,8 +164,7 @@ const HeroAnalyticsPnL: React.FC<{
                       className="w-full px-4 py-3 text-left text-sm text-muted-foreground hover:bg-muted/50 transition-colors flex items-center justify-between"
                       onClick={() => {
                         setDropdownOpen(false);
-                        // TODO: Show upgrade modal
-                        console.log('Upgrade to Premium for custom date ranges');
+                        handleUpgradeClick('Custom Date Ranges');
                       }}
                     >
                       <span>Custom Range</span>
@@ -1416,8 +1416,15 @@ export const AppleAnalyticsDashboard: React.FC = () => {
   const [customStartDate, setCustomStartDate] = React.useState<Date | null>(null);
   const [customEndDate, setCustomEndDate] = React.useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = React.useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = React.useState(false);
+  const [upgradeFeature, setUpgradeFeature] = React.useState<string>('');
   
   const hasCustomDateRanges = hasFeature(tier, 'hasCustomDateRanges');
+
+  const handleUpgradeClick = (featureName: string) => {
+    setUpgradeFeature(featureName);
+    setShowUpgradeModal(true);
+  };
 
   // Apply tier-based data retention FIRST
   const tierFilteredTrades = React.useMemo(() => {
@@ -1582,7 +1589,10 @@ export const AppleAnalyticsDashboard: React.FC = () => {
                 <p className="text-sm text-muted-foreground mb-4">
                   You're on the Basic plan. Upgrade to Premium for unlimited history and advanced analytics.
                 </p>
-                <button className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium">
+                <button 
+                  onClick={() => handleUpgradeClick('Unlimited History')}
+                  className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
+                >
                   <Sparkles className="w-4 h-4" />
                   Upgrade to Premium
                 </button>
@@ -1601,10 +1611,7 @@ export const AppleAnalyticsDashboard: React.FC = () => {
         <SetupAnalytics 
           trades={filteredTrades} 
           isPremium={isPremium}
-          onUpgrade={() => {
-            // TODO: Open upgrade modal
-            console.log('Upgrade clicked');
-          }}
+          onUpgrade={() => handleUpgradeClick('Setup Analytics')}
         />
 
         {/* At a Glance Weekly */}
@@ -1615,20 +1622,14 @@ export const AppleAnalyticsDashboard: React.FC = () => {
           trades={filteredTrades}
           isPremium={isPremium}
           monthsToShow={3}
-          onUpgrade={() => {
-            // TODO: Open upgrade modal
-            console.log('Upgrade clicked');
-          }}
+          onUpgrade={() => handleUpgradeClick('Calendar Heatmap')}
         />
 
         {/* Time Intelligence (Premium) */}
         <TimeIntelligence
           trades={filteredTrades}
           isPremium={isPremium}
-          onUpgrade={() => {
-            // TODO: Open upgrade modal
-            console.log('Upgrade clicked');
-          }}
+          onUpgrade={() => handleUpgradeClick('Time Intelligence')}
         />
 
         {/* Equity Curve */}
@@ -1650,6 +1651,13 @@ export const AppleAnalyticsDashboard: React.FC = () => {
         {/* What's Next - Apple always tells you what to do */}
         <WhatsNextCard trades={filteredTrades} />
       </div>
+
+      {/* Upgrade Modal */}
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        feature={upgradeFeature}
+      />
     </div>
   );
 };
