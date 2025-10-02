@@ -125,13 +125,13 @@ export const MobileTodoPage: React.FC = () => {
       const task = tasks.find(t => t.id === taskId);
       if (task && task.tags) {
         const updatedTags = task.tags.filter(t => t !== tagToDelete);
-        await updateTask(task.id, { tags: updatedTags.length > 0 ? updatedTags : undefined });
+        await updateTask(task.id, { tags: updatedTags.length > 0 ? updatedTags : [] });
       }
     } else {
       const tasksWithTag = tasks.filter(t => t.tags && t.tags.includes(tagToDelete));
       for (const task of tasksWithTag) {
         const updatedTags = task.tags!.filter(t => t !== tagToDelete);
-        await updateTask(task.id, { tags: updatedTags.length > 0 ? updatedTags : undefined });
+        await updateTask(task.id, { tags: updatedTags.length > 0 ? updatedTags : [] });
       }
       if (selectedTagFilter === tagToDelete) {
         setSelectedTagFilter(null);
