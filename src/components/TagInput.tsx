@@ -252,11 +252,13 @@ export const TagInput: React.FC<TagInputProps> = ({
 /**
  * Tag Pill (read-only display)
  * Used in tables, cards, etc.
+ * Supports long-press on mobile and right-click on desktop for context menu
  */
 interface TagPillProps {
   tag: string;
   onClick?: () => void;
   onRemove?: () => void;
+  onContextMenu?: (e: React.MouseEvent | React.TouchEvent) => void;
   size?: 'sm' | 'md';
   className?: string;
 }
@@ -265,25 +267,58 @@ export const TagPill: React.FC<TagPillProps> = ({
   tag,
   onClick,
   onRemove,
+  onContextMenu,
   size = 'sm',
   className,
 }) => {
   const { getTagColor } = useTagStore();
   const color = getTagColor(tag);
   const colorStyles = TAG_COLORS[color];
+  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!onContextMenu) return;
+    
+    const timer = setTimeout(() => {
+      // Vibrate on long-press (if supported)
+      if (navigator.vibrate) {
+        navigator.vibrate(50);
+      }
+      onContextMenu(e);
+    }, 500); // 500ms long press
+    
+    setLongPressTimer(timer);
+  };
+
+  const handleTouchEnd = () => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      setLongPressTimer(null);
+    }
+  };
+
+  const handleRightClick = (e: React.MouseEvent) => {
+    if (!onContextMenu) return;
+    e.preventDefault();
+    onContextMenu(e);
+  };
 
   return (
     <motion.button
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
       onClick={onClick}
+      onContextMenu={handleRightClick}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchEnd}
       className={cn(
-        'inline-flex items-center gap-1 rounded-full font-medium border transition-colors',
+        'inline-flex items-center gap-1 rounded-full font-medium border transition-colors select-none',
         colorStyles.bg,
         colorStyles.text,
         colorStyles.border,
         size === 'sm' ? 'px-2 py-0.5 text-xs' : 'px-3 py-1 text-sm',
-        onClick && 'cursor-pointer hover:opacity-80',
+        (onClick || onContextMenu) && 'cursor-pointer hover:opacity-80',
         className
       )}
       type="button"
