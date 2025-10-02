@@ -461,7 +461,7 @@ export const MobileTodoPage: React.FC = () => {
                         {/* Notes */}
                         <textarea
                           placeholder="Notes"
-                          className="w-full px-0 py-1 text-sm bg-transparent text-foreground placeholder:text-muted-foreground/50 outline-none resize-none"
+                          className="w-full px-0 py-1 text-base bg-transparent text-foreground placeholder:text-muted-foreground/50 outline-none resize-none"
                           rows={2}
                           defaultValue={task.notes || ''}
                           onBlur={(e) => {
@@ -566,7 +566,7 @@ export const MobileTodoPage: React.FC = () => {
                                 setNewTagForTask('');
                                 setEditingTagsTaskId(null);
                               }}
-                              className="w-full px-2 py-1.5 text-xs bg-background border border-border rounded-md outline-none"
+                              className="w-full px-2 py-1.5 text-base bg-background border border-border rounded-md outline-none"
                               autoFocus
                             />
                           </div>
@@ -576,7 +576,7 @@ export const MobileTodoPage: React.FC = () => {
                         <input
                           type="url"
                           placeholder="URL"
-                          className="w-full px-2 py-1.5 text-xs bg-transparent border border-border/50 rounded-md outline-none"
+                          className="w-full px-2 py-1.5 text-base bg-transparent border border-border/50 rounded-md outline-none"
                           defaultValue={task.url || ''}
                           onBlur={(e) => {
                             const url = e.target.value.trim();
@@ -629,7 +629,7 @@ export const MobileTodoPage: React.FC = () => {
                   }
                 }}
                 placeholder="New Reminder"
-                className="flex-1 text-[15px] bg-transparent placeholder:text-muted-foreground/50 outline-none"
+                className="flex-1 text-base bg-transparent placeholder:text-muted-foreground/50 outline-none"
               />
               {newFlagged && (
                 <Flag className="w-4 h-4 text-orange-500 fill-orange-500 flex-shrink-0" />
@@ -643,7 +643,7 @@ export const MobileTodoPage: React.FC = () => {
                   value={newNotes}
                   onChange={(e) => setNewNotes(e.target.value)}
                   placeholder="Notes"
-                  className="w-full px-0 py-1 text-sm bg-transparent text-muted-foreground placeholder:text-muted-foreground/50 outline-none resize-none"
+                  className="w-full px-0 py-1 text-base bg-transparent text-muted-foreground placeholder:text-muted-foreground/50 outline-none resize-none"
                   rows={2}
                 />
               </div>
@@ -773,7 +773,7 @@ export const MobileTodoPage: React.FC = () => {
                     setTagInput('');
                     setShowTagInput(false);
                   }}
-                  className="w-full px-2 py-1.5 text-xs bg-background border border-border rounded-md outline-none"
+                  className="w-full px-2 py-1.5 text-base bg-background border border-border rounded-md outline-none"
                   autoFocus
                 />
               </div>
