@@ -1046,12 +1046,17 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                         />
                       </td>
                     )}
-                    <td className="p-3 text-sm">
+                    <td 
+                      className="p-3 text-sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleTimeDoubleClick(trade);
+                      }}
+                    >
                       <div>{new Date(trade.entryTime).toLocaleDateString()}</div>
                       <div 
-                        className="text-muted-foreground cursor-pointer hover:text-primary transition-colors"
-                        onClick={() => handleTimeDoubleClick(trade)}
-                        title="Tap to edit time"
+                        className="text-muted-foreground cursor-pointer hover:text-primary transition-colors text-xs"
+                        title="Click to edit time"
                       >
                         {editingTimeId === trade.id ? (
                           <input
@@ -1064,7 +1069,9 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                             autoFocus
                           />
                         ) : (
-                          new Date(trade.entryTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                          <span className="inline-block">
+                            {new Date(trade.entryTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
                         )}
                       </div>
                     </td>
