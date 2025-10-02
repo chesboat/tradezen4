@@ -40,6 +40,8 @@ import { CoachChat } from './components/CoachChat';
 import { NudgeToast } from './components/NudgeToast';
 import { TodoDrawer } from './components/TodoDrawer';
 import { MobileTodoPage } from './components/MobileTodoPage';
+import { TrialBanner } from './components/TrialBanner';
+import { UpgradeModal } from './components/UpgradeModal';
 import { useTodoStore } from './store/useTodoStore';
 import { collection, getDocs, limit, query } from 'firebase/firestore';
 import { db } from './lib/firebase';
@@ -64,6 +66,7 @@ function AppContent() {
   const initializedUidRef = React.useRef<string | null>(null);
   const remoteExpectedRef = React.useRef(false);
   const [bootReloadTick, setBootReloadTick] = React.useState(0);
+  const [showUpgradeModal, setShowUpgradeModal] = React.useState(false);
 
   // Periodic check for weekly review todo (every hour)
   React.useEffect(() => {
@@ -296,6 +299,9 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
+      {/* Trial Banner */}
+      <TrialBanner onUpgradeClick={() => setShowUpgradeModal(true)} />
+      
       {/* Desktop Sidebar - Hidden on mobile */}
       <div className="hidden lg:block">
         <Sidebar onAddTrade={tradeLoggerModal.openForNew} />
@@ -348,6 +354,12 @@ function AppContent() {
         isVisible={showLevelUpToast}
         level={levelUpData?.level || 1}
         onClose={closeLevelUpToast}
+      />
+      
+      {/* Upgrade Modal */}
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
       />
     </div>
   );

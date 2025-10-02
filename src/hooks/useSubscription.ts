@@ -35,11 +35,8 @@ export const useSubscription = () => {
     }
     
     // TODO: When implementing billing, check profile.subscriptionTier and subscriptionStatus
-    // if (profile?.subscriptionTier) {
-    //   setTier(profile.subscriptionTier);
-    // } else {
-    //   setTier('trial');
-    // }
+    // For now, all users are on trial (for testing)
+    // In production, check profile.subscriptionStatus === 'trialing'
     
     setTier('trial');
   }, [currentUser, profile]);
