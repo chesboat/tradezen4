@@ -4,6 +4,7 @@ import { classifyTradeResult } from '@/lib/utils';
 import { FirestoreService } from '@/lib/firestore';
 import { onSnapshot, query, orderBy, collection } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
+import { filterByRetention } from '@/lib/tierLimits';
 
 const tradeService = new FirestoreService<Trade>('trades');
 
@@ -20,6 +21,7 @@ interface TradeState {
   calculatePnL: (trade: Trade) => number;
   autoCalculateResult: (trade: Trade) => TradeResult;
   getRecentTrades: () => Trade[];
+  getFilteredByTier: (tier: 'trial' | 'basic' | 'premium') => Trade[]; // NEW: Filter by tier limits
   initializeTrades: (userIdOverride?: string) => Promise<void>;
 }
 
@@ -265,6 +267,11 @@ export const useTradeStore = create<TradeState>((set, get) => ({
   // Get recent trades (last 10)
   getRecentTrades: () => {
     return get().trades.slice(0, 10);
+  },
+
+  // Filter trades by tier retention limits
+  getFilteredByTier: (tier: 'trial' | 'basic' | 'premium') => {
+    return filterByRetention(get().trades, tier);
   },
 }));
 

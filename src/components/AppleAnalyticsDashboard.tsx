@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   DollarSign, TrendingUp, TrendingDown, Activity, Calendar, 
   Trophy, AlertTriangle, ChevronDown, ChevronRight, X, ArrowUp, ArrowDown,
-  Target, Zap, MinusCircle, Lightbulb, Clock, Trash2
+  Target, Zap, MinusCircle, Lightbulb, Clock, Trash2, Lock, Sparkles
 } from 'lucide-react';
 import { useTradeStore } from '@/store/useTradeStore';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
@@ -14,6 +14,7 @@ import { useDailyReflectionStore } from '@/store/useDailyReflectionStore';
 import { useActivityLogStore } from '@/store/useActivityLogStore';
 import { useTodoStore } from '@/store/useTodoStore';
 import { useNavigationStore } from '@/store/useNavigationStore';
+import { useSubscription } from '@/lib/subscription';
 
 // ===============================================
 // TYPES & UTILITIES
@@ -1356,18 +1357,29 @@ const WhatsNextCard: React.FC<{ trades: any[] }> = ({ trades }) => {
 // ===============================================
 
 export const AppleAnalyticsDashboard: React.FC = () => {
-  const { trades } = useTradeStore();
+  const { trades, getFilteredByTier } = useTradeStore();
   const { selectedAccountId } = useAccountFilterStore();
   const { isExpanded: activityLogExpanded } = useActivityLogStore();
   const { isExpanded: todoExpanded } = useTodoStore();
+  const { tier, isPremium } = useSubscription();
   const [selectedPeriod, setSelectedPeriod] = React.useState<TimePeriod>('all');
   const [symbolFilter, setSymbolFilter] = React.useState<string | null>(null);
+
+  // Apply tier-based data retention FIRST
+  const tierFilteredTrades = React.useMemo(() => {
+    return getFilteredByTier(tier);
+  }, [trades, tier, getFilteredByTier]);
+
+  // Calculate how many trades are hidden due to tier limit
+  const hiddenTradesCount = React.useMemo(() => {
+    return trades.length - tierFilteredTrades.length;
+  }, [trades.length, tierFilteredTrades.length]);
 
   // Filter trades by account and period
   const filteredTrades = React.useMemo(() => {
     let filtered = selectedAccountId
-      ? trades.filter(t => t.accountId === selectedAccountId)
-      : trades;
+      ? tierFilteredTrades.filter(t => t.accountId === selectedAccountId)
+      : tierFilteredTrades;
 
     // Filter by symbol if selected
     if (symbolFilter) {
@@ -1383,7 +1395,7 @@ export const AppleAnalyticsDashboard: React.FC = () => {
     }
 
     return filtered;
-  }, [trades, selectedAccountId, selectedPeriod, symbolFilter]);
+  }, [tierFilteredTrades, selectedAccountId, selectedPeriod, symbolFilter]);
 
   // Calculate previous period trades for comparison
   const previousPeriodTrades = React.useMemo(() => {
@@ -1467,6 +1479,33 @@ export const AppleAnalyticsDashboard: React.FC = () => {
 
       {/* Main Content */}
       <div className="max-w-7xl 2xl:max-w-[1800px] mx-auto px-6 2xl:px-8 py-8 space-y-8">
+        {/* Tier Limit Banner (Basic users only) */}
+        {!isPremium && hiddenTradesCount > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-gradient-to-r from-primary/10 to-orange-500/10 border border-primary/20 rounded-2xl p-6"
+          >
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-primary/10 rounded-xl">
+                <Lock className="w-6 h-6 text-primary" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold mb-1">
+                  {hiddenTradesCount} {hiddenTradesCount === 1 ? 'trade' : 'trades'} hidden (30-day limit)
+                </h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  You're on the Basic plan. Upgrade to Premium for unlimited history and advanced analytics.
+                </p>
+                <button className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium">
+                  <Sparkles className="w-4 h-4" />
+                  Upgrade to Premium
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         {/* Your Edge at a Glance */}
         <YourEdgeAtAGlance trades={filteredTrades} />
 
