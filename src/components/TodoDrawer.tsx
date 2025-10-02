@@ -7,6 +7,7 @@ import { useActivityLogStore } from '@/store/useActivityLogStore';
 import { CustomSelect } from './CustomSelect';
 import { checkAndAddWeeklyReviewTodo, openWeeklyReviewFromUrl, parseWeeklyReviewUrl } from '@/lib/weeklyReviewTodo';
 import { cn } from '@/lib/utils';
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 interface TodoDrawerProps {
   className?: string;
@@ -27,6 +28,7 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
   const { isExpanded, tasks, toggleDrawer, addTask, toggleDone, deleteTask, updateTask, initialize, togglePin, setCategory, scheduleTask, railWidth, setRailWidth } = useTodoStore();
   const { isExpanded: activityExpanded } = useActivityLogStore();
   const { snoozeTask } = useTodoStore.getState();
+  const { accentColor } = useAccentColor();
   const [filter, setFilter] = useState<'all' | 'today' | 'open' | 'done' | 'snoozed'>('today');
   const [query, setQuery] = useState('');
   const [newText, setNewText] = useState('');
@@ -246,15 +248,20 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
       // Mark as completing for animation
       setCompletingTasks(prev => new Set(prev).add(taskId));
       
-      // Wait for animation, then toggle and remove from view
-      setTimeout(async () => {
+      // Wait for circle fill animation (400ms)
+      await new Promise(resolve => setTimeout(resolve, 400));
+      
+      // Toggle and start fade out
         await toggleDone(taskId);
+      
+      // Clear completing state after fade (300ms)
+      setTimeout(() => {
         setCompletingTasks(prev => {
           const next = new Set(prev);
           next.delete(taskId);
           return next;
         });
-      }, 600); // Animation duration
+      }, 300);
     } else {
       // Unchecking - no animation needed
       await toggleDone(taskId);
@@ -510,51 +517,59 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                 key={task.id}
                 className="group px-2 py-2 rounded-md hover:bg-accent/50 transition-all"
                 initial={false}
-                animate={{ opacity: 1 }}
+                animate={{ 
+                  opacity: completingTasks.has(task.id) && task.status === 'open' ? 0 : 1
+                }}
+                exit={{ 
+                  opacity: 0, 
+                  height: 0,
+                  marginTop: 0,
+                  marginBottom: 0,
+                  paddingTop: 0,
+                  paddingBottom: 0,
+                  transition: { duration: 0.3, ease: [0.4, 0.0, 0.2, 1] }
+                }}
+                transition={{ duration: 0.3, ease: [0.4, 0.0, 0.2, 1] }}
               >
                 <div className="flex items-start gap-2">
-                  {/* Checkbox - matches sidebar icons */}
+                  {/* Checkbox - Apple style circle fill */}
                     <motion.button 
-                    className="flex-shrink-0 mt-0.5" 
+                    className={cn(
+                      "relative flex-shrink-0 w-[18px] h-[18px] rounded-full border-2 flex items-center justify-center overflow-hidden mt-0.5",
+                      task.status === 'done'
+                        ? 'border-transparent'
+                        : 'border-muted-foreground/40'
+                    )}
                       onClick={() => handleToggleDone(task.id)} 
                       aria-label="toggle done"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    >
-                      <AnimatePresence mode="wait">
-                        {completingTasks.has(task.id) ? (
+                    style={{
+                      backgroundColor: task.status === 'done' || completingTasks.has(task.id)
+                        ? `var(--accent-${accentColor})` 
+                        : 'transparent'
+                    }}
+                  >
+                    {/* Fill animation */}
+                    {completingTasks.has(task.id) && task.status === 'open' && (
                           <motion.div
-                            key="completing"
-                            initial={{ scale: 0.8, opacity: 0 }}
-                            animate={{ 
-                              scale: [0.8, 1.2, 1], 
-                              opacity: 1,
-                              rotate: [0, 360]
-                            }}
-                            exit={{ scale: 0, opacity: 0 }}
-                            transition={{ 
-                              duration: 0.6, 
-                              ease: "easeOut",
-                              times: [0, 0.6, 1]
-                            }}
-                          >
-                          <CheckCircle2 className="w-[18px] h-[18px] text-primary" />
-                          </motion.div>
-                        ) : (
-                          <motion.div
-                            key="normal"
-                            initial={{ scale: 0.8, opacity: 0 }}
+                        className="absolute inset-0 rounded-full"
+                        style={{ backgroundColor: `var(--accent-${accentColor})` }}
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ duration: 0.4, ease: [0.4, 0.0, 0.2, 1] }}
+                      />
+                    )}
+                    
+                    {/* Checkmark dot */}
+                    {(task.status === 'done' || completingTasks.has(task.id)) && (
+                      <motion.div 
+                        className="w-[6px] h-[6px] bg-white rounded-full relative z-10"
+                        initial={completingTasks.has(task.id) && task.status === 'open' ? { scale: 0, opacity: 0 } : false}
                             animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.8, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                          >
-                            {task.status === 'done' ? 
-                            <CheckCircle2 className="w-[18px] h-[18px] text-primary" /> : 
-                            <Circle className="w-[18px] h-[18px] text-muted-foreground/60" />
-                            }
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
+                        transition={{ duration: 0.2, delay: 0.3, ease: [0.4, 0.0, 0.2, 1] }}
+                      />
+                    )}
                     </motion.button>
 
                   {/* Task Content */}
