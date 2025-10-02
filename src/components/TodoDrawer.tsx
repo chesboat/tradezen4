@@ -458,37 +458,38 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                     return (
                       <button
                         key={tag}
-                        onClick={() => setSelectedTagFilter(selectedTagFilter === tag ? null : tag)}
-                        onContextMenu={(e) => {
+                    onClick={() => setSelectedTagFilter(selectedTagFilter === tag ? null : tag)}
+                    onContextMenu={(e) => {
                       e.preventDefault();
-                          setTagContextMenu({ tag, x: e.clientX, y: e.clientY });
-                        }}
-                        onTouchStart={(e) => {
-                          const timer = setTimeout(() => {
-                            const touch = e.touches[0];
-                            setTagContextMenu({ tag, x: touch.clientX, y: touch.clientY });
-                          }, 500);
-                          setLongPressTimer(timer);
-                        }}
-                        onTouchEnd={() => {
-                          if (longPressTimer) {
-                            clearTimeout(longPressTimer);
-                            setLongPressTimer(null);
-                          }
-                        }}
-                        onTouchMove={() => {
-                          if (longPressTimer) {
-                            clearTimeout(longPressTimer);
-                            setLongPressTimer(null);
-                          }
-                        }}
-                        className={cn(
-                          'px-2 py-0.5 rounded-full text-[11px] font-medium transition-colors',
-                          selectedTagFilter === tag
-                            ? 'bg-purple-500/20 text-purple-600 dark:text-purple-400'
-                            : 'bg-purple-500/10 text-purple-600 dark:text-purple-400 hover:bg-purple-500/15'
-                        )}
-                      >
+                      setTagContextMenu({ tag, x: e.clientX, y: e.clientY });
+                    }}
+                    onTouchStart={(e) => {
+                      e.preventDefault(); // Prevent text selection
+                      const timer = setTimeout(() => {
+                        const touch = e.touches[0];
+                        setTagContextMenu({ tag, x: touch.clientX, y: touch.clientY });
+                      }, 500);
+                      setLongPressTimer(timer);
+                    }}
+                    onTouchEnd={() => {
+                      if (longPressTimer) {
+                        clearTimeout(longPressTimer);
+                        setLongPressTimer(null);
+                      }
+                    }}
+                    onTouchMove={() => {
+                      if (longPressTimer) {
+                        clearTimeout(longPressTimer);
+                        setLongPressTimer(null);
+                      }
+                    }}
+                    className={cn(
+                      'px-2 py-0.5 rounded-full text-[11px] font-medium transition-colors select-none',
+                      selectedTagFilter === tag
+                        ? 'bg-purple-500/20 text-purple-600 dark:text-purple-400'
+                        : 'bg-purple-500/10 text-purple-600 dark:text-purple-400 hover:bg-purple-500/15'
+                    )}
+                  >
                         {tag} {taskCount}
                 </button>
                     );
@@ -752,6 +753,7 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                                     setTagContextMenu({ tag, x: e.clientX, y: e.clientY, taskId: task.id });
                                   }}
                                   onTouchStart={(e) => {
+                                    e.preventDefault(); // Prevent text selection
                                     const timer = setTimeout(() => {
                                       const touch = e.touches[0];
                                       setTagContextMenu({ tag, x: touch.clientX, y: touch.clientY, taskId: task.id });
@@ -770,7 +772,7 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                                       setLongPressTimer(null);
                                     }
                                   }}
-                                  className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-full text-[11px] font-medium hover:bg-purple-500/15 transition-colors"
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-full text-[11px] font-medium hover:bg-purple-500/15 transition-colors select-none"
                                 >
                                   {tag}
                                 </button>

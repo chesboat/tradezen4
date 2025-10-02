@@ -320,6 +320,7 @@ export const MobileTodoPage: React.FC = () => {
                   key={tag}
                   onClick={() => setSelectedTagFilter(selectedTagFilter === tag ? null : tag)}
                   onTouchStart={(e) => {
+                    e.preventDefault(); // Prevent text selection
                     const timer = setTimeout(() => {
                       const touch = e.touches[0];
                       setTagContextMenu({ tag, x: touch.clientX, y: touch.clientY });
@@ -338,8 +339,9 @@ export const MobileTodoPage: React.FC = () => {
                       setLongPressTimer(null);
                     }
                   }}
+                  onContextMenu={(e) => e.preventDefault()} // Prevent iOS context menu
                   className={cn(
-                    'px-2 py-1 rounded-full text-[11px] font-medium transition-colors',
+                    'px-2 py-1 rounded-full text-[11px] font-medium transition-colors select-none',
                     selectedTagFilter === tag
                       ? 'bg-purple-500/20 text-purple-600 dark:text-purple-400'
                       : 'bg-purple-500/10 text-purple-600 dark:text-purple-400 active:bg-purple-500/15'
@@ -507,6 +509,7 @@ export const MobileTodoPage: React.FC = () => {
                                 <button
                                   key={tag}
                                   onTouchStart={(e) => {
+                                    e.preventDefault(); // Prevent text selection
                                     const timer = setTimeout(() => {
                                       const touch = e.touches[0];
                                       setTagContextMenu({ tag, x: touch.clientX, y: touch.clientY, taskId: task.id });
@@ -525,7 +528,8 @@ export const MobileTodoPage: React.FC = () => {
                                       setLongPressTimer(null);
                                     }
                                   }}
-                                  className="inline-flex items-center gap-1 px-2 py-1 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-full text-[11px] font-medium"
+                                  onContextMenu={(e) => e.preventDefault()} // Prevent iOS context menu
+                                  className="inline-flex items-center gap-1 px-2 py-1 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-full text-[11px] font-medium select-none"
                                 >
                                   {tag}
                                 </button>
