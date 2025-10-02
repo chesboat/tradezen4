@@ -80,7 +80,7 @@ const HeroAnalyticsPnL: React.FC<{
   const selectedLabel = timePeriodOptions.find(opt => opt.value === selectedPeriod)?.label || 'All Time';
 
   return (
-    <div className="bg-card border-b border-border">
+    <div className="bg-popover border-b border-border">
       <div className="max-w-7xl 2xl:max-w-[1800px] mx-auto px-6 2xl:px-8 py-8">
         {/* Time Period Dropdown */}
         <div className="relative inline-block mb-4" ref={dropdownRef}>
@@ -292,7 +292,7 @@ const YourEdgeAtAGlance: React.FC<{ trades: any[] }> = ({ trades }) => {
   const healthPercentage = (healthScore / 100) * 100;
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-6">
+    <div className="bg-background border border-border rounded-2xl p-6">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <Activity className="w-5 h-5 text-muted-foreground" />
@@ -404,7 +404,7 @@ const AtAGlanceWeekly: React.FC<{ trades: any[] }> = ({ trades }) => {
   const maxAbsPnL = Math.max(...weeklyData.map(d => Math.abs(d.pnl)), 1);
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-6">
+    <div className="bg-background border border-border rounded-2xl p-6">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <Calendar className="w-4 h-4 text-muted-foreground" />
@@ -860,7 +860,7 @@ const TopSymbolsSection: React.FC<{
   }, [trades]);
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-6">
+    <div className="bg-background border border-border rounded-2xl p-6">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <Trophy className="w-5 h-5 text-primary" />
@@ -1140,7 +1140,7 @@ const TradeHighlightsCard: React.FC<{ trades: any[] }> = ({ trades }) => {
   };
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-6">
+    <div className="bg-background border border-border rounded-2xl p-6">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <Activity className="w-5 h-5 text-primary" />
