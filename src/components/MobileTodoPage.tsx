@@ -1,141 +1,164 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   CheckCircle2, 
   Circle, 
   Plus, 
   Calendar, 
-  Clock, 
   Tag, 
   MoreVertical, 
   X, 
-  Pin,
-  Trash2,
-  Edit,
+  Flag,
   CalendarDays,
   ExternalLink,
-  Link
+  Link,
+  Inbox,
+  CheckSquare,
+  Hash
 } from 'lucide-react';
 import { useTodoStore } from '@/store/useTodoStore';
 import { ImprovementTask } from '@/types';
 import { cn } from '@/lib/utils';
-import { CustomSelect } from './CustomSelect';
 import { CalendarPicker } from './CalendarPicker';
 import { checkAndAddWeeklyReviewTodo, openWeeklyReviewFromUrl, parseWeeklyReviewUrl } from '@/lib/weeklyReviewTodo';
 
 export const MobileTodoPage: React.FC = () => {
-  const { tasks, toggleDone, addTask, deleteTask, updateTask, scheduleTask, togglePin } = useTodoStore();
-  const [newTaskText, setNewTaskText] = useState('');
-  const [newPriority, setNewPriority] = useState<'low' | 'med' | 'high' | ''>('');
+  const { tasks, toggleDone, addTask, deleteTask, updateTask, scheduleTask, togglePin, setCategory, initialize } = useTodoStore();
+  const [filter, setFilter] = useState<'today' | 'all' | 'open' | 'done' | 'snoozed'>('today');
+  const [selectedTagFilter, setSelectedTagFilter] = useState<string | null>(null);
+  const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
+  const [isAddingNew, setIsAddingNew] = useState(false);
+  const [newText, setNewText] = useState('');
   const [newCategory, setNewCategory] = useState('');
   const [newUrl, setNewUrl] = useState('');
-  const [isAddingTask, setIsAddingTask] = useState(false);
-  const [filter, setFilter] = useState<'today' | 'all' | 'open' | 'done' | 'snoozed'>('today');
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [activeTaskMenu, setActiveTaskMenu] = useState<string | null>(null);
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [newTags, setNewTags] = useState<string[]>([]);
+  const [newFlagged, setNewFlagged] = useState(false);
+  const [newNotes, setNewNotes] = useState('');
+  const [showTagInput, setShowTagInput] = useState(false);
+  const [tagInput, setTagInput] = useState('');
   const [schedulingTaskId, setSchedulingTaskId] = useState<string | null>(null);
-  const [editingUrlId, setEditingUrlId] = useState<string | null>(null);
-  const [editingUrl, setEditingUrl] = useState<string>('');
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [tagContextMenu, setTagContextMenu] = useState<{ tag: string; x: number; y: number; taskId?: string } | null>(null);
+  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
+  const [editingTagsTaskId, setEditingTagsTaskId] = useState<string | null>(null);
+  const [newTagForTask, setNewTagForTask] = useState('');
+  
+  const newTaskFormRef = useRef<HTMLDivElement>(null);
 
-  // Initialize and check for weekly review todo
+  // Initialize
   useEffect(() => {
     const init = async () => {
+      await initialize();
       await checkAndAddWeeklyReviewTodo();
     };
     init();
-  }, []);
+  }, [initialize]);
 
-  const filteredTasks = useMemo(() => {
+  // Filter tasks
+  const filtered = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
-    
+
     return tasks
       .slice()
-      .sort((a, b) => (Number(!!b.pinned) - Number(!!a.pinned)) || ((b.order || 0) - (a.order || 0)))
+      .sort((a, b) => ((b.order || 0) - (a.order || 0)))
       .filter((t) => {
-        if (filter === 'all') return true;
+        if (filter === 'all') return t.status === 'open';
         if (filter === 'today') {
-          // Show tasks scheduled for today, overdue tasks, or unscheduled open tasks
           if (t.status !== 'open') return false;
-          if (!t.scheduledFor) return true; // Unscheduled open tasks show in Today
+          if (!t.scheduledFor) return true;
           const scheduledDate = new Date(t.scheduledFor as any);
-          return scheduledDate < tomorrow; // Today or overdue
+          return scheduledDate < tomorrow;
+        }
+        if (filter === 'snoozed') {
+          if (t.status !== 'open' || !t.scheduledFor) return false;
+          const scheduledDate = new Date(t.scheduledFor as any);
+          return scheduledDate >= tomorrow;
         }
         return t.status === filter;
       })
-      .filter((t) => categoryFilter === 'all' ? true : t.category === categoryFilter);
-  }, [tasks, filter, categoryFilter]);
+      .filter((t) => selectedTagFilter ? (t.tags && t.tags.includes(selectedTagFilter)) : true);
+  }, [tasks, filter, selectedTagFilter]);
 
-  const openTasksCount = tasks.filter(task => task.status === 'open').length;
-  const completedTasksCount = tasks.filter(task => task.status === 'done').length;
-  const todayTasksCount = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    
-    return tasks.filter(t => {
-      if (t.status !== 'open') return false;
-      if (!t.scheduledFor) return true;
-      const scheduledDate = new Date(t.scheduledFor as any);
-      return scheduledDate < tomorrow;
-    }).length;
+  // Get all unique tags
+  const allTags = useMemo(() => {
+    const tagSet = new Set<string>();
+    tasks.forEach(task => {
+      if (task.tags && task.tags.length > 0) {
+        task.tags.forEach(tag => tagSet.add(tag));
+      }
+    });
+    return Array.from(tagSet).sort();
   }, [tasks]);
 
-  const handleAddTask = async () => {
-    if (newTaskText.trim()) {
-      await addTask(newTaskText.trim(), {
-        priority: newPriority || undefined,
-        category: newCategory || undefined,
-        url: newUrl.trim() || undefined,
-      });
-      setNewTaskText('');
-      setNewPriority('');
-      setNewCategory('');
-      setNewUrl('');
-      setIsAddingTask(false);
+  // Handle add task
+  const handleAdd = async () => {
+    const text = newText.trim();
+    if (!text) return;
+    
+    const extras: Partial<ImprovementTask> = {};
+    if (newCategory) extras.category = newCategory;
+    if (newUrl) extras.url = newUrl;
+    if (newTags.length > 0) extras.tags = newTags;
+    if (newNotes) extras.notes = newNotes;
+    if (newFlagged) extras.pinned = true;
+    extras.order = -Date.now();
+
+    await addTask(text, extras);
+    
+    // Reset form but keep it open for rapid entry
+    setNewText('');
+    setNewCategory('');
+    setNewUrl('');
+    setNewTags([]);
+    setNewNotes('');
+    setNewFlagged(false);
+    setShowTagInput(false);
+  };
+
+  // Handle tag deletion
+  const handleDeleteTag = async (tagToDelete: string, taskId?: string) => {
+    if (taskId) {
+      const task = tasks.find(t => t.id === taskId);
+      if (task && task.tags) {
+        const updatedTags = task.tags.filter(t => t !== tagToDelete);
+        await updateTask(task.id, { tags: updatedTags.length > 0 ? updatedTags : undefined });
+      }
+    } else {
+      const tasksWithTag = tasks.filter(t => t.tags && t.tags.includes(tagToDelete));
+      for (const task of tasksWithTag) {
+        const updatedTags = task.tags!.filter(t => t !== tagToDelete);
+        await updateTask(task.id, { tags: updatedTags.length > 0 ? updatedTags : undefined });
+      }
+      if (selectedTagFilter === tagToDelete) {
+        setSelectedTagFilter(null);
+      }
+    }
+    setTagContextMenu(null);
+  };
+
+  // Handle tag rename
+  const handleRenameTag = async (oldTag: string, newTag: string) => {
+    if (!newTag || newTag === oldTag) return;
+    
+    const formattedTag = newTag.startsWith('#') ? newTag : `#${newTag}`;
+    const tasksWithTag = tasks.filter(t => t.tags && t.tags.includes(oldTag));
+    
+    for (const task of tasksWithTag) {
+      const updatedTags = task.tags!.map(t => t === oldTag ? formattedTag : t);
+      await updateTask(task.id, { tags: updatedTags });
+    }
+    
+    setTagContextMenu(null);
+    if (selectedTagFilter === oldTag) {
+      setSelectedTagFilter(formattedTag);
     }
   };
 
-  const handleToggleTask = async (taskId: string) => {
-    await toggleDone(taskId);
-  };
-
-  const handleScheduleTask = async (taskId: string, date: Date) => {
-    await scheduleTask(taskId, date);
-    setActiveTaskMenu(null);
-  };
-
-  const handleDeleteTask = async (taskId: string) => {
-    await deleteTask(taskId);
-    setActiveTaskMenu(null);
-  };
-
-  const handleTogglePin = async (taskId: string) => {
-    await togglePin(taskId);
-    setActiveTaskMenu(null);
-  };
-
-  const handleOpenCalendar = (taskId: string) => {
-    setSchedulingTaskId(taskId);
-    setIsCalendarOpen(true);
-    setActiveTaskMenu(null);
-  };
-
-  const handleCalendarDateSelect = async (date: Date) => {
-    if (schedulingTaskId) {
-      await scheduleTask(schedulingTaskId, date);
-      setSchedulingTaskId(null);
-    }
-    setIsCalendarOpen(false);
-  };
-
-  // Helper function to format URLs for display (same as desktop)
+  // Format URL for display
   const formatUrlForDisplay = (url: string): string => {
-    // Check for weekly review URLs first
     const weekOf = parseWeeklyReviewUrl(url);
     if (weekOf) {
       const weekDate = new Date(weekOf);
@@ -149,405 +172,614 @@ export const MobileTodoPage: React.FC = () => {
       const hostname = urlObj.hostname.replace('www.', '');
       const path = urlObj.pathname;
       
-      if (hostname === 'youtube.com' || hostname === 'youtu.be') {
-        return 'YouTube';
-      } else if (hostname === 'github.com') {
-        return `GitHub${path.length > 1 ? ` • ${path.split('/')[1]}` : ''}`;
-      } else if (hostname === 'docs.google.com') {
-        return 'Google Docs';
-      } else if (hostname === 'notion.so') {
-        return 'Notion';
-      } else if (hostname === 'medium.com') {
-        return 'Medium';
-      } else {
-        return hostname;
-      }
+      if (hostname === 'youtube.com' || hostname === 'youtu.be') return 'YouTube';
+      if (hostname === 'github.com') return `GitHub${path.length > 1 ? ` • ${path.split('/')[1]}` : ''}`;
+      if (hostname === 'docs.google.com') return 'Google Docs';
+      if (hostname === 'notion.so') return 'Notion';
+      if (hostname === 'medium.com') return 'Medium';
+      return hostname;
     } catch {
       return url.length > 30 ? url.substring(0, 30) + '...' : url;
     }
   };
 
-  // Close menu when clicking outside
+  // Close context menu on click outside
   useEffect(() => {
-    const handleClickOutside = () => {
-      setActiveTaskMenu(null);
-    };
-
-    if (activeTaskMenu) {
+    const handleClickOutside = () => setTagContextMenu(null);
+    if (tagContextMenu) {
       document.addEventListener('click', handleClickOutside);
       return () => document.removeEventListener('click', handleClickOutside);
     }
-  }, [activeTaskMenu]);
+  }, [tagContextMenu]);
+
+  // Close expanded task on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (expandedTaskId && !target.closest(`[data-task-id="${expandedTaskId}"]`)) {
+        setExpandedTaskId(null);
+      }
+    };
+    
+    if (expandedTaskId) {
+      setTimeout(() => {
+        document.addEventListener('mousedown', handleClickOutside);
+      }, 100);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [expandedTaskId]);
+
+  // Close new task form on click outside
+  useEffect(() => {
+    const handleClickOutside = async (e: MouseEvent) => {
+      if (isAddingNew && newTaskFormRef.current && !newTaskFormRef.current.contains(e.target as Node)) {
+        if (newText.trim()) {
+          await handleAdd();
+        }
+        setIsAddingNew(false);
+        setNewText('');
+        setNewCategory('');
+        setNewUrl('');
+        setNewTags([]);
+        setNewNotes('');
+        setNewFlagged(false);
+        setShowTagInput(false);
+      }
+    };
+
+    if (isAddingNew) {
+      setTimeout(() => {
+        document.addEventListener('mousedown', handleClickOutside);
+      }, 100);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isAddingNew, newText, newCategory, newUrl, newTags, newNotes, newFlagged]);
 
   return (
-    <div className="min-h-screen bg-background p-4 pb-24">
+    <div className="min-h-screen bg-background pb-24">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground mb-2">Todo List</h1>
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-          <span>{todayTasksCount} today</span>
-          <span>{openTasksCount} open</span>
-          <span>{completedTasksCount} completed</span>
-        </div>
+      <div className="sticky top-0 bg-background/95 backdrop-blur-sm z-10 border-b border-border px-4 py-3">
+        <h1 className="text-xl font-semibold text-foreground">Todo</h1>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="space-y-4 mb-6">
-        <div className="flex bg-muted rounded-lg p-1">
-          {(['today', 'all', 'open', 'done', 'snoozed'] as const).map((filterOption) => (
+      {/* Smart Lists */}
+      <div className="px-4 pt-4 pb-3 space-y-1">
+        {[
+          { 
+            id: 'today', 
+            label: 'Today', 
+            icon: Circle,
+            count: tasks.filter(t => {
+              if (t.status !== 'open') return false;
+              if (!t.scheduledFor) return true;
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              const tomorrow = new Date(today);
+              tomorrow.setDate(tomorrow.getDate() + 1);
+              const scheduledDate = new Date(t.scheduledFor as any);
+              return scheduledDate < tomorrow;
+            }).length 
+          },
+          { 
+            id: 'all', 
+            label: 'All', 
+            icon: Inbox,
+            count: tasks.filter(t => t.status === 'open').length 
+          },
+          { 
+            id: 'snoozed', 
+            label: 'Scheduled', 
+            icon: CalendarDays,
+            count: tasks.filter(t => {
+              if (t.status !== 'open' || !t.scheduledFor) return false;
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              const tomorrow = new Date(today);
+              tomorrow.setDate(tomorrow.getDate() + 1);
+              const scheduledDate = new Date(t.scheduledFor as any);
+              return scheduledDate >= tomorrow;
+            }).length 
+          },
+          { 
+            id: 'done', 
+            label: 'Completed', 
+            icon: CheckSquare,
+            count: tasks.filter(t => t.status === 'done').length 
+          },
+        ].map((list) => {
+          const IconComponent = list.icon;
+          return (
             <button
-              key={filterOption}
+              key={list.id}
               className={cn(
-                'flex-1 py-2 px-2 rounded-md text-xs font-medium transition-colors',
-                filter === filterOption
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
+                'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors',
+                filter === list.id 
+                  ? 'bg-accent text-foreground font-medium' 
+                  : 'text-muted-foreground active:bg-accent/50'
               )}
-              onClick={() => setFilter(filterOption)}
+              onClick={() => setFilter(list.id as any)}
             >
-              {filterOption === 'today' ? 'Today' :
-               filterOption === 'all' ? 'All' : 
-               filterOption === 'open' ? 'Open' : 
-               filterOption === 'done' ? 'Done' : 'Snoozed'}
+              <IconComponent className="w-4 h-4" />
+              <span className="flex-1 text-left">{list.label}</span>
+              {list.count > 0 && (
+                <span className="text-xs">{list.count}</span>
+              )}
             </button>
-          ))}
-        </div>
-        
-        {/* Category Filter */}
-        <CustomSelect
-          value={categoryFilter}
-          onChange={(value) => setCategoryFilter(value as string)}
-          options={[
-            { value: 'all', label: 'All categories', emoji: '✓' },
-            { value: 'risk', label: 'Risk', emoji: '🔴' },
-            { value: 'analysis', label: 'Analysis', emoji: '🔵' },
-            { value: 'execution', label: 'Execution', emoji: '🟠' },
-            { value: 'journal', label: 'Journal', emoji: '🟢' },
-            { value: 'learning', label: 'Learning', emoji: '🔷' },
-            { value: 'wellness', label: 'Wellness', emoji: '🟣' },
-            { value: 'mindset', label: 'Mindset', emoji: '🩷' }
-          ]}
-          placeholder="All categories"
-          size="md"
-          className="w-full"
-        />
+          );
+        })}
       </div>
 
-      {/* Add Task Section */}
-      <div className="mb-6">
-        <AnimatePresence>
-          {isAddingTask ? (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="bg-card border border-border rounded-lg p-4 mb-4"
-            >
-              <div className="space-y-3">
-                <textarea
-                  value={newTaskText}
-                  onChange={(e) => setNewTaskText(e.target.value)}
-                  placeholder="What needs to be done?"
-                  className="w-full p-3 bg-background border border-border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary"
-                  rows={3}
-                  autoFocus
-                />
-                
-                {/* URL input field */}
-                <div className="relative">
-                  <Link className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <input
-                    type="url"
-                    value={newUrl}
-                    onChange={(e) => setNewUrl(e.target.value)}
-                    placeholder="Add URL (optional)"
-                    className="w-full pl-10 pr-3 py-2 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                </div>
-                
-                {/* Priority and Category selectors */}
-                <div className="flex gap-2">
-                  <CustomSelect
-                    value={newPriority}
-                    onChange={(value) => setNewPriority(value as 'low' | 'med' | 'high' | '')}
-                    options={[
-                      { value: '', label: 'Priority' },
-                      { value: 'high', label: 'High', emoji: '🔴' },
-                      { value: 'med', label: 'Medium', emoji: '🟡' },
-                      { value: 'low', label: 'Low', emoji: '🟢' }
-                    ]}
-                    placeholder="Priority"
-                    size="md"
-                    className="flex-1"
-                  />
-                  <CustomSelect
-                    value={newCategory}
-                    onChange={(value) => setNewCategory(value)}
-                    options={[
-                      { value: '', label: 'Category' },
-                      { value: 'risk', label: 'Risk', emoji: '🔴' },
-                      { value: 'analysis', label: 'Analysis', emoji: '🔵' },
-                      { value: 'journal', label: 'Journal', emoji: '🟢' },
-                      { value: 'wellness', label: 'Wellness', emoji: '🟣' },
-                      { value: 'execution', label: 'Execution', emoji: '🟠' },
-                      { value: 'learning', label: 'Learning', emoji: '🔷' },
-                      { value: 'mindset', label: 'Mindset', emoji: '🩷' }
-                    ]}
-                    placeholder="Category"
-                    size="md"
-                    className="flex-1"
-                  />
-                </div>
-                
-                <div className="flex gap-2">
-                  <motion.button
-                    className="flex-1 bg-primary text-primary-foreground py-2 px-4 rounded-lg font-medium"
-                    onClick={handleAddTask}
-                    whileTap={{ scale: 0.98 }}
-                    disabled={!newTaskText.trim()}
-                  >
-                    Add Task
-                  </motion.button>
-                  <motion.button
-                    className="px-4 py-2 border border-border rounded-lg text-muted-foreground"
-                    onClick={() => {
-                      setIsAddingTask(false);
-                      setNewTaskText('');
-                      setNewPriority('');
-                      setNewCategory('');
-                      setNewUrl('');
-                    }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    Cancel
-                  </motion.button>
-                </div>
-              </div>
-            </motion.div>
-          ) : (
-            <motion.button
-              className="w-full flex items-center justify-center gap-2 p-4 border-2 border-dashed border-border rounded-lg text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors"
-              onClick={() => setIsAddingTask(true)}
-              whileTap={{ scale: 0.98 }}
-            >
-              <Plus className="w-5 h-5" />
-              <span className="font-medium">Add New Task</span>
-            </motion.button>
-          )}
-        </AnimatePresence>
-      </div>
+      {/* Tag Filter Pills */}
+      {allTags.length > 0 && (
+        <div className="px-4 pb-3 border-b border-border/50">
+          <div className="flex flex-wrap gap-1.5">
+            {allTags.map((tag) => {
+              const taskCount = tasks.filter(t => t.tags && t.tags.includes(tag)).length;
+              return (
+                <button
+                  key={tag}
+                  onClick={() => setSelectedTagFilter(selectedTagFilter === tag ? null : tag)}
+                  onTouchStart={(e) => {
+                    const timer = setTimeout(() => {
+                      const touch = e.touches[0];
+                      setTagContextMenu({ tag, x: touch.clientX, y: touch.clientY });
+                    }, 500);
+                    setLongPressTimer(timer);
+                  }}
+                  onTouchEnd={() => {
+                    if (longPressTimer) {
+                      clearTimeout(longPressTimer);
+                      setLongPressTimer(null);
+                    }
+                  }}
+                  onTouchMove={() => {
+                    if (longPressTimer) {
+                      clearTimeout(longPressTimer);
+                      setLongPressTimer(null);
+                    }
+                  }}
+                  className={cn(
+                    'px-2 py-1 rounded-full text-[11px] font-medium transition-colors',
+                    selectedTagFilter === tag
+                      ? 'bg-purple-500/20 text-purple-600 dark:text-purple-400'
+                      : 'bg-purple-500/10 text-purple-600 dark:text-purple-400 active:bg-purple-500/15'
+                  )}
+                >
+                  {tag} {taskCount}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Tasks List */}
-      <div className="space-y-3">
-        <AnimatePresence>
-          {filteredTasks.map((task) => (
+      <div className="px-4 pt-4 space-y-2">
+        <AnimatePresence mode="popLayout">
+          {filtered.map((task) => (
             <motion.div
               key={task.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="bg-card border border-border rounded-lg p-4"
+              data-task-id={task.id}
+              initial={false}
+              className="bg-card border border-border rounded-lg overflow-hidden"
             >
-              <div className="flex items-start gap-3">
+              {/* Main task row */}
+              <div className="flex items-start gap-3 p-3">
                 {/* Checkbox */}
-                <motion.button
+                <button
                   className={cn(
-                    'mt-1 flex-shrink-0 w-5 h-5 rounded border-2 transition-colors flex items-center justify-center',
+                    'mt-0.5 flex-shrink-0 w-5 h-5 rounded-full border-2 transition-colors flex items-center justify-center',
                     task.status === 'done'
-                      ? 'bg-primary border-primary text-primary-foreground'
-                      : 'border-muted-foreground hover:border-primary'
+                      ? 'bg-primary border-primary'
+                      : 'border-muted-foreground/40 active:border-primary'
                   )}
-                  onClick={() => handleToggleTask(task.id)}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
+                  onClick={() => toggleDone(task.id)}
                 >
                   {task.status === 'done' && (
-                    <CheckCircle2 className="w-3 h-3" />
+                    <CheckCircle2 className="w-3 h-3 text-primary-foreground" strokeWidth={3} />
                   )}
-                </motion.button>
+                </button>
 
-                {/* Task Content */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start gap-2 mb-2">
-                    {task.pinned && (
-                      <Pin className="w-3 h-3 text-primary mt-0.5 flex-shrink-0" />
-                    )}
-                    <p className={cn(
-                      'text-sm leading-relaxed',
-                      task.status === 'done' 
-                        ? 'line-through text-muted-foreground' 
-                        : 'text-foreground'
-                    )}>
-                      {task.text}
-                    </p>
-                  </div>
+                {/* Task content */}
+                <div 
+                  className="flex-1 min-w-0"
+                  onClick={() => setExpandedTaskId(expandedTaskId === task.id ? null : task.id)}
+                >
+                  <p className={cn(
+                    'text-sm leading-relaxed break-words',
+                    task.status === 'done' 
+                      ? 'line-through text-muted-foreground' 
+                      : 'text-foreground'
+                  )}>
+                    {task.text}
+                  </p>
 
-                  {/* Task Meta */}
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
-                    {task.url && (
+                  {/* Task meta info */}
+                  {(task.notes || task.tags?.length || task.url || task.scheduledFor) && (
+                    <div className="mt-1.5 flex flex-wrap gap-1.5 text-[11px] text-muted-foreground">
+                      {task.notes && (
+                        <span className="truncate max-w-[200px]">{task.notes}</span>
+                      )}
+                      {task.tags && task.tags.length > 0 && (
+                        <div className="flex gap-1">
+                          {task.tags.map(tag => (
+                            <span key={tag} className="text-purple-600 dark:text-purple-400">{tag}</span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Flag icon */}
+                {task.pinned && (
+                  <Flag className="w-4 h-4 text-orange-500 fill-orange-500 flex-shrink-0 mt-0.5" />
+                )}
+              </div>
+
+              {/* Expanded details */}
+              <AnimatePresence>
+                {expandedTaskId === task.id && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="border-t border-border/50"
+                  >
+                    <div className="p-3 space-y-3">
+                      {/* Notes */}
+                      <textarea
+                        placeholder="Add Note"
+                        className="w-full px-0 py-1 text-xs bg-transparent text-muted-foreground placeholder:text-muted-foreground/50 outline-none resize-none"
+                        rows={2}
+                        defaultValue={task.notes || ''}
+                        onBlur={(e) => {
+                          const notes = e.target.value.trim();
+                          updateTask(task.id, { notes: notes || undefined });
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+
+                      {/* Action buttons */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <button
+                          className="inline-flex items-center gap-1 px-2 py-1.5 rounded-md bg-accent text-xs"
+                          onClick={() => {
+                            setSchedulingTaskId(task.id);
+                            setIsCalendarOpen(true);
+                          }}
+                        >
+                          <Calendar className="w-3 h-3" />
+                          {task.scheduledFor ? new Date(task.scheduledFor).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Schedule'}
+                        </button>
+
+                        <select
+                          className="px-2 py-1.5 rounded-md bg-accent text-xs outline-none"
+                          value={task.category || ''}
+                          onChange={(e) => setCategory(task.id, e.target.value || undefined)}
+                        >
+                          <option value="">Category</option>
+                          <option value="risk">Risk</option>
+                          <option value="analysis">Analysis</option>
+                          <option value="execution">Execution</option>
+                          <option value="journal">Journal</option>
+                          <option value="learning">Learning</option>
+                          <option value="wellness">Wellness</option>
+                          <option value="mindset">Mindset</option>
+                        </select>
+
+                        <button
+                          className={cn(
+                            'inline-flex items-center gap-1 px-2 py-1.5 rounded-md text-xs',
+                            task.pinned 
+                              ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400' 
+                              : 'bg-accent text-muted-foreground'
+                          )}
+                          onClick={() => togglePin(task.id)}
+                        >
+                          <Flag className={cn('w-3 h-3', task.pinned && 'fill-orange-500')} />
+                          {task.pinned ? 'Flagged' : 'Flag'}
+                        </button>
+
+                        <button
+                          className="inline-flex items-center gap-1 px-2 py-1.5 rounded-md bg-accent text-xs"
+                          onClick={() => {
+                            if (editingTagsTaskId === task.id) {
+                              setEditingTagsTaskId(null);
+                              setNewTagForTask('');
+                            } else {
+                              setEditingTagsTaskId(task.id);
+                            }
+                          }}
+                        >
+                          <Hash className="w-3 h-3" />
+                          Tag
+                        </button>
+                      </div>
+
+                      {/* Tags display and input */}
+                      {(task.tags && task.tags.length > 0) || editingTagsTaskId === task.id ? (
+                        <div className="space-y-2">
+                          {task.tags && task.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5">
+                              {task.tags.map((tag) => (
+                                <button
+                                  key={tag}
+                                  onTouchStart={(e) => {
+                                    const timer = setTimeout(() => {
+                                      const touch = e.touches[0];
+                                      setTagContextMenu({ tag, x: touch.clientX, y: touch.clientY, taskId: task.id });
+                                    }, 500);
+                                    setLongPressTimer(timer);
+                                  }}
+                                  onTouchEnd={() => {
+                                    if (longPressTimer) {
+                                      clearTimeout(longPressTimer);
+                                      setLongPressTimer(null);
+                                    }
+                                  }}
+                                  onTouchMove={() => {
+                                    if (longPressTimer) {
+                                      clearTimeout(longPressTimer);
+                                      setLongPressTimer(null);
+                                    }
+                                  }}
+                                  className="inline-flex items-center gap-1 px-2 py-1 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-full text-[11px] font-medium"
+                                >
+                                  {tag}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                          {editingTagsTaskId === task.id && (
+                            <input
+                              type="text"
+                              placeholder="Add tag (press Enter)"
+                              value={newTagForTask}
+                              onChange={(e) => {
+                                let value = e.target.value;
+                                if (value && !value.startsWith('#')) {
+                                  value = '#' + value;
+                                }
+                                setNewTagForTask(value);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && newTagForTask.trim()) {
+                                  const formattedTag = newTagForTask.trim().startsWith('#') 
+                                    ? newTagForTask.trim() 
+                                    : `#${newTagForTask.trim()}`;
+                                  const currentTags = task.tags || [];
+                                  if (!currentTags.includes(formattedTag)) {
+                                    updateTask(task.id, { tags: [...currentTags, formattedTag] });
+                                  }
+                                  setNewTagForTask('');
+                                } else if (e.key === 'Escape') {
+                                  setEditingTagsTaskId(null);
+                                  setNewTagForTask('');
+                                }
+                              }}
+                              onBlur={() => {
+                                if (newTagForTask.trim()) {
+                                  const formattedTag = newTagForTask.trim().startsWith('#') 
+                                    ? newTagForTask.trim() 
+                                    : `#${newTagForTask.trim()}`;
+                                  const currentTags = task.tags || [];
+                                  if (!currentTags.includes(formattedTag)) {
+                                    updateTask(task.id, { tags: [...currentTags, formattedTag] });
+                                  }
+                                }
+                                setNewTagForTask('');
+                                setEditingTagsTaskId(null);
+                              }}
+                              className="w-full px-2 py-1.5 text-xs bg-background border border-border rounded-md outline-none"
+                              autoFocus
+                            />
+                          )}
+                        </div>
+                      ) : null}
+
+                      {/* URL input */}
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="url"
+                          placeholder="Add URL"
+                          className="flex-1 px-2 py-1.5 text-xs bg-transparent border border-border/50 rounded-md outline-none focus:ring-1 focus:ring-primary"
+                          defaultValue={task.url || ''}
+                          onBlur={(e) => {
+                            const url = e.target.value.trim();
+                            updateTask(task.id, { url: url || undefined });
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </div>
+
+                      {/* Delete button */}
                       <button
-                        className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-blue-500/10 text-blue-600 border border-blue-500/20 hover:bg-blue-500/20 transition-colors text-xs font-medium"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (parseWeeklyReviewUrl(task.url!)) {
-                            openWeeklyReviewFromUrl(task.url!);
-                          } else {
-                            window.open(task.url!, '_blank', 'noopener,noreferrer');
+                        className="w-full px-2 py-1.5 text-xs text-red-600 dark:text-red-400 hover:bg-red-500/10 active:bg-red-500/20 rounded-md transition-colors"
+                        onClick={() => {
+                          if (window.confirm('Delete this task?')) {
+                            deleteTask(task.id);
+                            setExpandedTaskId(null);
                           }
                         }}
                       >
-                        <ExternalLink className="w-3 h-3" />
-                        {formatUrlForDisplay(task.url)}
+                        Delete Task
                       </button>
-                    )}
-                    {task.category && (
-                      <div className="flex items-center gap-1">
-                        <span>
-                          {task.category === 'risk' ? '🔴' :
-                           task.category === 'analysis' ? '🔵' :
-                           task.category === 'journal' ? '🟢' :
-                           task.category === 'wellness' ? '🟣' :
-                           task.category === 'execution' ? '🟠' :
-                           task.category === 'learning' ? '🔷' :
-                           task.category === 'mindset' ? '🩷' : '📝'}
-                        </span>
-                        <span className="capitalize">{task.category}</span>
-                      </div>
-                    )}
-                    {task.scheduledFor && (
-                      <div className="flex items-center gap-1">
-                        <CalendarDays className="w-3 h-3" />
-                        <span>Scheduled: {new Date(task.scheduledFor).toLocaleDateString()}</span>
-                      </div>
-                    )}
-                    {task.dueAt && (
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        <span>Due: {new Date(task.dueAt).toLocaleDateString()}</span>
-                      </div>
-                    )}
-                    {task.priority && (
-                      <div className="flex items-center gap-1">
-                        <div className={cn(
-                          'w-2 h-2 rounded-full',
-                          task.priority === 'high' ? 'bg-red-500' :
-                          task.priority === 'med' ? 'bg-yellow-500' : 'bg-green-500'
-                        )} />
-                        <span className="capitalize">{task.priority}</span>
-                      </div>
-                    )}
-                    {task.tags && task.tags.length > 0 && (
-                      <div className="flex items-center gap-1">
-                        <Tag className="w-3 h-3" />
-                        <span>{task.tags.join(', ')}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Actions Menu */}
-                <div className="relative">
-                  <motion.button
-                    className="p-1 rounded hover:bg-accent text-muted-foreground hover:text-accent-foreground"
-                    onClick={(e) => { e.stopPropagation(); setActiveTaskMenu(activeTaskMenu === task.id ? null : task.id); }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <MoreVertical className="w-4 h-4" />
-                  </motion.button>
-
-                  {/* Dropdown Menu */}
-                  <AnimatePresence>
-                    {activeTaskMenu === task.id && (
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                        className="absolute right-0 top-8 bg-card border border-border rounded-lg shadow-lg z-50 min-w-[160px]"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <div className="py-1">
-                          <button
-                            className="w-full px-3 py-2 text-left text-sm hover:bg-accent flex items-center gap-2"
-                            onClick={() => handleTogglePin(task.id)}
-                          >
-                            <Pin className="w-3 h-3" />
-                            {task.pinned ? 'Unpin' : 'Pin'}
-                          </button>
-                          <button
-                            className="w-full px-3 py-2 text-left text-sm hover:bg-accent flex items-center gap-2"
-                            onClick={() => {
-                              setEditingUrlId(task.id);
-                              setEditingUrl(task.url || '');
-                              setActiveTaskMenu(null);
-                            }}
-                          >
-                            <Link className="w-3 h-3" />
-                            {task.url ? 'Edit URL' : 'Add URL'}
-                          </button>
-                          <button
-                            className="w-full px-3 py-2 text-left text-sm hover:bg-accent flex items-center gap-2"
-                            onClick={() => handleScheduleTask(task.id, new Date())}
-                          >
-                            <CalendarDays className="w-3 h-3" />
-                            Schedule for Today
-                          </button>
-                          <button
-                            className="w-full px-3 py-2 text-left text-sm hover:bg-accent flex items-center gap-2"
-                            onClick={() => {
-                              const tomorrow = new Date();
-                              tomorrow.setDate(tomorrow.getDate() + 1);
-                              handleScheduleTask(task.id, tomorrow);
-                            }}
-                          >
-                            <Calendar className="w-3 h-3" />
-                            Schedule for Tomorrow
-                          </button>
-                          <button
-                            className="w-full px-3 py-2 text-left text-sm hover:bg-accent flex items-center gap-2"
-                            onClick={() => handleOpenCalendar(task.id)}
-                          >
-                            <CalendarDays className="w-3 h-3" />
-                            Schedule for Date...
-                          </button>
-                          <div className="border-t border-border my-1" />
-                          <button
-                            className="w-full px-3 py-2 text-left text-sm hover:bg-accent text-red-600 flex items-center gap-2"
-                            onClick={() => handleDeleteTask(task.id)}
-                          >
-                            <Trash2 className="w-3 h-3" />
-                            Delete
-                          </button>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
           ))}
         </AnimatePresence>
 
         {/* Empty State */}
-        {filteredTasks.length === 0 && (
+        {filtered.length === 0 && (
           <div className="text-center py-12">
             <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="w-8 h-8 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-medium text-foreground mb-2">
+            <h3 className="text-base font-medium text-foreground mb-2">
               {filter === 'today' ? 'Nothing for today' :
-               filter === 'open' ? 'No open tasks' : 
+               filter === 'all' ? 'No tasks' : 
                filter === 'done' ? 'No completed tasks' : 
-               filter === 'snoozed' ? 'No snoozed tasks' : 'No tasks yet'}
+               filter === 'snoozed' ? 'No scheduled tasks' : 'No tasks'}
             </h3>
-            <p className="text-muted-foreground">
-              {filter === 'today' ? 'All caught up for today! Great work.' :
-               filter === 'open' ? 'All tasks completed! Great work.' :
-               filter === 'done' ? 'Complete some tasks to see them here.' :
-               filter === 'snoozed' ? 'No tasks are currently snoozed.' :
-               'Add your first task to get started.'}
+            <p className="text-sm text-muted-foreground">
+              {filter === 'today' ? 'All caught up!' :
+               filter === 'all' ? 'Tap + to add your first task' :
+               filter === 'done' ? 'Complete some tasks to see them here' :
+               filter === 'snoozed' ? 'No tasks are currently scheduled' :
+               'Add your first task to get started'}
             </p>
           </div>
         )}
+      </div>
+
+      {/* Inline New Task Form */}
+      <AnimatePresence>
+        {isAddingNew && (
+          <div className="fixed inset-x-0 bottom-0 bg-background border-t border-border p-4 pb-24" ref={newTaskFormRef}>
+            <div className="space-y-3">
+              <input
+                type="text"
+                value={newText}
+                onChange={(e) => setNewText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && newText.trim()) {
+                    handleAdd();
+                  }
+                }}
+                placeholder="New Task"
+                className="w-full px-0 py-2 text-base bg-transparent placeholder:text-muted-foreground/50 outline-none"
+                autoFocus
+              />
+
+              {/* Quick actions */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  className="inline-flex items-center gap-1 px-2 py-1.5 rounded-md bg-accent text-xs"
+                  onClick={() => {
+                    setSchedulingTaskId('new');
+                    setIsCalendarOpen(true);
+                  }}
+                >
+                  <Calendar className="w-3 h-3" />
+                  Schedule
+                </button>
+
+                <select
+                  className="px-2 py-1.5 rounded-md bg-accent text-xs outline-none"
+                  value={newCategory}
+                  onChange={(e) => setNewCategory(e.target.value)}
+                >
+                  <option value="">Category</option>
+                  <option value="risk">Risk</option>
+                  <option value="analysis">Analysis</option>
+                  <option value="execution">Execution</option>
+                  <option value="journal">Journal</option>
+                  <option value="learning">Learning</option>
+                  <option value="wellness">Wellness</option>
+                  <option value="mindset">Mindset</option>
+                </select>
+
+                <button
+                  className={cn(
+                    'inline-flex items-center gap-1 px-2 py-1.5 rounded-md text-xs',
+                    newFlagged 
+                      ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400' 
+                      : 'bg-accent text-muted-foreground'
+                  )}
+                  onClick={() => setNewFlagged(!newFlagged)}
+                >
+                  <Flag className={cn('w-3 h-3', newFlagged && 'fill-orange-500')} />
+                </button>
+
+                <button
+                  className="inline-flex items-center gap-1 px-2 py-1.5 rounded-md bg-accent text-xs"
+                  onClick={() => setShowTagInput(!showTagInput)}
+                >
+                  <Hash className="w-3 h-3" />
+                </button>
+              </div>
+
+              {/* Tags */}
+              {(newTags.length > 0 || showTagInput) && (
+                <div className="space-y-2">
+                  {newTags.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {newTags.map((tag, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => setNewTags(newTags.filter((_, i) => i !== idx))}
+                          className="inline-flex items-center gap-1 px-2 py-1 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-full text-[11px] font-medium"
+                        >
+                          {tag}
+                          <X className="w-3 h-3" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {showTagInput && (
+                    <input
+                      type="text"
+                      placeholder="Add tag"
+                      value={tagInput}
+                      onChange={(e) => {
+                        let value = e.target.value;
+                        if (value && !value.startsWith('#')) {
+                          value = '#' + value;
+                        }
+                        setTagInput(value);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && tagInput.trim()) {
+                          const formattedTag = tagInput.trim().startsWith('#') ? tagInput.trim() : `#${tagInput.trim()}`;
+                          if (!newTags.includes(formattedTag)) {
+                            setNewTags([...newTags, formattedTag]);
+                          }
+                          setTagInput('');
+                        }
+                      }}
+                      className="w-full px-2 py-1.5 text-xs bg-background border border-border rounded-md outline-none"
+                      autoFocus
+                    />
+                  )}
+                </div>
+              )}
+
+              {/* Notes */}
+              <textarea
+                placeholder="Add Note"
+                value={newNotes}
+                onChange={(e) => setNewNotes(e.target.value)}
+                className="w-full px-0 py-1 text-xs bg-transparent text-muted-foreground placeholder:text-muted-foreground/50 outline-none resize-none"
+                rows={2}
+              />
+
+              {/* URL */}
+              <input
+                type="url"
+                placeholder="Add URL"
+                value={newUrl}
+                onChange={(e) => setNewUrl(e.target.value)}
+                className="w-full px-2 py-1.5 text-xs bg-transparent border border-border/50 rounded-md outline-none"
+              />
+            </div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Floating Add Button */}
+      <div className="fixed bottom-20 right-4 z-20">
+        <motion.button
+          className="w-14 h-14 bg-primary text-primary-foreground rounded-full shadow-lg flex items-center justify-center"
+          onClick={() => setIsAddingNew(!isAddingNew)}
+          whileTap={{ scale: 0.9 }}
+        >
+          {isAddingNew ? <X className="w-6 h-6" /> : <Plus className="w-6 h-6" />}
+        </motion.button>
       </div>
 
       {/* Calendar Picker Modal */}
@@ -557,82 +789,58 @@ export const MobileTodoPage: React.FC = () => {
           setIsCalendarOpen(false);
           setSchedulingTaskId(null);
         }}
-        onSelectDate={handleCalendarDateSelect}
+        onSelectDate={async (date) => {
+          if (schedulingTaskId === 'new') {
+            // Just store it, will be added when task is created
+            // For now, do nothing special
+          } else if (schedulingTaskId) {
+            await scheduleTask(schedulingTaskId, date);
+          }
+          setIsCalendarOpen(false);
+          setSchedulingTaskId(null);
+        }}
         title="Schedule Task"
       />
 
-      {/* URL Edit Modal */}
-      <AnimatePresence>
-        {editingUrlId && (
-          <motion.div
-            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setEditingUrlId(null)}
+      {/* Tag Context Menu */}
+      {tagContextMenu && (
+        <div
+          className="fixed bg-card border border-border rounded-lg shadow-xl py-1 z-[60] min-w-[160px]"
+          style={{
+            left: `${tagContextMenu.x}px`,
+            top: `${tagContextMenu.y}px`,
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            className="w-full px-4 py-2 text-left text-sm hover:bg-accent transition-colors flex items-center gap-2"
+            onClick={() => {
+              const newTag = window.prompt('Rename tag:', tagContextMenu.tag);
+              if (newTag) {
+                handleRenameTag(tagContextMenu.tag, newTag);
+              }
+            }}
           >
-            <motion.div
-              className="bg-card border border-border rounded-xl p-6 shadow-xl max-w-md w-full"
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <Link className="w-5 h-5 text-primary" />
-                Add/Edit URL
-              </h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">URL</label>
-                  <input
-                    type="url"
-                    value={editingUrl}
-                    onChange={(e) => setEditingUrl(e.target.value)}
-                    placeholder="https://example.com"
-                    className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                    autoFocus
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Add a link to YouTube videos, articles, documentation, or any resource related to this task.
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
-                    onClick={() => {
-                      updateTask(editingUrlId, { url: editingUrl.trim() || undefined });
-                      setEditingUrlId(null);
-                      setEditingUrl('');
-                    }}
-                  >
-                    Save
-                  </button>
-                  <button
-                    className="flex-1 px-4 py-2 bg-muted text-muted-foreground rounded-lg hover:bg-accent transition-colors font-medium"
-                    onClick={() => {
-                      updateTask(editingUrlId, { url: undefined });
-                      setEditingUrlId(null);
-                      setEditingUrl('');
-                    }}
-                  >
-                    Remove URL
-                  </button>
-                </div>
-                <button
-                  className="w-full px-4 py-2 border border-border rounded-lg hover:bg-accent transition-colors font-medium"
-                  onClick={() => {
-                    setEditingUrlId(null);
-                    setEditingUrl('');
-                  }}
-                >
-                  Cancel
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            <span className="text-muted-foreground">✏️</span>
+            Rename Tag
+          </button>
+          <button
+            className="w-full px-4 py-2 text-left text-sm hover:bg-accent transition-colors flex items-center gap-2 text-red-500"
+            onClick={() => {
+              if (tagContextMenu.taskId) {
+                handleDeleteTag(tagContextMenu.tag, tagContextMenu.taskId);
+              } else {
+                if (window.confirm(`Delete "${tagContextMenu.tag}" from all tasks?`)) {
+                  handleDeleteTag(tagContextMenu.tag);
+                }
+              }
+            }}
+          >
+            <span className="text-red-500">🗑️</span>
+            {tagContextMenu.taskId ? 'Remove Tag' : 'Delete Tag Globally'}
+          </button>
+        </div>
+      )}
     </div>
   );
 };

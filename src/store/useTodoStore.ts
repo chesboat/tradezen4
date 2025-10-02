@@ -119,18 +119,26 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       text: text.trim(),
       status: 'open',
       priority: extras.priority, // No default - only if explicitly set
-      tags: [],
+      tags: extras.tags || [],
       category: extras.category,
       accountId: (extras.accountId as string) || undefined, // Optional: journal-wide by default
       dueAt: normalizeDateLike(extras.dueAt),
       sourceReflectionId: extras.sourceReflectionId,
       completedAt: undefined,
       url: extras.url,
+      notes: extras.notes,
+      order: extras.order,
+      pinned: extras.pinned,
+      scheduledFor: normalizeDateLike(extras.scheduledFor),
     };
     try {
       const created = await taskService.create(base as any);
       set((state) => {
-        const withOrder: ImprovementTask = { ...created, order: (state.tasks[0]?.order ?? 0) + 1 } as ImprovementTask;
+        // Use the order from the created task if it exists, otherwise assign one
+        const withOrder: ImprovementTask = { 
+          ...created, 
+          order: created.order ?? (state.tasks[0]?.order ?? 0) + 1 
+        } as ImprovementTask;
         const next = [withOrder, ...state.tasks];
         localStorage.setItem(STORAGE_KEYS.TODO_TASKS, next);
         return { tasks: next };
