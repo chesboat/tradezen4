@@ -287,7 +287,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
   return (
     <motion.aside
       className={cn(
-        'fixed left-0 top-0 h-screen bg-card border-r border-border z-50',
+        'fixed left-0 top-0 h-screen bg-background border-r border-border z-50',
         'flex flex-col shadow-xl overflow-hidden',
         className
       )}

@@ -314,7 +314,7 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
       </AnimatePresence>
 
       <motion.aside
-        className={`fixed top-0 h-full bg-card border-l border-border z-50 flex flex-col shadow-xl ${className}`}
+        className={`fixed top-0 h-full bg-background border-l border-border z-50 flex flex-col shadow-xl ${className}`}
         style={{ right: rightOffset, width: clampedWidth }}
         variants={sidebarVariants}
         animate={isExpanded ? 'expanded' : 'collapsed'}

@@ -138,7 +138,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({ onAddTrade }
   return (
     <>
       {/* Mobile Top Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-sm border-b border-border">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="flex items-center justify-between px-4 py-3">
           {/* Logo */}
           <div className="flex items-center gap-3">
@@ -165,7 +165,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({ onAddTrade }
       </header>
 
       {/* Mobile Bottom Tab Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-sm border-t border-border">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-t border-border">
         <div className="flex items-center justify-around px-2 py-2">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -206,7 +206,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({ onAddTrade }
 
             {/* Drawer */}
             <motion.div
-              className="fixed top-0 right-0 h-full w-80 max-w-[85vw] bg-card border-l border-border z-50 flex flex-col shadow-xl"
+              className="fixed top-0 right-0 h-full w-80 max-w-[85vw] bg-background border-l border-border z-50 flex flex-col shadow-xl"
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
