@@ -109,10 +109,10 @@ export const useAccentColor = () => {
     const palette = accentColorPalettes[accentColor];
     const colors = isDark ? palette.dark : palette.light;
 
-    // Update CSS custom properties
-    root.style.setProperty('--primary', colors.primary);
-    root.style.setProperty('--primary-foreground', colors.primaryForeground);
-    root.style.setProperty('--ring', colors.ring);
+    // Update CSS custom properties with !important to override @layer base
+    root.style.setProperty('--primary', colors.primary, 'important');
+    root.style.setProperty('--primary-foreground', colors.primaryForeground, 'important');
+    root.style.setProperty('--ring', colors.ring, 'important');
 
     // Save to localStorage
     localStorage.setItem('refine-accent-color', accentColor);
@@ -126,9 +126,10 @@ export const useAccentColor = () => {
       const palette = accentColorPalettes[accentColor];
       const colors = isDark ? palette.dark : palette.light;
 
-      root.style.setProperty('--primary', colors.primary);
-      root.style.setProperty('--primary-foreground', colors.primaryForeground);
-      root.style.setProperty('--ring', colors.ring);
+      // Update with !important to override @layer base
+      root.style.setProperty('--primary', colors.primary, 'important');
+      root.style.setProperty('--primary-foreground', colors.primaryForeground, 'important');
+      root.style.setProperty('--ring', colors.ring, 'important');
     });
 
     observer.observe(document.documentElement, {
