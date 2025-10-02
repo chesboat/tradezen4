@@ -20,7 +20,8 @@ import {
   Link2,
   Code,
   Heading1,
-  Heading2
+  Heading2,
+  Trash2
 } from 'lucide-react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -47,7 +48,7 @@ const categoryOptions: { value: RichNote['category']; label: string; icon: React
 ];
 
 export const InlineNoteEditor: React.FC<InlineNoteEditorProps> = ({ noteId, onClose }) => {
-  const { getNoteById, updateNote, toggleFavorite, getFolders } = useRichNotesStore();
+  const { getNoteById, updateNote, toggleFavorite, getFolders, deleteNote } = useRichNotesStore();
   
   const existingNote = getNoteById(noteId);
   const folders = getFolders();
@@ -140,6 +141,22 @@ export const InlineNoteEditor: React.FC<InlineNoteEditorProps> = ({ noteId, onCl
     await toggleFavorite(noteId);
   };
 
+  const handleDelete = async () => {
+    if (!existingNote) return;
+    
+    const confirmed = window.confirm(`Delete "${existingNote.title}"? This cannot be undone.`);
+    if (!confirmed) return;
+    
+    try {
+      await deleteNote(noteId);
+      toast.success('Note deleted');
+      if (onClose) onClose();
+    } catch (error) {
+      console.error('Failed to delete note:', error);
+      toast.error('Failed to delete note');
+    }
+  };
+
   const handleAddTag = () => {
     if (newTag.trim() && !tags.includes(newTag.trim())) {
       setTags([...tags, newTag.trim()]);
@@ -217,7 +234,7 @@ export const InlineNoteEditor: React.FC<InlineNoteEditorProps> = ({ noteId, onCl
           </select>
 
           {/* Saving indicator */}
-          <div className="ml-auto flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="ml-auto flex items-center gap-3 text-sm text-muted-foreground">
             {savingStatus === 'saving' && (
               <>
                 <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -233,6 +250,15 @@ export const InlineNoteEditor: React.FC<InlineNoteEditorProps> = ({ noteId, onCl
             {savingStatus === 'idle' && existingNote.updatedAt && (
               <span>Last edited {new Date(existingNote.updatedAt).toLocaleString()}</span>
             )}
+            
+            {/* Delete button */}
+            <button
+              onClick={handleDelete}
+              className="p-1.5 rounded-lg hover:bg-red-500/10 text-muted-foreground hover:text-red-500 transition-colors"
+              title="Delete note"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
           </div>
         </div>
 

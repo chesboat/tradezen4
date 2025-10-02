@@ -712,6 +712,7 @@ export const NotesView: React.FC = () => {
                   </button>
                 </div>
                 <InlineNoteEditor
+                  key={selectedNote.id}
                   noteId={selectedNote.id}
                   onClose={() => setSelectedNoteId(null)}
                 />
