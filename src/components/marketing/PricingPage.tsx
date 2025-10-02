@@ -3,20 +3,18 @@ import { motion } from 'framer-motion';
 import { Check, Sparkles, Crown, Zap, ArrowRight, Brain, Target, TrendingUp, Shield } from 'lucide-react';
 import { SUBSCRIPTION_PLANS } from '@/types/subscription';
 import { formatPrice, formatAnnualMonthly, getSavingsPercentage } from '@/lib/subscription';
-import { useNavigationStore } from '@/store/useNavigationStore';
+interface PricingPageProps {
+  onGetStarted: (tier: 'basic' | 'premium') => void;
+}
 
-export const PricingPage: React.FC = () => {
+export const PricingPage: React.FC<PricingPageProps> = ({ onGetStarted }) => {
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>('annual');
-  const { setCurrentView } = useNavigationStore();
   
   const basicPlan = SUBSCRIPTION_PLANS.basic;
   const premiumPlan = SUBSCRIPTION_PLANS.premium;
   
   const handleGetStarted = (tier: 'basic' | 'premium') => {
-    // TODO: Redirect to signup/checkout
-    console.log('Get started with:', tier);
-    // For now, go back to dashboard
-    setCurrentView('dashboard');
+    onGetStarted(tier);
   };
 
   return (
