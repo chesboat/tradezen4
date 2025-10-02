@@ -42,6 +42,7 @@ export const MobileTodoPage: React.FC = () => {
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
   const [editingTagsTaskId, setEditingTagsTaskId] = useState<string | null>(null);
   const [newTagForTask, setNewTagForTask] = useState('');
+  const [swipingTaskId, setSwipingTaskId] = useState<string | null>(null);
   
   const newTaskFormRef = useRef<HTMLDivElement>(null);
 
@@ -359,12 +360,42 @@ export const MobileTodoPage: React.FC = () => {
       <div className="px-4 pt-4 space-y-2">
         <AnimatePresence mode="popLayout">
           {filtered.map((task) => (
-            <motion.div
+            <div
               key={task.id}
               data-task-id={task.id}
-              initial={false}
-              className="bg-card border border-border rounded-lg overflow-hidden"
+              className="relative overflow-hidden"
             >
+              {/* Swipe action backgrounds */}
+              <div className="absolute inset-0 flex items-center justify-between px-6">
+                {/* Left side - Complete (green) */}
+                <div className="flex items-center gap-2 text-green-500">
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
+                {/* Right side - Delete (red) */}
+                <div className="flex items-center gap-2 text-red-500">
+                  <X className="w-5 h-5" />
+                </div>
+              </div>
+
+              {/* Swipeable task card */}
+              <motion.div
+                drag="x"
+                dragConstraints={{ left: 0, right: 0 }}
+                dragElastic={0.2}
+                onDragEnd={(e, info) => {
+                  const threshold = 100;
+                  if (info.offset.x > threshold) {
+                    // Swipe right - Complete
+                    toggleDone(task.id);
+                  } else if (info.offset.x < -threshold) {
+                    // Swipe left - Delete
+                    if (window.confirm('Delete this task?')) {
+                      deleteTask(task.id);
+                    }
+                  }
+                }}
+                className="bg-card border border-border rounded-lg overflow-hidden relative z-10"
+              >
               {/* Main task row */}
               <div className="flex items-start gap-3 p-3">
                 {/* Checkbox */}
@@ -398,17 +429,38 @@ export const MobileTodoPage: React.FC = () => {
 
                   {/* Task meta info */}
                   {(task.notes || task.tags?.length || task.url || task.scheduledFor) && (
-                    <div className="mt-1.5 flex flex-wrap gap-1.5 text-[11px] text-muted-foreground">
-                      {task.notes && (
-                        <span className="truncate max-w-[200px]">{task.notes}</span>
+                    <div className="mt-1.5 space-y-1">
+                      {/* URL pill - Apple style */}
+                      {task.url && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (parseWeeklyReviewUrl(task.url!)) {
+                              openWeeklyReviewFromUrl(task.url!);
+                            } else {
+                              window.open(task.url!, '_blank', 'noopener,noreferrer');
+                            }
+                          }}
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 active:bg-blue-500/20 transition-colors text-[11px] font-medium"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          {formatUrlForDisplay(task.url)}
+                        </button>
                       )}
-                      {task.tags && task.tags.length > 0 && (
-                        <div className="flex gap-1">
-                          {task.tags.map(tag => (
-                            <span key={tag} className="text-purple-600 dark:text-purple-400">{tag}</span>
-                          ))}
-                        </div>
-                      )}
+                      
+                      {/* Tags and notes */}
+                      <div className="flex flex-wrap gap-1.5 text-[11px] text-muted-foreground">
+                        {task.notes && (
+                          <span className="truncate max-w-[200px]">{task.notes}</span>
+                        )}
+                        {task.tags && task.tags.length > 0 && (
+                          <div className="flex gap-1">
+                            {task.tags.map(tag => (
+                              <span key={tag} className="text-purple-600 dark:text-purple-400">{tag}</span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -614,7 +666,8 @@ export const MobileTodoPage: React.FC = () => {
                   </motion.div>
                 )}
               </AnimatePresence>
-            </motion.div>
+              </motion.div>
+            </div>
           ))}
         </AnimatePresence>
 
