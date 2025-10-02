@@ -60,9 +60,19 @@ export const InlineNoteEditor: React.FC<InlineNoteEditorProps> = ({ noteId, onCl
   const [newTag, setNewTag] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [savingStatus, setSavingStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [hasChanges, setHasChanges] = useState(false);
   
   const titleInputRef = useRef<HTMLInputElement>(null);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout>();
+  
+  // Store initial values to detect changes
+  const initialValuesRef = useRef({
+    title: existingNote?.title || '',
+    content: existingNote?.content || '<p></p>',
+    category: existingNote?.category || 'study',
+    tags: existingNote?.tags || [],
+    folder: existingNote?.folder || '',
+  });
 
   // TipTap editor
   const editor = useEditor({
@@ -113,13 +123,33 @@ export const InlineNoteEditor: React.FC<InlineNoteEditorProps> = ({ noteId, onCl
   const handleAutoSave = async () => {
     if (!existingNote || !editor) return;
 
+    const content = editor.getHTML();
+    
+    // Check if anything actually changed
+    const currentTitle = title || 'Untitled';
+    const currentFolder = folder || '';
+    const tagsChanged = JSON.stringify(tags.sort()) !== JSON.stringify(initialValuesRef.current.tags.sort());
+    
+    const hasActualChanges = 
+      currentTitle !== initialValuesRef.current.title ||
+      content !== initialValuesRef.current.content ||
+      category !== initialValuesRef.current.category ||
+      tagsChanged ||
+      currentFolder !== initialValuesRef.current.folder;
+
+    // Only save if there are actual changes
+    if (!hasActualChanges) {
+      setSavingStatus('idle');
+      setHasChanges(false);
+      return;
+    }
+
     try {
-      const content = editor.getHTML();
       const plainText = editor.getText();
       const wordCount = plainText.split(/\s+/).filter(Boolean).length;
 
       await updateNote(noteId, {
-        title: title || 'Untitled',
+        title: currentTitle,
         content,
         category,
         tags,
@@ -127,6 +157,16 @@ export const InlineNoteEditor: React.FC<InlineNoteEditorProps> = ({ noteId, onCl
         wordCount,
       });
 
+      // Update initial values after successful save
+      initialValuesRef.current = {
+        title: currentTitle,
+        content,
+        category,
+        tags: [...tags],
+        folder: currentFolder,
+      };
+
+      setHasChanges(false);
       setSavingStatus('saved');
       setTimeout(() => setSavingStatus('idle'), 2000);
     } catch (error) {
