@@ -571,7 +571,6 @@ export const SettingsPage: React.FC = () => {
       <UpgradeModal
         isOpen={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
-        currentTier={tier}
       />
     </div>
   );

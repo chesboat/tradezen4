@@ -69,7 +69,8 @@ const HeroAnalyticsPnL: React.FC<{
   hasCustomDateRanges: boolean;
   onPeriodChange: (period: TimePeriod) => void;
   onOpenCustomPicker: () => void;
-}> = ({ currentPnL, previousPnL, totalTrades, winRate, profitFactor, selectedPeriod, customStartDate, customEndDate, hasCustomDateRanges, onPeriodChange, onOpenCustomPicker }) => {
+  onUpgradeClick: (feature: string) => void;
+}> = ({ currentPnL, previousPnL, totalTrades, winRate, profitFactor, selectedPeriod, customStartDate, customEndDate, hasCustomDateRanges, onPeriodChange, onOpenCustomPicker, onUpgradeClick }) => {
   const [dropdownOpen, setDropdownOpen] = React.useState(false);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
 
@@ -164,7 +165,7 @@ const HeroAnalyticsPnL: React.FC<{
                       className="w-full px-4 py-3 text-left text-sm text-muted-foreground hover:bg-muted/50 transition-colors flex items-center justify-between"
                       onClick={() => {
                         setDropdownOpen(false);
-                        handleUpgradeClick('Custom Date Ranges');
+                        onUpgradeClick('Custom Date Ranges');
                       }}
                     >
                       <span>Custom Range</span>
@@ -1521,6 +1522,7 @@ export const AppleAnalyticsDashboard: React.FC = () => {
         hasCustomDateRanges={hasCustomDateRanges}
         onPeriodChange={setSelectedPeriod}
         onOpenCustomPicker={() => setShowDatePicker(true)}
+        onUpgradeClick={handleUpgradeClick}
       />
       
       {/* Custom Date Range Picker Modal */}
