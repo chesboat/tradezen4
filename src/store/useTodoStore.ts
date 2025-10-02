@@ -92,7 +92,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       const merged = Array.from(byId.values()).sort((a, b) => (new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
 
       set({ tasks: merged, categories });
-      localStorage.setItem(STORAGE_KEYS.TODO_TASKS, merged);
+      localStorage.setItem(STORAGE_KEYS.TODO_TASKS, JSON.stringify(merged));
     } catch (err) {
       console.error('Failed to initialize tasks:', err);
     }
@@ -140,7 +140,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
           order: created.order ?? (state.tasks[0]?.order ?? 0) + 1 
         } as ImprovementTask;
         const next = [withOrder, ...state.tasks];
-        localStorage.setItem(STORAGE_KEYS.TODO_TASKS, next);
+        localStorage.setItem(STORAGE_KEYS.TODO_TASKS, JSON.stringify(next));
         return { tasks: next };
       });
       return created;
@@ -164,7 +164,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       set((state) => {
         const withOrder: ImprovementTask = { ...local, order: (state.tasks[0]?.order ?? 0) + 1 };
         const next = [withOrder, ...state.tasks];
-        localStorage.setItem(STORAGE_KEYS.TODO_TASKS, next);
+        localStorage.setItem(STORAGE_KEYS.TODO_TASKS, JSON.stringify(next));
         return { tasks: next };
       });
       return local;
@@ -175,7 +175,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     // Optimistic local update first
     set((state) => {
       const next = state.tasks.map((t) => (t.id === id ? { ...t, ...updates } : t));
-      localStorage.setItem(STORAGE_KEYS.TODO_TASKS, next);
+      localStorage.setItem(STORAGE_KEYS.TODO_TASKS, JSON.stringify(next));
       return { tasks: next };
     });
     // Fire-and-forget remote sync
@@ -194,7 +194,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     }
     set((state) => {
       const next = state.tasks.filter((t) => t.id !== id);
-      localStorage.setItem(STORAGE_KEYS.TODO_TASKS, next);
+      localStorage.setItem(STORAGE_KEYS.TODO_TASKS, JSON.stringify(next));
       return { tasks: next };
     });
   },
@@ -210,7 +210,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     // Optimistic local toggle
     set((state) => {
       const next = state.tasks.map((t) => (t.id === id ? { ...t, ...updates } : t));
-      localStorage.setItem(STORAGE_KEYS.TODO_TASKS, next);
+      localStorage.setItem(STORAGE_KEYS.TODO_TASKS, JSON.stringify(next));
       return { tasks: next };
     });
     try {
@@ -251,7 +251,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       return t ? { ...t, order: orderedIds.length - idx } : undefined;
     }).filter(Boolean) as ImprovementTask[];
     set({ tasks: next });
-    localStorage.setItem(STORAGE_KEYS.TODO_TASKS, next);
+    localStorage.setItem(STORAGE_KEYS.TODO_TASKS, JSON.stringify(next));
     // Persist new order asynchronously
     orderedIds.forEach((id, idx) => {
       const order = orderedIds.length - idx;
