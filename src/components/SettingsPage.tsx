@@ -19,6 +19,7 @@ import { useUserProfileStore } from '@/store/useUserProfileStore';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
 import { useAccentColor, accentColorPalettes, type AccentColor } from '@/hooks/useAccentColor';
+import { useSubscription } from '@/hooks/useSubscription';
 import toast from 'react-hot-toast';
 import DisciplineModeToggle from '@/components/discipline/DisciplineModeToggle';
 import { setDisciplineMode } from '@/lib/discipline';
@@ -28,14 +29,12 @@ export const SettingsPage: React.FC = () => {
   const { currentUser } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { accentColor, setAccentColor } = useAccentColor();
+  const { tier, plan, hasAccess, isPremium } = useSubscription();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [displayName, setDisplayNameLocal] = useState(profile?.displayName || '');
   const [isUploading, setIsUploading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
-  
-  // TODO: Replace with actual premium status check
-  const isPremium = false;
 
   const handleDisplayNameSave = () => {
     if (displayName.trim()) {
