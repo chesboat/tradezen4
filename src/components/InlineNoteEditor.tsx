@@ -215,15 +215,22 @@ export const InlineNoteEditor: React.FC<InlineNoteEditorProps> = ({ noteId, onCl
   const handleShare = async () => {
     if (!existingNote) return;
     
-    // Make note public
     try {
+      // Make note public first
       await updateNote(noteId, { isPublic: true });
-      const shareUrl = `${window.location.origin}/share/note/${noteId}`;
       
-      // Copy to clipboard
-      await navigator.clipboard.writeText(shareUrl);
-      toast.success('Share link copied to clipboard!');
+      // Open modal (copy will happen from there)
       setShowShareModal(true);
+      
+      // Try to copy, but don't fail if it doesn't work
+      try {
+        const shareUrl = `${window.location.origin}/share/note/${noteId}`;
+        await navigator.clipboard.writeText(shareUrl);
+        toast.success('Share link copied to clipboard!');
+      } catch (clipboardError) {
+        // Clipboard failed, but that's ok - modal has copy button
+        toast.success('Note is now public! Use the modal to copy the link.');
+      }
     } catch (error) {
       console.error('Failed to share note:', error);
       toast.error('Failed to create share link');
@@ -236,7 +243,15 @@ export const InlineNoteEditor: React.FC<InlineNoteEditorProps> = ({ noteId, onCl
       await navigator.clipboard.writeText(shareUrl);
       toast.success('Link copied!');
     } catch (error) {
-      toast.error('Failed to copy link');
+      // Fallback: Select the text for manual copy
+      const input = document.querySelector('input[value="' + shareUrl + '"]') as HTMLInputElement;
+      if (input) {
+        input.select();
+        input.setSelectionRange(0, 99999); // For mobile
+        toast('Press Cmd+C (or Ctrl+C) to copy', { duration: 3000 });
+      } else {
+        toast.error('Failed to copy link');
+      }
     }
   };
 
@@ -509,7 +524,8 @@ export const InlineNoteEditor: React.FC<InlineNoteEditorProps> = ({ noteId, onCl
                 type="text"
                 value={shareUrl}
                 readOnly
-                className="flex-1 bg-transparent text-sm outline-none"
+                onClick={(e) => e.currentTarget.select()}
+                className="flex-1 bg-transparent text-sm outline-none cursor-pointer select-all"
               />
               <button
                 onClick={handleCopyLink}
