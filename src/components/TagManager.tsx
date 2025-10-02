@@ -510,25 +510,34 @@ export const TagManager: React.FC<TagManagerProps> = ({ isOpen, onClose }) => {
                     key={stats.tag}
                     layout
                     className={cn(
-                      "p-3 border rounded-lg transition-all duration-200 hover:shadow-md",
+                      "group p-3 border rounded-lg transition-all duration-200 hover:shadow-md",
                       selectedTags.has(stats.tag) ? "border-primary bg-primary/10" : "border-border hover:border-primary/50",
                       stats.totalCount === 0 && "opacity-60"
                     )}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
-                        {/* Tag Name - Editable */}
+                        {/* Tag Name - Double-click to edit (Apple-style) */}
                         {isEditing ? (
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1 mb-2">
                             <span className="text-primary">#</span>
                             <input
                               type="text"
                               value={editingTagValue}
                               onChange={(e) => setEditingTagValue(e.target.value)}
-                              onBlur={() => handleRenameTag(stats.tag, editingTagValue)}
+                              onBlur={() => {
+                                if (editingTagValue.trim()) {
+                                  handleRenameTag(stats.tag, editingTagValue);
+                                } else {
+                                  setEditingTagName(null);
+                                  setEditingTagValue('');
+                                }
+                              }}
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
-                                  handleRenameTag(stats.tag, editingTagValue);
+                                  if (editingTagValue.trim()) {
+                                    handleRenameTag(stats.tag, editingTagValue);
+                                  }
                                 } else if (e.key === 'Escape') {
                                   setEditingTagName(null);
                                   setEditingTagValue('');
@@ -536,28 +545,60 @@ export const TagManager: React.FC<TagManagerProps> = ({ isOpen, onClose }) => {
                               }}
                               className="flex-1 px-2 py-1 bg-primary/10 border border-primary rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                               autoFocus
+                              onClick={(e) => e.stopPropagation()}
                             />
                             <button
-                              onClick={() => handleRenameTag(stats.tag, editingTagValue)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (editingTagValue.trim()) {
+                                  handleRenameTag(stats.tag, editingTagValue);
+                                }
+                              }}
                               className="p-1 hover:bg-green-100 hover:text-green-600 rounded transition-colors"
                             >
                               <Check className="w-3 h-3" />
                             </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingTagName(null);
+                                setEditingTagValue('');
+                              }}
+                              className="p-1 hover:bg-red-100 hover:text-red-600 rounded transition-colors"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
                           </div>
                         ) : (
-                          <div className="flex items-center gap-2">
-                            {/* Color Dot */}
-                            <div
-                              className={cn('w-3 h-3 rounded-full border cursor-pointer', colorStyles.bg, colorStyles.border)}
-                              onClick={() => {
+                          <div className="flex items-center gap-2 mb-2">
+                            {/* Color Dot - Click to change */}
+                            <button
+                              className={cn(
+                                'w-3 h-3 rounded-full border-2 transition-all hover:scale-125',
+                                colorStyles.bg,
+                                isEditingColor ? 'border-foreground ring-2 ring-offset-2 ring-primary scale-125' : colorStyles.border
+                              )}
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 setEditingTagColor(isEditingColor ? null : stats.tag);
                               }}
-                              title="Change color"
+                              title={isEditingColor ? 'Close color picker' : 'Change color'}
                             />
                             <span className="text-primary">#</span>
-                            <span className="font-medium truncate">{stats.tag}</span>
+                            <span 
+                              className="font-medium truncate cursor-text"
+                              onDoubleClick={(e) => {
+                                e.stopPropagation();
+                                setEditingTagName(stats.tag);
+                                setEditingTagValue(stats.tag);
+                              }}
+                              title="Double-click to rename"
+                            >
+                              {stats.tag}
+                            </span>
                             <button
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 setEditingTagName(stats.tag);
                                 setEditingTagValue(stats.tag);
                               }}
@@ -569,26 +610,47 @@ export const TagManager: React.FC<TagManagerProps> = ({ isOpen, onClose }) => {
                           </div>
                         )}
 
-                        {/* Color Picker */}
-                        {isEditingColor && (
-                          <div className="flex gap-1 mt-2 flex-wrap">
-                            {(Object.keys(TAG_COLORS) as TagColor[]).map((color) => {
-                              const colorStyle = TAG_COLORS[color];
-                              return (
-                                <button
-                                  key={color}
-                                  onClick={() => handleColorChange(stats.tag, color)}
-                                  className={cn(
-                                    'w-6 h-6 rounded-full border-2 transition-all',
-                                    colorStyle.bg,
-                                    stats.color === color ? 'border-foreground scale-110' : 'border-transparent hover:scale-105'
-                                  )}
-                                  title={color}
-                                />
-                              );
-                            })}
-                          </div>
-                        )}
+                        {/* Color Picker - Apple style popover */}
+                        <AnimatePresence>
+                          {isEditingColor && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: 'auto' }}
+                              exit={{ opacity: 0, height: 0 }}
+                              className="mb-2 overflow-hidden"
+                            >
+                              <div className="p-2 bg-muted/50 rounded-lg border border-border">
+                                <div className="text-xs text-muted-foreground mb-2">Choose color:</div>
+                                <div className="flex gap-2 flex-wrap">
+                                  {(Object.keys(TAG_COLORS) as TagColor[]).map((color) => {
+                                    const colorStyle = TAG_COLORS[color];
+                                    return (
+                                      <button
+                                        key={color}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleColorChange(stats.tag, color);
+                                        }}
+                                        className={cn(
+                                          'w-8 h-8 rounded-full border-2 transition-all flex items-center justify-center',
+                                          colorStyle.bg,
+                                          stats.color === color 
+                                            ? 'border-foreground scale-110 ring-2 ring-offset-2 ring-primary' 
+                                            : 'border-border hover:scale-110 hover:border-muted-foreground'
+                                        )}
+                                        title={color}
+                                      >
+                                        {stats.color === color && (
+                                          <Check className="w-4 h-4 text-foreground" strokeWidth={3} />
+                                        )}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
 
                         {/* Stats */}
                         <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
