@@ -44,22 +44,28 @@ export const PublicNoteView: React.FC = () => {
 
       try {
         // Use collectionGroup to query across all users' richNotes
+        // Note: Only filter by isPublic to avoid needing composite index
         const richNotesQuery = query(
           collectionGroup(db, 'richNotes'),
-          where('id', '==', noteId),
           where('isPublic', '==', true)
         );
 
         const querySnapshot = await getDocs(richNotesQuery);
+        
+        console.log('Found public notes:', querySnapshot.docs.length);
 
-        if (querySnapshot.empty) {
+        // Find the note with matching ID
+        const noteDoc = querySnapshot.docs.find(doc => doc.id === noteId);
+
+        if (!noteDoc) {
+          console.log('Note not found with ID:', noteId);
           setError('Note not found or is private');
           setLoading(false);
           return;
         }
 
-        const noteDoc = querySnapshot.docs[0];
         const noteData = { id: noteDoc.id, ...noteDoc.data() } as RichNote;
+        console.log('Found note:', noteData.title);
 
         setNote(noteData);
         setLoading(false);
