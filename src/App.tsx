@@ -8,7 +8,10 @@ import { ActivityLog } from './components/ActivityLog';
 import { MinimalDashboard } from './components/MinimalDashboard';
 import { AppleHabitTracker as HabitTracker } from './components/AppleHabitTracker';
 import { CalendarView } from './components/CalendarView';
-import { PricingPage } from './components/PricingPage';
+import { HomePage } from './components/marketing/HomePage';
+import { FeaturesPage } from './components/marketing/FeaturesPage';
+import { PricingPage } from './components/marketing/PricingPage';
+import { MarketingNav } from './components/marketing/MarketingNav';
 import { QuestsView } from './components/QuestsView';
 import { WellnessView } from './components/WellnessView';
 import { TradesView } from './components/TradesView';
@@ -53,7 +56,7 @@ import { useDailyReflectionStore } from './store/useDailyReflectionStore';
 function AppContent() {
   const { isExpanded: sidebarExpanded } = useSidebarStore();
   const { isExpanded: activityLogExpanded } = useActivityLogStore();
-  const { currentView } = useNavigationStore();
+  const { currentView, setCurrentView } = useNavigationStore();
   const { theme } = useTheme();
   useAccentColor(); // Initialize accent color system
   const tradeLoggerModal = useTradeLoggerModal();
@@ -61,6 +64,11 @@ function AppContent() {
   const { initializeProfile } = useUserProfileStore();
   const { isExpanded: todoExpanded, railWidth } = useTodoStore();
   const { showLevelUpToast, levelUpData, closeLevelUpToast } = useXpRewards();
+
+  // Marketing site state
+  const [marketingPage, setMarketingPage] = React.useState<'home' | 'features' | 'pricing'>('home');
+  const [showAuthPage, setShowAuthPage] = React.useState(false);
+  const [authMode, setAuthMode] = React.useState<'login' | 'signup'>('signup');
 
   const [bootHydrating, setBootHydrating] = React.useState(false);
   const hydratingRef = React.useRef(false);
@@ -245,8 +253,6 @@ function AppContent() {
         return <HabitTracker />;
       case 'calendar':
         return <CalendarView />;
-      case 'pricing':
-        return <PricingPage />;
       case 'trades':
         return <TradesView onOpenTradeModal={(trade) => {
           if (trade.id) {
@@ -276,8 +282,62 @@ function AppContent() {
     }
   };
 
+  // Show Marketing Site for logged out users
   if (!currentUser) {
-    return <AuthPage />;
+    if (showAuthPage) {
+      return <AuthPage initialMode={authMode} onBack={() => setShowAuthPage(false)} />;
+    }
+
+    const renderMarketingPage = () => {
+      switch (marketingPage) {
+        case 'home':
+          return (
+            <HomePage
+              onGetStarted={() => {
+                setAuthMode('signup');
+                setShowAuthPage(true);
+              }}
+              onViewPricing={() => setMarketingPage('pricing')}
+            />
+          );
+        case 'features':
+          return (
+            <FeaturesPage
+              onGetStarted={() => {
+                setAuthMode('signup');
+                setShowAuthPage(true);
+              }}
+            />
+          );
+        case 'pricing':
+          return (
+            <PricingPage
+              onGetStarted={() => {
+                setAuthMode('signup');
+                setShowAuthPage(true);
+              }}
+            />
+          );
+      }
+    };
+
+    return (
+      <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
+        <MarketingNav
+          onNavigate={setMarketingPage}
+          onLogin={() => {
+            setAuthMode('login');
+            setShowAuthPage(true);
+          }}
+          onSignup={() => {
+            setAuthMode('signup');
+            setShowAuthPage(true);
+          }}
+          currentPage={marketingPage}
+        />
+        {renderMarketingPage()}
+      </div>
+    );
   }
 
   // Block UI until hydration completes to avoid flashing an empty dashboard when data exists remotely
