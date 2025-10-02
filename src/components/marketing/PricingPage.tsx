@@ -33,7 +33,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onGetStarted }) => {
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary mb-6"
           >
             <Sparkles className="w-4 h-4" />
-            <span className="text-sm font-medium">7-Day Free Trial • No Credit Card Required</span>
+            <span className="text-sm font-medium">7-Day Free Trial • Cancel Anytime</span>
           </motion.div>
           
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-6">
@@ -288,7 +288,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onGetStarted }) => {
             {[
               {
                 q: "How does the 7-day trial work?",
-                a: "Start with full Premium access for 7 days. If you love it, continue with Basic ($19/mo) or Premium ($39/mo). Cancel anytime with no charges."
+                a: "Enter your payment info to start a 7-day trial with full Premium access. You won't be charged until day 8. If you love it, continue with Basic ($19/mo) or Premium ($39/mo). Cancel anytime with no charges."
               },
               {
                 q: "Can I change plans later?",
@@ -347,7 +347,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onGetStarted }) => {
             <ArrowRight className="w-5 h-5" />
           </button>
           <p className="text-sm text-muted-foreground mt-4">
-            No credit card required • Cancel anytime • 30-day money-back guarantee
+            Cancel anytime • 30-day money-back guarantee
           </p>
         </motion.div>
       </div>

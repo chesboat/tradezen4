@@ -296,7 +296,7 @@ export const FeaturesPage: React.FC<FeaturesPageProps> = ({ onGetStarted }) => {
               Ready to Build Real Discipline?
             </h2>
             <p className="text-xl text-muted-foreground mb-12">
-              Start your 7-day free trial. No credit card required.
+              Start your 7-day free trial. Cancel anytime, no questions asked.
             </p>
             <button
               onClick={onGetStarted}

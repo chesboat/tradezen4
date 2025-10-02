@@ -50,7 +50,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted, onViewPricing 
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary mb-8 border border-primary/20"
             >
               <Sparkles className="w-4 h-4" />
-              <span className="text-sm font-medium">7-Day Free Trial • No Credit Card Required</span>
+              <span className="text-sm font-medium">7-Day Free Trial • Cancel Anytime</span>
             </motion.div>
 
             {/* Main Headline */}
@@ -472,7 +472,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted, onViewPricing 
             </h2>
             <p className="text-xl text-muted-foreground mb-12 leading-relaxed">
               Join 1,000+ traders who are mastering their psychology and building real discipline. 
-              Start your free trial today—no credit card required.
+              Start your free trial today. Cancel anytime, no questions asked.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <button
@@ -490,7 +490,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted, onViewPricing 
               </button>
             </div>
             <p className="text-sm text-muted-foreground mt-6">
-              No credit card required • Cancel anytime • 30-day money-back guarantee
+              Cancel anytime • 30-day money-back guarantee
             </p>
           </motion.div>
         </div>
