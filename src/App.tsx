@@ -46,6 +46,7 @@ import { NudgeToast } from './components/NudgeToast';
 import { TodoDrawer } from './components/TodoDrawer';
 import { MobileTodoPage } from './components/MobileTodoPage';
 import { TrialBanner } from './components/TrialBanner';
+import { DataRetentionWarning } from './components/DataRetentionWarning';
 import { UpgradeModal } from './components/UpgradeModal';
 import { useTodoStore } from './store/useTodoStore';
 import { collection, getDocs, limit, query } from 'firebase/firestore';
@@ -365,6 +366,9 @@ function AppContent() {
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
       {/* Trial Banner */}
       <TrialBanner onUpgradeClick={() => setShowUpgradeModal(true)} />
+      
+      {/* Data Retention Warning (Basic users) */}
+      <DataRetentionWarning onUpgrade={() => setShowUpgradeModal(true)} />
       
       {/* Desktop Sidebar - Hidden on mobile */}
       <div className="hidden lg:block">

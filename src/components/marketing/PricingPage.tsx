@@ -250,17 +250,20 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onGetStarted }) => {
                 </thead>
                 <tbody className="divide-y divide-border">
                   {[
+                    { name: 'Data History', basic: '30 days', premium: 'Unlimited' },
                     { name: 'Trading Accounts', basic: '3', premium: 'Unlimited' },
                     { name: 'Trades', basic: 'Unlimited', premium: 'Unlimited' },
+                    { name: 'Setup Analytics', basic: '✗', premium: '✓' },
+                    { name: 'Calendar Heatmap', basic: '✗', premium: '✓' },
+                    { name: 'Time Intelligence', basic: '✗', premium: '✓' },
+                    { name: 'Custom Date Ranges', basic: '✗', premium: '✓' },
                     { name: 'AI Insights', basic: '50/month', premium: 'Unlimited' },
                     { name: 'AI Coach', basic: '✗', premium: '✓' },
                     { name: 'Emotional Analysis', basic: '✗', premium: '✓' },
                     { name: 'Habits', basic: '10', premium: 'Unlimited' },
                     { name: 'Storage', basic: '2GB', premium: '10GB' },
-                    { name: 'Accent Colors', basic: 'All 6', premium: 'All 6' },
                     { name: 'Weekly Reviews', basic: '✓', premium: '✓' },
                     { name: 'Public Sharing', basic: '✓', premium: '✓' },
-                    { name: 'API Access', basic: '✗', premium: '✓' },
                     { name: 'Priority Support', basic: '✗', premium: '✓' },
                   ].map((row, i) => (
                     <tr key={i} className="hover:bg-muted/30 transition-colors">
