@@ -190,10 +190,9 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
         // Use html2canvas for pixel-perfect capture
         const html2canvas = (await import('html2canvas')).default;
         const canvas = await html2canvas(target, {
-          scale: 2, // High quality
           logging: false,
           useCORS: true,
-        });
+        } as any);
 
         // Convert to blob and download
         canvas.toBlob((blob) => {
