@@ -165,44 +165,91 @@ export const PublicNoteView: React.FC = () => {
         }
       `}</style>
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-lg border-b border-border">
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-              <span className="text-white font-bold text-sm">R</span>
+      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-md border-b border-border">
+        {/* Desktop Header */}
+        <div className="hidden md:block">
+          <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                <span className="text-white font-bold text-sm">R</span>
+              </div>
+              <span className="font-semibold">Refine</span>
             </div>
-            <span className="font-semibold">Refine</span>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            {isLoggedIn ? (
-              <>
-                <button
-                  onClick={handleSaveToMyNotes}
-                  disabled={isSaving}
-                  className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg hover:bg-accent transition-colors font-medium text-sm disabled:opacity-50"
-                >
-                  <Copy className="w-4 h-4" />
-                  {isSaving ? 'Saving...' : 'Save to My Notes'}
-                </button>
+            
+            <div className="flex items-center gap-3">
+              {isLoggedIn ? (
+                <>
+                  <button
+                    onClick={handleSaveToMyNotes}
+                    disabled={isSaving}
+                    className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg hover:bg-accent transition-colors font-medium text-sm disabled:opacity-50"
+                  >
+                    <Copy className="w-4 h-4" />
+                    {isSaving ? 'Saving...' : 'Save to My Notes'}
+                  </button>
+                  <a
+                    href="/"
+                    className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium text-sm"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    Back to Journal
+                  </a>
+                </>
+              ) : (
                 <a
-                  href="/"
+                  href="/signup"
                   className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium text-sm"
                 >
-                  <ArrowLeft className="w-4 h-4" />
-                  Back to Journal
+                  Start Your Journal
+                  <ArrowRight className="w-4 h-4" />
                 </a>
-              </>
-            ) : (
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Header - Apple Style */}
+        <div className="md:hidden">
+          {/* Logo Row */}
+          <div className="px-4 py-3 flex items-center justify-center border-b border-border">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                <span className="text-white font-bold text-xs">R</span>
+              </div>
+              <span className="font-semibold text-base">Refine</span>
+            </div>
+          </div>
+
+          {/* Actions Row */}
+          {isLoggedIn ? (
+            <div className="px-4 py-3 flex items-center gap-3">
+              <button
+                onClick={handleSaveToMyNotes}
+                disabled={isSaving}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border border-border rounded-lg active:bg-accent transition-colors font-medium text-sm disabled:opacity-50"
+              >
+                <Copy className="w-4 h-4 flex-shrink-0" />
+                <span className="whitespace-nowrap">{isSaving ? 'Saving...' : 'Save'}</span>
+              </button>
+              <a
+                href="/"
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg active:bg-primary/90 transition-colors font-medium text-sm"
+              >
+                <ArrowLeft className="w-4 h-4 flex-shrink-0" />
+                <span className="whitespace-nowrap">Journal</span>
+              </a>
+            </div>
+          ) : (
+            <div className="px-4 py-3">
               <a
                 href="/signup"
-                className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium text-sm"
+                className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-primary text-primary-foreground rounded-lg active:bg-primary/90 transition-colors font-medium text-sm"
               >
-                Start Your Journal
-                <ArrowRight className="w-4 h-4" />
+                <span>Start Your Journal</span>
+                <ArrowRight className="w-4 h-4 flex-shrink-0" />
               </a>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </header>
 
