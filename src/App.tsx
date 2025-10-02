@@ -6,8 +6,7 @@ import { AppleMobileNav } from './components/AppleMobileNav';
 import { ActivityLog } from './components/ActivityLog';
 
 import { MinimalDashboard } from './components/MinimalDashboard';
-import { MinimalHabitTracker } from './components/MinimalHabitTracker';
-import { AppleHabitTracker } from './components/AppleHabitTracker';
+import { AppleHabitTracker as HabitTracker } from './components/AppleHabitTracker';
 import { CalendarView } from './components/CalendarView';
 import { QuestsView } from './components/QuestsView';
 import { WellnessView } from './components/WellnessView';
@@ -237,9 +236,7 @@ function AppContent() {
         return <MinimalDashboard />;
 
       case 'habits':
-        // Toggle between versions using URL param: ?appleHabits=true
-        const useAppleHabits = new URLSearchParams(window.location.search).get('appleHabits') === 'true';
-        return useAppleHabits ? <AppleHabitTracker /> : <MinimalHabitTracker />;
+        return <HabitTracker />;
       case 'calendar':
         return <CalendarView />;
       case 'trades':
