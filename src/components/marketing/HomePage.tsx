@@ -160,6 +160,73 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted, onViewPricing 
         </div>
       </section>
 
+      {/* Positioning Section */}
+      <section className="py-24 bg-muted/30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-12">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+            >
+              <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
+                More Than Just a Journal
+              </h2>
+              <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-12">
+                Refine is the all-in-one productivity suite for serious traders
+              </p>
+            </motion.div>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            {[
+              { title: 'Trading Journal', icon: '📊', description: 'Track every trade with deep analytics' },
+              { title: 'Notes App', icon: '📓', description: 'Rich text editor for ideas & research' },
+              { title: 'Task Manager', icon: '✓', description: 'Apple-style todos for follow-ups' },
+              { title: 'AI Coach', icon: '🤖', description: 'Personal trading psychologist' },
+            ].map((item, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className="bg-background rounded-xl p-6 border border-border hover:border-primary/30 transition-all text-center"
+              >
+                <div className="text-4xl mb-3">{item.icon}</div>
+                <h3 className="text-lg font-semibold text-foreground mb-2">{item.title}</h3>
+                <p className="text-sm text-muted-foreground">{item.description}</p>
+              </motion.div>
+            ))}
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center"
+          >
+            <p className="text-lg text-muted-foreground mb-6">
+              <span className="font-semibold text-foreground">Why juggle 4 tools</span> when Refine does it all—and actually understands trading?
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-8 text-sm text-muted-foreground">
+              <div>
+                <span className="line-through">Tradezella</span>
+                <span className="ml-2 text-xs">(just journaling)</span>
+              </div>
+              <div>
+                <span className="line-through">Notion</span>
+                <span className="ml-2 text-xs">(too complex)</span>
+              </div>
+              <div>
+                <span className="line-through">Apple Reminders</span>
+                <span className="ml-2 text-xs">(no trading features)</span>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
       {/* Features Section */}
       <section className="py-24 bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
@@ -168,7 +235,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted, onViewPricing 
               Built for Traders Who Get It
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Refine isn't just another trading journal. It's a psychology lab for your trading mind.
+              Every feature designed to help you master trading psychology
             </p>
           </div>
 
