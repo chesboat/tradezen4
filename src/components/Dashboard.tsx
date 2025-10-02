@@ -64,7 +64,7 @@ const KPICard: React.FC<KPICardProps> = ({
   
   return (
     <motion.div
-      className="bg-card rounded-2xl p-6 border border-border hover:border-primary/50 transition-all duration-200 hover:shadow-glow-sm"
+      className="bg-background rounded-2xl p-6 border border-border hover:border-primary/50 transition-all duration-200"
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
     >
@@ -653,7 +653,7 @@ export const Dashboard: React.FC = () => {
         
         {/* Win Rate with Circular Progress */}
         <motion.div
-          className="bg-card rounded-2xl p-6 border border-border hover:border-primary/50 transition-all duration-200 hover:shadow-glow-sm"
+          className="bg-background rounded-2xl p-6 border border-border hover:border-primary/50 transition-all duration-200"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
@@ -719,7 +719,7 @@ export const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         {/* Daily Focus */}
         {dashboardLayout.find(t => t.id === 'dailyFocus')?.visible && (
-        <motion.div className="bg-card rounded-2xl p-5 border border-border" whileHover={{ scale: 1.01 }}>
+        <motion.div className="bg-background rounded-2xl p-5 border border-border hover:border-primary/30" whileHover={{ y: -2 }}>
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <Target className="w-5 h-5 text-primary" />
@@ -830,7 +830,7 @@ export const Dashboard: React.FC = () => {
 
         {/* Session Guardrails */}
         {dashboardLayout.find(t => t.id === 'guardrails')?.visible && (
-        <motion.div className="bg-card rounded-2xl p-5 border border-border" whileHover={{ scale: 1.01 }}>
+        <motion.div className="bg-background rounded-2xl p-5 border border-border hover:border-primary/30" whileHover={{ y: -2 }}>
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Zap className="w-5 h-5 text-yellow-500" />
@@ -945,7 +945,7 @@ export const Dashboard: React.FC = () => {
 
         {/* Compact Focus + Exec tile */}
         {dashboardLayout.find(t => t.id === 'miniKpis')?.visible && (
-        <motion.div className="bg-card rounded-2xl p-5 border border-border" whileHover={{ scale: 1.01 }}>
+        <motion.div className="bg-background rounded-2xl p-5 border border-border hover:border-primary/30" whileHover={{ y: -2 }}>
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Heart className="w-5 h-5 text-pink-500" />
@@ -984,7 +984,7 @@ export const Dashboard: React.FC = () => {
         {/* Recent Trades tile */}
         {dashboardLayout.find(t => t.id === 'recentTrades')?.visible && (
         <motion.div
-          className="bg-card rounded-2xl p-6 border border-border"
+          className="bg-background rounded-2xl p-6 border border-border"
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.15 }}
@@ -1059,7 +1059,7 @@ export const Dashboard: React.FC = () => {
         )}
         <motion.div
           style={{ display: dashboardLayout.find(t => t.id === 'pinnedQuests')?.visible ? undefined : 'none' }}
-          className="bg-card rounded-2xl p-6 border border-border"
+          className="bg-background rounded-2xl p-6 border border-border"
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
@@ -1129,7 +1129,7 @@ export const Dashboard: React.FC = () => {
 
         <motion.div
           style={{ display: dashboardLayout.find(t => t.id === 'gptInsights')?.visible ? undefined : 'none' }}
-          className="bg-card rounded-2xl p-6 border border-border"
+          className="bg-background rounded-2xl p-6 border border-border"
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
@@ -1180,7 +1180,7 @@ export const Dashboard: React.FC = () => {
       {/* Pattern Radar + Reflection Progress + XP/Level */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         {/* Pattern Radar */}
-        <motion.div className="bg-card rounded-2xl p-6 border border-border" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+        <motion.div className="bg-background rounded-2xl p-6 border border-border hover:border-primary/30" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
           style={{ display: dashboardLayout.find(t => t.id === 'patternRadar')?.visible ? undefined : 'none' }}>
           <div className="flex items-center gap-3 mb-3">
             <Brain className="w-6 h-6 text-blue-500" />
@@ -1190,7 +1190,7 @@ export const Dashboard: React.FC = () => {
         </motion.div>
 
         {/* Reflection Progress */}
-        <motion.div className="bg-card rounded-2xl p-6 border border-border" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+        <motion.div className="bg-background rounded-2xl p-6 border border-border hover:border-primary/30" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
           style={{ display: dashboardLayout.find(t => t.id === 'reflectionProgress')?.visible ? undefined : 'none' }}>
           <div className="flex items-center gap-3 mb-3">
             <BookOpen className="w-6 h-6 text-emerald-500" />
@@ -1200,7 +1200,7 @@ export const Dashboard: React.FC = () => {
         </motion.div>
 
         {/* XP / Level */}
-        <motion.div className="bg-card rounded-2xl p-6 border border-border" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+        <motion.div className="bg-background rounded-2xl p-6 border border-border hover:border-primary/30" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
           style={{ display: dashboardLayout.find(t => t.id === 'xpLevel')?.visible ? undefined : 'none' }}>
           <div className="flex items-center gap-3 mb-3">
             <Trophy className="w-6 h-6 text-purple-500" />
@@ -1219,7 +1219,7 @@ export const Dashboard: React.FC = () => {
         <div className="fixed inset-0 z-50">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setPlanAppliedVisible(false)} />
           <div className="absolute inset-0 flex items-end md:items-center justify-center p-4">
-            <div className="w-full md:max-w-md bg-card border border-border/50 rounded-2xl shadow-2xl overflow-hidden">
+            <div className="w-full md:max-w-md bg-popover border border-border/50 rounded-2xl shadow-2xl overflow-hidden">
               <div className="p-4 border-b border-border/50 flex items-center gap-2">
                 <Brain className="w-5 h-5 text-primary" />
                 <h3 className="text-base font-semibold text-card-foreground">Plan Applied</h3>
@@ -1244,7 +1244,7 @@ export const Dashboard: React.FC = () => {
         <div className="fixed inset-0 z-50">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setEndModalOpen(false)} />
           <div className="absolute inset-0 flex items-end md:items-center justify-center p-4">
-            <div className="w-full md:max-w-md bg-card border border-border/50 rounded-2xl shadow-2xl overflow-hidden">
+            <div className="w-full md:max-w-md bg-popover border border-border/50 rounded-2xl shadow-2xl overflow-hidden">
               <div className="p-4 border-b border-border/50 flex items-center gap-2">
                 <Brain className="w-5 h-5 text-primary" />
                 <h3 className="text-base font-semibold text-card-foreground">Session Summary</h3>

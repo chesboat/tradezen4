@@ -591,7 +591,7 @@ const MetricTile: React.FC<{
 
   const tileContent = (
     <motion.div
-      className="bg-card dark:bg-card rounded-xl border border-border p-6 hover:shadow-lg transition-all duration-200 h-full min-h-[140px] flex flex-col"
+      className="bg-background rounded-xl border border-border p-6 hover:border-primary/30 transition-all duration-200 h-full min-h-[140px] flex flex-col"
       whileHover={{ y: -2 }}
     >
       <div className="flex items-start justify-between mb-4 min-h-[24px]">
@@ -650,7 +650,7 @@ const EdgeScoreChart: React.FC<{ trades: any[] }> = ({ trades }) => {
 
   return (
     <>
-      <div className="bg-card dark:bg-card rounded-xl border border-border p-6">
+      <div className="bg-background rounded-xl border border-border p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <div className="relative">
@@ -803,7 +803,7 @@ const PnLChart: React.FC<{ trades: any[] }> = ({ trades }) => {
   }, [trades, mode]);
 
   return (
-    <div className="bg-card dark:bg-card rounded-xl border border-border p-6">
+    <div className="bg-background rounded-xl border border-border p-6">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <BarChart3 className="w-5 h-5 text-muted-foreground" />
@@ -881,7 +881,7 @@ const RecentTrades: React.FC<{ trades: any[] }> = ({ trades }) => {
   };
 
   return (
-    <div className="bg-card dark:bg-card rounded-xl border border-border p-6 h-full">
+    <div className="bg-background rounded-xl border border-border p-6 h-full">
       <div className="flex items-center gap-3 mb-6">
         <Clock className="w-5 h-5 text-muted-foreground" />
         <h3 className="text-lg font-semibold text-foreground">Recent Trades</h3>
@@ -1021,7 +1021,7 @@ const StreaksAndPatterns: React.FC<{ trades: any[] }> = ({ trades }) => {
   }, [trades]);
 
   return (
-    <div className="bg-card dark:bg-card rounded-xl border border-border p-6">
+    <div className="bg-background rounded-xl border border-border p-6">
       <div className="flex items-center gap-3 mb-6">
         <Zap className="w-5 h-5 text-muted-foreground" />
         <h3 className="text-lg font-semibold text-foreground">Streaks & Patterns</h3>
@@ -1082,7 +1082,7 @@ const TopPerformingSymbols: React.FC<{ trades: any[] }> = ({ trades }) => {
   }, [trades]);
 
   return (
-    <div className="bg-card dark:bg-card rounded-xl border border-border p-6">
+    <div className="bg-background rounded-xl border border-border p-6">
       <div className="flex items-center gap-3 mb-6">
         <Trophy className="w-5 h-5 text-muted-foreground" />
         <h3 className="text-lg font-semibold text-foreground">Top Performing Symbols</h3>
@@ -1272,7 +1272,7 @@ export const CleanAnalyticsDashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header with Time Period Filters */}
-      <div className="bg-card border-b border-border">
+      <div className="bg-popover border-b border-border">
         <div className="max-w-7xl 2xl:max-w-[1800px] 3xl:max-w-[2200px] 4xl:max-w-[2600px] mx-auto px-6 2xl:px-8 3xl:px-10 py-4">
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
