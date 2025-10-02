@@ -6,9 +6,10 @@ export interface SubscriptionLimits {
   // Account & Data
   maxAccounts: number | 'unlimited';
   storageGB: number;
+  maxImages: number | 'unlimited';
+  dataRetentionDays: number | 'unlimited';
   
   // Trading Features
-  maxPlaybooks: number | 'unlimited';
   maxTrades: number | 'unlimited';
   
   // Journal Features
@@ -16,26 +17,32 @@ export interface SubscriptionLimits {
   maxHabits: number | 'unlimited';
   dailyReflections: boolean;
   weeklyReviews: boolean;
+  customTemplates: boolean;
   
   // AI Features
   aiInsights: boolean;
   aiCoach: boolean;
-  aiAnalysis: 'basic' | 'advanced' | 'pro';
+  aiMonthlyRequests: number | 'unlimited';
+  aiAnalysis: 'none' | 'basic' | 'advanced';
+  emotionalAnalysis: boolean;
   
   // Customization
   accentColors: boolean;
-  customTemplates: boolean;
+  dashboardCustomization: boolean;
   
   // Advanced Features
   publicSharing: boolean;
   csvImport: boolean;
   imageImport: boolean;
+  dataExport: boolean;
   apiAccess: boolean;
   
   // Analytics
   advancedAnalytics: boolean;
   customReports: boolean;
-  backtesting: boolean;
+  
+  // Support
+  prioritySupport: boolean;
 }
 
 export interface SubscriptionPlan {
@@ -63,24 +70,29 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionTier, SubscriptionPlan> = {
     limits: {
       maxAccounts: 1,
       storageGB: 0.5,
-      maxPlaybooks: 1,
+      maxImages: 0,
+      dataRetentionDays: 90,
       maxTrades: 100,
       maxNotes: 50,
       maxHabits: 3,
       dailyReflections: true,
       weeklyReviews: false,
+      customTemplates: false,
       aiInsights: false,
       aiCoach: false,
-      aiAnalysis: 'basic',
+      aiMonthlyRequests: 0,
+      aiAnalysis: 'none',
+      emotionalAnalysis: false,
       accentColors: false, // Only Ocean Blue
-      customTemplates: false,
+      dashboardCustomization: false,
       publicSharing: false,
       csvImport: true,
       imageImport: false,
+      dataExport: false,
       apiAccess: false,
       advancedAnalytics: false,
       customReports: false,
-      backtesting: false,
+      prioritySupport: false,
     },
     features: [
       '1 trading account',
@@ -90,6 +102,7 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionTier, SubscriptionPlan> = {
       'Basic analytics',
       'CSV import',
       'Daily reflections',
+      '90-day history',
     ]
   },
   
@@ -103,38 +116,44 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionTier, SubscriptionPlan> = {
     limits: {
       maxAccounts: 3,
       storageGB: 2,
-      maxPlaybooks: 5,
+      maxImages: 100,
+      dataRetentionDays: 365, // 1 year
       maxTrades: 'unlimited',
       maxNotes: 'unlimited',
       maxHabits: 10,
       dailyReflections: true,
       weeklyReviews: true,
+      customTemplates: true,
       aiInsights: true,
       aiCoach: false,
-      aiAnalysis: 'advanced',
+      aiMonthlyRequests: 50,
+      aiAnalysis: 'basic',
+      emotionalAnalysis: false,
       accentColors: true, // All colors unlocked
-      customTemplates: true,
+      dashboardCustomization: true,
       publicSharing: true,
       csvImport: true,
       imageImport: true,
+      dataExport: true,
       apiAccess: false,
       advancedAnalytics: true,
       customReports: false,
-      backtesting: false,
+      prioritySupport: false,
     },
     features: [
       'Up to 3 accounts',
       'Unlimited trades',
       'Unlimited notes',
       '10 habits',
-      'AI insights',
+      'AI insights (50/month)',
       'Advanced analytics',
       'All accent colors',
       'Public sharing',
-      'Image import',
+      'Image import (100)',
       'Weekly reviews',
       'Custom templates',
       '2GB storage',
+      '1-year history',
     ]
   },
   
@@ -150,42 +169,49 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionTier, SubscriptionPlan> = {
     limits: {
       maxAccounts: 'unlimited',
       storageGB: 10,
-      maxPlaybooks: 'unlimited',
+      maxImages: 1000,
+      dataRetentionDays: 'unlimited',
       maxTrades: 'unlimited',
       maxNotes: 'unlimited',
       maxHabits: 'unlimited',
       dailyReflections: true,
       weeklyReviews: true,
+      customTemplates: true,
       aiInsights: true,
       aiCoach: true,
-      aiAnalysis: 'pro',
+      aiMonthlyRequests: 'unlimited',
+      aiAnalysis: 'advanced',
+      emotionalAnalysis: true,
       accentColors: true,
-      customTemplates: true,
+      dashboardCustomization: true,
       publicSharing: true,
       csvImport: true,
       imageImport: true,
+      dataExport: true,
       apiAccess: true,
       advancedAnalytics: true,
       customReports: true,
-      backtesting: true,
+      prioritySupport: true,
     },
     features: [
       'Unlimited accounts',
       'Unlimited trades',
       'Unlimited notes',
       'Unlimited habits',
-      'AI coach',
-      'Pro AI analysis',
+      'AI coach (unlimited)',
+      'Advanced AI analysis',
+      'Emotional analysis',
+      'Psychology insights',
       'Advanced analytics',
       'Custom reports',
-      'Backtesting',
       'API access',
       'All accent colors',
       'Public sharing',
-      'Image import',
+      'Image import (1000)',
       'Weekly reviews',
       'Custom templates',
       '10GB storage',
+      'Unlimited history',
       'Priority support',
     ]
   }
