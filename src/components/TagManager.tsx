@@ -282,11 +282,6 @@ export const TagManager: React.FC<TagManagerProps> = ({ isOpen, onClose }) => {
   const handleColorChange = (tag: string, color: TagColor) => {
     // Normalize tag name (remove # if present)
     const normalized = tag.toLowerCase().trim().replace(/^#/, '');
-    console.log('🎨 Changing color:', { original: tag, normalized, color });
-    
-    // Get all tags from store to debug
-    const allStoreTags = getAllTags();
-    console.log('📦 All tags in store:', allStoreTags.map(t => ({ name: t.name, color: t.color })));
     
     // Ensure tag exists in store (create if needed)
     const { getOrCreateTag } = useTagStore.getState();
@@ -294,8 +289,6 @@ export const TagManager: React.FC<TagManagerProps> = ({ isOpen, onClose }) => {
     
     // Now update the color
     updateTagColor(normalized, color);
-    
-    console.log('✅ Color updated. New color from store:', getTagColor(normalized));
     
     // Force re-render by updating both the editing state and refresh key
     setEditingTagColor(null);
