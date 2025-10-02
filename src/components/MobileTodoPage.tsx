@@ -394,7 +394,7 @@ export const MobileTodoPage: React.FC = () => {
                     }
                   }
                 }}
-                className="bg-card border border-border rounded-lg overflow-hidden relative z-10"
+                className="bg-background border border-border rounded-lg overflow-hidden relative z-10"
               >
               {/* Main task row */}
               <div className="flex items-start gap-3 p-3">
@@ -862,7 +862,7 @@ export const MobileTodoPage: React.FC = () => {
       {/* Tag Context Menu */}
       {tagContextMenu && (
         <div
-          className="fixed bg-card border border-border rounded-lg shadow-xl py-1 z-[60] min-w-[160px]"
+          className="fixed bg-popover border border-border rounded-lg shadow-xl py-1 z-[60] min-w-[160px]"
           style={{
             left: `${tagContextMenu.x}px`,
             top: `${tagContextMenu.y}px`,
