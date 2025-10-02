@@ -109,6 +109,8 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
   const [editingPnlValue, setEditingPnlValue] = useState<string>('');
   const [editingMoodId, setEditingMoodId] = useState<string | null>(null);
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
+  const [editingTimeId, setEditingTimeId] = useState<string | null>(null);
+  const [editingTimeValue, setEditingTimeValue] = useState<string>('');
   const [editingEntryValue, setEditingEntryValue] = useState<string>('');
   const [editingExitId, setEditingExitId] = useState<string | null>(null);
   const [editingExitValue, setEditingExitValue] = useState<string>('');
@@ -199,6 +201,43 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
   const handleMoodSelect = async (tradeId: string, mood: MoodType) => {
     await updateTrade(tradeId, { mood });
     setEditingMoodId(null);
+  };
+
+  // Time inline editing handlers (Apple-style)
+  const handleTimeDoubleClick = (trade: Trade) => {
+    setEditingTimeId(trade.id);
+    // Format time as HH:MM for input (24-hour format)
+    const date = new Date(trade.entryTime);
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    setEditingTimeValue(`${hours}:${minutes}`);
+  };
+
+  const handleTimeSave = async (tradeId: string, trade: Trade) => {
+    if (!editingTimeValue || !/^\d{2}:\d{2}$/.test(editingTimeValue)) {
+      setEditingTimeId(null);
+      setEditingTimeValue('');
+      return;
+    }
+
+    const [hours, minutes] = editingTimeValue.split(':').map(Number);
+    if (hours >= 0 && hours < 24 && minutes >= 0 && minutes < 60) {
+      // Preserve the date, only update time
+      const newDate = new Date(trade.entryTime);
+      newDate.setHours(hours, minutes, 0, 0);
+      await updateTrade(tradeId, { entryTime: newDate.toISOString() });
+    }
+    setEditingTimeId(null);
+    setEditingTimeValue('');
+  };
+
+  const handleTimeKeyDown = (e: React.KeyboardEvent, tradeId: string, trade: Trade) => {
+    if (e.key === 'Enter') {
+      handleTimeSave(tradeId, trade);
+    } else if (e.key === 'Escape') {
+      setEditingTimeId(null);
+      setEditingTimeValue('');
+    }
   };
 
   // Entry price inline editing handlers
@@ -1009,8 +1048,24 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                     )}
                     <td className="p-3 text-sm">
                       <div>{new Date(trade.entryTime).toLocaleDateString()}</div>
-                      <div className="text-muted-foreground">
-                        {new Date(trade.entryTime).toLocaleTimeString()}
+                      <div 
+                        className="text-muted-foreground cursor-pointer hover:text-primary transition-colors"
+                        onClick={() => handleTimeDoubleClick(trade)}
+                        title="Tap to edit time"
+                      >
+                        {editingTimeId === trade.id ? (
+                          <input
+                            type="time"
+                            value={editingTimeValue}
+                            onChange={(e) => setEditingTimeValue(e.target.value)}
+                            onBlur={() => handleTimeSave(trade.id, trade)}
+                            onKeyDown={(e) => handleTimeKeyDown(e, trade.id, trade)}
+                            className="w-20 px-1 py-0.5 bg-primary/10 border border-primary rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                            autoFocus
+                          />
+                        ) : (
+                          new Date(trade.entryTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                        )}
                       </div>
                     </td>
                     <td className="p-3 font-medium">{trade.symbol}</td>
@@ -1427,8 +1482,26 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                 </div>
               </div>
 
-              <div className="text-xs text-muted-foreground">
-                {formatRelativeTime(trade.entryTime)}
+              <div 
+                className="text-xs text-muted-foreground cursor-pointer active:text-primary transition-colors"
+                onClick={() => handleTimeDoubleClick(trade)}
+              >
+                {editingTimeId === trade.id ? (
+                  <input
+                    type="time"
+                    value={editingTimeValue}
+                    onChange={(e) => setEditingTimeValue(e.target.value)}
+                    onBlur={() => handleTimeSave(trade.id, trade)}
+                    onKeyDown={(e) => handleTimeKeyDown(e, trade.id, trade)}
+                    className="w-20 px-2 py-1 bg-primary/10 border border-primary rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    autoFocus
+                  />
+                ) : (
+                  <>
+                    {formatRelativeTime(trade.entryTime)}
+                    <span className="ml-1 text-[10px] opacity-60">• {new Date(trade.entryTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                  </>
+                )}
               </div>
 
               {trade.notes && (
