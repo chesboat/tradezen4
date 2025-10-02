@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { collectionGroup, query, where, getDocs } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db, auth } from '@/lib/firebase';
 import { RichNote } from '@/types';
+import { useRichNotesStore } from '@/store/useRichNotesStore';
+import toast from 'react-hot-toast';
 import { 
   BookOpen, 
   Briefcase, 
@@ -11,7 +13,9 @@ import {
   Calendar,
   Hash,
   ArrowRight,
-  Loader2
+  Loader2,
+  ArrowLeft,
+  Copy
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -26,9 +30,42 @@ const categoryIcons = {
 };
 
 export const PublicNoteView: React.FC = () => {
+  const { createNote } = useRichNotesStore();
   const [note, setNote] = useState<RichNote | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Check if user is logged in
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      setIsLoggedIn(!!user);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleSaveToMyNotes = async () => {
+    if (!note || !isLoggedIn) return;
+    
+    setIsSaving(true);
+    try {
+      await createNote({
+        title: `Copy of ${note.title}`,
+        content: note.content,
+        contentJSON: note.contentJSON || { type: 'doc', content: [{ type: 'paragraph' }] },
+        category: note.category,
+        tags: [...note.tags, 'imported'],
+        isFavorite: false,
+      });
+      toast.success('Note saved to your collection!');
+    } catch (error) {
+      console.error('Failed to save note:', error);
+      toast.error('Failed to save note');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   useEffect(() => {
     const fetchNote = async () => {
@@ -136,13 +173,36 @@ export const PublicNoteView: React.FC = () => {
             </div>
             <span className="font-semibold">Refine</span>
           </div>
-          <a
-            href="/signup"
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium text-sm"
-          >
-            Start Your Journal
-            <ArrowRight className="w-4 h-4" />
-          </a>
+          
+          <div className="flex items-center gap-3">
+            {isLoggedIn ? (
+              <>
+                <button
+                  onClick={handleSaveToMyNotes}
+                  disabled={isSaving}
+                  className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg hover:bg-accent transition-colors font-medium text-sm disabled:opacity-50"
+                >
+                  <Copy className="w-4 h-4" />
+                  {isSaving ? 'Saving...' : 'Save to My Notes'}
+                </button>
+                <a
+                  href="/"
+                  className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium text-sm"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Back to Journal
+                </a>
+              </>
+            ) : (
+              <a
+                href="/signup"
+                className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium text-sm"
+              >
+                Start Your Journal
+                <ArrowRight className="w-4 h-4" />
+              </a>
+            )}
+          </div>
         </div>
       </header>
 
@@ -200,27 +260,29 @@ export const PublicNoteView: React.FC = () => {
           />
         </motion.article>
 
-        {/* CTA Footer */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5, duration: 0.6 }}
-          className="mt-16 p-8 rounded-2xl bg-gradient-to-br from-primary/10 to-purple-500/10 border border-border text-center space-y-4"
-        >
-          <h3 className="text-2xl font-bold">Start Your Trading Journal</h3>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Create beautiful notes, track your trades, and refine your edge—all in one place.
-          </p>
-          <a
-            href="/signup"
-            className="inline-block px-8 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-semibold"
+        {/* CTA Footer - Only show for logged out users */}
+        {!isLoggedIn && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5, duration: 0.6 }}
+            className="mt-16 p-8 rounded-2xl bg-gradient-to-br from-primary/10 to-purple-500/10 border border-border text-center space-y-4"
           >
-            Get Started Free
-          </a>
-          <p className="text-xs text-muted-foreground">
-            7-day trial · Cancel anytime
-          </p>
-        </motion.div>
+            <h3 className="text-2xl font-bold">Start Your Trading Journal</h3>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Create beautiful notes, track your trades, and refine your edge—all in one place.
+            </p>
+            <a
+              href="/signup"
+              className="inline-block px-8 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-semibold"
+            >
+              Get Started Free
+            </a>
+            <p className="text-xs text-muted-foreground">
+              7-day trial · Cancel anytime
+            </p>
+          </motion.div>
+        )}
       </main>
 
       {/* Footer */}
