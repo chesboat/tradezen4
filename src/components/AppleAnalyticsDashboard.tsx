@@ -18,6 +18,7 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { SetupAnalytics } from './SetupAnalytics';
 import { CalendarHeatmap } from './CalendarHeatmap';
 import { CustomDateRangePicker } from './CustomDateRangePicker';
+import { TimeIntelligence } from './TimeIntelligence';
 import { hasFeature } from '@/lib/tierLimits';
 
 // ===============================================
@@ -1563,15 +1564,6 @@ export const AppleAnalyticsDashboard: React.FC = () => {
 
       {/* Main Content */}
       <div className="max-w-7xl 2xl:max-w-[1800px] mx-auto px-6 2xl:px-8 py-8 space-y-8">
-        {/* DEBUG: Show current tier (remove after testing) */}
-        <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 text-sm">
-          <strong>Debug Info:</strong> Current Tier: <span className="font-mono">{tier}</span> | 
-          isPremium: <span className="font-mono">{String(isPremium)}</span> | 
-          Total Trades: {trades.length} | 
-          Filtered Trades: {filteredTrades.length} |
-          Has Custom Ranges: <span className="font-mono">{String(hasCustomDateRanges)}</span>
-        </div>
-        
         {/* Tier Limit Banner (Basic users only) */}
         {!isPremium && hiddenTradesCount > 0 && (
           <motion.div
@@ -1623,6 +1615,16 @@ export const AppleAnalyticsDashboard: React.FC = () => {
           trades={filteredTrades}
           isPremium={isPremium}
           monthsToShow={3}
+          onUpgrade={() => {
+            // TODO: Open upgrade modal
+            console.log('Upgrade clicked');
+          }}
+        />
+
+        {/* Time Intelligence (Premium) */}
+        <TimeIntelligence
+          trades={filteredTrades}
+          isPremium={isPremium}
           onUpgrade={() => {
             // TODO: Open upgrade modal
             console.log('Upgrade clicked');
