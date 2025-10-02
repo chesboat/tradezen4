@@ -41,6 +41,11 @@ service cloud.firestore {
       allow read: if isOwner(userId) || resource.data.isPublic == true;
       allow write: if isOwner(userId);
     }
+    
+    // Allow collectionGroup queries on richNotes for public notes
+    match /{path=**}/richNotes/{noteId} {
+      allow read: if resource.data.isPublic == true;
+    }
 
     // Journal entries collection under each user
     match /users/{userId}/journalEntries/{entryId} {
