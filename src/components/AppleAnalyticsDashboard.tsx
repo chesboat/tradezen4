@@ -17,6 +17,8 @@ import { useNavigationStore } from '@/store/useNavigationStore';
 import { useSubscription } from '@/lib/subscription';
 import { SetupAnalytics } from './SetupAnalytics';
 import { CalendarHeatmap } from './CalendarHeatmap';
+import { CustomDateRangePicker } from './CustomDateRangePicker';
+import { hasFeature } from '@/lib/tierLimits';
 
 // ===============================================
 // TYPES & UTILITIES
@@ -60,8 +62,12 @@ const HeroAnalyticsPnL: React.FC<{
   winRate: number;
   profitFactor: number;
   selectedPeriod: string;
+  customStartDate: Date | null;
+  customEndDate: Date | null;
+  hasCustomDateRanges: boolean;
   onPeriodChange: (period: TimePeriod) => void;
-}> = ({ currentPnL, previousPnL, totalTrades, winRate, profitFactor, selectedPeriod, onPeriodChange }) => {
+  onOpenCustomPicker: () => void;
+}> = ({ currentPnL, previousPnL, totalTrades, winRate, profitFactor, selectedPeriod, customStartDate, customEndDate, hasCustomDateRanges, onPeriodChange, onOpenCustomPicker }) => {
   const [dropdownOpen, setDropdownOpen] = React.useState(false);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
 
@@ -80,7 +86,14 @@ const HeroAnalyticsPnL: React.FC<{
   const isPositive = currentPnL >= 0;
   const hasComparison = previousPnL !== 0;
 
-  const selectedLabel = timePeriodOptions.find(opt => opt.value === selectedPeriod)?.label || 'All Time';
+  let selectedLabel = timePeriodOptions.find(opt => opt.value === selectedPeriod)?.label || 'All Time';
+  
+  // Custom date range label
+  if (selectedPeriod === 'custom' && customStartDate && customEndDate) {
+    const start = customStartDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const end = customEndDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    selectedLabel = `${start} - ${end}`;
+  }
 
   return (
     <div className="bg-background border-b border-border">
@@ -125,6 +138,39 @@ const HeroAnalyticsPnL: React.FC<{
                     {option.label}
                   </button>
                 ))}
+                
+                {/* Custom Date Range (Premium) */}
+                <div className="border-t border-border">
+                  {hasCustomDateRanges ? (
+                    <button
+                      onClick={() => {
+                        onOpenCustomPicker();
+                        setDropdownOpen(false);
+                      }}
+                      className={cn(
+                        "w-full px-4 py-3 text-left text-sm transition-colors flex items-center justify-between",
+                        selectedPeriod === 'custom'
+                          ? "bg-primary/10 text-primary font-medium"
+                          : "text-foreground hover:bg-muted/50"
+                      )}
+                    >
+                      <span>Custom Range</span>
+                      <Calendar className="w-4 h-4" />
+                    </button>
+                  ) : (
+                    <button
+                      className="w-full px-4 py-3 text-left text-sm text-muted-foreground hover:bg-muted/50 transition-colors flex items-center justify-between"
+                      onClick={() => {
+                        setDropdownOpen(false);
+                        // TODO: Show upgrade modal
+                        console.log('Upgrade to Premium for custom date ranges');
+                      }}
+                    >
+                      <span>Custom Range</span>
+                      <Lock className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -1366,6 +1412,11 @@ export const AppleAnalyticsDashboard: React.FC = () => {
   const { tier, isPremium } = useSubscription();
   const [selectedPeriod, setSelectedPeriod] = React.useState<TimePeriod>('all');
   const [symbolFilter, setSymbolFilter] = React.useState<string | null>(null);
+  const [customStartDate, setCustomStartDate] = React.useState<Date | null>(null);
+  const [customEndDate, setCustomEndDate] = React.useState<Date | null>(null);
+  const [showDatePicker, setShowDatePicker] = React.useState(false);
+  
+  const hasCustomDateRanges = hasFeature(tier, 'hasCustomDateRanges');
 
   // Apply tier-based data retention FIRST
   const tierFilteredTrades = React.useMemo(() => {
@@ -1389,15 +1440,24 @@ export const AppleAnalyticsDashboard: React.FC = () => {
     }
 
     // Filter by time period
-    const periodOption = timePeriodOptions.find(opt => opt.value === selectedPeriod);
-    if (periodOption?.days) {
-      const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - periodOption.days);
-      filtered = filtered.filter(t => new Date(t.entryTime) >= cutoffDate);
+    if (selectedPeriod === 'custom' && customStartDate && customEndDate) {
+      // Custom date range (Premium only)
+      filtered = filtered.filter(t => {
+        const tradeDate = new Date(t.entryTime);
+        return tradeDate >= customStartDate && tradeDate <= customEndDate;
+      });
+    } else {
+      // Predefined periods
+      const periodOption = timePeriodOptions.find(opt => opt.value === selectedPeriod);
+      if (periodOption?.days) {
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - periodOption.days);
+        filtered = filtered.filter(t => new Date(t.entryTime) >= cutoffDate);
+      }
     }
 
     return filtered;
-  }, [tierFilteredTrades, selectedAccountId, selectedPeriod, symbolFilter]);
+  }, [tierFilteredTrades, selectedAccountId, selectedPeriod, symbolFilter, customStartDate, customEndDate]);
 
   // Calculate previous period trades for comparison
   const previousPeriodTrades = React.useMemo(() => {
@@ -1448,8 +1508,30 @@ export const AppleAnalyticsDashboard: React.FC = () => {
         winRate={metrics.current.winRate}
         profitFactor={metrics.current.profitFactor}
         selectedPeriod={selectedPeriod}
+        customStartDate={customStartDate}
+        customEndDate={customEndDate}
+        hasCustomDateRanges={hasCustomDateRanges}
         onPeriodChange={setSelectedPeriod}
+        onOpenCustomPicker={() => setShowDatePicker(true)}
       />
+      
+      {/* Custom Date Range Picker Modal */}
+      <AnimatePresence>
+        {showDatePicker && (
+          <CustomDateRangePicker
+            startDate={customStartDate}
+            endDate={customEndDate}
+            onDateChange={(start, end) => {
+              setCustomStartDate(start);
+              setCustomEndDate(end);
+              if (start && end) {
+                setSelectedPeriod('custom');
+              }
+            }}
+            onClose={() => setShowDatePicker(false)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Symbol Filter Badge (Sticky, respects sidebars) */}
       <AnimatePresence>
