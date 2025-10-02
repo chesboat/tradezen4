@@ -91,12 +91,8 @@ export const MobileTodoPage: React.FC = () => {
       result = result.filter(t => t.tags && t.tags.includes(selectedTagFilter));
     }
 
-    // Sort: pinned first, then by creation date
-    return result.sort((a, b) => {
-      if (a.pinned && !b.pinned) return -1;
-      if (!a.pinned && b.pinned) return 1;
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    });
+    // No sorting - tasks stay in the order they were created (blank canvas)
+    return result;
   }, [tasks, filter, selectedTagFilter]);
 
   // Get all unique tags
