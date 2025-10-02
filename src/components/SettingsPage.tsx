@@ -13,16 +13,23 @@ import {
   Moon,
   Bell,
   Shield,
-  Download
+  Download,
+  Crown,
+  Zap,
+  Calendar,
+  CreditCard
 } from 'lucide-react';
 import { useUserProfileStore } from '@/store/useUserProfileStore';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
 import { useAccentColor, accentColorPalettes, type AccentColor } from '@/hooks/useAccentColor';
 import { useSubscription } from '@/hooks/useSubscription';
+import { getTrialInfo, getTrialMessage, formatPrice, formatAnnualMonthly } from '@/lib/subscription';
+import { SUBSCRIPTION_PLANS } from '@/types/subscription';
 import toast from 'react-hot-toast';
 import DisciplineModeToggle from '@/components/discipline/DisciplineModeToggle';
 import { setDisciplineMode } from '@/lib/discipline';
+import { UpgradeModal } from './UpgradeModal';
 
 export const SettingsPage: React.FC = () => {
   const { profile, updateProfile, updateDisplayName, refreshStats } = useUserProfileStore();
@@ -35,6 +42,9 @@ export const SettingsPage: React.FC = () => {
   const [displayName, setDisplayNameLocal] = useState(profile?.displayName || '');
   const [isUploading, setIsUploading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  
+  const trialInfo = getTrialInfo(profile?.trialStartedAt);
 
   const handleDisplayNameSave = () => {
     if (displayName.trim()) {
@@ -204,11 +214,132 @@ export const SettingsPage: React.FC = () => {
           </div>
         </motion.div>
 
-        {/* Appearance Section */}
+        {/* Subscription Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
+          className="bg-card rounded-xl border p-6 space-y-6"
+        >
+          <h2 className="text-xl font-semibold flex items-center gap-2">
+            <CreditCard className="w-5 h-5" />
+            Subscription
+          </h2>
+
+          {/* Current Plan */}
+          <div className="space-y-4">
+            <div className="flex items-start justify-between p-4 bg-muted/30 rounded-lg border border-border">
+              <div className="flex items-start gap-3">
+                {tier === 'trial' && (
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Zap className="w-5 h-5 text-primary" />
+                  </div>
+                )}
+                {tier === 'basic' && (
+                  <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                    <Zap className="w-5 h-5 text-blue-500" />
+                  </div>
+                )}
+                {tier === 'premium' && (
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center flex-shrink-0">
+                    <Crown className="w-5 h-5 text-white" />
+                  </div>
+                )}
+                
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="font-semibold text-foreground">{plan.name}</h3>
+                    {plan.badge && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+                        {plan.badge}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-2">{plan.description}</p>
+                  
+                  {tier === 'trial' && trialInfo && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Calendar className="w-4 h-4 text-muted-foreground" />
+                      <span className={trialInfo.isExpiringSoon ? 'text-orange-500 font-medium' : 'text-muted-foreground'}>
+                        {getTrialMessage(trialInfo)}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {(tier === 'basic' || tier === 'premium') && (
+                    <div className="text-sm text-muted-foreground">
+                      {formatPrice(plan.monthlyPrice)}/month
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {tier === 'trial' && (
+                <button
+                  onClick={() => setShowUpgradeModal(true)}
+                  className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors text-sm whitespace-nowrap"
+                >
+                  Upgrade Now
+                </button>
+              )}
+              {tier === 'basic' && (
+                <button
+                  onClick={() => setShowUpgradeModal(true)}
+                  className="px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg font-medium hover:opacity-90 transition-opacity text-sm whitespace-nowrap"
+                >
+                  Upgrade to Premium
+                </button>
+              )}
+            </div>
+
+            {/* Features Summary */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="p-3 bg-muted/30 rounded-lg">
+                <div className="text-xs text-muted-foreground mb-1">Accounts</div>
+                <div className="font-semibold">
+                  {plan.limits.maxAccounts === 'unlimited' ? 'Unlimited' : plan.limits.maxAccounts}
+                </div>
+              </div>
+              <div className="p-3 bg-muted/30 rounded-lg">
+                <div className="text-xs text-muted-foreground mb-1">AI Coach</div>
+                <div className="font-semibold">
+                  {plan.limits.aiCoach ? '✓ Included' : '✗ Not included'}
+                </div>
+              </div>
+              <div className="p-3 bg-muted/30 rounded-lg">
+                <div className="text-xs text-muted-foreground mb-1">Storage</div>
+                <div className="font-semibold">{plan.limits.storageGB}GB</div>
+              </div>
+              <div className="p-3 bg-muted/30 rounded-lg">
+                <div className="text-xs text-muted-foreground mb-1">AI Requests</div>
+                <div className="font-semibold">
+                  {plan.limits.aiMonthlyRequests === 'unlimited' ? 'Unlimited' : plan.limits.aiMonthlyRequests === 0 ? 'None' : `${plan.limits.aiMonthlyRequests}/mo`}
+                </div>
+              </div>
+            </div>
+
+            {/* Manage Subscription */}
+            {(tier === 'basic' || tier === 'premium') && (
+              <div className="pt-4 border-t border-border">
+                <button
+                  onClick={() => {
+                    // TODO: Open Stripe customer portal
+                    toast.info('Billing portal coming soon!');
+                  }}
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Manage subscription →
+                </button>
+              </div>
+            )}
+          </div>
+        </motion.div>
+
+        {/* Appearance Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
           className="bg-card rounded-xl border p-6 space-y-6"
         >
           <h2 className="text-xl font-semibold flex items-center gap-2">
@@ -435,6 +566,13 @@ export const SettingsPage: React.FC = () => {
           />
         </motion.div>
       </div>
+      
+      {/* Upgrade Modal */}
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        currentTier={tier}
+      />
     </div>
   );
 };
