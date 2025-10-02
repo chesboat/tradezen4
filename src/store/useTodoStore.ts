@@ -46,6 +46,12 @@ function normalizeDateLike(value: any | undefined): string | undefined {
 }
 
 function deserializeTasks(raw: any[]): ImprovementTask[] {
+  // Handle corrupted localStorage data from previous bug
+  if (!raw || !Array.isArray(raw)) {
+    console.warn('Invalid tasks data in localStorage, clearing...', raw);
+    return [];
+  }
+  
   return (raw || []).map((t) => ({
     ...t,
     createdAt: normalizeDateLike(t.createdAt) || t.createdAt,
