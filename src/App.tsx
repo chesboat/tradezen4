@@ -1,5 +1,6 @@
 import React from 'react';
 import { PublicSharePageClean as PublicSharePage } from './components/PublicSharePageClean';
+import { PublicNoteView } from './components/PublicNoteView';
 import { SettingsPage } from './components/SettingsPage';
 import { Sidebar } from './components/Sidebar';
 import { AppleMobileNav } from './components/AppleMobileNav';
@@ -429,9 +430,14 @@ function AppContent() {
 }
 
 function App() {
-  // Check for public share route BEFORE rendering any app components/hooks
-  if (typeof window !== 'undefined' && window.location.pathname.startsWith('/share/')) {
-    return <PublicSharePage />;
+  // Check for public share routes BEFORE rendering any app components/hooks
+  if (typeof window !== 'undefined') {
+    if (window.location.pathname.startsWith('/share/note/')) {
+      return <PublicNoteView />;
+    }
+    if (window.location.pathname.startsWith('/share/')) {
+      return <PublicSharePage />;
+    }
   }
 
   return (

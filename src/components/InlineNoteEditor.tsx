@@ -21,7 +21,10 @@ import {
   Code,
   Heading1,
   Heading2,
-  Trash2
+  Trash2,
+  Share2,
+  Copy,
+  ExternalLink
 } from 'lucide-react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -61,6 +64,7 @@ export const InlineNoteEditor: React.FC<InlineNoteEditorProps> = ({ noteId, onCl
   const [isSaving, setIsSaving] = useState(false);
   const [savingStatus, setSavingStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [hasChanges, setHasChanges] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   
   const titleInputRef = useRef<HTMLInputElement>(null);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout>();
@@ -208,6 +212,50 @@ export const InlineNoteEditor: React.FC<InlineNoteEditorProps> = ({ noteId, onCl
     setTags(tags.filter(t => t !== tagToRemove));
   };
 
+  const handleShare = async () => {
+    if (!existingNote) return;
+    
+    // Make note public
+    try {
+      await updateNote(noteId, { isPublic: true });
+      const shareUrl = `${window.location.origin}/share/note/${noteId}`;
+      
+      // Copy to clipboard
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success('Share link copied to clipboard!');
+      setShowShareModal(true);
+    } catch (error) {
+      console.error('Failed to share note:', error);
+      toast.error('Failed to create share link');
+    }
+  };
+
+  const handleCopyLink = async () => {
+    const shareUrl = `${window.location.origin}/share/note/${noteId}`;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success('Link copied!');
+    } catch (error) {
+      toast.error('Failed to copy link');
+    }
+  };
+
+  const handleOpenInNewTab = () => {
+    const shareUrl = `${window.location.origin}/share/note/${noteId}`;
+    window.open(shareUrl, '_blank');
+  };
+
+  const handleDisableSharing = async () => {
+    try {
+      await updateNote(noteId, { isPublic: false });
+      toast.success('Sharing disabled');
+      setShowShareModal(false);
+    } catch (error) {
+      console.error('Failed to disable sharing:', error);
+      toast.error('Failed to disable sharing');
+    }
+  };
+
   if (!existingNote) {
     return (
       <div className="flex-1 flex items-center justify-center text-muted-foreground">
@@ -217,6 +265,7 @@ export const InlineNoteEditor: React.FC<InlineNoteEditorProps> = ({ noteId, onCl
   }
 
   const selectedCategory = categoryOptions.find(c => c.value === category);
+  const shareUrl = `${window.location.origin}/share/note/${noteId}`;
 
   return (
     <div className="flex-1 flex flex-col h-full bg-background overflow-hidden">
@@ -290,6 +339,15 @@ export const InlineNoteEditor: React.FC<InlineNoteEditorProps> = ({ noteId, onCl
             {savingStatus === 'idle' && existingNote.updatedAt && (
               <span>Last edited {new Date(existingNote.updatedAt).toLocaleString()}</span>
             )}
+            
+            {/* Share button */}
+            <button
+              onClick={existingNote.isPublic ? () => setShowShareModal(true) : handleShare}
+              className="p-1.5 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
+              title={existingNote.isPublic ? "Manage sharing" : "Share note"}
+            >
+              <Share2 className="w-4 h-4" />
+            </button>
             
             {/* Delete button */}
             <button
@@ -426,6 +484,69 @@ export const InlineNoteEditor: React.FC<InlineNoteEditorProps> = ({ noteId, onCl
       <div className="flex-1 overflow-y-auto">
         <EditorContent editor={editor} />
       </div>
+
+      {/* Share Modal */}
+      {showShareModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" onClick={() => setShowShareModal(false)}>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            onClick={(e) => e.stopPropagation()}
+            className="bg-background rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-6"
+          >
+            {/* Header */}
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold">Share Note</h3>
+              <p className="text-sm text-muted-foreground">
+                Anyone with the link can view this note
+              </p>
+            </div>
+
+            {/* Share URL */}
+            <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+              <input
+                type="text"
+                value={shareUrl}
+                readOnly
+                className="flex-1 bg-transparent text-sm outline-none"
+              />
+              <button
+                onClick={handleCopyLink}
+                className="p-2 hover:bg-accent rounded-lg transition-colors"
+                title="Copy link"
+              >
+                <Copy className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3">
+              <button
+                onClick={handleOpenInNewTab}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
+              >
+                <ExternalLink className="w-4 h-4" />
+                Open in New Tab
+              </button>
+              <button
+                onClick={handleDisableSharing}
+                className="px-4 py-2.5 border border-border rounded-lg hover:bg-accent transition-colors font-medium"
+              >
+                Disable Sharing
+              </button>
+            </div>
+
+            {/* Close */}
+            <button
+              onClick={() => setShowShareModal(false)}
+              className="w-full px-4 py-2.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Close
+            </button>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };

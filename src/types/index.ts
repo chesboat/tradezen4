@@ -47,6 +47,8 @@ export interface RichNote extends FirestoreDocument {
   category: 'study' | 'trading' | 'personal' | 'research' | 'meeting' | 'ideas';
   tags: string[];
   isFavorite: boolean;
+  isPublic?: boolean; // For sharing notes publicly
+  userId?: string; // Owner's user ID (for public sharing paths)
   folder?: string;
   linkedNotes?: string[]; // IDs of related notes
   attachments?: string[]; // Image URLs

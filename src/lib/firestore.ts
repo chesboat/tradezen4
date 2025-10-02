@@ -73,11 +73,13 @@ export class FirestoreService<T extends FirestoreDocument> {
   async create(data: Omit<T, 'id'>): Promise<T> {
     try {
       console.log('FirestoreService: Starting create with data:', data);
+      const userId = this.getUserId();
       const docRef = doc(this.getCollection());
       console.log('FirestoreService: Created doc reference:', docRef.path);
       const baseData = {
         ...data,
         id: docRef.id,
+        userId, // Add userId for public sharing paths
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       } as unknown as T;

@@ -248,20 +248,18 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
       // Mark as completing for animation
       setCompletingTasks(prev => new Set(prev).add(taskId));
       
-      // Wait for circle fill animation (400ms)
-      await new Promise(resolve => setTimeout(resolve, 400));
+      // Wait for full animation (circle fill + checkmark + fade)
+      await new Promise(resolve => setTimeout(resolve, 800));
       
-      // Toggle and start fade out
-        await toggleDone(taskId);
+      // Toggle status (task is already hidden)
+      await toggleDone(taskId);
       
-      // Clear completing state after fade (300ms)
-      setTimeout(() => {
-        setCompletingTasks(prev => {
-          const next = new Set(prev);
-          next.delete(taskId);
-          return next;
-        });
-      }, 300);
+      // Clear completing state
+      setCompletingTasks(prev => {
+        const next = new Set(prev);
+        next.delete(taskId);
+        return next;
+      });
     } else {
       // Unchecking - no animation needed
       await toggleDone(taskId);
@@ -513,23 +511,15 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
         <div className="flex-1 overflow-hidden">
           <div className="h-full overflow-y-auto p-3 space-y-2" onDragOver={(e) => e.preventDefault()}>
             {filtered.map((task) => (
-              <motion.div
+              <div
                 key={task.id}
-                className="group px-2 py-2 rounded-md hover:bg-accent/50 transition-all"
-                initial={false}
-                animate={{ 
-                  opacity: completingTasks.has(task.id) && task.status === 'open' ? 0 : 1
+                className={cn(
+                  "group px-2 py-2 rounded-md hover:bg-accent/50 transition-all duration-300",
+                  completingTasks.has(task.id) && "opacity-0 scale-95"
+                )}
+                style={{
+                  transition: 'opacity 0.3s ease, transform 0.3s ease'
                 }}
-                exit={{ 
-                  opacity: 0, 
-                  height: 0,
-                  marginTop: 0,
-                  marginBottom: 0,
-                  paddingTop: 0,
-                  paddingBottom: 0,
-                  transition: { duration: 0.3, ease: [0.4, 0.0, 0.2, 1] }
-                }}
-                transition={{ duration: 0.3, ease: [0.4, 0.0, 0.2, 1] }}
               >
                 <div className="flex items-start gap-2">
                   {/* Checkbox - Apple style circle fill */}
@@ -872,7 +862,7 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                           </motion.div>
                         )}
                       </AnimatePresence>
-              </motion.div>
+              </div>
             ))}
 
             {filtered.length === 0 && !isAddingNew && (

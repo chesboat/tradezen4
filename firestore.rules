@@ -37,7 +37,9 @@ service cloud.firestore {
     
     // Rich notes collection under each user
     match /users/{userId}/richNotes/{noteId} {
-      allow read, write: if isOwner(userId);
+      // Allow read if owner OR if note is marked as public
+      allow read: if isOwner(userId) || resource.data.isPublic == true;
+      allow write: if isOwner(userId);
     }
 
     // Journal entries collection under each user
