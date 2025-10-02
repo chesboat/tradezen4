@@ -473,7 +473,7 @@ export const NotesView: React.FC = () => {
   };
 
   return (
-    <div className="h-full flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-background">
       {/* Top Search Bar (Apple-style - always visible) */}
       <div className="border-b border-border bg-card/50 backdrop-blur-sm">
         <div className="px-4 py-3 flex items-center gap-3">
@@ -497,7 +497,7 @@ export const NotesView: React.FC = () => {
       </div>
 
       {/* 3-Column Layout (Apple Notes style) */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden min-h-0">
         
         {/* LEFT COLUMN: Folders & Smart Folders (Desktop only OR mobile folders view) */}
         <div className={cn(
