@@ -52,11 +52,15 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
     
     return cn(
       'relative p-3 rounded-xl transition-all duration-200',
+      'border border-border/50',
       
-      // Weekend styling (subtle, muted appearance)
-      isWeekend && !day.isOtherMonth 
-        ? 'border border-dashed border-border/40 bg-muted/20 opacity-60'
-        : 'border border-border/50 bg-card',
+      // Apple-style: Pure black for empty days, elevated gray for days with content
+      day.tradesCount === 0 
+        ? 'bg-background' 
+        : 'bg-card',
+      
+      // Weekend styling (slightly muted)
+      isWeekend && !day.isOtherMonth && 'opacity-75',
       
       day.isOtherMonth && 'opacity-40',
       isToday && 'ring-2 ring-primary/50',
@@ -103,7 +107,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
   };
 
   const html2canvasOpts = {
-    backgroundColor: '#0b0b0b',
+    backgroundColor: theme === 'dark' ? '#000000' : '#ffffff',
     useCORS: true,
     allowTaint: true,
     foreignObjectRendering: true,
