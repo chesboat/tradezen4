@@ -336,9 +336,21 @@ export const NotesView: React.FC = () => {
   }, [filteredNotes]);
 
   // Handlers
-  const handleCreateRichNote = () => {
-    setEditingRichNoteId(undefined);
-    setIsRichNoteEditorOpen(true);
+  const handleCreateRichNote = async () => {
+    // Create blank note instantly (Apple Notes style)
+    const newNote = await createRichNote({
+      title: 'Untitled',
+      content: '<p></p>',
+      contentJSON: { type: 'doc', content: [{ type: 'paragraph' }] },
+      category: 'study',
+      tags: [],
+      isFavorite: false,
+      accountId: selectedAccountId || undefined,
+    });
+    
+    // Select it immediately and switch to content view on mobile
+    setSelectedNoteId(newNote.id);
+    setMobileView('content');
   };
 
   // Folder management handlers
