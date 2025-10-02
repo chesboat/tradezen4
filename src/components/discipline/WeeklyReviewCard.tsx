@@ -21,7 +21,7 @@ export const WeeklyReviewCard: React.FC<{ days: WeeklyDay[]; streak?: number; xp
   };
 
   return (
-    <div className="p-4 border rounded-xl bg-card">
+    <div className="p-4 border rounded-xl bg-background">
       <div className="text-sm font-medium mb-3">Weekly Review</div>
       <div className="grid grid-cols-7 gap-2">
         {days.map((d) => (
