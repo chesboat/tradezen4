@@ -73,11 +73,11 @@ const HeroPnLCard: React.FC<{
   
   return (
     <motion.div
-      className="col-span-full bg-gradient-to-br from-card to-card/80 backdrop-blur-sm rounded-3xl p-6 sm:p-8 border border-border/50 shadow-xl"
+      className="col-span-full bg-background rounded-3xl p-6 sm:p-8 border border-border"
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.5 }}
-      whileHover={{ scale: 1.01, y: -4 }}
+      whileHover={{ y: -4 }}
     >
       <div className="flex items-start justify-between mb-6">
         <div>
@@ -179,11 +179,11 @@ const DailyIntentCard: React.FC = () => {
 
   return (
     <motion.div
-      className="bg-gradient-to-br from-card to-card/80 backdrop-blur-sm rounded-2xl p-6 border border-border/50"
+      className="bg-background rounded-2xl p-6 border border-border"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.1 }}
-      whileHover={{ scale: 1.01, y: -2 }}
+      whileHover={{ y: -2 }}
     >
       <div className="flex items-center gap-3 mb-4">
         <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
