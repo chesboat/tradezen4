@@ -70,11 +70,11 @@ export const QuickLogButton: React.FC<Props> = ({ tz, onMaxReached }) => {
     <button
       className={`px-4 py-2 rounded-lg bg-muted hover:bg-muted/80 transition-colors text-sm font-medium flex items-center gap-2 border border-border relative ${burst ? 'ring-2 ring-primary/30' : ''}`}
       onClick={doLog}
-      title="Log Trade (burns 1 bullet) - Press L"
+      title="Use a bullet (marks 1 trade taken) - Press L"
     >
       <span className="relative z-10 flex items-center gap-1.5">
         <span className="text-lg">•</span>
-        <span>Log Trade</span>
+        <span>Use Bullet</span>
       </span>
       {burst && (
         <span className="absolute inset-0 rounded-lg bg-primary/20 animate-ping" />
