@@ -12,7 +12,7 @@ export const useSubscription = () => {
   const { currentUser } = useAuth();
   const { profile } = useUserProfileStore();
   
-  // Get subscription tier from profile or default to free
+  // Get subscription tier from profile or default to trial
   // TODO: When implementing billing, store subscriptionTier in Firestore user profile
   const [tier, setTier] = useState<SubscriptionTier>(() => {
     // Check if admin
@@ -21,9 +21,10 @@ export const useSubscription = () => {
     }
     
     // Check profile (when implemented)
-    // return profile?.subscriptionTier || 'free';
+    // return profile?.subscriptionTier || 'trial';
     
-    return 'free';
+    // New users start with trial
+    return 'trial';
   });
 
   // Update tier when user or profile changes
@@ -33,14 +34,14 @@ export const useSubscription = () => {
       return;
     }
     
-    // TODO: When implementing billing, check profile.subscriptionTier
+    // TODO: When implementing billing, check profile.subscriptionTier and subscriptionStatus
     // if (profile?.subscriptionTier) {
     //   setTier(profile.subscriptionTier);
     // } else {
-    //   setTier('free');
+    //   setTier('trial');
     // }
     
-    setTier('free');
+    setTier('trial');
   }, [currentUser, profile]);
 
   const plan = SUBSCRIPTION_PLANS[tier];
@@ -74,7 +75,7 @@ export const useSubscription = () => {
     getRemainingUsage,
     isPremium: tier === 'premium',
     isBasic: tier === 'basic',
-    isFree: tier === 'free',
+    isTrial: tier === 'trial',
   };
 };
 

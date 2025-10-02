@@ -1,6 +1,7 @@
 // Subscription tier types and configuration
 
-export type SubscriptionTier = 'free' | 'basic' | 'premium';
+export type SubscriptionTier = 'trial' | 'basic' | 'premium';
+export type SubscriptionStatus = 'trialing' | 'active' | 'canceled' | 'past_due' | 'expired';
 
 export interface SubscriptionLimits {
   // Account & Data
@@ -60,49 +61,48 @@ export interface SubscriptionPlan {
 
 // Subscription Plans Configuration
 export const SUBSCRIPTION_PLANS: Record<SubscriptionTier, SubscriptionPlan> = {
-  free: {
-    tier: 'free',
-    name: 'Free',
-    description: 'Perfect for getting started',
+  trial: {
+    tier: 'trial',
+    name: '7-Day Trial',
+    description: '7 days of Premium access',
     monthlyPrice: 0,
     annualPrice: 0,
     annualMonthlyPrice: 0,
+    badge: '🎁 Trial Active',
     limits: {
-      maxAccounts: 1,
-      storageGB: 0.5,
-      maxImages: 0,
-      dataRetentionDays: 90,
-      maxTrades: 100,
-      maxNotes: 50,
-      maxHabits: 3,
+      // Trial gets full Premium access to get them hooked
+      maxAccounts: 'unlimited',
+      storageGB: 10,
+      maxImages: 1000,
+      dataRetentionDays: 'unlimited',
+      maxTrades: 'unlimited',
+      maxNotes: 'unlimited',
+      maxHabits: 'unlimited',
       dailyReflections: true,
-      weeklyReviews: false,
-      customTemplates: false,
-      aiInsights: false,
-      aiCoach: false,
-      aiMonthlyRequests: 0,
-      aiAnalysis: 'none',
-      emotionalAnalysis: false,
-      accentColors: false, // Only Ocean Blue
-      dashboardCustomization: false,
-      publicSharing: false,
+      weeklyReviews: true,
+      customTemplates: true,
+      aiInsights: true,
+      aiCoach: true,
+      aiMonthlyRequests: 'unlimited',
+      aiAnalysis: 'advanced',
+      emotionalAnalysis: true,
+      accentColors: true,
+      dashboardCustomization: true,
+      publicSharing: true,
       csvImport: true,
-      imageImport: false,
-      dataExport: false,
-      apiAccess: false,
-      advancedAnalytics: false,
-      customReports: false,
+      imageImport: true,
+      dataExport: true,
+      apiAccess: false, // Don't give API access during trial
+      advancedAnalytics: true,
+      customReports: true,
       prioritySupport: false,
     },
     features: [
-      '1 trading account',
-      '100 trades',
-      '50 notes',
-      '3 habits',
-      'Basic analytics',
-      'CSV import',
-      'Daily reflections',
-      '90-day history',
+      '7 days of Premium access',
+      'All Premium features included',
+      'Auto-converts to Basic ($19/mo)',
+      'Upgrade to Premium anytime',
+      'Cancel anytime',
     ]
   },
   

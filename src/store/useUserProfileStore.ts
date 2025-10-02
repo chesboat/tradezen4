@@ -17,9 +17,10 @@ export interface UserProfile {
   id: string;
   displayName: string;
   email?: string;
-  subscriptionTier?: 'free' | 'basic' | 'premium'; // Subscription tier
-  subscriptionStatus?: 'active' | 'canceled' | 'past_due' | 'trialing'; // Subscription status
-  subscriptionExpiresAt?: Date; // When subscription expires/renews
+  subscriptionTier?: 'trial' | 'basic' | 'premium'; // Subscription tier
+  subscriptionStatus?: 'trialing' | 'active' | 'canceled' | 'past_due' | 'expired'; // Subscription status
+  subscriptionExpiresAt?: Date; // When subscription expires/renews (trial end or billing date)
+  trialStartedAt?: Date; // When trial started (for 7-day countdown)
   xp: {
     total: number;        // Lifetime XP (never resets)
     seasonXp: number;     // Current season XP (resets on prestige)

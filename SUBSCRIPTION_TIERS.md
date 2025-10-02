@@ -10,9 +10,10 @@ Refine offers 3 subscription tiers designed for traders at different stages of t
 
 ## Pricing Structure
 
+**All plans include a 7-day free trial (credit card required)**
+
 | Tier | Monthly | Annual | Annual Savings |
 |------|---------|--------|----------------|
-| **Free** | $0 | $0 | - |
 | **Basic** | $19 | $168 ($14/mo) | 26% off |
 | **Premium** | $39 | $348 ($29/mo) | 26% off |
 
@@ -98,22 +99,40 @@ Refine offers 3 subscription tiers designed for traders at different stages of t
 
 ---
 
+## Trial Strategy
+
+### **7-Day Free Trial (Credit Card Required)**
+
+**Why Credit Card?**
+- Pre-qualified leads (serious users only)
+- Higher conversion (60-70% vs 10-15%)
+- Less abuse/fake accounts
+- Traders expect it (every trading platform requires it)
+
+**Trial Experience:**
+- Full Premium access for 7 days
+- Auto-converts to Basic ($19/mo) on day 8
+- Can upgrade to Premium anytime
+- Clear cancel anytime policy
+
+**Trial Flow:**
+- **Day 1-2**: Onboarding, import trades, set up habits
+- **Day 3-5**: Use AI Coach (Premium feature), build routine
+- **Day 6**: Email: "Trial ends in 24 hours. Continues at $19/mo"
+- **Day 7**: Email: "Last day! Upgrade to Premium ($39) to keep AI Coach"
+- **Day 8**: Auto-charge $19 (Basic) or $39 (Premium)
+
+**Cancel Flow:**
+- Settings → Subscription → "Cancel Trial"
+- No dark patterns, instant cancel
+- Data saved for 30 days in case they return
+
+---
+
 ## Recommended Tier Structure (Updated for Refine)
 
-### 🆓 **Free Tier** 
-**Target**: Beginners, tire kickers, demo users
-
-**Philosophy**: Give them enough to get hooked on journaling, but limit them so they feel constrained
-
-**Key Limitations**:
-- 1 account (can't track multiple brokers)
-- 100 trades (runs out quickly for active traders)
-- 3 habits (can't build comprehensive routine)
-- No AI (miss out on best feature)
-- No accent colors (visual limitation)
-- No weekly reviews (miss deeper insights)
-
-**Upgrade Trigger**: "You've logged 95/100 trades. Upgrade to Basic for unlimited trades!"
+### ❌ **No Free Tier**
+**Rationale**: Traders need skin in the game. Free users don't commit. 7-day trial is enough to evaluate.
 
 ---
 
