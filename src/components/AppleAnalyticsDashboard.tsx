@@ -15,6 +15,7 @@ import { useActivityLogStore } from '@/store/useActivityLogStore';
 import { useTodoStore } from '@/store/useTodoStore';
 import { useNavigationStore } from '@/store/useNavigationStore';
 import { useSubscription } from '@/lib/subscription';
+import { SetupAnalytics } from './SetupAnalytics';
 
 // ===============================================
 // TYPES & UTILITIES
@@ -1511,6 +1512,16 @@ export const AppleAnalyticsDashboard: React.FC = () => {
 
         {/* Smart Insights */}
         <SmartInsightsCard trades={filteredTrades} />
+
+        {/* Setup Analytics (Premium) */}
+        <SetupAnalytics 
+          trades={filteredTrades} 
+          isPremium={isPremium}
+          onUpgrade={() => {
+            // TODO: Open upgrade modal
+            console.log('Upgrade clicked');
+          }}
+        />
 
         {/* At a Glance Weekly */}
         <AtAGlanceWeekly trades={filteredTrades} />
