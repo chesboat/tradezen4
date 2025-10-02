@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type ViewType = 'dashboard' | 'habits' | 'calendar' | 'trades' | 'journal' | 'notes' | 'analytics' | 'quests' | 'wellness' | 'coach' | 'settings' | 'todos';
+export type ViewType = 'dashboard' | 'habits' | 'calendar' | 'trades' | 'journal' | 'notes' | 'analytics' | 'quests' | 'wellness' | 'coach' | 'settings' | 'todos' | 'more';
 
 interface NavigationState {
   currentView: ViewType;

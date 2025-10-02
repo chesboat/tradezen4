@@ -274,7 +274,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({ onAddTrade }
                   <div className="my-4 border-t border-border" />
 
                   {/* Additional nav items */}
-                  {additionalNavItems.map((item) => {
+                  {moreTabItems.map((item) => {
                     const Icon = item.icon;
                     const isActive = currentView === item.id;
                     
