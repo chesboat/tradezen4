@@ -244,7 +244,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ className }) => {
 
   return (
     <motion.aside
-      className={`fixed right-0 top-0 h-full bg-card border-l border-border z-40 flex flex-col shadow-xl ${className}`}
+      className={`fixed right-0 top-0 h-full bg-background border-l border-border z-40 flex flex-col shadow-xl ${className}`}
       variants={sidebarVariants}
       animate={isExpanded ? 'expanded' : 'collapsed'}
       initial={false}
