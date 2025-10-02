@@ -295,8 +295,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
       animate={isExpanded ? 'expanded' : 'collapsed'}
       initial={false}
     >
-      {/* Header - Minimal Apple-style */}
-      <div className="flex items-center p-4 border-b border-border/50">
+      {/* Header - Apple-style with consistent collapse button */}
+      <div className="flex items-center justify-between p-4 border-b border-border/50">
         <AnimatePresence mode="wait">
           {isExpanded ? (
             <motion.div
@@ -312,16 +312,31 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
               <div className="flex-1 min-w-0">
                 <h1 className="text-base font-semibold text-foreground">Refine</h1>
               </div>
-              <ThemeToggle size="sm" />
             </motion.div>
           ) : (
-            <div className="w-full flex justify-center">
+            <div className="flex justify-center flex-1">
               <div className="w-7 h-7 bg-gradient-to-br from-primary-400 to-primary-600 rounded-lg flex items-center justify-center">
                 <Zap className="w-4 h-4 text-white" />
               </div>
             </div>
           )}
         </AnimatePresence>
+        
+        {/* Collapse/Expand button - consistent with TodoDrawer/ActivityLog */}
+        <Tooltip content={isExpanded ? "Collapse" : "Expand"} position="right">
+          <motion.button
+            className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+            onClick={toggleSidebar}
+            whileHover={hoverScale}
+            whileTap={tapScale}
+          >
+            {isExpanded ? (
+              <ChevronLeft className="w-4 h-4" />
+            ) : (
+              <ChevronRight className="w-4 h-4" />
+            )}
+          </motion.button>
+        </Tooltip>
       </div>
 
       {/* XP Progress - Subtle, Apple Fitness style */}
@@ -507,6 +522,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
                   </p>
                 </div>
                 <div className="flex items-center gap-1">
+                  <ThemeToggle size="sm" />
                   <Tooltip content="Settings" position="top">
                     <motion.button
                       className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
@@ -529,45 +545,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
                   </Tooltip>
                 </div>
               </div>
-              
-              {/* Collapse button at bottom */}
-              <motion.button
-                className="w-full mt-2 flex items-center justify-center gap-2 py-1.5 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
-                onClick={toggleSidebar}
-                whileHover={hoverScale}
-                whileTap={tapScale}
-              >
-                <ChevronLeft className="w-4 h-4" />
-                <span className="text-xs font-medium">Collapse</span>
-              </motion.button>
             </motion.div>
           ) : (
-            <div className="p-3 space-y-2">
-              <Tooltip content={profile?.displayName || getUserDisplayName()} position="right">
-                <div className="flex justify-center">
-                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center overflow-hidden">
-                    {profile?.avatar ? (
-                      <img 
-                        src={profile.avatar} 
-                        alt="Profile" 
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <User className="w-4 h-4 text-white" />
-                    )}
-                  </div>
-                </div>
-              </Tooltip>
+            <div className="p-3 flex flex-col items-center gap-2">
+              {/* Theme Toggle */}
+              <ThemeToggle size="sm" />
               
-              {/* Expand button */}
-              <Tooltip content="Expand sidebar" position="right">
+              {/* Settings */}
+              <Tooltip content="Settings" position="right">
                 <motion.button
-                  className="w-full flex items-center justify-center p-1.5 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
-                  onClick={toggleSidebar}
+                  className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => setCurrentView('settings')}
                   whileHover={hoverScale}
                   whileTap={tapScale}
                 >
-                  <ChevronRight className="w-4 h-4" />
+                  <Settings className="w-4 h-4" />
                 </motion.button>
               </Tooltip>
             </div>
