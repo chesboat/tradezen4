@@ -111,6 +111,8 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
   const [editingTimeId, setEditingTimeId] = useState<string | null>(null);
   const [editingTimeValue, setEditingTimeValue] = useState<string>('');
+  const [editingDateId, setEditingDateId] = useState<string | null>(null);
+  const [editingDateValue, setEditingDateValue] = useState<string>('');
   const [editingEntryValue, setEditingEntryValue] = useState<string>('');
   const [editingExitId, setEditingExitId] = useState<string | null>(null);
   const [editingExitValue, setEditingExitValue] = useState<string>('');
@@ -237,6 +239,40 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
     } else if (e.key === 'Escape') {
       setEditingTimeId(null);
       setEditingTimeValue('');
+    }
+  };
+
+  // Date inline editing handlers (Apple-style)
+  const handleDateDoubleClick = (trade: Trade) => {
+    setEditingDateId(trade.id);
+    // Format date as YYYY-MM-DD for input
+    const date = new Date(trade.entryTime);
+    setEditingDateValue(date.toISOString().split('T')[0]);
+  };
+
+  const handleDateSave = async (tradeId: string, trade: Trade) => {
+    if (!editingDateValue) {
+      setEditingDateId(null);
+      setEditingDateValue('');
+      return;
+    }
+
+    // Preserve the time, only update date
+    const oldDate = new Date(trade.entryTime);
+    const newDate = new Date(editingDateValue);
+    newDate.setHours(oldDate.getHours(), oldDate.getMinutes(), oldDate.getSeconds(), 0);
+    await updateTrade(tradeId, { entryTime: newDate.toISOString() });
+    
+    setEditingDateId(null);
+    setEditingDateValue('');
+  };
+
+  const handleDateKeyDown = (e: React.KeyboardEvent, tradeId: string, trade: Trade) => {
+    if (e.key === 'Enter') {
+      handleDateSave(tradeId, trade);
+    } else if (e.key === 'Escape') {
+      setEditingDateId(null);
+      setEditingDateValue('');
     }
   };
 
@@ -1046,16 +1082,38 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                         />
                       </td>
                     )}
-                    <td 
-                      className="p-3 text-sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleTimeDoubleClick(trade);
-                      }}
-                    >
-                      <div>{new Date(trade.entryTime).toLocaleDateString()}</div>
+                    <td className="p-3 text-sm">
+                      {/* Date - Click to edit */}
+                      <div 
+                        className="cursor-pointer hover:text-primary transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDateDoubleClick(trade);
+                        }}
+                        title="Click to edit date"
+                      >
+                        {editingDateId === trade.id ? (
+                          <input
+                            type="date"
+                            value={editingDateValue}
+                            onChange={(e) => setEditingDateValue(e.target.value)}
+                            onBlur={() => handleDateSave(trade.id, trade)}
+                            onKeyDown={(e) => handleDateKeyDown(e, trade.id, trade)}
+                            className="w-32 px-1 py-0.5 bg-primary/10 border border-primary rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                            autoFocus
+                          />
+                        ) : (
+                          new Date(trade.entryTime).toLocaleDateString()
+                        )}
+                      </div>
+                      
+                      {/* Time - Click to edit */}
                       <div 
                         className="text-muted-foreground cursor-pointer hover:text-primary transition-colors text-xs"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleTimeDoubleClick(trade);
+                        }}
                         title="Click to edit time"
                       >
                         {editingTimeId === trade.id ? (

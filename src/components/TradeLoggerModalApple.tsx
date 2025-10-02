@@ -39,6 +39,9 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
   const [result, setResult] = useState<TradeResult | null>(null);
   const [pnl, setPnl] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [tradeDate, setTradeDate] = useState<string>(new Date().toISOString().split('T')[0]); // YYYY-MM-DD
+  const [tradeTime, setTradeTime] = useState<string>(''); // HH:MM (empty = use current time)
+  const [showDateTimePicker, setShowDateTimePicker] = useState(false);
   
   const [recentSymbols, setRecentSymbols] = useState<string[]>([]);
   const [showSymbolPicker, setShowSymbolPicker] = useState(false);
@@ -63,7 +66,10 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
         setDirection('long');
         setResult(null);
         setPnl('');
+        setTradeDate(new Date().toISOString().split('T')[0]);
+        setTradeTime('');
         setShowSymbolPicker(false);
+        setShowDateTimePicker(false);
       }, 300);
     }
   }, [isOpen]);
@@ -75,6 +81,13 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
       setDirection(editingTrade.direction);
       setResult(editingTrade.result || null);
       setPnl(Math.abs(editingTrade.pnl || 0).toString());
+      
+      // Load date and time from editing trade
+      const entryDate = new Date(editingTrade.entryTime);
+      setTradeDate(entryDate.toISOString().split('T')[0]);
+      const hours = entryDate.getHours().toString().padStart(2, '0');
+      const minutes = entryDate.getMinutes().toString().padStart(2, '0');
+      setTradeTime(`${hours}:${minutes}`);
     }
   }, [editingTrade, isOpen]);
 
@@ -92,6 +105,20 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
       const defaultRR = 1;
       const calculatedRiskAmount = Math.abs(pnlValue) / defaultRR;
       
+      // Build entry time from date and time
+      let entryTime: Date;
+      if (tradeTime) {
+        // Use custom time
+        const [hours, minutes] = tradeTime.split(':').map(Number);
+        entryTime = new Date(tradeDate);
+        entryTime.setHours(hours, minutes, 0, 0);
+      } else {
+        // Use current time with selected date
+        const now = new Date();
+        entryTime = new Date(tradeDate);
+        entryTime.setHours(now.getHours(), now.getMinutes(), 0, 0);
+      }
+      
       const tradeData = {
         symbol: symbol.toUpperCase(),
         direction,
@@ -102,7 +129,7 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
         quantity: 1,
         riskAmount: calculatedRiskAmount,
         riskRewardRatio: defaultRR,
-        entryTime: new Date().toISOString(),
+        entryTime: entryTime.toISOString(),
         mood: 'neutral' as const,
         tags: [] as string[],
         notes: '',
@@ -368,6 +395,96 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
                         <p className="text-xs text-muted-foreground">
                           Enter net P&L after fees
                         </p>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Date & Time (Optional - Apple-style collapsed) */}
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => setShowDateTimePicker(!showDateTimePicker)}
+                  className="w-full flex items-center justify-between px-4 py-2.5 bg-muted/20 hover:bg-muted/30 rounded-lg transition-colors text-sm"
+                >
+                  <span className="text-muted-foreground">
+                    {tradeDate === new Date().toISOString().split('T')[0] 
+                      ? 'Today' 
+                      : new Date(tradeDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    {tradeTime && ` • ${new Date(`2000-01-01T${tradeTime}`).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`}
+                  </span>
+                  <ChevronDown className={cn(
+                    "w-4 h-4 transition-transform",
+                    showDateTimePicker && "rotate-180"
+                  )} />
+                </button>
+
+                <AnimatePresence>
+                  {showDateTimePicker && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="space-y-3 pt-2"
+                    >
+                      {/* Quick Date Shortcuts */}
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setTradeDate(new Date().toISOString().split('T')[0])}
+                          className={cn(
+                            "flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-colors",
+                            tradeDate === new Date().toISOString().split('T')[0]
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted/30 text-foreground hover:bg-muted/50"
+                          )}
+                        >
+                          Today
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const yesterday = new Date();
+                            yesterday.setDate(yesterday.getDate() - 1);
+                            setTradeDate(yesterday.toISOString().split('T')[0]);
+                          }}
+                          className="flex-1 px-3 py-2 rounded-lg text-xs font-medium bg-muted/30 text-foreground hover:bg-muted/50 transition-colors"
+                        >
+                          Yesterday
+                        </button>
+                      </div>
+
+                      {/* Date Picker */}
+                      <div>
+                        <label className="block text-xs font-medium text-muted-foreground mb-1 px-1">
+                          Date
+                        </label>
+                        <input
+                          type="date"
+                          value={tradeDate}
+                          onChange={(e) => setTradeDate(e.target.value)}
+                          className="w-full px-3 py-2 bg-muted/30 border border-border/50 rounded-lg text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        />
+                      </div>
+
+                      {/* Time Picker (Optional) */}
+                      <div>
+                        <label className="block text-xs font-medium text-muted-foreground mb-1 px-1">
+                          Time (optional)
+                        </label>
+                        <input
+                          type="time"
+                          value={tradeTime}
+                          onChange={(e) => setTradeTime(e.target.value)}
+                          className="w-full px-3 py-2 bg-muted/30 border border-border/50 rounded-lg text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                          placeholder="Current time"
+                        />
+                        {!tradeTime && (
+                          <p className="text-xs text-muted-foreground mt-1 px-1">
+                            Leave empty to use current time
+                          </p>
+                        )}
                       </div>
                     </motion.div>
                   )}
