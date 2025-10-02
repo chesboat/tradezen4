@@ -48,18 +48,37 @@ function normalizeDateLike(value: any | undefined): string | undefined {
 function deserializeTasks(raw: any[]): ImprovementTask[] {
   // Handle corrupted localStorage data from previous bug
   if (!raw || !Array.isArray(raw)) {
-    console.warn('Invalid tasks data in localStorage, clearing...', raw);
+    console.warn('Invalid tasks data in localStorage, clearing...');
     return [];
   }
   
-  return (raw || []).map((t) => ({
-    ...t,
-    createdAt: normalizeDateLike(t.createdAt) || t.createdAt,
-    updatedAt: normalizeDateLike(t.updatedAt) || t.updatedAt,
-    dueAt: normalizeDateLike(t.dueAt),
-    scheduledFor: normalizeDateLike(t.scheduledFor),
-    completedAt: normalizeDateLike(t.completedAt),
-  }));
+  try {
+    return raw.map((t) => {
+      // Ensure required fields exist
+      if (!t.id || !t.text) {
+        console.warn('Skipping task with missing required fields:', t);
+        return null;
+      }
+      
+      return {
+        ...t,
+        // Normalize dates
+        createdAt: normalizeDateLike(t.createdAt) || t.createdAt,
+        updatedAt: normalizeDateLike(t.updatedAt) || t.updatedAt,
+        dueAt: normalizeDateLike(t.dueAt),
+        scheduledFor: normalizeDateLike(t.scheduledFor),
+        completedAt: normalizeDateLike(t.completedAt),
+        // Ensure status exists
+        status: t.status || 'open',
+        // Remove deprecated fields
+        priority: undefined,
+        pinned: undefined,
+      };
+    }).filter(Boolean) as ImprovementTask[];
+  } catch (error) {
+    console.error('Error deserializing tasks:', error);
+    return [];
+  }
 }
 
 export const useTodoStore = create<TodoState>((set, get) => ({
