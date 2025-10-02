@@ -25,6 +25,7 @@ import { useNavigationStore } from './store/useNavigationStore';
 import { initializeDefaultAccounts } from './store/useAccountFilterStore';
 import { initializeDefaultQuests } from './store/useQuestStore';
 import { useTheme } from './hooks/useTheme';
+import { useAccentColor } from './hooks/useAccentColor';
 import { useTradeLoggerModal } from './hooks/useTradeLoggerModal';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LevelUpToast } from './components/xp/LevelUpToast';
@@ -51,6 +52,7 @@ function AppContent() {
   const { isExpanded: activityLogExpanded } = useActivityLogStore();
   const { currentView } = useNavigationStore();
   const { theme } = useTheme();
+  useAccentColor(); // Initialize accent color system
   const tradeLoggerModal = useTradeLoggerModal();
   const { currentUser, loading } = useAuth();
   const { initializeProfile } = useUserProfileStore();

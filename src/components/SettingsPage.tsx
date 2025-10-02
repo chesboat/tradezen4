@@ -18,6 +18,7 @@ import {
 import { useUserProfileStore } from '@/store/useUserProfileStore';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
+import { useAccentColor, accentColorPalettes, type AccentColor } from '@/hooks/useAccentColor';
 import toast from 'react-hot-toast';
 import DisciplineModeToggle from '@/components/discipline/DisciplineModeToggle';
 import { setDisciplineMode } from '@/lib/discipline';
@@ -26,11 +27,15 @@ export const SettingsPage: React.FC = () => {
   const { profile, updateProfile, updateDisplayName, refreshStats } = useUserProfileStore();
   const { currentUser } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { accentColor, setAccentColor } = useAccentColor();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [displayName, setDisplayNameLocal] = useState(profile?.displayName || '');
   const [isUploading, setIsUploading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  
+  // TODO: Replace with actual premium status check
+  const isPremium = false;
 
   const handleDisplayNameSave = () => {
     if (displayName.trim()) {
@@ -237,6 +242,70 @@ export const SettingsPage: React.FC = () => {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Accent Color Picker */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <label className="block text-sm font-medium">Accent Color</label>
+              {!isPremium && (
+                <span className="text-xs text-muted-foreground bg-muted/30 px-2 py-1 rounded-md">
+                  Premium colors locked
+                </span>
+              )}
+            </div>
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+              {(Object.entries(accentColorPalettes) as [AccentColor, typeof accentColorPalettes[AccentColor]][]).map(([key, palette]) => {
+                const isLocked = palette.isPremium && !isPremium;
+                const isSelected = accentColor === key;
+                
+                return (
+                  <button
+                    key={key}
+                    onClick={() => {
+                      if (isLocked) {
+                        toast.error('Upgrade to Premium to unlock this color');
+                        return;
+                      }
+                      setAccentColor(key);
+                      toast.success(`Accent color changed to ${palette.name}`);
+                    }}
+                    disabled={isLocked}
+                    className={`relative flex flex-col items-center gap-2 p-3 rounded-lg border transition-all ${
+                      isSelected
+                        ? 'bg-primary/10 border-primary ring-2 ring-primary/20'
+                        : isLocked
+                          ? 'bg-muted/20 border-border opacity-40 cursor-not-allowed'
+                          : 'bg-background hover:bg-accent border-border hover:border-primary/30'
+                    }`}
+                  >
+                    {/* Color Preview Circle */}
+                    <div 
+                      className="w-8 h-8 rounded-full border-2 border-border flex items-center justify-center text-lg"
+                      style={{
+                        background: isLocked 
+                          ? 'hsl(0 0% 50%)' 
+                          : theme === 'dark' 
+                            ? `hsl(${palette.dark.primary})`
+                            : `hsl(${palette.light.primary})`
+                      }}
+                    >
+                      {isLocked && (
+                        <span className="text-xs">🔒</span>
+                      )}
+                    </div>
+                    
+                    {/* Color Name */}
+                    <span className="text-xs font-medium text-center leading-tight">
+                      {palette.emoji} {palette.name.split(' ')[palette.name.split(' ').length - 1]}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-xs text-muted-foreground mt-3">
+              Accent color applies to buttons, links, and interactive elements throughout the app.
+            </p>
           </div>
         </motion.div>
 
