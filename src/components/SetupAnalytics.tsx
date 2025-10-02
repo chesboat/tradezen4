@@ -11,6 +11,7 @@ import { Trade } from '@/types';
 import { formatCurrency } from '@/lib/localStorageUtils';
 import { cn } from '@/lib/utils';
 import { PremiumBadge } from './PremiumBadge';
+import { useTagStore, TAG_COLORS } from '@/store/useTagStore';
 
 interface SetupPerformance {
   tag: string;
@@ -33,6 +34,8 @@ interface SetupAnalyticsProps {
 }
 
 export const SetupAnalytics: React.FC<SetupAnalyticsProps> = ({ trades, isPremium, onUpgrade }) => {
+  const { getTagColor } = useTagStore();
+  
   // Calculate performance by tag
   const setupPerformance = useMemo(() => {
     const tagMap = new Map<string, Trade[]>();
@@ -189,7 +192,10 @@ export const SetupAnalytics: React.FC<SetupAnalyticsProps> = ({ trades, isPremiu
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-xs text-green-600 dark:text-green-400 font-medium mb-1">Best Setup</div>
-              <div className="text-lg font-bold truncate">{bestSetup.tag}</div>
+              <div className="text-lg font-bold flex items-center gap-1.5">
+                <Hash className="w-4 h-4" />
+                {bestSetup.tag}
+              </div>
               <div className="text-sm text-muted-foreground">
                 {bestSetup.totalTrades} trades • {formatCurrency(bestSetup.totalPnL)}
               </div>
@@ -206,7 +212,10 @@ export const SetupAnalytics: React.FC<SetupAnalyticsProps> = ({ trades, isPremiu
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-xs text-red-600 dark:text-red-400 font-medium mb-1">Needs Work</div>
-                <div className="text-lg font-bold truncate">{worstSetup.tag}</div>
+                <div className="text-lg font-bold flex items-center gap-1.5">
+                  <Hash className="w-4 h-4" />
+                  {worstSetup.tag}
+                </div>
                 <div className="text-sm text-muted-foreground">
                   {worstSetup.totalTrades} trades • {formatCurrency(worstSetup.totalPnL)}
                 </div>
@@ -229,14 +238,23 @@ export const SetupAnalytics: React.FC<SetupAnalyticsProps> = ({ trades, isPremiu
             <div className="flex items-center justify-between gap-4">
               {/* Tag Name & Trade Count */}
               <div className="flex items-center gap-3 min-w-0 flex-1">
-                <div className={cn(
-                  "w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold",
-                  setup.totalPnL > 0 ? "bg-green-500/20 text-green-600 dark:text-green-400" : "bg-red-500/20 text-red-600 dark:text-red-400"
-                )}>
-                  #{index + 1}
-                </div>
+                {/* Color-coded tag pill */}
+                {(() => {
+                  const tagColor = getTagColor(setup.tag);
+                  const colorStyles = TAG_COLORS[tagColor];
+                  return (
+                    <div className={cn(
+                      "px-3 py-1.5 rounded-full flex items-center gap-1.5 border",
+                      colorStyles.bg,
+                      colorStyles.text,
+                      colorStyles.border
+                    )}>
+                      <Hash className="w-3.5 h-3.5" />
+                      <span className="font-semibold text-sm">{setup.tag}</span>
+                    </div>
+                  );
+                })()}
                 <div className="flex-1 min-w-0">
-                  <div className="font-semibold truncate">{setup.tag}</div>
                   <div className="text-xs text-muted-foreground">
                     {setup.totalTrades} {setup.totalTrades === 1 ? 'trade' : 'trades'}
                   </div>
