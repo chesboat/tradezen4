@@ -442,17 +442,26 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
       paddingClasses,
       heightClasses,
       
-      // Weekend styling (subtle, muted appearance)
-      isWeekend && !day.isOtherMonth 
-        ? 'border border-dashed border-border/40 bg-muted/20 opacity-60 hover:opacity-75 hover:border-primary/30 hover:bg-muted/30'
-        : 'border border-border/50 bg-card hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10',
+      // Apple-style: Pure black for empty days, elevated gray for days with content
+      // Border styling
+      'border border-border/50',
+      
+      // Background: black for empty days, elevated for days with trades
+      day.tradesCount === 0 
+        ? 'bg-background hover:bg-card/50' 
+        : 'bg-card hover:shadow-lg hover:shadow-primary/10',
+      
+      // Hover border
+      'hover:border-primary/50',
+      
+      // Weekend styling (slightly muted)
+      isWeekend && !day.isOtherMonth && 'opacity-75',
       
       // Mobile: Reduce opacity change for other month days
       day.isOtherMonth && 'opacity-30 sm:opacity-40',
       isToday && 'ring-1 sm:ring-2 ring-primary/50',
       isSelected && 'bg-primary/10 border-primary',
       isHovered && 'bg-accent/50',
-      day.tradesCount > 0 && 'bg-muted/30',
       day.pnl > 0 && 'border-green-500/30 bg-green-50/10',
       day.pnl < 0 && 'border-red-500/30 bg-red-50/10',
     );
@@ -954,7 +963,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                           <motion.div
                             className={cn(
                               'relative overflow-hidden rounded-lg border border-border/50 transition-all duration-300 cursor-pointer aspect-square',
-                              'p-1.5 bg-muted/30 hover:bg-muted/50',
+                              'p-1.5 bg-card hover:bg-card/80 hover:shadow-lg',
                               reviewStatus === 'completed' && 'ring-1 ring-green-500/30 bg-green-500/5',
                               reviewStatus === 'available' && 'ring-1 ring-blue-500/30 bg-blue-500/5'
                             )}
@@ -1201,7 +1210,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
               {/* Weekly Summary - Desktop only (8th column) */}
             <motion.div
                 className={cn(
-                  "hidden lg:flex overflow-hidden bg-muted/30 border border-border/50 rounded-lg sm:rounded-xl hover:bg-muted/50 transition-all duration-300 aspect-[7/6] flex-col justify-between cursor-pointer relative",
+                  "hidden lg:flex overflow-hidden bg-card border border-border/50 rounded-lg sm:rounded-xl hover:bg-card/80 hover:shadow-lg transition-all duration-300 aspect-[7/6] flex-col justify-between cursor-pointer relative",
                   (() => {
                     switch (spaceLevel) {
                       case 'ultra-compact':
