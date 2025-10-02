@@ -324,7 +324,7 @@ export const SettingsPage: React.FC = () => {
                 <button
                   onClick={() => {
                     // TODO: Open Stripe customer portal
-                    toast.info('Billing portal coming soon!');
+                    toast('Billing portal coming soon!');
                   }}
                   className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
