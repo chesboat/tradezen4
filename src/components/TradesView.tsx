@@ -416,14 +416,24 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
       filtered = filtered.filter(trade => (trade.pnl || 0) < 0);
     }
 
-    // Apply filters
+    // Apply filters (Apple-style smart search with hashtag support)
     if (filters.search) {
-      const searchLower = filters.search.toLowerCase();
-      filtered = filtered.filter(trade => 
-        trade.symbol.toLowerCase().includes(searchLower) ||
-        trade.notes?.toLowerCase().includes(searchLower) ||
-        trade.tags?.some(tag => tag.toLowerCase().includes(searchLower))
-      );
+      const searchLower = filters.search.toLowerCase().trim();
+      
+      // If search starts with #, treat it as a tag filter
+      if (searchLower.startsWith('#')) {
+        const tagQuery = searchLower.substring(1); // Remove the #
+        filtered = filtered.filter(trade => 
+          trade.tags?.some(tag => tag.toLowerCase().includes(tagQuery))
+        );
+      } else {
+        // Regular search across symbol, notes, and tags
+        filtered = filtered.filter(trade => 
+          trade.symbol.toLowerCase().includes(searchLower) ||
+          trade.notes?.toLowerCase().includes(searchLower) ||
+          trade.tags?.some(tag => tag.toLowerCase().includes(searchLower))
+        );
+      }
     }
 
     if (filters.result !== 'all') {
@@ -504,7 +514,7 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
     });
 
     return filtered;
-  }, [trades, filters, sortConfig, quickFilter, selectedAccountId, includeArchived, activeTag]);
+  }, [trades, filters, sortConfig, quickFilter, selectedAccountId, includeArchived, activeTag, selectedTagFilters]);
 
   // Calculate statistics (exclude scratches from win rate)
   const statistics = useMemo(() => {
@@ -769,7 +779,7 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <input
               type="text"
-              placeholder="Search trades by symbol, notes, or tags..."
+              placeholder="Search trades... (try #breakout)"
               value={filters.search}
               onChange={(e) => handleFilterChange('search', e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-muted/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
@@ -819,30 +829,18 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
           ))}
         </div>
 
-        {/* Tag Filter Bar - Apple-style pills */}
-        {uniqueTags.length > 0 && (
+        {/* Active Tag Filters (Apple-style - only show when filtering) */}
+        {selectedTagFilters.size > 0 && (
           <div className="flex flex-wrap items-center gap-2">
-            <Hash className="w-4 h-4 text-muted-foreground" />
-            {uniqueTags.map((tag) => (
+            <span className="text-xs text-muted-foreground">Filtering by:</span>
+            {Array.from(selectedTagFilters).map((tag) => (
               <TagPill
                 key={tag}
                 tag={tag}
-                onClick={() => toggleTagFilter(tag)}
-                className={cn(
-                  "cursor-pointer transition-all",
-                  selectedTagFilters.has(tag) ? "ring-2 ring-primary" : "opacity-70 hover:opacity-100"
-                )}
+                onRemove={() => toggleTagFilter(tag)}
+                className="ring-2 ring-primary"
               />
             ))}
-            {selectedTagFilters.size > 0 && (
-              <button 
-                onClick={() => setSelectedTagFilters(new Set())} 
-                className="text-xs px-2 py-1 rounded-lg bg-muted hover:bg-muted/70 text-muted-foreground transition-colors flex items-center gap-1"
-              >
-                <X className="w-3 h-3" />
-                Clear
-              </button>
-            )}
           </div>
         )}
 
@@ -1206,10 +1204,26 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                           ) : (
                             <>
                               {(trade.tags || []).slice(0, 2).map((tag) => (
-                                <TagPill key={tag} tag={tag} size="sm" />
+                                <TagPill 
+                                  key={tag} 
+                                  tag={tag} 
+                                  size="sm"
+                                  onClick={() => {
+                                    // Quick filter by clicking a tag
+                                    toggleTagFilter(tag.toLowerCase());
+                                  }}
+                                  className="cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
+                                />
                               ))}
                               {(trade.tags || []).length > 2 && (
-                                <span className="text-xs text-muted-foreground">
+                                <span 
+                                  className="text-xs text-muted-foreground cursor-pointer hover:text-primary transition-colors"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleTagsClick(trade);
+                                  }}
+                                  title="View all tags"
+                                >
                                   +{(trade.tags || []).length - 2}
                                 </span>
                               )}
