@@ -23,7 +23,7 @@ import {
 import { useNavigationStore } from '@/store/useNavigationStore';
 import { useUserProfileStore, getUserDisplayName } from '@/store/useUserProfileStore';
 import { useAuth } from '@/contexts/AuthContext';
-import { useDisciplineStore } from '@/store/useDisciplineStore';
+import { useDisciplineUser, useTodayDay } from '@/lib/disciplineHooks';
 import { todayInTZ } from '@/lib/time';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from './ThemeToggle';
@@ -61,8 +61,7 @@ const moreTabItems: NavItem[] = [
 export const AppleMobileNav: React.FC<AppleMobileNavProps> = ({ onAddTrade }) => {
   const { currentView, setCurrentView } = useNavigationStore();
   const { profile } = useUserProfileStore();
-  const { logout } = useAuth();
-  const { disciplineEnabled, getDayByDate } = useDisciplineStore();
+  const { logout, currentUser } = useAuth();
   const [isProfileSheetOpen, setIsProfileSheetOpen] = useState(false);
 
   const handleSignOut = async () => {
@@ -76,16 +75,18 @@ export const AppleMobileNav: React.FC<AppleMobileNavProps> = ({ onAddTrade }) =>
     }
   };
 
+  // Get discipline data using hooks
+  const tz = (profile as any)?.timezone || 'America/New_York';
+  const { data: userDoc } = useDisciplineUser(currentUser?.uid);
+  const disciplineEnabled = !!userDoc?.settings?.disciplineMode?.enabled;
+  const { data: todayDay } = useTodayDay(currentUser?.uid, tz);
+
   // Calculate trades left for mobile badge
   const tradesLeft = useMemo(() => {
-    if (!disciplineEnabled) return null;
-    const tz = profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const todayStr = todayInTZ(tz);
-    const todayDay = getDayByDate(todayStr);
-    if (!todayDay?.checkInAt) return null;
+    if (!disciplineEnabled || !todayDay?.checkInAt) return null;
     const left = Math.max(0, (todayDay.maxTrades || 0) - (todayDay.usedTrades || 0));
     return { left, isMax: left === 0 };
-  }, [disciplineEnabled, profile?.timezone, getDayByDate]);
+  }, [disciplineEnabled, todayDay]);
 
   return (
     <>
