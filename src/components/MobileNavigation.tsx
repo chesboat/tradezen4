@@ -46,45 +46,47 @@ interface NavItem {
   onClick?: () => void;
 }
 
+// Apple iOS-style bottom navigation (5 core items)
 const navItems: NavItem[] = [
   {
     id: 'dashboard',
-    label: 'Dashboard',
+    label: 'Today',
     icon: Home,
   },
   {
-    id: 'habits',
-    label: 'Habits',
-    icon: Target,
-  },
-  {
     id: 'calendar',
-    label: 'Calendar',
+    label: 'Journal',
     icon: Calendar,
   },
+  // Center button (+ for quick trade) handled separately
+  {
+    id: 'analytics',
+    label: 'Analytics',
+    icon: BarChart3,
+  },
+  {
+    id: 'more',
+    label: 'More',
+    icon: Menu,
+  },
+];
+
+// Items shown in the "More" tab
+const moreTabItems: NavItem[] = [
   {
     id: 'trades',
     label: 'Trades',
     icon: TrendingUp,
   },
   {
-    id: 'journal',
-    label: 'Journal',
-    icon: BookOpen,
-  },
-];
-
-// Additional nav items for the drawer
-const additionalNavItems: NavItem[] = [
-  {
     id: 'notes',
     label: 'Notes',
     icon: FileText,
   },
   {
-    id: 'analytics',
-    label: 'Analytics',
-    icon: BarChart3,
+    id: 'habits',
+    label: 'Habits',
+    icon: Target,
   },
   {
     id: 'quests',

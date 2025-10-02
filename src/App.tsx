@@ -2,7 +2,7 @@ import React from 'react';
 import { PublicSharePageClean as PublicSharePage } from './components/PublicSharePageClean';
 import { SettingsPage } from './components/SettingsPage';
 import { Sidebar } from './components/Sidebar';
-import { MobileNavigation } from './components/MobileNavigation';
+import { AppleMobileNav } from './components/AppleMobileNav';
 import { ActivityLog } from './components/ActivityLog';
 
 import { MinimalDashboard } from './components/MinimalDashboard';
@@ -301,7 +301,7 @@ function AppContent() {
       
       {/* Mobile Navigation - Only visible on mobile */}
       <div className="lg:hidden">
-        <MobileNavigation onAddTrade={tradeLoggerModal.openForNew} />
+        <AppleMobileNav onAddTrade={tradeLoggerModal.openForNew} />
       </div>
       
       {/* Main Content */}
