@@ -277,7 +277,9 @@ export const TagManager: React.FC<TagManagerProps> = ({ isOpen, onClose }) => {
   };
 
   const handleColorChange = (tag: string, color: TagColor) => {
+    console.log('🎨 Changing color:', { tag, color });
     updateTagColor(tag, color);
+    // Force re-render by updating the editing state
     setEditingTagColor(null);
   };
 
@@ -627,12 +629,15 @@ export const TagManager: React.FC<TagManagerProps> = ({ isOpen, onClose }) => {
                                     return (
                                       <button
                                         key={color}
+                                        type="button"
                                         onClick={(e) => {
                                           e.stopPropagation();
+                                          e.preventDefault();
+                                          console.log('Color button clicked:', { tag: stats.tag, color });
                                           handleColorChange(stats.tag, color);
                                         }}
                                         className={cn(
-                                          'w-8 h-8 rounded-full border-2 transition-all flex items-center justify-center',
+                                          'w-8 h-8 rounded-full border-2 transition-all flex items-center justify-center cursor-pointer',
                                           colorStyle.bg,
                                           stats.color === color 
                                             ? 'border-foreground scale-110 ring-2 ring-offset-2 ring-primary' 
