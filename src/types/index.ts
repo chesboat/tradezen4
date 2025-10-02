@@ -319,6 +319,7 @@ export interface ImprovementTask extends FirestoreDocument {
   pinned?: boolean;
   order?: number;
   url?: string; // Optional URL for linking to resources
+  notes?: string; // Optional notes for the task (Apple Reminders style)
   accountId?: string; // Optional: todos are personal, not account-specific
 }
 
