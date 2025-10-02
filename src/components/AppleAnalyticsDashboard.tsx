@@ -16,6 +16,7 @@ import { useTodoStore } from '@/store/useTodoStore';
 import { useNavigationStore } from '@/store/useNavigationStore';
 import { useSubscription } from '@/lib/subscription';
 import { SetupAnalytics } from './SetupAnalytics';
+import { CalendarHeatmap } from './CalendarHeatmap';
 
 // ===============================================
 // TYPES & UTILITIES
@@ -1525,6 +1526,17 @@ export const AppleAnalyticsDashboard: React.FC = () => {
 
         {/* At a Glance Weekly */}
         <AtAGlanceWeekly trades={filteredTrades} />
+
+        {/* Calendar Heatmap (Premium) */}
+        <CalendarHeatmap
+          trades={filteredTrades}
+          isPremium={isPremium}
+          monthsToShow={3}
+          onUpgrade={() => {
+            // TODO: Open upgrade modal
+            console.log('Upgrade clicked');
+          }}
+        />
 
         {/* Equity Curve */}
         <AnnotatedEquityCurve 
