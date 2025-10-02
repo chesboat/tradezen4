@@ -550,9 +550,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
             </motion.div>
           ) : (
             <div className="p-3 flex flex-col items-center gap-2">
-              {/* Theme Toggle */}
-              <ThemeToggle size="sm" />
-              
               {/* Settings */}
               <Tooltip content="Settings" position="right">
                 <motion.button
@@ -572,12 +569,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
       {/* Collapsed State Indicators */}
       {!isExpanded && (
         <div className="p-4 space-y-4 overflow-y-auto flex-shrink-0">
-          <Tooltip content="Theme" position="right" fullWidth>
-            <div className="flex justify-center">
-              <ThemeToggle size="sm" />
-            </div>
-          </Tooltip>
-          
           <Tooltip content="Add Trade" position="right" fullWidth>
             <motion.button
               className="w-full flex items-center justify-center p-3 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground transition-colors"
