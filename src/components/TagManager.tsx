@@ -48,6 +48,8 @@ export const TagManager: React.FC<TagManagerProps> = ({ isOpen, onClose }) => {
   const { notes, removeTag: removeNoteTag, renameTag: renameNoteTag } = useQuickNoteStore();
   const { trades, updateTrade } = useTradeStore();
   const { getAllTags, getTagColor, updateTagColor, renameTag: renameTagMetadata, deleteTag: deleteTagMetadata } = useTagStore();
+  // Subscribe to the tags object directly to trigger re-renders on color changes
+  const tagStoreVersion = useTagStore((state) => Object.keys(state.tags).length + JSON.stringify(Object.values(state.tags).map(t => t.color)));
   const { selectedAccountId } = useAccountFilterStore();
   
   const [searchTerm, setSearchTerm] = useState('');
@@ -58,6 +60,7 @@ export const TagManager: React.FC<TagManagerProps> = ({ isOpen, onClose }) => {
   const [editingTagName, setEditingTagName] = useState<string | null>(null);
   const [editingTagValue, setEditingTagValue] = useState('');
   const [editingTagColor, setEditingTagColor] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Get account-specific data
   const accountNotes = useMemo(() => {
@@ -135,7 +138,7 @@ export const TagManager: React.FC<TagManagerProps> = ({ isOpen, onClose }) => {
     });
 
     return Array.from(statsMap.values());
-  }, [accountNotes, accountTrades, getAllTags, getTagColor]);
+  }, [accountNotes, accountTrades, getAllTags, getTagColor, refreshKey, tagStoreVersion]);
 
   // Filter and sort tags
   const filteredTags = useMemo(() => {
@@ -279,8 +282,9 @@ export const TagManager: React.FC<TagManagerProps> = ({ isOpen, onClose }) => {
   const handleColorChange = (tag: string, color: TagColor) => {
     console.log('🎨 Changing color:', { tag, color });
     updateTagColor(tag, color);
-    // Force re-render by updating the editing state
+    // Force re-render by updating both the editing state and refresh key
     setEditingTagColor(null);
+    setRefreshKey(prev => prev + 1);
   };
 
   const handleBulkDelete = async () => {
