@@ -8,6 +8,7 @@ import { ActivityLog } from './components/ActivityLog';
 import { MinimalDashboard } from './components/MinimalDashboard';
 import { AppleHabitTracker as HabitTracker } from './components/AppleHabitTracker';
 import { CalendarView } from './components/CalendarView';
+import { PricingPage } from './components/PricingPage';
 import { QuestsView } from './components/QuestsView';
 import { WellnessView } from './components/WellnessView';
 import { TradesView } from './components/TradesView';
@@ -244,6 +245,8 @@ function AppContent() {
         return <HabitTracker />;
       case 'calendar':
         return <CalendarView />;
+      case 'pricing':
+        return <PricingPage />;
       case 'trades':
         return <TradesView onOpenTradeModal={(trade) => {
           if (trade.id) {

@@ -112,6 +112,6 @@ export function formatPrice(amount: number): string {
  */
 export function formatAnnualMonthly(annualPrice: number): string {
   const monthly = Math.floor(annualPrice / 12);
-  return `$${monthly}/mo`;
+  return `$${monthly}`;
 }
 
