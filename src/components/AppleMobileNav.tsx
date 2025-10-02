@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Home, 
@@ -23,6 +23,8 @@ import {
 import { useNavigationStore } from '@/store/useNavigationStore';
 import { useUserProfileStore, getUserDisplayName } from '@/store/useUserProfileStore';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDisciplineStore } from '@/store/useDisciplineStore';
+import { todayInTZ } from '@/lib/time';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from './ThemeToggle';
 import toast from 'react-hot-toast';
@@ -60,6 +62,7 @@ export const AppleMobileNav: React.FC<AppleMobileNavProps> = ({ onAddTrade }) =>
   const { currentView, setCurrentView } = useNavigationStore();
   const { profile } = useUserProfileStore();
   const { logout } = useAuth();
+  const { disciplineEnabled, getDayByDate } = useDisciplineStore();
   const [isProfileSheetOpen, setIsProfileSheetOpen] = useState(false);
 
   const handleSignOut = async () => {
@@ -73,17 +76,44 @@ export const AppleMobileNav: React.FC<AppleMobileNavProps> = ({ onAddTrade }) =>
     }
   };
 
+  // Calculate trades left for mobile badge
+  const tradesLeft = useMemo(() => {
+    if (!disciplineEnabled) return null;
+    const tz = profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const todayStr = todayInTZ(tz);
+    const todayDay = getDayByDate(todayStr);
+    if (!todayDay?.checkInAt) return null;
+    const left = Math.max(0, (todayDay.maxTrades || 0) - (todayDay.usedTrades || 0));
+    return { left, isMax: left === 0 };
+  }, [disciplineEnabled, profile?.timezone, getDayByDate]);
+
   return (
     <>
       {/* Top Bar - Apple minimal style */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="flex items-center justify-between px-4 py-3">
-          {/* Logo */}
-          <div className="flex items-center gap-3">
+          {/* Logo + Trades Badge */}
+          <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 bg-gradient-to-br from-primary-400 to-primary-600 rounded-lg flex items-center justify-center">
               <Zap className="w-5 h-5 text-white" />
             </div>
             <h1 className="text-lg font-bold text-foreground">Refine</h1>
+            
+            {/* Trades Left Badge - iOS notification badge style */}
+            {tradesLeft !== null && (
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className={cn(
+                  "px-2 py-0.5 rounded-full text-[11px] font-semibold",
+                  tradesLeft.isMax 
+                    ? "bg-red-500/15 text-red-500 border border-red-500/30" 
+                    : "bg-primary/15 text-primary border border-primary/30"
+                )}
+              >
+                {tradesLeft.left}
+              </motion.div>
+            )}
           </div>
 
           {/* Profile Avatar - opens bottom sheet */}
