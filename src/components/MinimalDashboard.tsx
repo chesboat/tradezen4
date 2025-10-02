@@ -136,7 +136,7 @@ interface KPICardProps {
 const MinimalKPICard: React.FC<KPICardProps> = ({ title, value, change, changeType, icon: Icon }) => {
   return (
     <motion.div 
-      className="bg-card/50 backdrop-blur-sm rounded-xl sm:rounded-2xl p-3 sm:p-6 border border-border/50 hover:border-border transition-all duration-200"
+      className="bg-background rounded-xl sm:rounded-2xl p-3 sm:p-6 border border-border hover:border-primary/30 transition-all duration-200"
       whileHover={{ scale: 1.02, y: -2 }}
     >
       <div className="flex items-center justify-between mb-2 sm:mb-3">
@@ -277,7 +277,7 @@ const HabitsCard: React.FC = () => {
 
   return (
     <motion.div
-      className="bg-card/50 backdrop-blur-sm rounded-2xl p-6 border border-border/50"
+      className="bg-background rounded-2xl p-6 border border-border"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.2 }}
@@ -360,7 +360,7 @@ const RecentActivity: React.FC = () => {
 
   return (
     <motion.div 
-      className="bg-card/50 backdrop-blur-sm rounded-2xl p-6 border border-border/50"
+      className="bg-background rounded-2xl p-6 border border-border"
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.5, delay: 0.2 }}
@@ -647,7 +647,7 @@ const AIInsights: React.FC = () => {
           <motion.div
             key={index}
             className={cn(
-              "p-6 rounded-2xl border-2 bg-card/50 backdrop-blur-sm",
+              "p-6 rounded-2xl border-2 bg-background",
               insight.type === 'positive' ? "border-green-500/30 bg-green-500/5" :
               insight.type === 'warning' ? "border-orange-500/30 bg-orange-500/5" :
               "border-border/50"
