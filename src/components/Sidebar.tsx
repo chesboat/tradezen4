@@ -625,16 +625,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
                     <User className="w-3 h-3 text-white" />
                   )}
                 </div>
-                {/* XP Progress Ring around avatar */}
-                {FEATURE_XP_PRESTIGE && profile?.xp && (
-                  <div className="absolute -inset-0.5">
-                    <ProgressRing 
-                      progressPct={getLevelProgress(profile.xp.seasonXp)}
-                      size="sm"
-                      thickness={1}
-                    />
-                  </div>
-                )}
               </div>
             </motion.button>
           </Tooltip>
