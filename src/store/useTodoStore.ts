@@ -143,9 +143,9 @@ export const useTodoStore = create<TodoState>((set, get) => ({
         // Use the order from the created task if it exists, otherwise assign one
         const withOrder: ImprovementTask = { 
           ...created, 
-          order: created.order ?? (state.tasks[0]?.order ?? 0) + 1 
+          order: created.order ?? (state.tasks[state.tasks.length - 1]?.order ?? 0) + 1 
         } as ImprovementTask;
-        const next = [withOrder, ...state.tasks];
+        const next = [...state.tasks, withOrder]; // Add to end (blank canvas)
         localStorage.setItem(STORAGE_KEYS.TODO_TASKS, JSON.stringify(next));
         return { tasks: next };
       });
