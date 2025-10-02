@@ -15,6 +15,7 @@ import {
   Heart,
   CheckCircle2,
   ArrowRight,
+  FileText,
 } from 'lucide-react';
 
 interface FeaturesPageProps {
@@ -106,6 +107,34 @@ export const FeaturesPage: React.FC<FeaturesPageProps> = ({ onGetStarted }) => {
         'Correlation to trading performance',
       ],
       image: '✅',
+    },
+    {
+      icon: <FileText className="w-12 h-12" />,
+      title: 'Rich Notes App',
+      badge: null,
+      description: 'A full-featured notes system built for traders',
+      features: [
+        'Rich text editor with markdown support',
+        'Tag-based organization and smart filtering',
+        'Full-text search across all notes',
+        'Link notes to specific trades or days',
+        'Long-form trade analysis and market research',
+      ],
+      image: '📓',
+    },
+    {
+      icon: <CheckCircle2 className="w-12 h-12" />,
+      title: 'Smart Todo System',
+      badge: null,
+      description: 'Apple Reminders-style task management for traders',
+      features: [
+        'Smart lists (Today, Scheduled, Flagged)',
+        'Quick-add with tags, notes, and URLs',
+        'Flag important tasks for easy access',
+        'Schedule tasks for future review',
+        'Swipe actions on mobile (complete, delete)',
+      ],
+      image: '✓',
     },
   ];
 

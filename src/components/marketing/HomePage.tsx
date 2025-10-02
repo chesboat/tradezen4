@@ -16,7 +16,8 @@ import {
   BookOpen,
   Users,
   Star,
-  Quote
+  Quote,
+  FileText
 } from 'lucide-react';
 import { useNavigationStore } from '@/store/useNavigationStore';
 
@@ -203,6 +204,16 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted, onViewPricing 
                 icon: <MessageCircle className="w-8 h-8" />,
                 title: 'Habit Tracking',
                 description: 'Track pre-market rituals, screen time, exercise, sleep. Your trading performance starts before the bell.',
+              },
+              {
+                icon: <FileText className="w-8 h-8" />,
+                title: 'Rich Notes App',
+                description: 'Full-featured notes with tags, search, and markdown. Perfect for trade ideas, market analysis, and learning.',
+              },
+              {
+                icon: <CheckCircle2 className="w-8 h-8" />,
+                title: 'Smart Todos',
+                description: 'Apple Reminders-style task management. Track review items, research tasks, and follow-up actions.',
               },
             ].map((feature, i) => (
               <motion.div
