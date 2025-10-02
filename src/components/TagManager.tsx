@@ -280,8 +280,10 @@ export const TagManager: React.FC<TagManagerProps> = ({ isOpen, onClose }) => {
   };
 
   const handleColorChange = (tag: string, color: TagColor) => {
-    console.log('🎨 Changing color:', { tag, color });
-    updateTagColor(tag, color);
+    // Normalize tag name (remove # if present)
+    const normalized = tag.toLowerCase().trim().replace(/^#/, '');
+    console.log('🎨 Changing color:', { original: tag, normalized, color });
+    updateTagColor(normalized, color);
     // Force re-render by updating both the editing state and refresh key
     setEditingTagColor(null);
     setRefreshKey(prev => prev + 1);
