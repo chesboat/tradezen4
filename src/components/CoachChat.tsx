@@ -90,12 +90,16 @@ export const CoachChat: React.FC<CoachChatProps> = ({ date }) => {
   return (
     <>
       <button
-        className="fixed bottom-6 z-50 bg-primary text-primary-foreground p-4 rounded-full shadow-lg hover:bg-primary/90"
+        className="fixed bottom-6 z-50 bg-primary text-primary-foreground p-4 rounded-full shadow-lg hover:bg-primary/90 group"
         style={{ left: leftOffset }}
         onClick={isOpen ? close : open}
         title="Ask Coach"
       >
         <MessageCircle className="w-6 h-6" />
+        {/* Premium Badge */}
+        <span className="absolute -top-1 -right-1 bg-gradient-to-r from-orange-500 to-red-500 text-white text-[9px] px-1.5 py-0.5 rounded-full font-bold shadow-lg group-hover:scale-110 transition-transform">
+          PRO
+        </span>
       </button>
 
       <AnimatePresence>
