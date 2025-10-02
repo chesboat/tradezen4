@@ -6,6 +6,8 @@ import { SUBSCRIPTION_PLANS, hasFeature, isLimitReached, type SubscriptionTier }
 // Admin emails that get automatic premium access
 const ADMIN_EMAILS = [
   'your-email@example.com', // Replace with your actual email
+  // Add your email below for testing:
+  // 'yourname@gmail.com',
 ];
 
 export const useSubscription = () => {
