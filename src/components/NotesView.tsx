@@ -40,6 +40,7 @@ import {
 import { NoteContent } from './NoteContent';
 import { SmartTagFilterBar } from './SmartTagFilterBar';
 import { RichNoteEditorModal } from './RichNoteEditorModal';
+import { InlineNoteEditor } from './InlineNoteEditor';
 import { useQuickNoteStore, useQuickNoteModal } from '@/store/useQuickNoteStore';
 import { useRichNotesStore } from '@/store/useRichNotesStore';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
@@ -686,104 +687,113 @@ export const NotesView: React.FC = () => {
           mobileView === 'content' ? "flex" : "hidden md:flex" // Show on mobile only in content view
         )}>
           {selectedNote ? (
-            <>
-              {/* Note Header */}
-              <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+            selectedNote.type === 'rich' ? (
+              /* Rich Note: Inline Editor (Apple Notes style) */
+              <div className="flex-1 flex flex-col overflow-hidden">
                 {/* Mobile Back Button */}
-                <button
-                  onClick={() => setMobileView('list')}
-                  className="md:hidden mr-3 p-2 hover:bg-muted rounded-lg transition-colors"
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-                
-                <div className="flex-1">
-                  <h1 className="text-2xl font-semibold text-foreground mb-1">
-                    {selectedNote.title}
-                  </h1>
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                    <span>{new Date(selectedNote.updatedAt).toLocaleString()}</span>
-                    {selectedNote.wordCount && <span>• {selectedNote.wordCount} words</span>}
-                    {selectedNote.readingTime && <span>• {selectedNote.readingTime} min read</span>}
+                <div className="md:hidden px-4 py-2 border-b border-border">
+                  <button
+                    onClick={() => setMobileView('list')}
+                    className="p-2 hover:bg-muted rounded-lg transition-colors"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                </div>
+                <InlineNoteEditor
+                  noteId={selectedNote.id}
+                  onClose={() => setSelectedNoteId(null)}
+                />
+              </div>
+            ) : (
+              /* Quick Note: Read-only view with edit button */
+              <>
+                {/* Note Header */}
+                <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+                  {/* Mobile Back Button */}
+                  <button
+                    onClick={() => setMobileView('list')}
+                    className="md:hidden mr-3 p-2 hover:bg-muted rounded-lg transition-colors"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  
+                  <div className="flex-1">
+                    <h1 className="text-2xl font-semibold text-foreground mb-1">
+                      {selectedNote.title}
+                    </h1>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <span>{new Date(selectedNote.updatedAt).toLocaleString()}</span>
+                      {selectedNote.wordCount && <span>• {selectedNote.wordCount} words</span>}
+                    </div>
                   </div>
+                  
+                  <button
+                    onClick={() => setOpenMenuId(openMenuId === selectedNote.id ? null : selectedNote.id)}
+                    className="p-2 hover:bg-muted rounded-lg transition-colors"
+                  >
+                    <MoreVertical className="w-4 h-4" />
+                  </button>
+                  
+                  {/* Actions Menu */}
+                  <AnimatePresence>
+                    {openMenuId === selectedNote.id && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                        className="absolute right-6 top-16 z-50 w-48 bg-popover border border-border rounded-lg shadow-lg overflow-hidden"
+                        onMouseLeave={() => setOpenMenuId(null)}
+                      >
+                        <button
+                          onClick={() => {
+                            handleEditNote(selectedNote);
+                            setOpenMenuId(null);
+                          }}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-muted/50 transition-colors text-left"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                          <span className="text-sm">Edit</span>
+                        </button>
+                        <div className="h-px bg-border my-1" />
+                        <button
+                          onClick={() => {
+                            handleDeleteNote(selectedNote);
+                            setOpenMenuId(null);
+                          }}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-red-500/10 transition-colors text-left text-red-500"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          <span className="text-sm">Delete</span>
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
                 
-                <button
-                  onClick={() => setOpenMenuId(openMenuId === selectedNote.id ? null : selectedNote.id)}
-                  className="p-2 hover:bg-muted rounded-lg transition-colors"
-                >
-                  <MoreVertical className="w-4 h-4" />
-                </button>
-                
-                {/* Actions Menu */}
-                <AnimatePresence>
-                  {openMenuId === selectedNote.id && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                      className="absolute right-6 top-16 z-50 w-48 bg-popover border border-border rounded-lg shadow-lg overflow-hidden"
-                      onMouseLeave={() => setOpenMenuId(null)}
-                    >
-                      <button
-                        onClick={() => {
-                          handleEditNote(selectedNote);
-                          setOpenMenuId(null);
-                        }}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-muted/50 transition-colors text-left"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                        <span className="text-sm">Edit</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          // Toggle favorite
-                          setOpenMenuId(null);
-                        }}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-muted/50 transition-colors text-left"
-                      >
-                        <Star className="w-4 h-4" />
-                        <span className="text-sm">Favorite</span>
-                      </button>
-                      <div className="h-px bg-border my-1" />
-                      <button
-                        onClick={() => {
-                          handleDeleteNote(selectedNote);
-                          setOpenMenuId(null);
-                        }}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-red-500/10 transition-colors text-left text-red-500"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        <span className="text-sm">Delete</span>
-                      </button>
-                    </motion.div>
+                {/* Note Content */}
+                <div className="flex-1 overflow-y-auto px-6 py-4">
+                  <div 
+                    className="prose prose-sm max-w-none dark:prose-invert"
+                    dangerouslySetInnerHTML={{ __html: selectedNote.content }}
+                  />
+                  
+                  {/* Tags */}
+                  {selectedNote.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-6 pt-6 border-t border-border">
+                      {selectedNote.tags.map(tag => (
+                        <span
+                          key={tag}
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-muted text-muted-foreground"
+                        >
+                          <Hash className="w-3 h-3" />
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
                   )}
-                </AnimatePresence>
-              </div>
-              
-              {/* Note Content */}
-              <div className="flex-1 overflow-y-auto px-6 py-4">
-                <div 
-                  className="prose prose-sm max-w-none dark:prose-invert"
-                  dangerouslySetInnerHTML={{ __html: selectedNote.content }}
-                />
-                
-                {/* Tags */}
-                {selectedNote.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-6 pt-6 border-t border-border">
-                    {selectedNote.tags.map(tag => (
-                      <span
-                        key={tag}
-                        className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-muted text-muted-foreground"
-                      >
-                        <Hash className="w-3 h-3" />
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </>
+                </div>
+              </>
+            )
           ) : (
             <div className="flex-1 flex items-center justify-center text-center px-6">
               <div>
