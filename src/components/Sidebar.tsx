@@ -312,6 +312,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
               <div className="flex-1 min-w-0">
                 <h1 className="text-base font-semibold text-foreground">Refine</h1>
               </div>
+              {/* Theme Toggle - fixed position in header */}
+              <ThemeToggle size="sm" />
             </motion.div>
           ) : (
             <div className="flex justify-center flex-1">
@@ -505,6 +507,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
               exit="collapsed"
             >
               <div className="flex items-center gap-3">
+                {/* Clean profile picture - no progress ring */}
                 <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
                   {profile?.avatar ? (
                     <img 
@@ -522,7 +525,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
                   </p>
                 </div>
                 <div className="flex items-center gap-1">
-                  <ThemeToggle size="sm" />
                   <Tooltip content="Settings" position="top">
                     <motion.button
                       className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
