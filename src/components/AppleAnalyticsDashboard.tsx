@@ -80,7 +80,7 @@ const HeroAnalyticsPnL: React.FC<{
   const selectedLabel = timePeriodOptions.find(opt => opt.value === selectedPeriod)?.label || 'All Time';
 
   return (
-    <div className="bg-popover border-b border-border">
+    <div className="bg-background border-b border-border">
       <div className="max-w-7xl 2xl:max-w-[1800px] mx-auto px-6 2xl:px-8 py-8">
         {/* Time Period Dropdown */}
         <div className="relative inline-block mb-4" ref={dropdownRef}>
@@ -588,7 +588,7 @@ const AnnotatedEquityCurve: React.FC<{
   };
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-6 overflow-visible">
+    <div className="bg-background border border-border rounded-2xl p-6 overflow-visible">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <TrendingUp className="w-5 h-5 text-muted-foreground" />
