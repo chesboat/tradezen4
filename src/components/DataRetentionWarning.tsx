@@ -113,7 +113,7 @@ export const DataRetentionWarning: React.FC<DataRetentionWarningProps> = ({ onUp
                 }
               </h3>
               <p className="text-xs text-muted-foreground mb-3">
-                Basic plan only keeps 30 days of history. Upgrade to Premium for unlimited history and never lose your data.
+                Basic plan shows last 30 days. Your data is safely stored — upgrade anytime to instantly access your full history.
               </p>
               <div className="flex items-center gap-2">
                 <button

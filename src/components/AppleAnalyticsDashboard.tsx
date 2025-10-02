@@ -1589,7 +1589,7 @@ export const AppleAnalyticsDashboard: React.FC = () => {
                   {hiddenTradesCount} {hiddenTradesCount === 1 ? 'trade' : 'trades'} hidden (30-day limit)
                 </h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  You're on the Basic plan. Upgrade to Premium for unlimited history and advanced analytics.
+                  You're on the Basic plan (30-day view). Your data is safely stored — upgrade to Premium for unlimited history and advanced analytics.
                 </p>
                 <button 
                   onClick={() => handleUpgradeClick('Unlimited History')}
