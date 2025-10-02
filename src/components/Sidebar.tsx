@@ -26,6 +26,8 @@ import { useSidebarStore } from '@/store/useSidebarStore';
 import { useNavigationStore } from '@/store/useNavigationStore';
 import { useQuickNoteModal } from '@/store/useQuickNoteStore';
 import { useUserProfileStore, getUserDisplayName, getFormattedLevel } from '@/store/useUserProfileStore';
+import { useSubscription } from '@/hooks/useSubscription';
+import toast from 'react-hot-toast';
 import { LevelBadge } from './xp/LevelBadge';
 import { ProgressRing } from './xp/ProgressRing';
 import { getLevelProgress } from '@/lib/xp/math';
@@ -38,7 +40,6 @@ import { SearchBar } from './SearchBar';
 import { Tooltip } from './ui/Tooltip';
 import { ThemeToggle } from './ThemeToggle';
 import { TagManager } from './TagManager';
-import toast from 'react-hot-toast';
 import { useScrollShadows } from '@/hooks/useScrollShadows';
 
 interface SidebarProps {
@@ -181,6 +182,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
   const { isExpanded, toggleSidebar } = useSidebarStore();
   const { currentView, setCurrentView } = useNavigationStore();
   const { openModal: openQuickNote } = useQuickNoteModal();
+  const { isPremium } = useSubscription();
   const { profile, refreshStats } = useUserProfileStore();
   const navScroll = useScrollShadows<HTMLDivElement>();
   
@@ -463,6 +465,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
               <button
                 className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors duration-200 group"
                 onClick={() => {
+                  if (!isPremium) {
+                    toast.error('Upgrade to Premium to access AI Coach', {
+                      icon: '👑',
+                      duration: 3000,
+                    });
+                    return;
+                  }
                   // Navigate to Coach view
                   try {
                     useNavigationStore.getState().setCurrentView('coach');

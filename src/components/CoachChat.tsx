@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircle, X, Send } from 'lucide-react';
+import { MessageCircle, X, Send, Crown } from 'lucide-react';
 import { useCoachStore } from '@/store/useCoachStore';
 import { useTradeStore } from '@/store/useTradeStore';
 import { useQuickNoteStore } from '@/store/useQuickNoteStore';
@@ -8,6 +8,8 @@ import { useAccountFilterStore } from '@/store/useAccountFilterStore';
 import { CoachService } from '@/lib/ai/coachService';
 import { useSidebarStore } from '@/store/useSidebarStore';
 import { useSessionStore } from '@/store/useSessionStore';
+import { useSubscription } from '@/hooks/useSubscription';
+import { UpgradePrompt } from './PremiumBadge';
 
 interface CoachChatProps {
   date: string; // YYYY-MM-DD
@@ -19,11 +21,25 @@ export const CoachChat: React.FC<CoachChatProps> = ({ date }) => {
   const { trades } = useTradeStore();
   const { notes } = useQuickNoteStore();
   const { rules } = useSessionStore();
+  const { isPremium } = useSubscription();
   const [input, setInput] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const { isExpanded: sidebarExpanded } = useSidebarStore();
   const leftOffset = sidebarExpanded ? 300 : 84; // match sidebar widths (expanded vs collapsed)
+
+  const handleCoachClick = () => {
+    if (!isPremium) {
+      setShowUpgradePrompt(true);
+      return;
+    }
+    if (isOpen) {
+      close();
+    } else {
+      open();
+    }
+  };
 
   useEffect(() => { loadFromStorage(); }, [loadFromStorage]);
 
@@ -92,7 +108,7 @@ export const CoachChat: React.FC<CoachChatProps> = ({ date }) => {
       <button
         className="fixed bottom-6 z-50 bg-primary text-primary-foreground p-4 rounded-full shadow-lg hover:bg-primary/90 group"
         style={{ left: leftOffset }}
-        onClick={isOpen ? close : open}
+        onClick={handleCoachClick}
         title="Ask Coach"
       >
         <MessageCircle className="w-6 h-6" />
@@ -101,6 +117,26 @@ export const CoachChat: React.FC<CoachChatProps> = ({ date }) => {
           PRO
         </span>
       </button>
+
+      {/* Upgrade Prompt */}
+      <AnimatePresence>
+        {showUpgradePrompt && (
+          <UpgradePrompt
+            feature="AI Trading Coach"
+            tier="premium"
+            onUpgrade={() => {
+              // TODO: Navigate to settings or upgrade modal
+              setShowUpgradePrompt(false);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+              // For now, just show a toast
+              import('react-hot-toast').then(({ default: toast }) => {
+                toast('Opening upgrade options...', { icon: '🚀' });
+              });
+            }}
+            onDismiss={() => setShowUpgradePrompt(false)}
+          />
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {isOpen && (
