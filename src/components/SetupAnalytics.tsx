@@ -176,7 +176,7 @@ export const SetupAnalytics: React.FC<SetupAnalyticsProps> = ({ trades, isPremiu
             Which trading setups work best for you
           </p>
         </div>
-        <PremiumBadge variant="success" />
+        <PremiumBadge variant="subtle" />
       </div>
 
       {/* Key Insights */}

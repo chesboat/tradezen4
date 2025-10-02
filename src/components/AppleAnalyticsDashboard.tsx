@@ -14,7 +14,7 @@ import { useDailyReflectionStore } from '@/store/useDailyReflectionStore';
 import { useActivityLogStore } from '@/store/useActivityLogStore';
 import { useTodoStore } from '@/store/useTodoStore';
 import { useNavigationStore } from '@/store/useNavigationStore';
-import { useSubscription } from '@/lib/subscription';
+import { useSubscription } from '@/hooks/useSubscription';
 import { SetupAnalytics } from './SetupAnalytics';
 import { CalendarHeatmap } from './CalendarHeatmap';
 import { CustomDateRangePicker } from './CustomDateRangePicker';

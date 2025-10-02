@@ -234,7 +234,7 @@ export const CalendarHeatmap: React.FC<CalendarHeatmapProps> = ({
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <PremiumBadge variant="success" />
+          <PremiumBadge variant="subtle" />
           {/* Future: Export button */}
           {/* <button className="p-2 hover:bg-muted rounded-lg transition-colors">
             <Download className="w-4 h-4" />
