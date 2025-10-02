@@ -54,6 +54,7 @@ export interface QuickNoteState {
   getNotesForDate: (date: Date) => QuickNote[];
   allTags: string[];
   removeTag: (tag: string) => void;
+  renameTag: (oldTag: string, newTag: string) => void;
   initializeNotes: () => Promise<void>;
   uploadImage: (file: Blob | File) => Promise<string>;
 }

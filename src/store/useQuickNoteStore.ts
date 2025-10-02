@@ -256,6 +256,19 @@ export const useQuickNoteStore = create<QuickNoteState>((set, get) => ({
     const allTags = [...new Set(updatedNotes.flatMap(note => (note.tags || [])))] ;
     
     set({ notes: updatedNotes, allTags });
+  },
+
+  renameTag: (oldTag, newTag) => {
+    const currentNotes = get().notes;
+    const updatedNotes = currentNotes.map(note => ({
+      ...note,
+      tags: (note.tags || []).map(tag => tag === oldTag ? newTag : tag)
+    }));
+    
+    // Update all tags
+    const allTags = [...new Set(updatedNotes.flatMap(note => (note.tags || [])))] ;
+    
+    set({ notes: updatedNotes, allTags });
   }
 }));
 
