@@ -114,6 +114,19 @@ export const PublicNoteView: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <style>{`
+        .prose a {
+          word-break: break-all;
+          overflow-wrap: anywhere;
+        }
+        .prose code {
+          word-break: break-all;
+          overflow-wrap: anywhere;
+        }
+        .prose pre {
+          overflow-x: auto;
+        }
+      `}</style>
       {/* Header */}
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-lg border-b border-border">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -182,7 +195,7 @@ export const PublicNoteView: React.FC = () => {
 
           {/* Content */}
           <div
-            className="prose prose-lg dark:prose-invert max-w-none"
+            className="prose prose-lg dark:prose-invert max-w-none break-words overflow-wrap-anywhere"
             dangerouslySetInnerHTML={{ __html: note.content }}
           />
         </motion.article>
