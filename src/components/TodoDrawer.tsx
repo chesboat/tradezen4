@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, Circle, ChevronLeft, ChevronRight, Clock, Tag, MoreVertical, Plus, X, Pin, Flag, Calendar, ExternalLink, Link, Inbox, CalendarDays, CheckSquare, Hash } from 'lucide-react';
+import { CheckCircle2, Circle, ChevronLeft, ChevronRight, Clock, Tag, MoreVertical, Plus, X, Pin, Flag, Calendar, ExternalLink, Link, Inbox, CalendarDays, CheckSquare, Hash, Check } from 'lucide-react';
 import { useTodoStore, initializeSampleTasks } from '@/store/useTodoStore';
 import { ImprovementTask } from '@/types';
 import { useActivityLogStore } from '@/store/useActivityLogStore';
@@ -248,8 +248,8 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
       // Mark as completing for animation
       setCompletingTasks(prev => new Set(prev).add(taskId));
       
-      // Wait for full animation (circle fill + checkmark + fade)
-      await new Promise(resolve => setTimeout(resolve, 800));
+      // Wait for full animation: checkmark (300ms) + strikethrough (200ms) + pause (200ms) + fade (400ms)
+      await new Promise(resolve => setTimeout(resolve, 1100));
       
       // Toggle status (task is already hidden)
       await toggleDone(taskId);
@@ -510,19 +510,25 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
       {isExpanded && (
         <div className="flex-1 overflow-hidden">
           <div className="h-full overflow-y-auto p-3 space-y-2" onDragOver={(e) => e.preventDefault()}>
-            {filtered.map((task) => (
-              <div
+            {filtered.map((task) => {
+              const isCompleting = completingTasks.has(task.id);
+              
+              return (
+              <motion.div
                 key={task.id}
-                className={cn(
-                  "group px-2 py-2 rounded-md hover:bg-accent/50 transition-all duration-300",
-                  completingTasks.has(task.id) && "opacity-0 scale-95"
-                )}
-                style={{
-                  transition: 'opacity 0.3s ease, transform 0.3s ease'
+                className="group px-2 py-2 rounded-md hover:bg-accent/50"
+                initial={false}
+                animate={{
+                  opacity: isCompleting ? 0 : 1,
+                  scale: isCompleting ? 0.95 : 1,
+                }}
+                transition={{
+                  opacity: { duration: 0.4, delay: isCompleting ? 0.7 : 0, ease: [0.4, 0, 0.2, 1] },
+                  scale: { duration: 0.4, delay: isCompleting ? 0.7 : 0, ease: [0.4, 0, 0.2, 1] },
                 }}
               >
                 <div className="flex items-start gap-2">
-                  {/* Checkbox - Apple style circle fill */}
+                  {/* Checkbox - Apple style with checkmark */}
                     <motion.button 
                     className={cn(
                       "relative flex-shrink-0 w-[18px] h-[18px] rounded-full border-2 flex items-center justify-center overflow-hidden mt-0.5",
@@ -535,40 +541,32 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     style={{
-                      backgroundColor: task.status === 'done' || completingTasks.has(task.id)
+                      backgroundColor: task.status === 'done' || isCompleting
                         ? `var(--accent-${accentColor})` 
                         : 'transparent'
                     }}
                   >
-                    {/* Fill animation */}
-                    {completingTasks.has(task.id) && task.status === 'open' && (
-                          <motion.div
-                        className="absolute inset-0 rounded-full"
-                        style={{ backgroundColor: `var(--accent-${accentColor})` }}
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ duration: 0.4, ease: [0.4, 0.0, 0.2, 1] }}
-                      />
-                    )}
-                    
-                    {/* Checkmark dot */}
-                    {(task.status === 'done' || completingTasks.has(task.id)) && (
-                      <motion.div 
-                        className="w-[6px] h-[6px] bg-white rounded-full relative z-10"
-                        initial={completingTasks.has(task.id) && task.status === 'open' ? { scale: 0, opacity: 0 } : false}
+                    {/* Checkmark icon */}
+                    {(task.status === 'done' || isCompleting) && (
+                      <motion.div
+                        initial={isCompleting && task.status === 'open' ? { scale: 0, opacity: 0 } : false}
                             animate={{ scale: 1, opacity: 1 }}
-                        transition={{ duration: 0.2, delay: 0.3, ease: [0.4, 0.0, 0.2, 1] }}
-                      />
+                        transition={{ duration: 0.3, ease: [0.4, 0.0, 0.2, 1] }}
+                        className="relative z-10"
+                      >
+                        <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                      </motion.div>
                     )}
                     </motion.button>
 
                   {/* Task Content */}
                   <div className="flex-1 min-w-0">
-                    {/* Task Text - wraps naturally */}
-                      <textarea
-                      className={`w-full bg-transparent text-sm outline-none resize-none overflow-hidden leading-relaxed ${
-                        task.status === 'done' ? 'line-through text-muted-foreground' : 'text-foreground'
-                      }`}
+                    {/* Task Text - wraps naturally with strikethrough animation */}
+                      <motion.textarea
+                      className={cn(
+                        "w-full bg-transparent text-sm outline-none resize-none overflow-hidden leading-relaxed",
+                        task.status === 'done' ? 'text-muted-foreground' : 'text-foreground'
+                      )}
                         defaultValue={task.text}
                         rows={1}
                         onInput={(e) => {
@@ -580,6 +578,15 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                           const text = e.target.value.trim();
                           if (text && text !== task.text) updateTask(task.id, { text });
                           else e.target.value = task.text;
+                        }}
+                        initial={false}
+                        animate={{
+                          textDecoration: (task.status === 'done' || isCompleting) ? 'line-through' : 'none',
+                        }}
+                        transition={{
+                          duration: 0.2,
+                          delay: isCompleting ? 0.3 : 0,
+                          ease: [0.4, 0, 0.2, 1]
                         }}
                       />
                     
@@ -862,8 +869,9 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                           </motion.div>
                         )}
                       </AnimatePresence>
-              </div>
-            ))}
+              </motion.div>
+              );
+            })}
 
             {filtered.length === 0 && !isAddingNew && (
               <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground text-sm">

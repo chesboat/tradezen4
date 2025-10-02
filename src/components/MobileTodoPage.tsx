@@ -16,7 +16,8 @@ import {
   CheckSquare,
   Hash,
   Camera,
-  MapPin
+  MapPin,
+  Check
 } from 'lucide-react';
 import { useTodoStore } from '@/store/useTodoStore';
 import { ImprovementTask } from '@/types';
@@ -135,8 +136,8 @@ export const MobileTodoPage: React.FC = () => {
     // Start the completion animation
     setCompletingTaskId(taskId);
     
-    // Wait for circle fill animation to complete (400ms)
-    await new Promise(resolve => setTimeout(resolve, 400));
+    // Wait for full animation: checkmark (300ms) + strikethrough (200ms) + pause (200ms) + fade (400ms)
+    await new Promise(resolve => setTimeout(resolve, 1100));
     
     // Then toggle the task and fade out (handled by AnimatePresence)
     toggleDone(taskId);
@@ -144,7 +145,7 @@ export const MobileTodoPage: React.FC = () => {
     // Clear the completing state after fade out
     setTimeout(() => {
       setCompletingTaskId(null);
-    }, 300);
+    }, 100);
   };
 
   const formatUrlForDisplay = (url: string) => {
@@ -346,12 +347,16 @@ export const MobileTodoPage: React.FC = () => {
       {/* Tasks List - Apple Reminders Style */}
       <div className="divide-y divide-border">
         <AnimatePresence mode="popLayout">
-          {filtered.map((task, index) => (
+          {filtered.map((task, index) => {
+            const isCompleting = completingTaskId === task.id && task.status === 'open';
+            
+            return (
             <motion.div
               key={task.id}
               initial={{ opacity: 0, y: -10 }}
               animate={{ 
-                opacity: completingTaskId === task.id && task.status === 'open' ? 0.5 : 1, 
+                opacity: isCompleting ? 0 : 1, 
+                scale: isCompleting ? 0.95 : 1,
                 y: 0 
               }}
               exit={{ 
@@ -359,7 +364,11 @@ export const MobileTodoPage: React.FC = () => {
                 height: 0,
                 transition: { duration: 0.3, ease: [0.4, 0.0, 0.2, 1] }
               }}
-              transition={{ duration: 0.2 }}
+              transition={{
+                opacity: { duration: 0.4, delay: isCompleting ? 0.7 : 0 },
+                scale: { duration: 0.4, delay: isCompleting ? 0.7 : 0 },
+                y: { duration: 0.2 }
+              }}
               className="relative overflow-hidden"
             >
               {/* Swipe action backgrounds */}
@@ -416,38 +425,38 @@ export const MobileTodoPage: React.FC = () => {
                         : 'transparent'
                     }}
                   >
-                    {/* Fill animation */}
-                    {completingTaskId === task.id && task.status === 'open' && (
-                      <motion.div
-                        className="absolute inset-0 rounded-full"
-                        style={{ backgroundColor: `var(--accent-${accentColor})` }}
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ duration: 0.4, ease: [0.4, 0.0, 0.2, 1] }}
-                      />
-                    )}
-                    
-                    {/* Checkmark dot */}
+                    {/* Checkmark icon */}
                     {(task.status === 'done' || completingTaskId === task.id) && (
-                      <motion.div 
-                        className="w-2 h-2 bg-white rounded-full relative z-10"
-                        initial={completingTaskId === task.id ? { scale: 0, opacity: 0 } : false}
+                      <motion.div
+                        initial={completingTaskId === task.id && task.status === 'open' ? { scale: 0, opacity: 0 } : false}
                         animate={{ scale: 1, opacity: 1 }}
-                        transition={{ duration: 0.2, delay: 0.3, ease: [0.4, 0.0, 0.2, 1] }}
-                      />
+                        transition={{ duration: 0.3, ease: [0.4, 0.0, 0.2, 1] }}
+                        className="relative z-10"
+                      >
+                        <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                      </motion.div>
                     )}
                   </button>
 
                   {/* Task content */}
                   <div className="flex-1 min-w-0">
-                    <p className={cn(
-                      'text-[15px] leading-snug',
-                      task.status === 'done' 
-                        ? 'line-through text-muted-foreground' 
-                        : 'text-foreground'
-                    )}>
+                    <motion.p 
+                      className={cn(
+                        'text-[15px] leading-snug',
+                        task.status === 'done' ? 'text-muted-foreground' : 'text-foreground'
+                      )}
+                      initial={false}
+                      animate={{
+                        textDecoration: (task.status === 'done' || completingTaskId === task.id) ? 'line-through' : 'none',
+                      }}
+                      transition={{
+                        duration: 0.2,
+                        delay: completingTaskId === task.id ? 0.3 : 0,
+                        ease: [0.4, 0, 0.2, 1]
+                      }}
+                    >
                       {task.text}
-                    </p>
+                    </motion.p>
 
                     {/* Metadata - compact */}
                     {(task.notes || task.tags?.length || task.url) && (
@@ -652,7 +661,8 @@ export const MobileTodoPage: React.FC = () => {
                   </AnimatePresence>
               </motion.div>
             </motion.div>
-          ))}
+            );
+          })}
         </AnimatePresence>
 
         {/* New Task Row - Inline at bottom (Apple Reminders style) */}
