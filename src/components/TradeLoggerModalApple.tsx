@@ -9,7 +9,8 @@ import {
   Minus,
   ChevronDown,
   Check,
-  Info
+  Info,
+  Hash
 } from 'lucide-react';
 import { useTradeActions } from '@/store/useTradeStore';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
@@ -17,6 +18,7 @@ import { useActivityLogStore } from '@/store/useActivityLogStore';
 import { Trade, TradeDirection, TradeResult } from '@/types';
 import { formatCurrency, getRecentSymbols, addRecentSymbol } from '@/lib/localStorageUtils';
 import { cn } from '@/lib/utils';
+import { TagInput } from './TagInput';
 
 interface TradeLoggerModalAppleProps {
   isOpen: boolean;
@@ -38,10 +40,14 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
   const [direction, setDirection] = useState<TradeDirection>('long');
   const [result, setResult] = useState<TradeResult | null>(null);
   const [pnl, setPnl] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
+  const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tradeDate, setTradeDate] = useState<string>(new Date().toISOString().split('T')[0]); // YYYY-MM-DD
   const [tradeTime, setTradeTime] = useState<string>(''); // HH:MM (empty = use current time)
   const [showDateTimePicker, setShowDateTimePicker] = useState(false);
+  const [showTagInput, setShowTagInput] = useState(false);
+  const [showNotesInput, setShowNotesInput] = useState(false);
   
   const [recentSymbols, setRecentSymbols] = useState<string[]>([]);
   const [showSymbolPicker, setShowSymbolPicker] = useState(false);
@@ -66,10 +72,14 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
         setDirection('long');
         setResult(null);
         setPnl('');
+        setTags([]);
+        setNotes('');
         setTradeDate(new Date().toISOString().split('T')[0]);
         setTradeTime('');
         setShowSymbolPicker(false);
         setShowDateTimePicker(false);
+        setShowTagInput(false);
+        setShowNotesInput(false);
       }, 300);
     }
   }, [isOpen]);
@@ -81,6 +91,8 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
       setDirection(editingTrade.direction);
       setResult(editingTrade.result || null);
       setPnl(Math.abs(editingTrade.pnl || 0).toString());
+      setTags(editingTrade.tags || []);
+      setNotes(editingTrade.notes || '');
       
       // Load date and time from editing trade
       const entryDate = new Date(editingTrade.entryTime);
@@ -88,6 +100,14 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
       const hours = entryDate.getHours().toString().padStart(2, '0');
       const minutes = entryDate.getMinutes().toString().padStart(2, '0');
       setTradeTime(`${hours}:${minutes}`);
+      
+      // Show tag/notes inputs if they have values
+      if (editingTrade.tags && editingTrade.tags.length > 0) {
+        setShowTagInput(true);
+      }
+      if (editingTrade.notes) {
+        setShowNotesInput(true);
+      }
     }
   }, [editingTrade, isOpen]);
 
@@ -119,6 +139,11 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
         entryTime.setHours(now.getHours(), now.getMinutes(), 0, 0);
       }
       
+      // Auto-extract tags from notes (hashtags)
+      const noteTags = (notes.match(/#([a-zA-Z0-9_-]+)/g) || [])
+        .map(t => t.slice(1).toLowerCase());
+      const allTags = [...new Set([...tags, ...noteTags])]; // Merge and dedupe
+      
       const tradeData = {
         symbol: symbol.toUpperCase(),
         direction,
@@ -131,8 +156,8 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
         riskRewardRatio: defaultRR,
         entryTime: entryTime.toISOString(),
         mood: 'neutral' as const,
-        tags: [] as string[],
-        notes: '',
+        tags: allTags,
+        notes: notes,
         accountId: selectedAccountId,
       };
 
@@ -486,6 +511,83 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
                           </p>
                         )}
                       </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Tags (Optional - Apple-style collapsed) */}
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => setShowTagInput(!showTagInput)}
+                  className="w-full flex items-center justify-between px-4 py-2.5 bg-muted/20 hover:bg-muted/30 rounded-lg transition-colors text-sm"
+                >
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Hash className="w-4 h-4" />
+                    <span>{tags.length > 0 ? `${tags.length} ${tags.length === 1 ? 'tag' : 'tags'}` : 'Add Tags'}</span>
+                  </div>
+                  <ChevronDown className={cn(
+                    "w-4 h-4 transition-transform",
+                    showTagInput && "rotate-180"
+                  )} />
+                </button>
+
+                <AnimatePresence>
+                  {showTagInput && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="pt-2"
+                    >
+                      <TagInput
+                        value={tags}
+                        onChange={setTags}
+                        placeholder="e.g. breakout, reversal, momentum"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1.5 px-1">
+                        Tag your setups to track which strategies work best
+                      </p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Notes (Optional - Apple-style collapsed) */}
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => setShowNotesInput(!showNotesInput)}
+                  className="w-full flex items-center justify-between px-4 py-2.5 bg-muted/20 hover:bg-muted/30 rounded-lg transition-colors text-sm"
+                >
+                  <span className="text-muted-foreground">
+                    {notes ? 'Edit Note' : 'Add Note'}
+                  </span>
+                  <ChevronDown className={cn(
+                    "w-4 h-4 transition-transform",
+                    showNotesInput && "rotate-180"
+                  )} />
+                </button>
+
+                <AnimatePresence>
+                  {showNotesInput && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="pt-2"
+                    >
+                      <textarea
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                        placeholder="Quick note about this trade... (use #hashtags for tags)"
+                        className="w-full px-3 py-2 bg-muted/30 border border-border/50 rounded-lg text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none"
+                        rows={3}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1.5 px-1">
+                        Use #hashtags to automatically tag trades
+                      </p>
                     </motion.div>
                   )}
                 </AnimatePresence>

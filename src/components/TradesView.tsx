@@ -29,7 +29,8 @@ import {
   MinusCircle,
   Archive,
   MoreVertical,
-  Star
+  Star,
+  Hash
 } from 'lucide-react';
 import { useTradeStore } from '@/store/useTradeStore';
 import TradeImageImport from '@/components/TradeImageImport';
@@ -39,7 +40,8 @@ import { Trade, TradeResult, MoodType } from '@/types';
 import { summarizeWinLossScratch, classifyTradeResult } from '@/lib/utils';
 import { formatCurrency, formatRelativeTime, getMoodColor, getMoodEmoji } from '@/lib/localStorageUtils';
 import { cn } from '@/lib/utils';
-import { TagList } from './TagPill';
+import { TagPill, TagInput } from './TagInput';
+import { useTagStore } from '@/store/useTagStore';
 
 interface TradeFilters {
   search: string;
@@ -116,11 +118,16 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
   const [editingEntryValue, setEditingEntryValue] = useState<string>('');
   const [editingExitId, setEditingExitId] = useState<string | null>(null);
   const [editingExitValue, setEditingExitValue] = useState<string>('');
+  const [editingTagsId, setEditingTagsId] = useState<string | null>(null);
   const [quickFilter, setQuickFilter] = useState<'all' | 'today' | 'week' | 'winners' | 'losers'>('all');
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [swipedTradeId, setSwipedTradeId] = useState<string | null>(null);
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
   const [selectionMode, setSelectionMode] = useState(false);
+  
+  // Tag filters
+  const [selectedTagFilters, setSelectedTagFilters] = useState<Set<string>>(new Set());
+  const { getAllTags } = useTagStore();
 
   // Get unique symbols for filter dropdown
   const uniqueSymbols = useMemo(() => {
@@ -344,6 +351,29 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
     }
   };
 
+  // Tags inline editing handlers
+  const handleTagsClick = (trade: Trade) => {
+    setEditingTagsId(editingTagsId === trade.id ? null : trade.id);
+  };
+
+  const handleTagsSave = async (tradeId: string, newTags: string[]) => {
+    await updateTrade(tradeId, { tags: newTags });
+    setEditingTagsId(null);
+  };
+
+  const toggleTagFilter = (tag: string) => {
+    setSelectedTagFilters(prev => {
+      const next = new Set(prev);
+      if (next.has(tag)) {
+        next.delete(tag);
+      } else {
+        next.add(tag);
+      }
+      return next;
+    });
+    setCurrentPage(1); // Reset to first page when filtering
+  };
+
   const handleTradeClick = (tradeId: string) => {
     if (selectionMode) {
       // Toggle selection
@@ -411,6 +441,15 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
 
     if (filters.mood !== 'all') {
       filtered = filtered.filter(trade => trade.mood === filters.mood);
+    }
+
+    // Tag filtering (Apple-style - can select multiple tags)
+    if (selectedTagFilters.size > 0) {
+      filtered = filtered.filter(trade => {
+        const tradeTags = (trade.tags || []).map(t => t.toLowerCase());
+        // Show trade if it has ANY of the selected tags
+        return Array.from(selectedTagFilters).some(filterTag => tradeTags.includes(filterTag));
+      });
     }
 
     if (activeTag) {
@@ -780,20 +819,29 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
           ))}
         </div>
 
-        {/* Tag Filter Bar */}
+        {/* Tag Filter Bar - Apple-style pills */}
         {uniqueTags.length > 0 && (
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">Filter by tag:</span>
-            <TagList
-              tags={uniqueTags}
-              variant="interactive"
-              size="sm"
-              onClick={(tag) => setActiveTag(prev => (prev === tag ? null : tag))}
-              selectedTags={activeTag ? [activeTag] : []}
-              className="mt-1"
-            />
-            {activeTag && (
-              <button className="text-xs px-2 py-1 rounded bg-muted hover:bg-muted/70" onClick={() => setActiveTag(null)}>Clear</button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Hash className="w-4 h-4 text-muted-foreground" />
+            {uniqueTags.map((tag) => (
+              <TagPill
+                key={tag}
+                tag={tag}
+                onClick={() => toggleTagFilter(tag)}
+                className={cn(
+                  "cursor-pointer transition-all",
+                  selectedTagFilters.has(tag) ? "ring-2 ring-primary" : "opacity-70 hover:opacity-100"
+                )}
+              />
+            ))}
+            {selectedTagFilters.size > 0 && (
+              <button 
+                onClick={() => setSelectedTagFilters(new Set())} 
+                className="text-xs px-2 py-1 rounded-lg bg-muted hover:bg-muted/70 text-muted-foreground transition-colors flex items-center gap-1"
+              >
+                <X className="w-3 h-3" />
+                Clear
+              </button>
             )}
           </div>
         )}
@@ -1133,7 +1181,49 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                         )}
                       </div>
                     </td>
-                    <td className="p-3 font-medium">{trade.symbol}</td>
+                    <td className="p-3">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{trade.symbol}</span>
+                        
+                        {/* Tag Pills - Click to edit */}
+                        <div 
+                          className="flex gap-1 cursor-pointer"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleTagsClick(trade);
+                          }}
+                          title="Click to edit tags"
+                        >
+                          {editingTagsId === trade.id ? (
+                            <div className="min-w-[200px]" onClick={(e) => e.stopPropagation()}>
+                              <TagInput
+                                value={trade.tags || []}
+                                onChange={(newTags) => handleTagsSave(trade.id, newTags)}
+                                autoFocus
+                                className="text-xs"
+                              />
+                            </div>
+                          ) : (
+                            <>
+                              {(trade.tags || []).slice(0, 2).map((tag) => (
+                                <TagPill key={tag} tag={tag} size="sm" />
+                              ))}
+                              {(trade.tags || []).length > 2 && (
+                                <span className="text-xs text-muted-foreground">
+                                  +{(trade.tags || []).length - 2}
+                                </span>
+                              )}
+                              {(!trade.tags || trade.tags.length === 0) && (
+                                <button className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1">
+                                  <Hash className="w-3 h-3" />
+                                  <span>Add tags</span>
+                                </button>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </td>
                     <td className="p-3">
                       <span className={cn(
                         'px-2 py-1 rounded text-xs font-medium',
