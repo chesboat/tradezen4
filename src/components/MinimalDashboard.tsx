@@ -709,6 +709,7 @@ export const MinimalDashboard: React.FC = () => {
   const { currentUser } = useAuth();
   const { trades } = useTradeStore();
   const { selectedAccountId } = useAccountFilterStore();
+  const { setCurrentView } = useNavigationStore();
   const [showBottomSection, setShowBottomSection] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>('30d');
   const tz = (useUserProfileStore.getState().profile as any)?.timezone || 'America/New_York';
@@ -847,7 +848,7 @@ export const MinimalDashboard: React.FC = () => {
     toast.className = 'fixed bottom-4 right-4 z-50 px-4 py-3 bg-card border border-border rounded-xl shadow-lg flex items-center gap-3 animate-in slide-in-from-bottom';
     toast.innerHTML = `
       <div class="w-2 h-2 rounded-full bg-green-500"></div>
-      <span class="text-sm font-medium">${message}</span>
+      <span class="text-sm font-medium text-foreground">${message}</span>
     `;
     document.body.appendChild(toast);
     setTimeout(() => toast.remove(), 3000);
