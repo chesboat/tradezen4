@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useTradeStore } from '@/store/useTradeStore';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
+import { useAnalyticsFilterStore } from '@/store/useAnalyticsFilterStore';
 import { computeEdgeScore } from '@/lib/edgeScore';
 import { formatCurrency } from '@/lib/localStorageUtils';
 import { cn } from '@/lib/utils';
@@ -1412,6 +1413,7 @@ export const AppleAnalyticsDashboard: React.FC = () => {
   const { isExpanded: activityLogExpanded } = useActivityLogStore();
   const { isExpanded: todoExpanded } = useTodoStore();
   const { tier, isPremium } = useSubscription();
+  const { activeFilter, clearFilter, getFilteredTrades, getComparisonTrades } = useAnalyticsFilterStore();
   const [selectedPeriod, setSelectedPeriod] = React.useState<TimePeriod>('all');
   const [symbolFilter, setSymbolFilter] = React.useState<string | null>(null);
   const [customStartDate, setCustomStartDate] = React.useState<Date | null>(null);
@@ -1465,8 +1467,34 @@ export const AppleAnalyticsDashboard: React.FC = () => {
       }
     }
 
+    // Apply insight filter (from Daily Insights)
+    if (activeFilter) {
+      filtered = getFilteredTrades(filtered);
+    }
+
     return filtered;
-  }, [tierFilteredTrades, selectedAccountId, selectedPeriod, symbolFilter, customStartDate, customEndDate]);
+  }, [tierFilteredTrades, selectedAccountId, selectedPeriod, symbolFilter, customStartDate, customEndDate, activeFilter, getFilteredTrades]);
+
+  // Get comparison trades for "vs normal" analysis
+  const comparisonTrades = React.useMemo(() => {
+    if (!activeFilter) return [];
+    
+    let base = selectedAccountId
+      ? tierFilteredTrades.filter(t => t.accountId === selectedAccountId)
+      : tierFilteredTrades;
+    
+    // Apply same time period filter
+    if (selectedPeriod !== 'all' && selectedPeriod !== 'custom') {
+      const periodOption = timePeriodOptions.find(opt => opt.value === selectedPeriod);
+      if (periodOption?.days) {
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - periodOption.days);
+        base = base.filter(t => new Date(t.entryTime) >= cutoffDate);
+      }
+    }
+    
+    return getComparisonTrades(base);
+  }, [tierFilteredTrades, selectedAccountId, selectedPeriod, activeFilter, getComparisonTrades]);
 
   // Calculate previous period trades for comparison
   const previousPeriodTrades = React.useMemo(() => {
@@ -1543,6 +1571,58 @@ export const AppleAnalyticsDashboard: React.FC = () => {
         )}
       </AnimatePresence>
 
+      {/* Insight Filter Badge (From Daily Insights) */}
+      <AnimatePresence>
+        {activeFilter && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className={cn(
+              "fixed top-20 z-50 transition-all duration-300",
+              activityLogExpanded && todoExpanded ? 'right-[500px]' :
+              activityLogExpanded ? 'right-[400px]' :
+              todoExpanded ? 'right-[480px]' : 'right-[140px]'
+            )}
+          >
+            <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-2 border-blue-500/20 rounded-2xl p-4 shadow-xl backdrop-blur-xl">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                  <Lightbulb className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="text-sm font-semibold text-foreground">
+                      {activeFilter.label}
+                    </h3>
+                    <span className="px-2 py-0.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-full text-xs font-medium">
+                      {filteredTrades.length} trades
+                    </span>
+                  </div>
+                  {activeFilter.description && (
+                    <p className="text-xs text-muted-foreground">
+                      {activeFilter.description}
+                    </p>
+                  )}
+                  {comparisonTrades.length > 0 && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      vs {comparisonTrades.length} comparison trades
+                    </p>
+                  )}
+                </div>
+                <button
+                  onClick={clearFilter}
+                  className="flex-shrink-0 p-2 hover:bg-muted rounded-lg transition-colors"
+                  aria-label="Clear insight filter"
+                >
+                  <X className="w-4 h-4 text-muted-foreground" />
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Symbol Filter Badge (Sticky, respects sidebars) */}
       <AnimatePresence>
         {symbolFilter && (
@@ -1551,7 +1631,8 @@ export const AppleAnalyticsDashboard: React.FC = () => {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
             className={cn(
-              "fixed top-20 z-50 transition-all duration-300",
+              "fixed z-50 transition-all duration-300",
+              activeFilter ? 'top-36' : 'top-20', // Offset if insight filter is showing
               activityLogExpanded && todoExpanded ? 'right-[500px]' :
               activityLogExpanded ? 'right-[400px]' :
               todoExpanded ? 'right-[480px]' : 'right-[140px]'

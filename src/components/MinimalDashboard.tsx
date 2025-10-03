@@ -47,6 +47,14 @@ import { useSWRConfig } from 'swr';
 import { DailyInsightCard, DailyInsightEmptyState } from './DailyInsightCard';
 import { generateDailyInsight } from '@/lib/dailyInsightEngine';
 import { useTodoStore } from '@/store/useTodoStore';
+import {
+  useAnalyticsFilterStore,
+  createGoldenHourFilter,
+  createRevengeTradesFilter,
+  createFirstTradesFilter,
+  createLastTradesFilter,
+  createLossPatternFilter,
+} from '@/store/useAnalyticsFilterStore';
 
 // Helper function to get appropriate streak text based on habit category
 const getStreakText = (category: HabitCategory): string => {
@@ -793,19 +801,65 @@ export const MinimalDashboard: React.FC = () => {
   }, [accountTrades]);
 
   const [insightDismissed, setInsightDismissed] = useState(false);
+  const { setFilter } = useAnalyticsFilterStore();
 
   const handleInsightAction = (action: string) => {
     console.log('Insight action:', action);
     
     switch (action) {
       case 'view-overtrade-days':
-      case 'view-time-analysis':
-      case 'view-revenge-trades':
-      case 'view-session-analysis':
-      case 'review-losses':
-        // Navigate to trades view
-        setCurrentView('trades');
+        // TODO: Implement overtrade days filter with day grouping
+        setFilter(null); // Placeholder for now
+        setCurrentView('analytics');
+        showToast('View all analytics - overtrade filter coming soon!');
         break;
+      
+      case 'view-time-analysis': {
+        // Find the golden hour from trades
+        const hourMap = new Map<number, Trade[]>();
+        accountTrades.forEach(t => {
+          const hour = new Date(t.entryTime).getHours();
+          if (!hourMap.has(hour)) hourMap.set(hour, []);
+          hourMap.get(hour)!.push(t);
+        });
+        
+        const hourStats = Array.from(hourMap.entries())
+          .filter(([_, trades]) => trades.length >= 5)
+          .map(([hour, trades]) => ({
+            hour,
+            winRate: (trades.filter(t => (t.pnl || 0) > 0).length / trades.length) * 100,
+          }))
+          .sort((a, b) => b.winRate - a.winRate);
+        
+        if (hourStats.length > 0) {
+          const filter = createGoldenHourFilter(hourStats[0].hour);
+          setFilter(filter);
+          setCurrentView('analytics');
+        }
+        break;
+      }
+      
+      case 'view-revenge-trades': {
+        const filter = createRevengeTradesFilter(accountTrades);
+        setFilter(filter);
+        setCurrentView('analytics');
+        break;
+      }
+      
+      case 'view-session-analysis': {
+        // Show comparison of first vs last trades
+        const firstFilter = createFirstTradesFilter(accountTrades);
+        setFilter(firstFilter);
+        setCurrentView('analytics');
+        break;
+      }
+      
+      case 'review-losses': {
+        const filter = createLossPatternFilter();
+        setFilter(filter);
+        setCurrentView('analytics');
+        break;
+      }
       
       case 'set-trade-limit':
       case 'set-daily-limit':
