@@ -177,49 +177,37 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
   const handleDownload = async () => {
     setIsGenerating(true);
     try {
-      // Capture the exact preview element - what you see is what you get!
-      const target = canvasRef.current;
-      if (!target) {
-        toast.error('Calendar not ready');
-        setIsGenerating(false);
-        return;
-      }
-
-      // Small delay to ensure everything is rendered
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      // Use html2canvas to capture the exact preview
-      const html2canvas = (await import('html2canvas')).default;
-      const canvas = await html2canvas(target, {
-        logging: false,
-        useCORS: true,
-        scale: 2, // 2x for retina displays
-        backgroundColor: null, // Preserve transparency
-      } as any);
-
-      // Convert to blob and download
-      canvas.toBlob((blob) => {
-        if (!blob) {
-          toast.error('Failed to generate image');
-          setIsGenerating(false);
-          return;
-        }
-
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.download = `Refine-Calendar-${currentMonth}-${currentYear}.png`;
-        link.href = url;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-        
-        toast.success('Calendar downloaded!');
-        setIsGenerating(false);
-      }, 'image/png');
+      // Build share data
+      const payload = buildRenderData();
+      const themeParam = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+      const dataParam = encodeURIComponent(btoa(JSON.stringify(payload)));
+      
+      // Add cache-busting timestamp to ensure we get the latest version
+      const cacheBuster = `v=${Date.now()}`;
+      const shareUrl = `${window.location.origin}/share/calendar?theme=${themeParam}&accent=${accentColor}&data=${dataParam}&${cacheBuster}`;
+      
+      // Use server-side screenshot API for pixel-perfect rendering (capture full page with gradient)
+      const api = `/api/screenshot-calendar?url=${encodeURIComponent(shareUrl)}&width=1200&height=800`;
+      
+      const resp = await fetch(api);
+      if (!resp.ok) throw new Error('Screenshot API failed');
+      const blob = await resp.blob();
+      
+      // Download the blob
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.download = `Refine-Calendar-${currentMonth}-${currentYear}.png`;
+      link.href = url;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast.success('Calendar downloaded!');
     } catch (error) {
       console.error('Error downloading calendar:', error);
       toast.error('Failed to download calendar');
+    } finally {
       setIsGenerating(false);
     }
   };
@@ -470,14 +458,16 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
           </div>
 
           {/* Calendar Preview - Apple-style gradient background */}
-          <div className={cn(
-            "p-6 flex-1 flex items-center justify-center overflow-hidden",
-            theme === 'dark' 
-              ? "bg-gradient-to-br from-indigo-950 via-purple-900 to-pink-900" 
-              : "bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100"
-          )}>
+          <div 
+            ref={canvasRef}
+            className={cn(
+              "p-6 flex-1 flex items-center justify-center overflow-hidden",
+              theme === 'dark' 
+                ? "bg-gradient-to-br from-indigo-950 via-purple-900 to-pink-900" 
+                : "bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100"
+            )}
+          >
             <div
-              ref={canvasRef}
               className="relative p-8 w-full max-w-5xl flex items-center justify-center"
               style={{ aspectRatio: '16/10' }}
             >
