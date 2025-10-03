@@ -623,8 +623,8 @@ ${shareUrl}`,
                   </div>
                 </div>
 
-                {/* Simple Uniform Calendar Grid - Different horizontal and vertical gaps */}
-                <div className="grid grid-cols-8 gap-x-1 gap-y-4">
+                {/* Simple Uniform Calendar Grid - Tight gaps for preview */}
+                <div className="grid grid-cols-8 gap-1">
                   {/* Headers Row */}
                   {DAYS_OF_WEEK.map((day) => (
                     <div key={day} className="text-center font-semibold text-muted-foreground py-2">
@@ -797,8 +797,8 @@ ${shareUrl}`,
                     </div>
 
                     {/* Grid */}
-                    <div className="space-y-1">
-                      <div className="grid grid-cols-8 gap-1">
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-8 gap-x-1">
                         {DAYS_OF_WEEK.map((day) => (
                           <div key={`h-${day}`} className="text-center font-semibold text-muted-foreground py-2">{day}</div>
                         ))}
@@ -806,7 +806,7 @@ ${shareUrl}`,
                       </div>
 
                       {calendarData.weeks.map((week: any, weekIndex: number) => (
-                        <div key={`w-${weekIndex}`} className="grid grid-cols-8 gap-1">
+                        <div key={`w-${weekIndex}`} className="grid grid-cols-8 gap-x-1">
                           {week.map((day: any, dayIndex: number) => {
                             const isWeekend = day.date.getDay() === 0 || day.date.getDay() === 6;
                             return (
