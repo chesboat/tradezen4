@@ -187,16 +187,25 @@ export const ShareCalendarSnapshot: React.FC<ShareCalendarSnapshotProps> = ({
     document.documentElement.classList.add(theme);
   }, [theme]);
 
+  // Get accent color values for inline styles
+  const accentPalette = accentColorPalettes[accentColor][theme];
+  
   return (
     <div className={cn('min-h-screen overflow-x-hidden flex items-center justify-center bg-gradient-to-br', gradientClass, theme)}>
       {/* Match preview exactly */}
       <div className="relative p-6 w-full max-w-6xl flex items-center justify-center" style={{ aspectRatio: '16/10' }}>
         <div className="max-w-5xl w-[92%] relative">
-          <div className="bg-background rounded-xl pt-4 pb-6 px-6 border relative" 
+          <div 
+            className="bg-background rounded-xl pt-4 pb-6 px-6 border relative" 
             style={{ 
               boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15), 0 10px 20px rgba(0, 0, 0, 0.1), 0 5px 10px rgba(0, 0, 0, 0.05)',
-              filter: 'drop-shadow(0 25px 25px rgba(0, 0, 0, 0.15))'
-            }}>
+              filter: 'drop-shadow(0 25px 25px rgba(0, 0, 0, 0.15))',
+              // Apply accent color inline to override Tailwind defaults
+              '--primary': accentPalette.primary,
+              '--primary-foreground': accentPalette.primaryForeground,
+              '--ring': accentPalette.ring,
+            } as React.CSSProperties
+          }>
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-4">
