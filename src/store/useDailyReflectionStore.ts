@@ -487,6 +487,11 @@ export const useDailyReflectionStore = create<DailyReflectionState>()(
           currentStreak: newStreak,
         }));
 
+        // Check for streak milestones and celebrate (Apple-style)
+        import('@/store/useStreakMilestoneStore').then(({ useStreakMilestoneStore }) => {
+          useStreakMilestoneStore.getState().checkAndCelebrate(newStreak);
+        });
+
         // Award XP through the prestige system
         import('@/lib/xp/XpService').then(({ awardXp }) => {
           awardXp.dailyReflection().catch((e) => {

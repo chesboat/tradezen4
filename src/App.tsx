@@ -37,6 +37,8 @@ import { useTradeLoggerModal } from './hooks/useTradeLoggerModal';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LevelUpToast } from './components/xp/LevelUpToast';
 import { useXpRewards } from './hooks/useXpRewards';
+import { StreakMilestoneCelebration } from './components/StreakMilestoneCelebration';
+import { useStreakMilestoneStore } from './store/useStreakMilestoneStore';
 import { initializeTradeStore } from './store/useTradeStore';
 import { useUserProfileStore } from './store/useUserProfileStore';
 import { initializeQuickNoteStore } from './store/useQuickNoteStore';
@@ -56,6 +58,7 @@ import { db } from './lib/firebase';
 import { checkAndAddWeeklyReviewTodo } from './lib/weeklyReviewTodo';
 import { initializeWeeklyReviewStore } from './store/useWeeklyReviewStore';
 import { useDailyReflectionStore } from './store/useDailyReflectionStore';
+import './lib/testMilestones'; // Load test utilities for development
 
 function AppContent() {
   const { isExpanded: sidebarExpanded } = useSidebarStore();
@@ -68,6 +71,7 @@ function AppContent() {
   const { initializeProfile } = useUserProfileStore();
   const { isExpanded: todoExpanded, railWidth } = useTodoStore();
   const { showLevelUpToast, levelUpData, closeLevelUpToast } = useXpRewards();
+  const { currentMilestone, dismiss: dismissMilestone } = useStreakMilestoneStore();
 
   // Marketing site state
   const [marketingPage, setMarketingPage] = React.useState<'home' | 'features' | 'pricing'>('home');
@@ -424,6 +428,12 @@ function AppContent() {
         isVisible={showLevelUpToast}
         level={levelUpData?.level || 1}
         onClose={closeLevelUpToast}
+      />
+      
+      {/* Streak Milestone Celebration - Apple-style */}
+      <StreakMilestoneCelebration
+        milestone={currentMilestone}
+        onDismiss={dismissMilestone}
       />
       
       {/* Upgrade Modal */}
