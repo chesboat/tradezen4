@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { checkRateLimit, extractUserId } from './_lib/rateLimit';
+import { checkRateLimit, extractUserId } from './_lib/rateLimit.js';
 
 export default async function handler(
   req: VercelRequest,
