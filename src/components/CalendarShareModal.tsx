@@ -15,6 +15,7 @@ import { formatDate } from '@/lib/localStorageUtils';
 import { formatCurrencyApple } from '@/lib/appleFormatters';
 import { renderCalendarToDataURL } from '@/lib/share/CalendarRenderer';
 import { useTheme } from '@/hooks/useTheme';
+import { useAccentColor } from '@/hooks/useAccentColor';
 import { cn } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
@@ -38,6 +39,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
   const captureRef = useRef<HTMLDivElement>(null); // offscreen, fixed-size capture target
   const [isGenerating, setIsGenerating] = useState(false);
   const { theme } = useTheme();
+  const { accentColor, accentColorPalettes } = useAccentColor();
 
   const currentMonth = new Intl.DateTimeFormat('en-US', { month: 'long' }).format(currentDate);
   const currentYear = currentDate.getFullYear();
@@ -179,7 +181,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
       const payload = buildRenderData();
       const themeParam = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
       const dataParam = encodeURIComponent(btoa(JSON.stringify(payload)));
-      const shareUrl = `${window.location.origin}/share/calendar?theme=${themeParam}&data=${dataParam}`;
+      const shareUrl = `${window.location.origin}/share/calendar?theme=${themeParam}&accent=${accentColor}&data=${dataParam}`;
       const api = `/api/screenshot-calendar?url=${encodeURIComponent(shareUrl)}&width=1200&height=675&selector=${encodeURIComponent('[data-share-calendar-card]')}`;
       
       const resp = await fetch(api);
@@ -214,7 +216,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
       const payload = buildRenderData();
       const themeParam = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
       const dataParam = encodeURIComponent(btoa(JSON.stringify(payload)));
-      const shareUrl = `${window.location.origin}/share/calendar?theme=${themeParam}&data=${dataParam}`;
+      const shareUrl = `${window.location.origin}/share/calendar?theme=${themeParam}&accent=${accentColor}&data=${dataParam}`;
       const api = `/api/screenshot-calendar?url=${encodeURIComponent(shareUrl)}&width=1200&height=675&selector=${encodeURIComponent('[data-share-calendar-card]')}`;
       const resp = await fetch(api);
       if (!resp.ok) throw new Error('Screenshot API failed');
@@ -248,7 +250,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
       const payload = buildRenderData();
       const themeParam = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
       const dataParam = encodeURIComponent(btoa(JSON.stringify(payload)));
-      const shareUrl = `${window.location.origin}/share/calendar?theme=${themeParam}&data=${dataParam}`;
+      const shareUrl = `${window.location.origin}/share/calendar?theme=${themeParam}&accent=${accentColor}&data=${dataParam}`;
       const api = `/api/screenshot-calendar?url=${encodeURIComponent(shareUrl)}&width=1200&height=675&selector=${encodeURIComponent('[data-share-calendar-card]')}`;
       const resp = await fetch(api);
       if (!resp.ok) throw new Error('Screenshot API failed');
@@ -310,7 +312,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
         const payload = buildRenderData();
         const themeParam = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
         const dataParam = encodeURIComponent(btoa(JSON.stringify(payload)));
-        const shareUrl = `${window.location.origin}/share/calendar?theme=${themeParam}&data=${dataParam}`;
+        const shareUrl = `${window.location.origin}/share/calendar?theme=${themeParam}&accent=${accentColor}&data=${dataParam}`;
         const api = `/api/screenshot-calendar?url=${encodeURIComponent(shareUrl)}&width=1200&height=675&selector=${encodeURIComponent('[data-share-calendar-card]')}`;
         const resp = await fetch(api);
         if (!resp.ok) throw new Error('Screenshot API failed');
@@ -467,10 +469,10 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
                 <div 
                   className={`${theme}`}
                   style={{
-                    // Apply purple accent to match gradient theme (inline to ensure it works in scoped theme div)
-                    '--primary': theme === 'dark' ? '271 91% 70%' : '271 91% 65%',
-                    '--primary-foreground': theme === 'dark' ? '0 0% 100%' : '210 40% 98%',
-                    '--ring': theme === 'dark' ? '271 91% 70%' : '271 91% 65%',
+                    // Apply user's selected accent color (inline to ensure it works in scoped theme div)
+                    '--primary': accentColorPalettes[accentColor][theme === 'dark' ? 'dark' : 'light'].primary,
+                    '--primary-foreground': accentColorPalettes[accentColor][theme === 'dark' ? 'dark' : 'light'].primaryForeground,
+                    '--ring': accentColorPalettes[accentColor][theme === 'dark' ? 'dark' : 'light'].ring,
                   } as React.CSSProperties
                 }>
                   <div className="bg-background rounded-xl pt-4 pb-6 px-6 border relative" 
@@ -630,10 +632,10 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
                   className={`${theme}`} 
                   style={{ 
                     width: 1000,
-                    // Apply purple accent to match gradient theme (inline to ensure it works in scoped theme div)
-                    '--primary': theme === 'dark' ? '271 91% 70%' : '271 91% 65%',
-                    '--primary-foreground': theme === 'dark' ? '0 0% 100%' : '210 40% 98%',
-                    '--ring': theme === 'dark' ? '271 91% 70%' : '271 91% 65%',
+                    // Apply user's selected accent color (inline to ensure it works in scoped theme div)
+                    '--primary': accentColorPalettes[accentColor][theme === 'dark' ? 'dark' : 'light'].primary,
+                    '--primary-foreground': accentColorPalettes[accentColor][theme === 'dark' ? 'dark' : 'light'].primaryForeground,
+                    '--ring': accentColorPalettes[accentColor][theme === 'dark' ? 'dark' : 'light'].ring,
                   } as React.CSSProperties
                 }>
                   <div className="bg-background rounded-xl pt-4 pb-6 px-6 border relative" 

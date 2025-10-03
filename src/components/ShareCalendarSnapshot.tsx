@@ -41,6 +41,7 @@ export const ShareCalendarSnapshot: React.FC = () => {
   
   const params = new URLSearchParams(window.location.search);
   const theme = (params.get('theme') as 'light' | 'dark') || 'dark';
+  const accentColor = (params.get('accent') as 'blue' | 'purple' | 'green' | 'orange' | 'red' | 'pink' | 'mono') || 'blue';
   const raw = params.get('data') || '';
   let data: RenderData | null = null;
   try {
@@ -76,20 +77,47 @@ export const ShareCalendarSnapshot: React.FC = () => {
     ? 'from-indigo-950 via-purple-900 to-pink-900' 
     : 'from-blue-100 via-purple-100 to-pink-100';
 
-  // Set accent color inline (purple to match the gradient theme)
+  // Accent color palette mapping (same as useAccentColor hook)
+  const accentColorPalettes = {
+    blue: {
+      light: { primary: '221.2 83.2% 53.3%', primaryForeground: '210 40% 98%', ring: '221.2 83.2% 53.3%' },
+      dark: { primary: '217 91% 60%', primaryForeground: '0 0% 100%', ring: '217 91% 60%' }
+    },
+    purple: {
+      light: { primary: '271 91% 65%', primaryForeground: '210 40% 98%', ring: '271 91% 65%' },
+      dark: { primary: '271 91% 70%', primaryForeground: '0 0% 100%', ring: '271 91% 70%' }
+    },
+    green: {
+      light: { primary: '142 76% 36%', primaryForeground: '0 0% 100%', ring: '142 76% 36%' },
+      dark: { primary: '142 71% 45%', primaryForeground: '0 0% 100%', ring: '142 71% 45%' }
+    },
+    orange: {
+      light: { primary: '25 95% 53%', primaryForeground: '0 0% 100%', ring: '25 95% 53%' },
+      dark: { primary: '25 95% 58%', primaryForeground: '0 0% 100%', ring: '25 95% 58%' }
+    },
+    red: {
+      light: { primary: '0 84% 60%', primaryForeground: '0 0% 100%', ring: '0 84% 60%' },
+      dark: { primary: '0 84% 65%', primaryForeground: '0 0% 100%', ring: '0 84% 65%' }
+    },
+    pink: {
+      light: { primary: '330 81% 60%', primaryForeground: '0 0% 100%', ring: '330 81% 60%' },
+      dark: { primary: '330 81% 65%', primaryForeground: '0 0% 100%', ring: '330 81% 65%' }
+    },
+    mono: {
+      light: { primary: '0 0% 20%', primaryForeground: '0 0% 100%', ring: '0 0% 20%' },
+      dark: { primary: '0 0% 80%', primaryForeground: '0 0% 10%', ring: '0 0% 80%' }
+    }
+  };
+
+  // Set user's selected accent color
   // Since this is a standalone page loaded by Puppeteer, we need to set CSS variables manually
   React.useEffect(() => {
     const root = document.documentElement;
-    if (theme === 'dark') {
-      root.style.setProperty('--primary', '271 91% 70%');        // purple dark
-      root.style.setProperty('--primary-foreground', '0 0% 100%');
-      root.style.setProperty('--ring', '271 91% 70%');
-    } else {
-      root.style.setProperty('--primary', '271 91% 65%');        // purple light
-      root.style.setProperty('--primary-foreground', '210 40% 98%');
-      root.style.setProperty('--ring', '271 91% 65%');
-    }
-  }, [theme]);
+    const palette = accentColorPalettes[accentColor][theme];
+    root.style.setProperty('--primary', palette.primary);
+    root.style.setProperty('--primary-foreground', palette.primaryForeground);
+    root.style.setProperty('--ring', palette.ring);
+  }, [theme, accentColor]);
 
   return (
     <div className={cn('min-h-screen overflow-x-hidden', theme)}>
