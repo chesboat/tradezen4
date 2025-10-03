@@ -376,46 +376,81 @@ export const useDailyReflectionStore = create<DailyReflectionState>()(
 
       getReflectionStreak: (accountId) => {
         const reflections = get().getReflectionsByAccount(accountId);
-        if (reflections.length === 0) return 0;
-
-        // For now, use a simplified streak calculation that doesn't depend on trades/reviews
-        // This avoids circular dependency issues with require() in browser bundles
-        // The streak is based on consecutive days with meaningful reflections
         
-        const sortedReflections = reflections
-          .filter(r => 
-            // Only count reflections with actual written content
-            (r.reflection && r.reflection.trim().length > 0) ||
-            (r.keyFocus && r.keyFocus.trim().length > 0) ||
-            (r.goals && r.goals.trim().length > 0) ||
-            (r.lessons && r.lessons.trim().length > 0)
-          )
-          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-        if (sortedReflections.length === 0) return 0;
-
+        // Helper to check if a day has reflection content (old system)
+        const hasOldReflection = (dateStr: string): boolean => {
+          const reflection = reflections.find(r => r.date === dateStr);
+          return Boolean(reflection && (
+            (reflection.reflection && reflection.reflection.trim().length > 0) ||
+            (reflection.keyFocus && reflection.keyFocus.trim().length > 0) ||
+            (reflection.goals && reflection.goals.trim().length > 0) ||
+            (reflection.lessons && reflection.lessons.trim().length > 0)
+          ));
+        };
+        
+        // Helper to check if a day has Insight Blocks (new system)
+        const hasInsightBlocks = (dateStr: string): boolean => {
+          // Dynamically import to avoid circular deps
+          const { useReflectionTemplateStore } = require('@/store/useReflectionTemplateStore');
+          const getInsightReflection = useReflectionTemplateStore.getState().getReflectionByDate;
+          const insightReflection = getInsightReflection(dateStr, accountId);
+          
+          if (!insightReflection || !insightReflection.insightBlocks) return false;
+          
+          // Only count if blocks have actual content
+          return insightReflection.insightBlocks.some(block => 
+            block.content && block.content.trim().length > 0
+          );
+        };
+        
+        // Helper to check if user traded on a specific day (weekend check)
+        const hasTrades = (dateStr: string): boolean => {
+          // Dynamically import to avoid circular deps
+          const { useTradeStore } = require('@/store/useTradeStore');
+          const trades = useTradeStore.getState().trades;
+          
+          return trades.some(trade => {
+            const tradeDate = new Date(trade.entryTime);
+            const dayStart = new Date(dateStr + 'T00:00:00');
+            const dayEnd = new Date(dateStr + 'T23:59:59.999');
+            return tradeDate >= dayStart && tradeDate <= dayEnd && trade.accountId === accountId;
+          });
+        };
+        
+        // Helper to check if a day is a weekend
+        const isWeekend = (dateStr: string): boolean => {
+          const date = new Date(dateStr + 'T00:00:00');
+          const dayOfWeek = date.getDay();
+          return dayOfWeek === 0 || dayOfWeek === 6; // Sunday or Saturday
+        };
+        
         let streak = 0;
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         
-        // Start from today and count backwards
-        let currentDate = new Date(today);
-        
-        for (let i = 0; i < sortedReflections.length && i < 365; i++) {
-          const reflectionDate = new Date(sortedReflections[i].date + 'T00:00:00');
+        // Check backwards from today
+        for (let daysBack = 0; daysBack < 365; daysBack++) {
+          const checkDate = new Date(today);
+          checkDate.setDate(today.getDate() - daysBack);
+          const dateStr = checkDate.toISOString().split('T')[0];
           
-          // Check if this reflection matches our expected date (today - i days)
-          const expectedDate = new Date(today);
-          expectedDate.setDate(today.getDate() - streak);
-          expectedDate.setHours(0, 0, 0, 0);
+          const hasReflection = hasOldReflection(dateStr) || hasInsightBlocks(dateStr);
+          const isWeekendDay = isWeekend(dateStr);
+          const tradedOnWeekend = isWeekendDay && hasTrades(dateStr);
           
-          if (reflectionDate.getTime() === expectedDate.getTime()) {
+          // Weekend logic: Skip weekends UNLESS user traded on that weekend
+          if (isWeekendDay && !tradedOnWeekend) {
+            // Weekend with no trades - skip, doesn't break streak
+            continue;
+          }
+          
+          // Weekday OR weekend with trades - must have reflection
+          if (hasReflection) {
             streak++;
-          } else if (reflectionDate.getTime() < expectedDate.getTime()) {
-            // Gap in reflections, streak is broken
+          } else {
+            // Missing reflection on a required day - streak broken
             break;
           }
-          // If reflectionDate > expectedDate, skip this reflection (from the future somehow)
         }
 
         return streak;
