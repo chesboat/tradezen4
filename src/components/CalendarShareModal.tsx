@@ -27,6 +27,38 @@ interface CalendarShareModalProps {
   weeklyData: any[];
 }
 
+// Accent color gradients for calendar backgrounds
+const accentGradients = {
+  blue: {
+    dark: 'from-blue-950 via-blue-900 to-indigo-900',
+    light: 'from-blue-100 via-blue-200 to-indigo-200',
+  },
+  purple: {
+    dark: 'from-purple-950 via-purple-900 to-violet-900',
+    light: 'from-purple-100 via-purple-200 to-violet-200',
+  },
+  green: {
+    dark: 'from-green-950 via-green-900 to-emerald-900',
+    light: 'from-green-100 via-green-200 to-emerald-200',
+  },
+  orange: {
+    dark: 'from-orange-950 via-orange-900 to-amber-900',
+    light: 'from-orange-100 via-orange-200 to-amber-200',
+  },
+  red: {
+    dark: 'from-red-950 via-red-900 to-rose-900',
+    light: 'from-red-100 via-red-200 to-rose-200',
+  },
+  pink: {
+    dark: 'from-pink-950 via-pink-900 to-fuchsia-900',
+    light: 'from-pink-100 via-pink-200 to-fuchsia-200',
+  },
+  mono: {
+    dark: 'from-gray-950 via-gray-900 to-slate-900',
+    light: 'from-gray-100 via-gray-200 to-slate-200',
+  },
+};
+
 export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
   isOpen,
   onClose,
@@ -636,10 +668,8 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
               ref={captureRef}
               id="calendar-share-capture"
               className={cn(
-                "fixed left-0 top-0 rounded-2xl",
-                theme === 'dark' 
-                  ? "bg-gradient-to-br from-indigo-950 via-purple-900 to-pink-900" 
-                  : "bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100"
+                "fixed left-0 top-0 rounded-2xl bg-gradient-to-br",
+                accentGradients[accentColor][theme]
               )}
               style={{ width: 1200, height: 1000, padding: 48, opacity: 0, zIndex: -1000, pointerEvents: 'none' }}
             >
