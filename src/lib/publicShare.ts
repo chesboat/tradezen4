@@ -53,11 +53,6 @@ export async function createTradeInsightShare(tradeId: string) {
     tags: trade.tags || [],
   };
   
-  // Only add strategy if it exists
-  if (trade.strategy) {
-    shareData.strategy = trade.strategy;
-  }
-  
   const shareDoc = doc(db, 'publicShares', shareId);
   await setDoc(shareDoc, shareData);
   
@@ -535,8 +530,7 @@ export async function createPublicShareSnapshot(date: string, accountId: string,
           reviewNote: trade.reviewNote || '',
           reviewImages: resolvedImages,
           reviewedAt: trade.reviewedAt,
-          tags: trade.tags || [],
-          strategy: trade.strategy
+          tags: trade.tags || []
         };
       })
     );

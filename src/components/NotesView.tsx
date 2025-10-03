@@ -935,14 +935,7 @@ export const NotesView: React.FC = () => {
                 
                 {/* Note Content */}
                 <div className="flex-1 overflow-y-auto px-6 py-4">
-                  {selectedNote.type === 'rich' ? (
-                    <div 
-                      className="prose prose-sm max-w-none dark:prose-invert"
-                      dangerouslySetInnerHTML={{ __html: selectedNote.content }}
-                    />
-                  ) : (
-                    <NoteContent content={selectedNote.content} className="text-sm text-foreground leading-relaxed whitespace-pre-wrap" />
-                  )}
+                  <NoteContent content={selectedNote.content} className="text-sm text-foreground leading-relaxed whitespace-pre-wrap" />
                   
                   {/* Tags */}
                   {selectedNote.tags.length > 0 && (
