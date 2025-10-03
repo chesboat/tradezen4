@@ -121,11 +121,18 @@ export const ShareCalendarSnapshot: React.FC<ShareCalendarSnapshotProps> = ({
 
   // Set accent color
   React.useEffect(() => {
+    console.log('[ShareCalendarSnapshot] Setting accent color:', accentColor, 'theme:', theme);
     const root = document.documentElement;
     const palette = accentColorPalettes[accentColor][theme];
-    root.style.setProperty('--primary', palette.primary);
-    root.style.setProperty('--primary-foreground', palette.primaryForeground);
-    root.style.setProperty('--ring', palette.ring);
+    console.log('[ShareCalendarSnapshot] Palette:', palette);
+    root.style.setProperty('--primary', palette.primary, 'important');
+    root.style.setProperty('--primary-foreground', palette.primaryForeground, 'important');
+    root.style.setProperty('--ring', palette.ring, 'important');
+    console.log('[ShareCalendarSnapshot] CSS variables set:', {
+      primary: root.style.getPropertyValue('--primary'),
+      primaryForeground: root.style.getPropertyValue('--primary-foreground'),
+      ring: root.style.getPropertyValue('--ring')
+    });
   }, [theme, accentColor]);
 
   const formatCurrency = (amount: number) => {
