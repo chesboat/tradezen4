@@ -83,6 +83,9 @@ export const PublicCalendarView: React.FC = () => {
   // Render the calendar with the share data
   const { calendarData, theme, accentColor } = shareData;
   
+  console.log('[PublicCalendarView] Share data:', shareData);
+  console.log('[PublicCalendarView] Accent color:', accentColor);
+  
   // Deserialize the weeks JSON string back to array
   const fullCalendarData = {
     ...calendarData,

@@ -130,7 +130,15 @@ export const ShareCalendarSnapshot: React.FC<ShareCalendarSnapshotProps> = ({
 
   const formatCurrency = (amount: number) => {
     const sign = amount >= 0 ? '+' : '';
-    return `${sign}$${Math.abs(amount).toFixed(2)}`;
+    const abs = Math.abs(amount);
+    
+    // Abbreviate large numbers
+    if (abs >= 1000) {
+      return `${sign}$${(abs / 1000).toFixed(1)}k`;
+    }
+    
+    // Whole numbers for smaller amounts
+    return `${sign}$${Math.round(abs)}`;
   };
 
   const formatPnL = (pnl: number) => {

@@ -216,6 +216,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
       };
       
       console.log('[CalendarShare] Payload:', payload);
+      console.log('[CalendarShare] Accent color being saved:', accentColor);
       
       // Save to Firestore public shares
       const { db } = await import('@/lib/firebase');
