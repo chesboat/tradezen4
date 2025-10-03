@@ -415,7 +415,7 @@ function detectWinStreak(trades: Trade[]): DailyInsight | null {
     type: 'win-streak',
     title: `${streak}-Trade Win Streak!`,
     message: `You're on fire! Your last ${streak} trades were all winners. Keep following your process.`,
-    suggestion: 'Don't get overconfident. Stick to your risk management rules.',
+    suggestion: 'Don\'t get overconfident. Stick to your risk management rules.',
     icon: '🎯',
     severity: 'success',
     metric: {
