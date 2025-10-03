@@ -12,6 +12,7 @@ import {
 import { useTradeStore } from '@/store/useTradeStore';
 import { useQuickNoteStore } from '@/store/useQuickNoteStore';
 import { useDailyReflectionStore } from '@/store/useDailyReflectionStore';
+import { useReflectionTemplateStore } from '@/store/useReflectionTemplateStore';
 import { summarizeWinLossScratch } from '@/lib/utils';
 import { useAccountFilterStore, getAccountIdsForSelection } from '@/store/useAccountFilterStore';
 
@@ -27,6 +28,7 @@ export const JournalTimeline: React.FC<JournalTimelineProps> = ({ className }) =
   const { selectedAccountId } = useAccountFilterStore();
   const { trades } = useTradeStore();
   const { notes } = useQuickNoteStore();
+  const { getReflectionByDate: getInsightReflection } = useReflectionTemplateStore();
   const { 
     reflections,
     getReflectionStreak,
@@ -87,9 +89,24 @@ export const JournalTimeline: React.FC<JournalTimelineProps> = ({ className }) =
         ? dayTrades.reduce((sum, trade) => sum + trade.riskRewardRatio, 0) / dayTrades.length 
         : 0;
       
-      // Check if reflection exists
+      // Check if reflection exists (check both old fields and new Insight Blocks)
       const ids = getAccountIdsForSelection(selectedAccountId || null);
-      const hasReflection = reflections.find(r => r.date === dateStr && ids.includes(r.accountId)) !== undefined;
+      const reflection = reflections.find(r => r.date === dateStr && ids.includes(r.accountId));
+      
+      // Check for old-style reflection fields with actual content
+      const hasOldReflection = Boolean(reflection && (
+        (reflection.reflection && reflection.reflection.trim().length > 0) ||
+        (reflection.keyFocus && reflection.keyFocus.trim().length > 0) ||
+        (reflection.goals && reflection.goals.trim().length > 0) ||
+        (reflection.lessons && reflection.lessons.trim().length > 0)
+      ));
+      
+      // Also check for new Insight Blocks (Insight Blocks 2.0)
+      const insightReflection = selectedAccountId ? getInsightReflection(dateStr, selectedAccountId) : null;
+      const hasInsightBlocks = Boolean(insightReflection && insightReflection.insightBlocks && insightReflection.insightBlocks.length > 0);
+      
+      // Show checkmark if either old reflection OR new insight blocks exist
+      const hasReflection = hasOldReflection || hasInsightBlocks;
       
       entries.push({
         date: dateStr,
@@ -131,7 +148,7 @@ export const JournalTimeline: React.FC<JournalTimelineProps> = ({ className }) =
     }
     
     return filteredEntries; // Most recent first (entries are already generated in newest-to-oldest order)
-  }, [trades, notes, selectedAccountId, daysToShow, showOnlyReflected, selectedTagFilter, reflections, getReflectionTags]);
+  }, [trades, notes, selectedAccountId, daysToShow, showOnlyReflected, selectedTagFilter, reflections, getReflectionTags, getInsightReflection]);
 
 
 
