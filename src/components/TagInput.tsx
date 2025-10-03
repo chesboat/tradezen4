@@ -17,12 +17,12 @@ interface TagInputProps {
  * - Pills for existing tags (x to remove)
  * - Input field for new tags
  * - Autocomplete dropdown (existing tags)
- * - Accepts comma, space, or Enter to add tag
+ * - Accepts comma or Enter to add tag (spaces allowed in tag names)
  */
 export const TagInput: React.FC<TagInputProps> = ({
   value = [],
   onChange,
-  placeholder = 'e.g. breakout, reversal, momentum',
+  placeholder = 'Add tags (press Enter or comma to save)',
   autoFocus = false,
   className,
 }) => {
@@ -94,13 +94,6 @@ export const TagInput: React.FC<TagInputProps> = ({
         // Add new tag
         addTag(input);
       }
-      return;
-    }
-
-    // Space - add tag (but allow spaces in multi-word tags if already typing)
-    if (e.key === ' ' && input.trim() && !input.includes(' ')) {
-      e.preventDefault();
-      addTag(input);
       return;
     }
 
