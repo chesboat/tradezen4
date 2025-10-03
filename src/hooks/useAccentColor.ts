@@ -130,7 +130,8 @@ export const useAccentColor = () => {
       console.log('🎨 Loading accent color from profile:', profile.preferences.accentColor);
       setAccentColorState(profile.preferences.accentColor);
     }
-  }, [profile?.preferences?.accentColor]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.preferences?.accentColor]); // accentColor intentionally omitted to prevent loop
 
   // Apply accent color by setting data attribute AND CSS variables
   useEffect(() => {
@@ -158,8 +159,9 @@ export const useAccentColor = () => {
     // Save to localStorage (for immediate persistence)
     localStorage.setItem('refine-accent-color', accentColor);
     
-    // Save to Firestore (for cross-device sync)
-    if (profile) {
+    // Save to Firestore (for cross-device sync) - ONLY if different from profile
+    if (profile && profile.preferences?.accentColor !== accentColor) {
+      console.log('💾 Syncing accent color to Firestore:', accentColor);
       updateProfile({
         preferences: {
           ...profile.preferences,
@@ -169,7 +171,8 @@ export const useAccentColor = () => {
       // Sync to Firestore (debounced in the background)
       syncToFirestore();
     }
-  }, [accentColor, profile, updateProfile, syncToFirestore]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accentColor]); // profile, updateProfile, syncToFirestore intentionally omitted to prevent infinite loop
 
   // Re-apply when theme changes (watch for class changes on html element)
   useEffect(() => {
