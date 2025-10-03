@@ -15,7 +15,6 @@ import { formatDate } from '@/lib/localStorageUtils';
 import { formatCurrencyApple } from '@/lib/appleFormatters';
 import { renderCalendarToDataURL } from '@/lib/share/CalendarRenderer';
 import { useTheme } from '@/hooks/useTheme';
-import { useAccentColor } from '@/hooks/useAccentColor';
 import { cn } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
@@ -27,37 +26,6 @@ interface CalendarShareModalProps {
   weeklyData: any[];
 }
 
-// Accent color gradients for calendar backgrounds
-const accentGradients = {
-  blue: {
-    dark: 'from-blue-950 via-blue-900 to-indigo-900',
-    light: 'from-blue-100 via-blue-200 to-indigo-200',
-  },
-  purple: {
-    dark: 'from-purple-950 via-purple-900 to-violet-900',
-    light: 'from-purple-100 via-purple-200 to-violet-200',
-  },
-  green: {
-    dark: 'from-green-950 via-green-900 to-emerald-900',
-    light: 'from-green-100 via-green-200 to-emerald-200',
-  },
-  orange: {
-    dark: 'from-orange-950 via-orange-900 to-amber-900',
-    light: 'from-orange-100 via-orange-200 to-amber-200',
-  },
-  red: {
-    dark: 'from-red-950 via-red-900 to-rose-900',
-    light: 'from-red-100 via-red-200 to-rose-200',
-  },
-  pink: {
-    dark: 'from-pink-950 via-pink-900 to-fuchsia-900',
-    light: 'from-pink-100 via-pink-200 to-fuchsia-200',
-  },
-  mono: {
-    dark: 'from-gray-950 via-gray-900 to-slate-900',
-    light: 'from-gray-100 via-gray-200 to-slate-200',
-  },
-};
 
 export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
   isOpen,
@@ -70,7 +38,6 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
   const captureRef = useRef<HTMLDivElement>(null); // offscreen, fixed-size capture target
   const [isGenerating, setIsGenerating] = useState(false);
   const { theme } = useTheme();
-  const { accentColor } = useAccentColor();
 
   const currentMonth = new Intl.DateTimeFormat('en-US', { month: 'long' }).format(currentDate);
   const currentYear = currentDate.getFullYear();
@@ -208,55 +175,30 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
   const handleDownload = async () => {
     setIsGenerating(true);
     try {
-      // Use server-side screenshot for pixel-perfect capture of the new calendar
-      const target = captureRef.current;
-      if (!target) {
-        toast.error('Calendar not ready');
-        return;
-      }
-
-      // Small delay to ensure everything is rendered
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      // Temporarily make visible for screenshot
-      const originalOpacity = target.style.opacity;
-      const originalZIndex = target.style.zIndex;
-      target.style.opacity = '1';
-      target.style.zIndex = '9999';
-
-      try {
-        // Use html2canvas for pixel-perfect capture
-        const html2canvas = (await import('html2canvas')).default;
-        const canvas = await html2canvas(target, {
-          logging: false,
-          useCORS: true,
-        } as any);
-
-        // Convert to blob and download
-        canvas.toBlob((blob) => {
-          if (!blob) {
-            toast.error('Failed to generate image');
-            return;
-          }
-
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.download = `Refine-Calendar-${currentMonth}-${currentYear}.png`;
-          link.href = url;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
-          
-          toast.success('Calendar downloaded!');
-        }, 'image/png');
-      } finally {
-        // Restore original styles
-        target.style.opacity = originalOpacity;
-        target.style.zIndex = originalZIndex;
-      }
+      // Use server-side screenshot API for pixel-perfect rendering (no html2canvas alignment issues)
+      const payload = buildRenderData();
+      const themeParam = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+      const dataParam = encodeURIComponent(btoa(JSON.stringify(payload)));
+      const shareUrl = `${window.location.origin}/share/calendar?theme=${themeParam}&data=${dataParam}`;
+      const api = `/api/screenshot-calendar?url=${encodeURIComponent(shareUrl)}&width=1200&height=675&selector=${encodeURIComponent('[data-share-calendar-card]')}`;
+      
+      const resp = await fetch(api);
+      if (!resp.ok) throw new Error('Screenshot API failed');
+      const blob = await resp.blob();
+      
+      // Download the blob
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.download = `Refine-Calendar-${currentMonth}-${currentYear}.png`;
+      link.href = url;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast.success('Calendar downloaded!');
     } catch (error) {
-      console.error('Error generating calendar image:', error);
+      console.error('Error downloading calendar:', error);
       toast.error('Failed to download calendar');
     } finally {
       setIsGenerating(false);
@@ -272,7 +214,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
       const payload = buildRenderData();
       const themeParam = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
       const dataParam = encodeURIComponent(btoa(JSON.stringify(payload)));
-      const shareUrl = `${window.location.origin}/share/calendar?theme=${themeParam}&accent=${accentColor}&data=${dataParam}`;
+      const shareUrl = `${window.location.origin}/share/calendar?theme=${themeParam}&data=${dataParam}`;
       const api = `/api/screenshot-calendar?url=${encodeURIComponent(shareUrl)}&width=1200&height=675&selector=${encodeURIComponent('[data-share-calendar-card]')}`;
       const resp = await fetch(api);
       if (!resp.ok) throw new Error('Screenshot API failed');
@@ -306,7 +248,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
       const payload = buildRenderData();
       const themeParam = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
       const dataParam = encodeURIComponent(btoa(JSON.stringify(payload)));
-      const shareUrl = `${window.location.origin}/share/calendar?theme=${themeParam}&accent=${accentColor}&data=${dataParam}`;
+      const shareUrl = `${window.location.origin}/share/calendar?theme=${themeParam}&data=${dataParam}`;
       const api = `/api/screenshot-calendar?url=${encodeURIComponent(shareUrl)}&width=1200&height=675&selector=${encodeURIComponent('[data-share-calendar-card]')}`;
       const resp = await fetch(api);
       if (!resp.ok) throw new Error('Screenshot API failed');
@@ -368,7 +310,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
         const payload = buildRenderData();
         const themeParam = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
         const dataParam = encodeURIComponent(btoa(JSON.stringify(payload)));
-        const shareUrl = `${window.location.origin}/share/calendar?theme=${themeParam}&accent=${accentColor}&data=${dataParam}`;
+        const shareUrl = `${window.location.origin}/share/calendar?theme=${themeParam}&data=${dataParam}`;
         const api = `/api/screenshot-calendar?url=${encodeURIComponent(shareUrl)}&width=1200&height=675&selector=${encodeURIComponent('[data-share-calendar-card]')}`;
         const resp = await fetch(api);
         if (!resp.ok) throw new Error('Screenshot API failed');
@@ -668,8 +610,10 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
               ref={captureRef}
               id="calendar-share-capture"
               className={cn(
-                "fixed left-0 top-0 rounded-2xl bg-gradient-to-br",
-                accentGradients[accentColor][theme]
+                "fixed left-0 top-0 rounded-2xl",
+                theme === 'dark' 
+                  ? "bg-gradient-to-br from-indigo-950 via-purple-900 to-pink-900" 
+                  : "bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100"
               )}
               style={{ width: 1200, height: 1000, padding: 48, opacity: 0, zIndex: -1000, pointerEvents: 'none' }}
             >

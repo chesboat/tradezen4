@@ -3,37 +3,6 @@ import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/localStorageUtils';
 import { Calendar as CalendarIcon, BookOpen, Zap } from 'lucide-react';
 
-// Accent color gradients for social media backgrounds
-const accentGradients = {
-  blue: {
-    dark: 'from-blue-900 via-blue-700 to-blue-600',
-    light: 'from-blue-200 via-blue-300 to-blue-400',
-  },
-  purple: {
-    dark: 'from-purple-900 via-purple-700 to-purple-600',
-    light: 'from-purple-200 via-purple-300 to-purple-400',
-  },
-  green: {
-    dark: 'from-green-900 via-green-700 to-green-600',
-    light: 'from-green-200 via-green-300 to-green-400',
-  },
-  orange: {
-    dark: 'from-orange-900 via-orange-700 to-orange-600',
-    light: 'from-orange-200 via-orange-300 to-orange-400',
-  },
-  red: {
-    dark: 'from-red-900 via-red-700 to-red-600',
-    light: 'from-red-200 via-red-300 to-red-400',
-  },
-  pink: {
-    dark: 'from-pink-900 via-pink-700 to-pink-600',
-    light: 'from-pink-200 via-pink-300 to-pink-400',
-  },
-  mono: {
-    dark: 'from-gray-900 via-gray-800 to-gray-700',
-    light: 'from-gray-200 via-gray-300 to-gray-400',
-  },
-};
 
 type Day = {
   date: string | Date;
@@ -72,7 +41,6 @@ export const ShareCalendarSnapshot: React.FC = () => {
   
   const params = new URLSearchParams(window.location.search);
   const theme = (params.get('theme') as 'light' | 'dark') || 'dark';
-  const accentColor = (params.get('accent') as 'blue' | 'purple' | 'green' | 'orange' | 'red' | 'pink' | 'mono') || 'blue';
   const raw = params.get('data') || '';
   let data: RenderData | null = null;
   try {
@@ -103,7 +71,10 @@ export const ShareCalendarSnapshot: React.FC = () => {
     );
   }
 
-  const gradientClass = accentGradients[accentColor][theme];
+  // Universal gradient (not personalized per user - keeps backgrounds neutral)
+  const gradientClass = theme === 'dark' 
+    ? 'from-indigo-950 via-purple-900 to-pink-900' 
+    : 'from-blue-100 via-purple-100 to-pink-100';
 
   return (
     <div className={cn('min-h-screen overflow-x-hidden', theme)}>
