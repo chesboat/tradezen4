@@ -540,11 +540,12 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
                         return (
                           <div
                             key={`${weekIndex}-${dayIndex}`}
-                            className={`${getDayClassName(day)} aspect-[6/5] w-full`}
+                            className={`${getDayClassName(day)} w-full`}
+                            style={{ aspectRatio: '6/5', minHeight: '80px' }}
                           >
-                            <div className="flex flex-col h-full">
+                            <div className="flex flex-col h-full justify-between">
                               {/* Date - Top Left */}
-                              <div className="flex items-center justify-between px-2 pt-2">
+                              <div className="flex items-center justify-between px-2 pt-2 flex-shrink-0">
                                 <span className={cn(
                                   'text-sm font-medium',
                                   day.isOtherMonth ? 'text-muted-foreground' : 'text-foreground'
@@ -560,13 +561,13 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
                               
                               {/* Center Content - Apple Style */}
                               {isWeekend ? (
-                                <div className="flex flex-col items-center justify-center flex-1 text-center">
+                                <div className="flex flex-col items-center justify-center flex-1 text-center pb-2">
                                   <div className="text-xs text-muted-foreground/70">
                                     Weekend
                                   </div>
                                 </div>
                               ) : (
-                                <div className="flex flex-col items-center justify-center flex-1 gap-0.5">
+                                <div className="flex flex-col items-center justify-center flex-1 gap-0.5 pb-2">
                                   {/* P&L - Centered, bold */}
                                   {formatPnL(day.pnl)}
                                   

@@ -43,22 +43,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await page.goto(url, { waitUntil: 'networkidle2' });
     console.log('[Screenshot API] Page loaded');
 
-    // Wait for the calendar card wrapper to exist
-    const selector = req.query.selector as string || '[data-share-calendar-card]';
-    console.log('[Screenshot API] Waiting for selector:', selector);
-    await page.waitForSelector(selector, { timeout: 15000 });
-    console.log('[Screenshot API] Selector found');
+    // Optional selector - if not provided, screenshot entire viewport
+    const selector = req.query.selector as string;
+    
+    let png: Buffer;
+    if (selector) {
+      console.log('[Screenshot API] Waiting for selector:', selector);
+      await page.waitForSelector(selector, { timeout: 15000 });
+      console.log('[Screenshot API] Selector found');
 
-    const element = await page.$(selector);
-    if (!element) {
-      console.error('[Screenshot API] Element not found after waitForSelector');
-      await browser.close();
-      res.status(404).json({ error: 'Calendar element not found' });
-      return;
+      const element = await page.$(selector);
+      if (!element) {
+        console.error('[Screenshot API] Element not found after waitForSelector');
+        await browser.close();
+        res.status(404).json({ error: 'Calendar element not found' });
+        return;
+      }
+
+      console.log('[Screenshot API] Taking screenshot of element...');
+      png = await element.screenshot({ type: 'png' }) as Buffer;
+    } else {
+      // No selector - screenshot entire viewport
+      console.log('[Screenshot API] Taking full page screenshot...');
+      png = await page.screenshot({ type: 'png', fullPage: false }) as Buffer;
     }
-
-    console.log('[Screenshot API] Taking screenshot...');
-    const png = await element.screenshot({ type: 'png' }) as Buffer;
+    
     console.log('[Screenshot API] Screenshot taken, size:', png.length);
 
     await browser.close();
