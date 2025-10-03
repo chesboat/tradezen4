@@ -241,17 +241,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
         className={cn(
           'w-full flex items-center rounded-lg transition-all duration-200 relative group',
           isActive
-            ? 'bg-accent/50 text-foreground'
+            ? 'bg-primary/10 text-foreground'
             : 'text-muted-foreground hover:bg-accent/30 hover:text-foreground',
-          isExpanded ? 'justify-start px-3 py-2 gap-3' : 'justify-center px-0 py-2'
+          isExpanded ? 'justify-start px-3 py-2.5 gap-3' : 'justify-center px-3 py-2.5'
         )}
         onClick={() => handleNavItemClick(item)}
       >
-        {/* Apple-style left accent bar */}
-        {isActive && (
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-primary rounded-r-full" />
-        )}
-        
         <Icon className={cn(
           'w-5 h-5 flex-shrink-0 transition-colors',
           isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
