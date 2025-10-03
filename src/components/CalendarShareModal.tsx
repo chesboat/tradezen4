@@ -464,7 +464,15 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
             >
               {/* Calendar Content - Exact replica of CalendarView */}
               <div className="max-w-4xl w-[85%] relative" data-share-calendar-card>
-                <div className={`${theme}`}>
+                <div 
+                  className={`${theme}`}
+                  style={{
+                    // Apply purple accent to match gradient theme (inline to ensure it works in scoped theme div)
+                    '--primary': theme === 'dark' ? '271 91% 70%' : '271 91% 65%',
+                    '--primary-foreground': theme === 'dark' ? '0 0% 100%' : '210 40% 98%',
+                    '--ring': theme === 'dark' ? '271 91% 70%' : '271 91% 65%',
+                  } as React.CSSProperties
+                }>
                   <div className="bg-background rounded-xl pt-4 pb-6 px-6 border relative" 
                    style={{ 
                      boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15), 0 10px 20px rgba(0, 0, 0, 0.1), 0 5px 10px rgba(0, 0, 0, 0.05)',
@@ -618,7 +626,16 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
               style={{ width: 1200, height: 1000, padding: 48, opacity: 0, zIndex: -1000, pointerEvents: 'none' }}
             >
               <div className="w-full h-full flex items-center justify-center">
-                <div className={`${theme}`} style={{ width: 1000 }}>
+                <div 
+                  className={`${theme}`} 
+                  style={{ 
+                    width: 1000,
+                    // Apply purple accent to match gradient theme (inline to ensure it works in scoped theme div)
+                    '--primary': theme === 'dark' ? '271 91% 70%' : '271 91% 65%',
+                    '--primary-foreground': theme === 'dark' ? '0 0% 100%' : '210 40% 98%',
+                    '--ring': theme === 'dark' ? '271 91% 70%' : '271 91% 65%',
+                  } as React.CSSProperties
+                }>
                   <div className="bg-background rounded-xl pt-4 pb-6 px-6 border relative" 
                     style={{ 
                       boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15), 0 10px 20px rgba(0, 0, 0, 0.1), 0 5px 10px rgba(0, 0, 0, 0.05)'

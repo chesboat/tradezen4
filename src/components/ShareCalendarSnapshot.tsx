@@ -76,6 +76,21 @@ export const ShareCalendarSnapshot: React.FC = () => {
     ? 'from-indigo-950 via-purple-900 to-pink-900' 
     : 'from-blue-100 via-purple-100 to-pink-100';
 
+  // Set accent color inline (purple to match the gradient theme)
+  // Since this is a standalone page loaded by Puppeteer, we need to set CSS variables manually
+  React.useEffect(() => {
+    const root = document.documentElement;
+    if (theme === 'dark') {
+      root.style.setProperty('--primary', '271 91% 70%');        // purple dark
+      root.style.setProperty('--primary-foreground', '0 0% 100%');
+      root.style.setProperty('--ring', '271 91% 70%');
+    } else {
+      root.style.setProperty('--primary', '271 91% 65%');        // purple light
+      root.style.setProperty('--primary-foreground', '210 40% 98%');
+      root.style.setProperty('--ring', '271 91% 65%');
+    }
+  }, [theme]);
+
   return (
     <div className={cn('min-h-screen overflow-x-hidden', theme)}>
       {/* Mobile version - clean and scrollable */}
@@ -148,7 +163,7 @@ export const ShareCalendarSnapshot: React.FC = () => {
                   <Zap className="w-3 h-3 text-primary-foreground" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-foreground">TradeFutura</h3>
+                  <h3 className="text-sm font-bold text-foreground">Refine</h3>
                   <p className="text-[10px] text-muted-foreground">Your edge, future-proofed</p>
                 </div>
               </div>
@@ -251,7 +266,7 @@ export const ShareCalendarSnapshot: React.FC = () => {
                   <Zap className="w-4 h-4 text-primary-foreground" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-foreground">TradeFutura</h3>
+                  <h3 className="text-base font-bold text-foreground">Refine</h3>
                   <p className="text-xs text-muted-foreground">Your edge, future-proofed</p>
                 </div>
               </div>
