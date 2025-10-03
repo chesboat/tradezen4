@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, Circle, ChevronLeft, ChevronRight, Clock, Tag, MoreVertical, Plus, X, Pin, Flag, Calendar, ExternalLink, Link, Inbox, CalendarDays, CheckSquare, Hash, Check } from 'lucide-react';
-import { useTodoStore, initializeSampleTasks } from '@/store/useTodoStore';
+import { useTodoStore, cleanupDuplicateTasks } from '@/store/useTodoStore';
 import { ImprovementTask } from '@/types';
 import { useActivityLogStore } from '@/store/useActivityLogStore';
 import { CustomSelect } from './CustomSelect';
@@ -59,15 +59,17 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
   const [editingTagsTaskId, setEditingTagsTaskId] = useState<string | null>(null);
   const [newTagForTask, setNewTagForTask] = useState('');
 
+  // Initialize on mount only (Apple-style: blank canvas, not pre-filled)
   useEffect(() => {
     const init = async () => {
       await initialize();
-      await initializeSampleTasks();
-      // Check if we need to add a weekly review todo
+      // Clean up any duplicate tasks from the old auto-generation bug
+      await cleanupDuplicateTasks();
+      // Check if we need to add a weekly review todo (contextual, time-sensitive)
       await checkAndAddWeeklyReviewTodo();
     };
     init();
-  }, [initialize]);
+  }, []); // Empty deps = run once on mount
 
   useEffect(() => {
     if (isExpanded) setTimeout(() => inputRef.current?.focus(), 100);

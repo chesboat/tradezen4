@@ -330,6 +330,8 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 }));
 
 // Initialize with some sample colorful tasks if none exist
+// NOTE: No longer auto-called (Apple-style: blank canvas > pre-filled)
+// Kept for backward compatibility / manual testing only
 export const initializeSampleTasks = async () => {
   const store = useTodoStore.getState();
   
@@ -369,5 +371,61 @@ export const initializeSampleTasks = async () => {
     }
   }
 };
+
+/**
+ * Clean up duplicate tasks (same text, created within 5 minutes of each other)
+ * Useful for fixing the bug where sample tasks were being added multiple times
+ */
+export const cleanupDuplicateTasks = async () => {
+  const store = useTodoStore.getState();
+  const { deleteTask } = store;
+  
+  // Group by text
+  const byText = new Map<string, ImprovementTask[]>();
+  for (const task of store.tasks) {
+    const key = task.text.trim().toLowerCase();
+    if (!byText.has(key)) {
+      byText.set(key, []);
+    }
+    byText.get(key)!.push(task);
+  }
+  
+  let deletedCount = 0;
+  
+  // For each group, keep oldest and delete recent duplicates
+  for (const [text, tasks] of byText.entries()) {
+    if (tasks.length > 1) {
+      // Sort by creation time (oldest first)
+      const sorted = tasks.sort((a, b) => 
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
+      
+      // Keep the oldest, delete the rest if they're within 5 minutes
+      const oldest = sorted[0];
+      const oldestTime = new Date(oldest.createdAt).getTime();
+      
+      for (let i = 1; i < sorted.length; i++) {
+        const duplicate = sorted[i];
+        const duplicateTime = new Date(duplicate.createdAt).getTime();
+        const diffMinutes = (duplicateTime - oldestTime) / (1000 * 60);
+        
+        // If created within 5 minutes, it's likely a duplicate from the bug
+        if (diffMinutes < 5) {
+          console.log(`🧹 Removing duplicate: "${text}" (created ${diffMinutes.toFixed(1)} min after original)`);
+          await deleteTask(duplicate.id);
+          deletedCount++;
+        }
+      }
+    }
+  }
+  
+  console.log(`✅ Cleaned up ${deletedCount} duplicate task(s)`);
+  return deletedCount;
+};
+
+// Expose cleanup function for console debugging
+if (typeof window !== 'undefined') {
+  (window as any).cleanupDuplicateTasks = cleanupDuplicateTasks;
+}
 
 
