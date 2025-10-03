@@ -184,6 +184,19 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
       const shareId = Math.random().toString(36).slice(2, 10);
       console.log('[CalendarShare] Generated share ID:', shareId);
       
+      // Build calendar data and flatten nested arrays (Firestore doesn't support them)
+      const renderData = buildRenderData();
+      
+      // Flatten weeks array by converting to JSON string
+      const flattenedCalendarData = {
+        monthName: renderData.monthName,
+        year: renderData.year,
+        monthlyPnl: renderData.monthlyPnl,
+        // Serialize weeks as JSON string to avoid nested array issue
+        weeksJson: JSON.stringify(renderData.weeks),
+        weeklySummaries: renderData.weeklySummaries,
+      };
+      
       // Build share payload
       const payload = {
         id: shareId,
@@ -192,7 +205,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
         year: currentYear,
         monthlyPnl: monthlyPnL,
         totalTrades,
-        calendarData: buildRenderData(),
+        calendarData: flattenedCalendarData,
         theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
         accentColor,
         isPublic: true,

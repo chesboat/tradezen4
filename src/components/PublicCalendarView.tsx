@@ -81,15 +81,18 @@ export const PublicCalendarView: React.FC = () => {
   }
 
   // Render the calendar with the share data
-  // Build URL params for ShareCalendarSnapshot component
   const { calendarData, theme, accentColor } = shareData;
-  const dataParam = encodeURIComponent(btoa(JSON.stringify(calendarData)));
   
-  // Temporarily construct URL params and pass to existing ShareCalendarSnapshot
+  // Deserialize the weeks JSON string back to array
+  const fullCalendarData = {
+    ...calendarData,
+    weeks: JSON.parse(calendarData.weeksJson),
+  };
+  
   return (
     <div className="relative">
       <ShareCalendarSnapshot 
-        data={calendarData}
+        data={fullCalendarData}
         theme={theme || 'dark'}
         accentColor={accentColor || 'blue'}
       />
