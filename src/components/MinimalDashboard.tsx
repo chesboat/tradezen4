@@ -46,6 +46,7 @@ import BulletMeter from '@/components/discipline/BulletMeter';
 import { useSWRConfig } from 'swr';
 import { DailyInsightCard, DailyInsightEmptyState } from './DailyInsightCard';
 import { generateDailyInsight } from '@/lib/dailyInsightEngine';
+import { useTodoStore } from '@/store/useTodoStore';
 
 // Helper function to get appropriate streak text based on habit category
 const getStreakText = (category: HabitCategory): string => {
@@ -794,8 +795,62 @@ export const MinimalDashboard: React.FC = () => {
 
   const handleInsightAction = (action: string) => {
     console.log('Insight action:', action);
-    // TODO: Implement insight actions (view trades, set reminders, etc.)
-    // For now, just log the action
+    
+    switch (action) {
+      case 'view-overtrade-days':
+      case 'view-time-analysis':
+      case 'view-revenge-trades':
+      case 'view-session-analysis':
+      case 'review-losses':
+        // Navigate to trades view
+        setCurrentView('trades');
+        break;
+      
+      case 'set-trade-limit':
+      case 'set-daily-limit':
+        // Show todo with suggestion to set a limit
+        const { addTask } = useTodoStore.getState();
+        addTask('Set daily trade limit to maintain quality', {
+          priority: 'high',
+          category: 'discipline',
+          pinned: true,
+        });
+        // Show toast
+        showToast('Added to your todos!');
+        break;
+      
+      case 'set-time-reminder':
+      case 'set-cooldown-timer':
+        // Add reminder task
+        const { addTask: addReminderTask } = useTodoStore.getState();
+        addReminderTask('Set up trading time/cooldown reminders', {
+          priority: 'med',
+          category: 'discipline',
+        });
+        showToast('Added reminder to todos!');
+        break;
+      
+      case 'log-break':
+        // Navigate to journal
+        setCurrentView('journal');
+        showToast('Take a break and reflect on your trades');
+        break;
+      
+      default:
+        console.log('Unhandled action:', action);
+    }
+  };
+
+  // Simple toast notification
+  const showToast = (message: string) => {
+    const toast = document.createElement('div');
+    toast.className = 'fixed bottom-4 right-4 z-50 px-4 py-3 bg-card border border-border rounded-xl shadow-lg flex items-center gap-3 animate-in slide-in-from-bottom';
+    toast.innerHTML = `
+      <div class="w-2 h-2 rounded-full bg-green-500"></div>
+      <span class="text-sm font-medium">${message}</span>
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
   };
 
   return (
