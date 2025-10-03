@@ -177,20 +177,34 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
   const handleShare = async () => {
     setIsGenerating(true);
     try {
-      // Build share data
-      const payload = buildRenderData();
-      const themeParam = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
-      const dataParam = encodeURIComponent(btoa(JSON.stringify(payload)));
-      
-      // Add cache-busting timestamp
-      const cacheBuster = `v=${Date.now()}`;
-      const shareUrl = `${window.location.origin}/share/calendar?theme=${themeParam}&accent=${accentColor}&data=${dataParam}&${cacheBuster}`;
-      
-      // Generate image for sharing
-      const api = `/api/screenshot-calendar?url=${encodeURIComponent(shareUrl)}&width=1200&height=800`;
-      const resp = await fetch(api);
-      if (!resp.ok) throw new Error('Screenshot API failed');
-      const blob = await resp.blob();
+      // Screenshot the exact preview element (WYSIWYG)
+      const target = canvasRef.current;
+      if (!target) {
+        toast.error('Calendar not ready');
+        setIsGenerating(false);
+        return;
+      }
+
+      // Small delay to ensure everything is rendered
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Use html2canvas to capture the exact preview
+      const html2canvas = (await import('html2canvas')).default;
+      const canvas = await html2canvas(target, {
+        logging: false,
+        useCORS: true,
+        scale: 2, // 2x for retina quality
+        backgroundColor: null,
+        width: target.offsetWidth,
+        height: target.offsetHeight,
+      } as any);
+
+      // Convert to blob
+      const blob: Blob = await new Promise((resolve) => {
+        canvas.toBlob((blob) => {
+          resolve(blob!);
+        }, 'image/png');
+      });
       
       // Try native share API first (works great on mobile)
       if (navigator.share && navigator.canShare) {
