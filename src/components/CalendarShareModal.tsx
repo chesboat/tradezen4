@@ -373,6 +373,44 @@ ${shareUrl}`,
     }
   };
 
+  const handleShareToX = async () => {
+    setIsGenerating(true);
+    try {
+      const { caption } = await generateShareCaption();
+      
+      // Open X.com with pre-filled tweet
+      const xUrl = `https://x.com/intent/tweet?text=${encodeURIComponent(caption)}`;
+      window.open(xUrl, '_blank');
+      
+      toast.success('🐦 Opening X.com...');
+    } catch (error: any) {
+      console.error('Error sharing to X:', error);
+      toast.error('Failed to generate share link');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleShareToInstagram = async () => {
+    setIsGenerating(true);
+    try {
+      const { caption } = await generateShareCaption();
+      
+      // Copy caption for Instagram (can't pre-fill IG posts via URL)
+      try {
+        await navigator.clipboard.writeText(caption);
+        toast.success('📸 Caption copied! Open Instagram and paste it 🚀');
+      } catch (clipboardError) {
+        toast.success('📸 Share on Instagram Stories or Feed!');
+      }
+    } catch (error: any) {
+      console.error('Error sharing to Instagram:', error);
+      toast.error('Failed to generate share link');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   const handleShare = async () => {
     setIsGenerating(true);
     try {
@@ -480,7 +518,7 @@ ${shareUrl}`,
             <div className="flex items-center gap-2">
               {/* X.com Share */}
               <motion.button
-                onClick={handleShare}
+                onClick={handleShareToX}
                 disabled={isGenerating}
                 className="px-4 py-2 bg-black dark:bg-white dark:text-black text-white rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2 disabled:opacity-50"
                 whileHover={{ scale: 1.02 }}
@@ -496,7 +534,7 @@ ${shareUrl}`,
               
               {/* Instagram Share */}
               <motion.button
-                onClick={handleShare}
+                onClick={handleShareToInstagram}
                 disabled={isGenerating}
                 className="px-4 py-2 bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 text-white rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2 disabled:opacity-50"
                 whileHover={{ scale: 1.02 }}
