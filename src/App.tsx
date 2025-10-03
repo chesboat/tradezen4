@@ -2,6 +2,7 @@ import React from 'react';
 import { PublicSharePageClean as PublicSharePage } from './components/PublicSharePageClean';
 import { PublicNoteView } from './components/PublicNoteView';
 import { PublicTradeInsightView } from './components/PublicTradeInsightView';
+import { StreakPreview } from './components/StreakPreview';
 import { SettingsPage } from './components/SettingsPage';
 import { Sidebar } from './components/Sidebar';
 import { AppleMobileNav } from './components/AppleMobileNav';
@@ -437,6 +438,11 @@ function AppContent() {
 function App() {
   // Check for public share routes BEFORE rendering any app components/hooks
   if (typeof window !== 'undefined') {
+    // Dev preview page for streak icons
+    if (window.location.pathname === '/streak-preview') {
+      return <StreakPreview />;
+    }
+    
     if (window.location.pathname.startsWith('/share/note/')) {
       return <PublicNoteView />;
     }
