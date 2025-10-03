@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useUserProfileStore } from '@/store/useUserProfileStore';
 
-export type AccentColor = 'blue' | 'purple' | 'green' | 'orange' | 'red' | 'mono';
+export type AccentColor = 'blue' | 'purple' | 'green' | 'orange' | 'red' | 'pink' | 'mono';
 
 // Define color palettes for light and dark modes
 export const accentColorPalettes = {
@@ -79,6 +80,21 @@ export const accentColorPalettes = {
       ring: '0 84% 65%',
     }
   },
+  pink: {
+    name: 'Hot Pink',
+    emoji: '💗',
+    isPremium: true,
+    light: {
+      primary: '330 81% 60%',
+      primaryForeground: '0 0% 100%',
+      ring: '330 81% 60%',
+    },
+    dark: {
+      primary: '330 81% 65%',
+      primaryForeground: '0 0% 100%',
+      ring: '330 81% 65%',
+    }
+  },
   mono: {
     name: 'Monochrome',
     emoji: '⚫',
@@ -97,50 +113,114 @@ export const accentColorPalettes = {
 };
 
 export const useAccentColor = () => {
+  const { profile, updateProfile, syncToFirestore } = useUserProfileStore();
+  
+  // Initialize from profile preferences, fallback to localStorage, then default to blue
   const [accentColor, setAccentColorState] = useState<AccentColor>(() => {
+    if (profile?.preferences?.accentColor) {
+      return profile.preferences.accentColor;
+    }
     const saved = localStorage.getItem('refine-accent-color');
     return (saved as AccentColor) || 'blue';
   });
 
-  // Apply accent color to CSS variables
+  // Sync from profile when it loads
+  useEffect(() => {
+    if (profile?.preferences?.accentColor && profile.preferences.accentColor !== accentColor) {
+      console.log('🎨 Loading accent color from profile:', profile.preferences.accentColor);
+      setAccentColorState(profile.preferences.accentColor);
+    }
+  }, [profile?.preferences?.accentColor]);
+
+  // Apply accent color by setting data attribute AND CSS variables
   useEffect(() => {
     const root = window.document.documentElement;
     const isDark = root.classList.contains('dark');
     const palette = accentColorPalettes[accentColor];
     const colors = isDark ? palette.dark : palette.light;
 
-    // Update CSS custom properties with !important to override @layer base
+    console.log('🎨 Applying accent color:', accentColor, 'isDark:', isDark, 'colors:', colors);
+
+    // Set data attribute for CSS targeting
+    root.setAttribute('data-accent', accentColor);
+
+    // Update CSS custom properties (these should override @layer base)
     root.style.setProperty('--primary', colors.primary, 'important');
     root.style.setProperty('--primary-foreground', colors.primaryForeground, 'important');
     root.style.setProperty('--ring', colors.ring, 'important');
+    
+    console.log('✅ CSS variables set:', {
+      primary: root.style.getPropertyValue('--primary'),
+      primaryForeground: root.style.getPropertyValue('--primary-foreground'),
+      ring: root.style.getPropertyValue('--ring')
+    });
 
-    // Save to localStorage
+    // Save to localStorage (for immediate persistence)
     localStorage.setItem('refine-accent-color', accentColor);
-  }, [accentColor]);
+    
+    // Save to Firestore (for cross-device sync)
+    if (profile) {
+      updateProfile({
+        preferences: {
+          ...profile.preferences,
+          accentColor,
+        },
+      });
+      // Sync to Firestore (debounced in the background)
+      syncToFirestore();
+    }
+  }, [accentColor, profile, updateProfile, syncToFirestore]);
 
-  // Re-apply when theme changes
+  // Re-apply when theme changes (watch for class changes on html element)
   useEffect(() => {
-    const observer = new MutationObserver(() => {
-      const root = window.document.documentElement;
-      const isDark = root.classList.contains('dark');
-      const palette = accentColorPalettes[accentColor];
-      const colors = isDark ? palette.dark : palette.light;
+    let isApplying = false; // Prevent infinite loop
+    
+    const observer = new MutationObserver((mutations) => {
+      // Check if the mutation is actually a theme change (class change)
+      const themeChanged = mutations.some(mutation => {
+        if (mutation.attributeName === 'class') {
+          const oldClasses = mutation.oldValue?.split(' ') || [];
+          const newClasses = Array.from((mutation.target as HTMLElement).classList);
+          const themeWasLight = oldClasses.includes('light');
+          const themeWasDark = oldClasses.includes('dark');
+          const themeIsLight = newClasses.includes('light');
+          const themeIsDark = newClasses.includes('dark');
+          return (themeWasLight !== themeIsLight) || (themeWasDark !== themeIsDark);
+        }
+        return false;
+      });
 
-      // Update with !important to override @layer base
-      root.style.setProperty('--primary', colors.primary, 'important');
-      root.style.setProperty('--primary-foreground', colors.primaryForeground, 'important');
-      root.style.setProperty('--ring', colors.ring, 'important');
+      if (themeChanged && !isApplying) {
+        isApplying = true;
+        
+        // Read DIRECTLY from localStorage to avoid stale closure
+        const currentAccentColor = (localStorage.getItem('refine-accent-color') as AccentColor) || 'blue';
+        console.log('🌗 Theme changed, re-applying accent color:', currentAccentColor);
+        
+        const root = window.document.documentElement;
+        const isDark = root.classList.contains('dark');
+        const palette = accentColorPalettes[currentAccentColor];
+        const colors = isDark ? palette.dark : palette.light;
+
+        root.style.setProperty('--primary', colors.primary, 'important');
+        root.style.setProperty('--primary-foreground', colors.primaryForeground, 'important');
+        root.style.setProperty('--ring', colors.ring, 'important');
+        
+        setTimeout(() => { isApplying = false; }, 100);
+      }
     });
 
     observer.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ['class']
+      attributeFilter: ['class'],
+      attributeOldValue: true // Track old value to detect actual changes
     });
 
     return () => observer.disconnect();
-  }, [accentColor]);
+  }, []); // Empty deps - observer only needs to be set up once
 
   const setAccentColor = (color: AccentColor) => {
+    console.log('🎨 Setting new accent color:', color);
     setAccentColorState(color);
   };
 

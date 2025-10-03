@@ -37,6 +37,7 @@ export interface UserProfile {
     theme: 'light' | 'dark' | 'system';
     notifications: boolean;
     autoBackup: boolean;
+    accentColor?: 'blue' | 'purple' | 'green' | 'orange' | 'red' | 'pink' | 'mono';
   };
   stats: {
     totalTrades: number;
