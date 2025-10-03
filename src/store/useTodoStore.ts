@@ -48,15 +48,21 @@ function normalizeDateLike(value: any | undefined): string | undefined {
 function deserializeTasks(raw: any[]): ImprovementTask[] {
   // Handle corrupted localStorage data from previous bug
   if (!raw || !Array.isArray(raw)) {
-    console.warn('Invalid tasks data in localStorage, clearing...');
+    console.warn('[TodoStore] Invalid tasks data in localStorage, clearing...');
+    // Immediately clear corrupted data to prevent infinite loops
+    try {
+      localStorage.removeItem(STORAGE_KEYS.TODO_TASKS);
+    } catch (e) {
+      console.error('[TodoStore] Failed to clear corrupted tasks:', e);
+    }
     return [];
   }
   
   try {
-    return raw.map((t) => {
+    const validTasks = raw.map((t) => {
       // Ensure required fields exist
-      if (!t.id || !t.text) {
-        console.warn('Skipping task with missing required fields:', t);
+      if (!t || typeof t !== 'object' || !t.id || !t.text) {
+        console.warn('[TodoStore] Skipping task with missing required fields:', t);
         return null;
       }
       
@@ -75,8 +81,17 @@ function deserializeTasks(raw: any[]): ImprovementTask[] {
         pinned: undefined,
       };
     }).filter(Boolean) as ImprovementTask[];
+    
+    console.log(`[TodoStore] Successfully deserialized ${validTasks.length} tasks`);
+    return validTasks;
   } catch (error) {
-    console.error('Error deserializing tasks:', error);
+    console.error('[TodoStore] Error deserializing tasks, clearing localStorage:', error);
+    // Clear corrupted data
+    try {
+      localStorage.removeItem(STORAGE_KEYS.TODO_TASKS);
+    } catch (e) {
+      console.error('[TodoStore] Failed to clear corrupted tasks:', e);
+    }
     return [];
   }
 }
