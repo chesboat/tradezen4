@@ -146,10 +146,22 @@ export const ShareCalendarSnapshot: React.FC<ShareCalendarSnapshotProps> = ({
   };
 
   const getDayClassName = (day: Day) => {
+    const dayDate = new Date(day.date);
+    const today = new Date();
+    const isToday = dayDate.getDate() === today.getDate() && 
+                    dayDate.getMonth() === today.getMonth() && 
+                    dayDate.getFullYear() === today.getFullYear();
+    
     return cn(
-      'relative p-3 rounded-xl border border-border/50 transition-all duration-200 cursor-pointer bg-card',
-      day.pnl > 0 && 'border-green-500/30 bg-green-50/10',
-      day.pnl < 0 && 'border-red-500/30 bg-red-50/10',
+      'relative p-3 rounded-xl border transition-all duration-200 cursor-pointer',
+      // Match calendar styling
+      theme === 'dark' ? 'bg-zinc-900/50' : 'bg-white',
+      'border-border/50',
+      // Today styling with accent color
+      isToday && 'border-primary ring-2 ring-primary/50',
+      // P&L coloring
+      !isToday && day.pnl > 0 && 'border-green-500/30 bg-green-50/10',
+      !isToday && day.pnl < 0 && 'border-red-500/30 bg-red-50/10',
       day.isOtherMonth && 'opacity-40'
     );
   };
@@ -174,7 +186,7 @@ export const ShareCalendarSnapshot: React.FC<ShareCalendarSnapshotProps> = ({
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-4">
                 <h1 className="text-2xl font-bold text-foreground">{data.monthName} {data.year}</h1>
-                <div className="px-4 py-2 bg-primary/10 text-primary rounded-lg text-sm font-medium">TODAY</div>
+                <div className="px-4 py-2 bg-primary/10 text-primary rounded-lg flex items-center justify-center text-sm font-medium leading-none">TODAY</div>
               </div>
               <div className="text-sm text-muted-foreground">
                 Monthly: <span className={cn("font-semibold", data.monthlyPnl > 0 ? "text-green-500" : data.monthlyPnl < 0 ? "text-red-500" : "text-muted-foreground")}>{formatCurrency(data.monthlyPnl)}</span>

@@ -375,77 +375,41 @@ ${shareUrl}`,
   const handleShare = async () => {
     setIsGenerating(true);
     try {
-      // Screenshot the exact preview element (WYSIWYG)
-      const target = canvasRef.current;
-      if (!target) {
-        toast.error('Calendar not ready');
-        setIsGenerating(false);
-        return;
-      }
-
-      // Small delay to ensure everything is rendered
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      // Use html2canvas to capture the exact preview
-      const html2canvas = (await import('html2canvas')).default;
-      const canvas = await html2canvas(target, {
-        logging: false,
-        useCORS: true,
-        scale: 2, // 2x for retina quality
-        backgroundColor: null,
-        width: target.offsetWidth,
-        height: target.offsetHeight,
-      } as any);
-
-      // Convert to blob
-      const blob: Blob = await new Promise((resolve) => {
-        canvas.toBlob((blob) => {
-          resolve(blob!);
-        }, 'image/png');
-      });
-      
+      // Generate public share link and caption
       const { caption, shareUrl } = await generateShareCaption();
       
       // Try native share API first (works great on mobile)
-      if (navigator.share && navigator.canShare) {
-        const file = new File([blob], `Refine-${currentMonth}-${currentYear}.png`, { type: 'image/png' });
-        const shareData = {
-          files: [file],
-          title: `${currentMonth} ${currentYear} Trading Calendar`,
-          text: caption,
-        };
-        
-        if (navigator.canShare(shareData)) {
-          await navigator.share(shareData);
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: `${currentMonth} ${currentYear} Trading Calendar`,
+            text: caption,
+          });
           toast.success('Shared successfully!');
           setIsGenerating(false);
           return;
+        } catch (err: any) {
+          // User cancelled or share not supported - continue to fallback
+          if (err.name !== 'AbortError') {
+            console.log('Native share not available, using fallback');
+          }
         }
       }
       
-      // Fallback: Download for desktop + auto-copy caption
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.download = `Refine-${currentMonth}-${currentYear}.png`;
-      link.href = url;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      
-      // Auto-copy caption to clipboard
+      // Fallback: Copy link to clipboard
       try {
         await navigator.clipboard.writeText(caption);
-        toast.success('📸 Image saved! Caption copied - paste it on your socials 🚀');
+        toast.success('🔗 Link copied! Share it on your socials 🚀');
       } catch (clipboardError) {
-        toast.success('Calendar downloaded! Share it on your socials 🚀');
+        // Manual fallback - show the link
+        toast.success(`Share this link: ${shareUrl}`);
       }
     } catch (error: any) {
       console.error('Error sharing calendar:', error);
       if (error.name === 'AbortError') {
         toast.error('Share cancelled');
       } else {
-        toast.error('Failed to generate image');
+        toast.error('Failed to generate share link');
       }
     } finally {
       setIsGenerating(false);
@@ -513,43 +477,16 @@ ${shareUrl}`,
               </p>
             </div>
             <div className="flex items-center gap-2">
-              {/* X.com Share */}
-              <motion.button
-                onClick={handleShareToX}
-                disabled={isGenerating}
-                className="px-4 py-2 bg-black dark:bg-white dark:text-black text-white rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2 disabled:opacity-50"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                title="Share to X"
-              >
-                <Twitter className="w-4 h-4" />
-                <span className="hidden sm:inline">X</span>
-              </motion.button>
-              
-              {/* Instagram Share */}
-              <motion.button
-                onClick={handleShareToInstagram}
-                disabled={isGenerating}
-                className="px-4 py-2 bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 text-white rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2 disabled:opacity-50"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                title="Share to Instagram"
-              >
-                <Instagram className="w-4 h-4" />
-                <span className="hidden sm:inline">IG</span>
-              </motion.button>
-              
-              {/* Generic Share (mobile native sheet) */}
+              {/* Share to Public Page */}
               <motion.button
                 onClick={handleShare}
                 disabled={isGenerating}
                 className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2 disabled:opacity-50"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                title="More share options"
               >
                 <Share className="w-4 h-4" />
-                <span className="hidden sm:inline">More</span>
+                {isGenerating ? 'Generating...' : 'Share'}
               </motion.button>
               
               <motion.button
@@ -798,7 +735,7 @@ ${shareUrl}`,
 
                     {/* Grid */}
                     <div className="space-y-4">
-                      <div className="grid grid-cols-8 gap-x-1">
+                      <div className="grid grid-cols-8 gap-x-15">
                         {DAYS_OF_WEEK.map((day) => (
                           <div key={`h-${day}`} className="text-center font-semibold text-muted-foreground py-2">{day}</div>
                         ))}
