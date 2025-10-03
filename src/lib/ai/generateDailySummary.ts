@@ -1,6 +1,6 @@
 import { DailyJournalData } from '@/types';
-import OpenAI from 'openai';
 import { formatCurrency } from '@/lib/localStorageUtils';
+import { authenticatedFetch } from '../apiClient';
 
 // AI Summary Generation Prompt
 const DAILY_SUMMARY_PROMPT = `You are a professional trading psychology coach and journaling assistant.  
@@ -247,47 +247,30 @@ const getTomorrowFocus = (_trades: any[], _notes: any[], _stats: any): string =>
   return focuses[Math.floor(Math.random() * focuses.length)];
 };
 
-// Real AI Integration with OpenAI
+// Real AI Integration with OpenAI (via secure backend)
 export const generateAISummaryWithAPI = async (data: DailyJournalData): Promise<string> => {
-  const apiKey = (import.meta as any).env.VITE_OPENAI_API_KEY;
-  
-  if (!apiKey) {
-    throw new Error('OpenAI API key not configured');
-  }
-
-  const openai = new OpenAI({
-    apiKey: apiKey,
-    dangerouslyAllowBrowser: true // Note: In production, you'd want this to go through your backend
-  });
-
   try {
-    // Prefer widely available model first to avoid empty responses
-    const invoke = (model: string) => openai.chat.completions.create({
-      model,
-      messages: [
-        {
-          role: 'system',
-          content: DAILY_SUMMARY_PROMPT,
-        },
-        {
-          role: 'user',
-          content: JSON.stringify(data, null, 2),
-        },
-      ],
-      max_completion_tokens: 700,
+    console.debug('[generateDailySummary] Calling secure backend API');
+    
+    const response = await authenticatedFetch('/api/generate-ai-summary', {
+      method: 'POST',
+      body: JSON.stringify({
+        prompt: DAILY_SUMMARY_PROMPT,
+        data: data,
+        model: 'gpt-4o-mini',
+      }),
     });
 
-    const model = 'gpt-4o-mini';
-    console.debug('[generateDailySummary] Using model:', model);
-    let completion = await invoke(model);
-    let content = (completion.choices[0]?.message?.content || '').trim();
-    if (!content.trim()) {
-      console.warn('Empty content from gpt-4o-mini, retrying with gpt-4o');
-      completion = await invoke('gpt-4o');
-      content = (completion.choices[0]?.message?.content || '').trim();
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Failed to generate AI summary');
     }
+
+    const result = await response.json();
+    let content = (result.content || '').trim();
+    
     // Post-process to remove stray leading fragments
-    content = content.replace(/^['`’\-\s]*s\s+/i, '');
+    content = content.replace(/^['`'\-\s]*s\s+/i, '');
     return content || generateFallbackSummary(data);
   } catch (error) {
     console.error('OpenAI API error:', error);

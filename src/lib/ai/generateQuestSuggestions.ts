@@ -1,5 +1,5 @@
-import OpenAI from 'openai';
 import { Trade, QuickNote, MoodType, Quest } from '@/types';
+import { authenticatedFetch } from '../apiClient';
 
 interface QuestSuggestionRequest {
   recentTrades: Trade[];
@@ -87,11 +87,6 @@ const generateAIQuests = async (
   request: QuestSuggestionRequest,
   apiKey: string
 ): Promise<Quest[]> => {
-  const openai = new OpenAI({
-    apiKey: apiKey,
-    dangerouslyAllowBrowser: true
-  });
-
   const userPrompt = `
 Analyze this trader's recent performance and generate personalized quest suggestions:
 
@@ -116,30 +111,25 @@ ${request.recentNotes.slice(-3).map(note =>
 Generate 3-4 specific quests that address this trader's current needs and performance patterns.
 Focus on improvement areas based on the actual data provided.`;
 
-  console.log('🔄 Calling OpenAI API...');
-  const invoke = (model: string) => openai.chat.completions.create({
-    model,
-    messages: [
-      { role: 'system', content: QUEST_GENERATION_SYSTEM_PROMPT },
-      { role: 'user', content: userPrompt }
-    ],
-    response_format: { type: 'json_object' },
-    max_completion_tokens: 1200,
+  console.log('🔄 Calling secure backend API...');
+  
+  const response = await authenticatedFetch('/api/generate-ai-quests', {
+    method: 'POST',
+    body: JSON.stringify({
+      systemPrompt: QUEST_GENERATION_SYSTEM_PROMPT,
+      userPrompt: userPrompt,
+      model: 'gpt-4o-mini',
+    }),
   });
 
-  // Prefer stable models to avoid empty content
-  const model = 'gpt-4o-mini';
-  console.debug('[generateQuestSuggestions] Using model:', model);
-  let completion = await invoke(model);
-  console.log('📨 Received OpenAI response');
-  let responseContent = completion.choices[0]?.message?.content || '';
-  if (!responseContent.trim()) {
-    console.warn('⚠️ Empty content from gpt-4o-mini, retrying with gpt-4o');
-    completion = await invoke('gpt-4o');
-    console.log('📨 Received OpenAI response (fallback)');
-    responseContent = completion.choices[0]?.message?.content || '';
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Failed to generate AI quests');
   }
 
+  const result = await response.json();
+  const responseContent = result.content || '';
+  
   if (!responseContent.trim()) {
     throw new Error('No response from AI');
   }

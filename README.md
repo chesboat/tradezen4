@@ -187,23 +187,27 @@ src/
 Create a `.env` file in the project root:
 
 ```env
-# OpenAI Configuration (Optional)
-# Get your API key from: https://platform.openai.com/api-keys
-VITE_OPENAI_API_KEY=your_openai_api_key_here
-
-# Firebase Configuration
+# Firebase Configuration (REQUIRED)
+# Get these from: https://console.firebase.google.com/
 VITE_FIREBASE_API_KEY=your_firebase_api_key
 VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
 VITE_FIREBASE_PROJECT_ID=your_project_id
 VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
 VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 VITE_FIREBASE_APP_ID=your_app_id
+
+# OpenAI API Key (Backend - REQUIRED for AI features)
+# IMPORTANT: This is for serverless functions only - NO VITE_ prefix for security
+# Get your API key from: https://platform.openai.com/api-keys
+OPENAI_API_KEY=your_openai_api_key_here
 ```
 
-**Note:** 
+**Important Security Notes:**
+- ⚠️ **Never use `VITE_` prefix for API keys** - it exposes them to the browser
+- ✅ OpenAI API key is used **only in serverless functions** (`/api` folder)
+- ✅ API keys are **never embedded** in client-side JavaScript bundles
 - AI features will work with mock data if no OpenAI API key is provided
 - Firebase configuration is required for authentication and data storage
-- Get your Firebase configuration from the Firebase Console after creating a project
 
 ### Customization
 - **Colors**: Update `tailwind.config.js` color palette

@@ -1,6 +1,6 @@
-import OpenAI from 'openai';
 import { useCoachStore } from '@/store/useCoachStore';
 import { QuickNote, Trade } from '@/types';
+import { authenticatedFetch } from '../apiClient';
 
 export interface CoachContext {
   date: string;
@@ -17,37 +17,39 @@ export interface CoachContext {
 }
 
 export class CoachService {
-  private static getClient(): OpenAI | null {
-    const apiKey = (import.meta as any).env.VITE_OPENAI_API_KEY;
-    if (!apiKey) return null;
-    return new OpenAI({ apiKey, dangerouslyAllowBrowser: true });
-  }
-
   static async askCoach(question: string, context: CoachContext): Promise<string> {
     try {
-      const client = this.getClient();
       const summary = this.enrichContext(context);
       const userJson = JSON.stringify({ question, context, summary }, null, 2);
-      if (!client) {
-        return this.localAnswer(question, context);
-      }
+      
       const state = useCoachStore.getState?.();
       const model = state?.model || 'gpt-4o';
-      console.debug('[CoachService] Using model:', model);
-      const res = await client.chat.completions.create({
-        model,
-        messages: [
-          {
-            role: 'system',
-            content:
-              `You are an elite trading coach. Use the provided context summary and data to give actionable guidance.\n\nStyle: ${useCoachStore.getState().detailLevel === 'detailed' ? 'a few short paragraphs plus bullets' : '3–6 concise bullets'}.\nRules:\n- Use bold labels (**risk**, **action**, **pattern**)\n- Cite concrete numbers from context (win rate, R, loss cap, time windows)\n- Prioritize process recommendations (entries, pacing, risk)\n- ${useCoachStore.getState().detailLevel === 'detailed' ? '≈220 words max' : '≈120 words max'}\n- No platitudes`,
-          },
-          { role: 'user', content: userJson },
-        ],
-        max_completion_tokens: 450,
+      const detailLevel = state?.detailLevel || 'concise';
+      
+      console.debug('[CoachService] Calling secure backend API with model:', model);
+      
+      const response = await authenticatedFetch('/api/generate-ai-coach-response', {
+        method: 'POST',
+        body: JSON.stringify({
+          messages: [
+            {
+              role: 'system',
+              content: `You are an elite trading coach. Use the provided context summary and data to give actionable guidance.\n\nStyle: ${detailLevel === 'detailed' ? 'a few short paragraphs plus bullets' : '3–6 concise bullets'}.\nRules:\n- Use bold labels (**risk**, **action**, **pattern**)\n- Cite concrete numbers from context (win rate, R, loss cap, time windows)\n- Prioritize process recommendations (entries, pacing, risk)\n- ${detailLevel === 'detailed' ? '≈220 words max' : '≈120 words max'}\n- No platitudes`,
+            },
+            { role: 'user', content: userJson },
+          ],
+          model,
+        }),
       });
-      return res.choices[0]?.message?.content?.trim() || this.localAnswer(question, context);
+
+      if (!response.ok) {
+        throw new Error('Failed to get AI coach response');
+      }
+
+      const result = await response.json();
+      return result.content?.trim() || this.localAnswer(question, context);
     } catch (e) {
+      console.error('[CoachService] Error:', e);
       return this.localAnswer(question, context);
     }
   }

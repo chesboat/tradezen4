@@ -1,7 +1,7 @@
 import { DailyJournalData, CustomTemplate, TemplateBlock } from '@/types';
 import { generateId } from '@/lib/localStorageUtils';
-import OpenAI from 'openai';
 import insightTemplatesData from '@/lib/insightTemplates.json';
+import { authenticatedFetch } from '../apiClient';
 
 interface AITemplateResponse {
   templateName: string;
@@ -84,21 +84,11 @@ export const generateInsightTemplate = async (
   }
 };
 
-// AI-powered template generation using OpenAI
+// AI-powered template generation using OpenAI (via secure backend)
 const generateAIInsightTemplate = async (
   context: DailyJournalData,
   customPrompt?: string
 ): Promise<CustomTemplate> => {
-  const apiKey = (import.meta as any).env.VITE_OPENAI_API_KEY;
-  
-  if (!apiKey) {
-    throw new Error('OpenAI API key not configured');
-  }
-
-  const openai = new OpenAI({
-    apiKey: apiKey,
-    dangerouslyAllowBrowser: true
-  });
 
   // Analyze the trading context
   const { trades, notes, stats } = context;
@@ -180,28 +170,29 @@ Return JSON format:
 }`;
 
   try {
-    console.log('📤 Sending to GPT-5-mini:', {
+    console.log('📤 Sending to secure backend API:', {
       model: 'gpt-5-mini',
       contextSummary: `${tradeCount} trades, $${pnl.toFixed(2)} P&L, ${winRate.toFixed(1)}% win rate`,
       promptLength: userPrompt.length
     });
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-5-mini',
-      messages: [
-        {
-          role: 'system',
-          content: INSIGHT_TEMPLATE_SYSTEM_PROMPT,
-        },
-        {
-          role: 'user',
-          content: userPrompt,
-        },
-      ],
-      max_completion_tokens: 1000,
+    const response = await authenticatedFetch('/api/generate-ai-insight-template', {
+      method: 'POST',
+      body: JSON.stringify({
+        systemPrompt: INSIGHT_TEMPLATE_SYSTEM_PROMPT,
+        userPrompt: userPrompt,
+        model: 'gpt-5-mini',
+      }),
     });
 
-    const responseContent = completion.choices[0]?.message?.content;
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Failed to generate AI insight template');
+    }
+
+    const result = await response.json();
+    const responseContent = result.content;
+    
     if (!responseContent) {
       throw new Error('No response from AI');
     }

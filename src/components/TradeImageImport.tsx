@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import OpenAI from 'openai';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
+import { authenticatedFetch } from '@/lib/apiClient';
 import { useTradeStore } from '@/store/useTradeStore';
 import { Trade } from '@/types';
 import { cn } from '@/lib/utils';
@@ -90,13 +90,6 @@ export const TradeImageImport: React.FC<TradeImageImportProps> = ({ isOpen, onCl
     setParsedTrades([]);
 
     try {
-      const apiKey = (import.meta as any).env.VITE_OPENAI_API_KEY as string | undefined;
-      if (!apiKey) {
-        throw new Error('OpenAI API key not configured');
-      }
-
-      const openai = new OpenAI({ apiKey, dangerouslyAllowBrowser: true });
-
       const systemPrompt = `You are a precise data extraction engine for trading tables.
 Return ONLY valid JSON with the schema:
 {
@@ -121,45 +114,24 @@ Rules:\n- Use data exactly as shown in the screenshot.\n- Numbers should be plai
 
       const userText = `Extract trades visible in this screenshot. The columns often include: Symbol, Side/Direction, Quantity, Entry Time, Exit Time, Entry Price, Exit Price, P&L, Fees/Commissions. Only return JSON.`;
 
-      const completion = await openai.chat.completions.create({
-        model: 'gpt-5-mini',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: userText } as any,
-              { type: 'image_url', image_url: { url: dataUrl } } as any,
-            ] as any,
-          },
-        ],
-        response_format: { type: 'json_object' } as any,
-        max_completion_tokens: 1200,
+      const response = await authenticatedFetch('/api/parse-trade-image', {
+        method: 'POST',
+        body: JSON.stringify({
+          dataUrl,
+          systemPrompt,
+          userText,
+          model: 'gpt-4o-mini',
+        }),
       });
 
-      let raw = completion.choices[0]?.message?.content?.trim() || '';
-      if (!raw) {
-        // Fallback attempt with gpt-4o-mini
-        try {
-          const backup = await openai.chat.completions.create({
-            model: 'gpt-4o-mini',
-            messages: [
-              { role: 'system', content: systemPrompt },
-              {
-                role: 'user',
-                content: [
-                  { type: 'text', text: userText } as any,
-                  { type: 'image_url', image_url: { url: dataUrl } } as any,
-                ] as any,
-              },
-            ],
-            response_format: { type: 'json_object' } as any,
-          });
-          raw = backup.choices[0]?.message?.content?.trim() || '';
-        } catch (e) {
-          console.error('Backup model failed:', e);
-        }
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to parse trade image');
       }
+
+      const result = await response.json();
+      let raw = result.content?.trim() || '';
+      
       if (!raw) throw new Error('Empty AI response');
       // Try strict parsing, then fenced cleanup, then best-effort brace slice
       const tryParse = (text: string) => {
