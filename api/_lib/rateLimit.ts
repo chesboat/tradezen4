@@ -3,24 +3,32 @@ import { getFirestore } from 'firebase-admin/firestore';
 import type { VercelRequest } from '@vercel/node';
 
 // Initialize Firebase Admin (only once)
-if (!getApps().length) {
-  // In production, Vercel will use FIREBASE_SERVICE_ACCOUNT_KEY env var
-  // For local dev, you can use a service account JSON file
-  const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_KEY
-    ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY)
-    : undefined;
+let firebaseInitialized = false;
+try {
+  if (!getApps().length) {
+    // In production, Vercel will use FIREBASE_SERVICE_ACCOUNT_KEY env var
+    const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_KEY
+      ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY)
+      : undefined;
 
-  if (serviceAccount) {
-    initializeApp({
-      credential: cert(serviceAccount),
-    });
+    if (serviceAccount) {
+      initializeApp({
+        credential: cert(serviceAccount),
+      });
+      firebaseInitialized = true;
+      console.log('✅ Firebase Admin initialized successfully');
+    } else {
+      console.warn('⚠️ FIREBASE_SERVICE_ACCOUNT_KEY not found - rate limiting will be disabled');
+    }
   } else {
-    // Fallback for local development without service account
-    initializeApp();
+    firebaseInitialized = true;
   }
+} catch (error) {
+  console.error('❌ Firebase Admin initialization failed:', error);
+  console.warn('⚠️ Rate limiting will be disabled');
 }
 
-const db = getFirestore();
+const db = firebaseInitialized ? getFirestore() : null;
 
 // Rate limit configuration per feature
 export const RATE_LIMITS = {
@@ -75,8 +83,19 @@ export async function checkRateLimit(
   const resetAt = new Date(today);
   resetAt.setUTCDate(resetAt.getUTCDate() + 1); // Next day at midnight UTC
 
+  // If Firebase isn't initialized, allow all requests (fail open)
+  if (!firebaseInitialized) {
+    console.warn('⚠️ Firebase not initialized - allowing request without rate limit check');
+    return {
+      allowed: true,
+      remaining: config.dailyLimit,
+      limit: config.dailyLimit,
+      resetAt,
+    };
+  }
+
   try {
-    const docRef = db
+    const docRef = db!
       .collection('rateLimits')
       .doc(userId)
       .collection('features')
@@ -177,6 +196,15 @@ export async function getRateLimitStatus(
   const today = new Date().toISOString().split('T')[0];
   const resetAt = new Date(today);
   resetAt.setUTCDate(resetAt.getUTCDate() + 1);
+
+  // If Firebase isn't initialized, return full limit
+  if (!firebaseInitialized || !db) {
+    return {
+      remaining: config.dailyLimit,
+      limit: config.dailyLimit,
+      resetAt,
+    };
+  }
 
   try {
     const docRef = db
