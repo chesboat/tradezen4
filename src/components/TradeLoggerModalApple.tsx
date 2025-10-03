@@ -125,17 +125,18 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
       const defaultRR = 1;
       const calculatedRiskAmount = Math.abs(pnlValue) / defaultRR;
       
-      // Build entry time from date and time
+      // Build entry time from date and time (parse as local date to avoid timezone issues)
       let entryTime: Date;
+      const [year, month, day] = tradeDate.split('-').map(Number);
+      entryTime = new Date(year, month - 1, day);
+      
       if (tradeTime) {
         // Use custom time
         const [hours, minutes] = tradeTime.split(':').map(Number);
-        entryTime = new Date(tradeDate);
         entryTime.setHours(hours, minutes, 0, 0);
       } else {
-        // Use current time with selected date
+        // Use current time
         const now = new Date();
-        entryTime = new Date(tradeDate);
         entryTime.setHours(now.getHours(), now.getMinutes(), 0, 0);
       }
       

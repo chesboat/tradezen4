@@ -266,7 +266,9 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
 
     // Preserve the time, only update date
     const oldDate = new Date(trade.entryTime);
-    const newDate = new Date(editingDateValue);
+    // Parse date as local date (YYYY-MM-DD) to avoid timezone issues
+    const [year, month, day] = editingDateValue.split('-').map(Number);
+    const newDate = new Date(year, month - 1, day);
     newDate.setHours(oldDate.getHours(), oldDate.getMinutes(), oldDate.getSeconds(), 0);
     await updateTrade(tradeId, { entryTime: newDate.toISOString() });
     
