@@ -44,6 +44,8 @@ import WeeklyReviewCard from '@/components/discipline/WeeklyReviewCard';
 import DisciplineNudgeCard from '@/components/discipline/DisciplineNudgeCard';
 import BulletMeter from '@/components/discipline/BulletMeter';
 import { useSWRConfig } from 'swr';
+import { DailyInsightCard, DailyInsightEmptyState } from './DailyInsightCard';
+import { generateDailyInsight } from '@/lib/dailyInsightEngine';
 
 // Helper function to get appropriate streak text based on habit category
 const getStreakText = (category: HabitCategory): string => {
@@ -783,6 +785,19 @@ export const MinimalDashboard: React.FC = () => {
   });
   const yesterdayPnL = yesterdayTrades.reduce((sum, t) => sum + (t.pnl || 0), 0);
 
+  // Generate daily insight (Apple-style: one insight per day)
+  const dailyInsight = useMemo(() => {
+    return generateDailyInsight(accountTrades);
+  }, [accountTrades]);
+
+  const [insightDismissed, setInsightDismissed] = useState(false);
+
+  const handleInsightAction = (action: string) => {
+    console.log('Insight action:', action);
+    // TODO: Implement insight actions (view trades, set reminders, etc.)
+    // For now, just log the action
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
       <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6 sm:space-y-8">
@@ -827,6 +842,25 @@ export const MinimalDashboard: React.FC = () => {
             />
           </div>
         </motion.section>
+
+        {/* Daily Insight - Apple-style personalized coaching */}
+        {!insightDismissed && (
+          <motion.section
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.15 }}
+          >
+            {dailyInsight ? (
+              <DailyInsightCard
+                insight={dailyInsight}
+                onDismiss={() => setInsightDismissed(true)}
+                onAction={handleInsightAction}
+              />
+            ) : accountTrades.length >= 5 && accountTrades.length < 10 ? (
+              <DailyInsightEmptyState />
+            ) : null}
+          </motion.section>
+        )}
         
         {/* Historical Performance - Secondary Metrics */}
         <motion.section
