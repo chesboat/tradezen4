@@ -499,8 +499,9 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
                         <ChevronLeft className="w-5 h-5" />
                       </div>
                       
-                      <h1 className="text-2xl font-bold text-foreground">
-                        {currentMonth} {currentYear}
+                      <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+                        <span>{currentMonth}</span>
+                        <span>{currentYear}</span>
                       </h1>
                       
                       <div className="p-2 rounded-lg text-muted-foreground">
@@ -508,7 +509,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
                       </div>
                     </div>
                     
-                    <div className="px-4 py-2 bg-primary/10 text-primary rounded-lg">
+                    <div className="px-4 py-2 bg-primary/10 text-primary rounded-lg flex items-center justify-center text-sm font-medium">
                       TODAY
                     </div>
                   </div>
