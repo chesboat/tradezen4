@@ -3,6 +3,38 @@ import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/localStorageUtils';
 import { Calendar as CalendarIcon, BookOpen, Zap } from 'lucide-react';
 
+// Accent color gradients for social media backgrounds
+const accentGradients = {
+  blue: {
+    dark: 'from-blue-900 via-blue-700 to-blue-600',
+    light: 'from-blue-200 via-blue-300 to-blue-400',
+  },
+  purple: {
+    dark: 'from-purple-900 via-purple-700 to-purple-600',
+    light: 'from-purple-200 via-purple-300 to-purple-400',
+  },
+  green: {
+    dark: 'from-green-900 via-green-700 to-green-600',
+    light: 'from-green-200 via-green-300 to-green-400',
+  },
+  orange: {
+    dark: 'from-orange-900 via-orange-700 to-orange-600',
+    light: 'from-orange-200 via-orange-300 to-orange-400',
+  },
+  red: {
+    dark: 'from-red-900 via-red-700 to-red-600',
+    light: 'from-red-200 via-red-300 to-red-400',
+  },
+  pink: {
+    dark: 'from-pink-900 via-pink-700 to-pink-600',
+    light: 'from-pink-200 via-pink-300 to-pink-400',
+  },
+  mono: {
+    dark: 'from-gray-900 via-gray-800 to-gray-700',
+    light: 'from-gray-200 via-gray-300 to-gray-400',
+  },
+};
+
 type Day = {
   date: string | Date;
   pnl: number;
@@ -40,6 +72,7 @@ export const ShareCalendarSnapshot: React.FC = () => {
   
   const params = new URLSearchParams(window.location.search);
   const theme = (params.get('theme') as 'light' | 'dark') || 'dark';
+  const accentColor = (params.get('accent') as 'blue' | 'purple' | 'green' | 'orange' | 'red' | 'pink' | 'mono') || 'blue';
   const raw = params.get('data') || '';
   let data: RenderData | null = null;
   try {
@@ -70,11 +103,13 @@ export const ShareCalendarSnapshot: React.FC = () => {
     );
   }
 
+  const gradientClass = accentGradients[accentColor][theme];
+
   return (
     <div className={cn('min-h-screen overflow-x-hidden', theme)}>
       {/* Mobile version - clean and scrollable */}
       {isMobile && (
-      <div className="w-full min-h-screen bg-gradient-to-br from-blue-600 via-purple-500 to-pink-400 p-3">
+      <div className={cn("w-full min-h-screen bg-gradient-to-br p-3", gradientClass)}>
         <div className="bg-background rounded-xl border-2 border-blue-500 shadow-xl max-w-md mx-auto">
           <div className="p-3">
             {/* Mobile Header */}
@@ -154,7 +189,7 @@ export const ShareCalendarSnapshot: React.FC = () => {
 
       {/* Desktop/Screenshot version - shown on tablet+ */}
       {!isMobile && (
-      <div className="w-full bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 py-16 px-12" data-share-calendar-card>
+      <div className={cn("w-full bg-gradient-to-br py-16 px-12", gradientClass)} data-share-calendar-card>
         <div className="bg-background rounded-2xl border w-full max-w-[1100px] mx-auto shadow-2xl">
           <div className="pt-6 pb-8 px-6">
             {/* Header */}

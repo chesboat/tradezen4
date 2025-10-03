@@ -30,7 +30,40 @@ export interface RenderOptions {
   width?: number; // default 1200
   height?: number; // default 1000
   theme: 'light' | 'dark';
+  accentColor?: 'blue' | 'purple' | 'green' | 'orange' | 'red' | 'pink' | 'mono';
 }
+
+// Accent color gradients for social media backgrounds
+const accentGradients = {
+  blue: {
+    dark: ['#1e3a8a', '#1e40af', '#1d4ed8'],  // Deep blue shades
+    light: ['#dbeafe', '#bfdbfe', '#93c5fd'], // Light blue shades
+  },
+  purple: {
+    dark: ['#581c87', '#6b21a8', '#7e22ce'],  // Deep purple shades
+    light: ['#e9d5ff', '#d8b4fe', '#c084fc'], // Light purple shades
+  },
+  green: {
+    dark: ['#14532d', '#166534', '#15803d'],  // Deep green shades
+    light: ['#d1fae5', '#a7f3d0', '#6ee7b7'], // Light green shades
+  },
+  orange: {
+    dark: ['#7c2d12', '#9a3412', '#c2410c'],  // Deep orange shades
+    light: ['#fed7aa', '#fdba74', '#fb923c'], // Light orange shades
+  },
+  red: {
+    dark: ['#7f1d1d', '#991b1b', '#b91c1c'],  // Deep red shades
+    light: ['#fecaca', '#fca5a5', '#f87171'], // Light red shades
+  },
+  pink: {
+    dark: ['#831843', '#9f1239', '#be123c'],  // Deep pink shades
+    light: ['#fce7f3', '#fbcfe8', '#f9a8d4'], // Light pink shades
+  },
+  mono: {
+    dark: ['#171717', '#262626', '#404040'],  // Deep gray shades
+    light: ['#f5f5f5', '#e5e5e5', '#d4d4d4'], // Light gray shades
+  },
+};
 
 export async function renderCalendarToDataURL(data: CalendarRenderData, opts: RenderOptions): Promise<string> {
   const width = opts.width ?? 1200;
@@ -50,19 +83,17 @@ export async function renderCalendarToDataURL(data: CalendarRenderData, opts: Re
   const green = '#22c55e';
   const red = '#ef4444';
 
-  // Eye-catching gradient background for social media
+  // Eye-catching gradient background for social media (personalized with accent color)
+  const accentColor = opts.accentColor || 'blue';
+  const gradientColors = opts.theme === 'dark' 
+    ? accentGradients[accentColor].dark 
+    : accentGradients[accentColor].light;
+  
   const grad = ctx.createLinearGradient(0, 0, width, height);
-  if (opts.theme === 'dark') {
-    // Dark: Deep blue → purple → subtle pink
-    grad.addColorStop(0, '#1e1b4b');      // Deep indigo
-    grad.addColorStop(0.5, '#581c87');    // Deep purple
-    grad.addColorStop(1, '#831843');      // Deep pink
-  } else {
-    // Light: Soft blue → purple → pink
-    grad.addColorStop(0, '#dbeafe');      // Light blue
-    grad.addColorStop(0.5, '#e9d5ff');    // Light purple
-    grad.addColorStop(1, '#fce7f3');      // Light pink
-  }
+  grad.addColorStop(0, gradientColors[0]);
+  grad.addColorStop(0.5, gradientColors[1]);
+  grad.addColorStop(1, gradientColors[2]);
+  
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, width, height);
 
