@@ -9,7 +9,9 @@ import {
   BookOpen,
   ChevronLeft,
   ChevronRight,
-  Share
+  Share,
+  Twitter,
+  Instagram
 } from 'lucide-react';
 import { formatDate } from '@/lib/localStorageUtils';
 import { formatCurrencyApple } from '@/lib/appleFormatters';
@@ -174,6 +176,143 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
     };
   };
 
+  const generateShareCaption = () => {
+    // Generate public share link
+    const payload = buildRenderData();
+    const themeParam = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+    const dataParam = encodeURIComponent(btoa(JSON.stringify(payload)));
+    const shareUrl = `${window.location.origin}/share/calendar?theme=${themeParam}&accent=${accentColor}&data=${dataParam}`;
+    
+    // Calculate win rate
+    const totalWins = weeklyData.reduce((sum, week) => {
+      const weekDays = calendarData.weeks[weeklyData.indexOf(week)]?.filter((day: any) => !day.isOtherMonth && !day.isWeekend && day.tradesCount > 0) || [];
+      return sum + weekDays.filter((day: any) => day.pnl > 0).length;
+    }, 0);
+    const winRate = totalTrades > 0 ? Math.round((totalWins / totalTrades) * 100) : 0;
+    
+    // Build caption with stats
+    const pnlSign = monthlyPnL >= 0 ? '+' : '';
+    return {
+      caption: `${currentMonth} ${currentYear} 📊
+
+P&L: ${pnlSign}${formatCurrencyApple(monthlyPnL, { showSign: false })}
+${totalTrades} trade${totalTrades !== 1 ? 's' : ''}${winRate > 0 ? `, ${winRate}% win rate` : ''}
+
+Refining my edge, daily.
+
+${shareUrl}`,
+      shareUrl
+    };
+  };
+
+  const handleShareToX = async () => {
+    setIsGenerating(true);
+    try {
+      // Generate image first
+      const target = canvasRef.current;
+      if (!target) {
+        toast.error('Calendar not ready');
+        setIsGenerating(false);
+        return;
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const html2canvas = (await import('html2canvas')).default;
+      const canvas = await html2canvas(target, {
+        logging: false,
+        useCORS: true,
+        scale: 2,
+        backgroundColor: null,
+        width: target.offsetWidth,
+        height: target.offsetHeight,
+      } as any);
+
+      const blob: Blob = await new Promise((resolve) => {
+        canvas.toBlob((blob) => {
+          resolve(blob!);
+        }, 'image/png');
+      });
+      
+      // Download image
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.download = `Refine-${currentMonth}-${currentYear}.png`;
+      link.href = url;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      // Open Twitter with pre-filled tweet
+      const { caption } = generateShareCaption();
+      const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(caption)}`;
+      window.open(twitterUrl, '_blank');
+      
+      toast.success('📸 Image downloaded! Opening X.com...');
+    } catch (error: any) {
+      console.error('Error sharing to X:', error);
+      toast.error('Failed to generate image');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleShareToInstagram = async () => {
+    setIsGenerating(true);
+    try {
+      // Generate image
+      const target = canvasRef.current;
+      if (!target) {
+        toast.error('Calendar not ready');
+        setIsGenerating(false);
+        return;
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const html2canvas = (await import('html2canvas')).default;
+      const canvas = await html2canvas(target, {
+        logging: false,
+        useCORS: true,
+        scale: 2,
+        backgroundColor: null,
+        width: target.offsetWidth,
+        height: target.offsetHeight,
+      } as any);
+
+      const blob: Blob = await new Promise((resolve) => {
+        canvas.toBlob((blob) => {
+          resolve(blob!);
+        }, 'image/png');
+      });
+      
+      // Download image
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.download = `Refine-${currentMonth}-${currentYear}.png`;
+      link.href = url;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      // Copy caption for Instagram
+      const { caption } = generateShareCaption();
+      try {
+        await navigator.clipboard.writeText(caption);
+        toast.success('📸 Image downloaded! Caption copied - open Instagram and paste 🚀');
+      } catch {
+        toast.success('📸 Image downloaded! Upload to Instagram Stories or Feed 🚀');
+      }
+    } catch (error: any) {
+      console.error('Error sharing to Instagram:', error);
+      toast.error('Failed to generate image');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   const handleShare = async () => {
     setIsGenerating(true);
     try {
@@ -206,30 +345,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
         }, 'image/png');
       });
       
-      // Generate public share link
-      const payload = buildRenderData();
-      const themeParam = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
-      const dataParam = encodeURIComponent(btoa(JSON.stringify(payload)));
-      const shareUrl = `${window.location.origin}/share/calendar?theme=${themeParam}&accent=${accentColor}&data=${dataParam}`;
-      
-      // Calculate win rate
-      const totalWins = weeklyData.reduce((sum, week) => {
-        // Count winning days across the week
-        const weekDays = calendarData.weeks[weeklyData.indexOf(week)]?.filter((day: any) => !day.isOtherMonth && !day.isWeekend && day.tradesCount > 0) || [];
-        return sum + weekDays.filter((day: any) => day.pnl > 0).length;
-      }, 0);
-      const winRate = totalTrades > 0 ? Math.round((totalWins / totalTrades) * 100) : 0;
-      
-      // Build suggested caption with stats
-      const pnlSign = monthlyPnL >= 0 ? '+' : '';
-      const caption = `${currentMonth} ${currentYear} 📊
-
-P&L: ${pnlSign}${formatCurrencyApple(monthlyPnL, { showSign: false })}
-${totalTrades} trade${totalTrades !== 1 ? 's' : ''}${winRate > 0 ? `, ${winRate}% win rate` : ''}
-
-Refining my edge, daily.
-
-${shareUrl}`;
+      const { caption, shareUrl } = generateShareCaption();
       
       // Try native share API first (works great on mobile)
       if (navigator.share && navigator.canShare) {
@@ -465,22 +581,51 @@ ${shareUrl}`;
           {/* Modal Header */}
           <div className="flex items-center justify-between p-6 border-b">
             <div>
-              <h2 className="text-xl font-semibold">Calendar Preview</h2>
+              <h2 className="text-xl font-semibold">Share Calendar</h2>
               <p className="text-sm text-muted-foreground">
-                Your trading calendar for {currentMonth} {currentYear}
+                Post your {currentMonth} performance to social media
               </p>
             </div>
             <div className="flex items-center gap-2">
+              {/* X.com Share */}
+              <motion.button
+                onClick={handleShareToX}
+                disabled={isGenerating}
+                className="px-4 py-2 bg-black dark:bg-white dark:text-black text-white rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2 disabled:opacity-50"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                title="Share to X"
+              >
+                <Twitter className="w-4 h-4" />
+                <span className="hidden sm:inline">X</span>
+              </motion.button>
+              
+              {/* Instagram Share */}
+              <motion.button
+                onClick={handleShareToInstagram}
+                disabled={isGenerating}
+                className="px-4 py-2 bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 text-white rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2 disabled:opacity-50"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                title="Share to Instagram"
+              >
+                <Instagram className="w-4 h-4" />
+                <span className="hidden sm:inline">IG</span>
+              </motion.button>
+              
+              {/* Generic Share (mobile native sheet) */}
               <motion.button
                 onClick={handleShare}
                 disabled={isGenerating}
                 className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2 disabled:opacity-50"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
+                title="More share options"
               >
                 <Share className="w-4 h-4" />
-                {isGenerating ? 'Generating...' : 'Share'}
+                <span className="hidden sm:inline">More</span>
               </motion.button>
+              
               <motion.button
                 onClick={onClose}
                 className="p-2 hover:bg-accent rounded-lg transition-colors"
