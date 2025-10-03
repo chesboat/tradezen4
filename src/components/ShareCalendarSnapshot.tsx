@@ -131,8 +131,8 @@ export const ShareCalendarSnapshot: React.FC = () => {
   return (
     <div className={cn('min-h-screen overflow-x-hidden flex items-center justify-center bg-gradient-to-br', gradientClass, theme)}>
       {/* Match preview exactly */}
-      <div className="relative p-8 w-full max-w-5xl flex items-center justify-center" style={{ aspectRatio: '16/10' }}>
-        <div className="max-w-4xl w-[85%] relative">
+      <div className="relative p-6 w-full max-w-6xl flex items-center justify-center" style={{ aspectRatio: '16/10' }}>
+        <div className="max-w-5xl w-[92%] relative">
           <div className="bg-background rounded-xl pt-4 pb-6 px-6 border relative" 
             style={{ 
               boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15), 0 10px 20px rgba(0, 0, 0, 0.1), 0 5px 10px rgba(0, 0, 0, 0.05)',
@@ -150,18 +150,16 @@ export const ShareCalendarSnapshot: React.FC = () => {
             </div>
 
             {/* Calendar Grid */}
-            <div className="space-y-1">
+            <div className="grid grid-cols-8" style={{ gap: '4px', rowGap: '4px' }}>
               {/* Headers Row */}
-              <div className="grid grid-cols-8 gap-1">
-                {DAYS_OF_WEEK.map((day) => (
-                  <div key={`h-${day}`} className="text-center font-semibold text-muted-foreground py-2">{day}</div>
-                ))}
-                <div className="text-center font-semibold text-muted-foreground py-2">Week</div>
-              </div>
+              {DAYS_OF_WEEK.map((day) => (
+                <div key={`h-${day}`} className="text-center font-semibold text-muted-foreground py-2">{day}</div>
+              ))}
+              <div className="text-center font-semibold text-muted-foreground py-2">Week</div>
 
-              {/* Calendar Rows */}
+              {/* Calendar Rows - flattened into single grid */}
               {data.weeks.map((week, weekIndex) => (
-                <div key={weekIndex} className="grid grid-cols-8 gap-1">
+                <React.Fragment key={weekIndex}>
                   {week.map((day, dayIndex) => {
                     const dayDate = new Date(day.date);
                     const isWeekend = dayDate.getDay() === 0 || dayDate.getDay() === 6;
@@ -169,27 +167,41 @@ export const ShareCalendarSnapshot: React.FC = () => {
                       <div
                         key={`${weekIndex}-${dayIndex}`}
                         className={`${getDayClassName(day)} w-full`}
-                        style={{ aspectRatio: '6/5', minHeight: '80px' }}
+                        style={{ aspectRatio: '6/5', minHeight: '80px', display: 'flex', flexDirection: 'column' }}
                       >
-                        <div className="flex flex-col h-full justify-between">
-                          <div className="flex items-center justify-between px-2 pt-2 flex-shrink-0">
-                            <span className={cn('text-sm font-medium', day.isOtherMonth ? 'text-muted-foreground' : 'text-foreground')}>
+                        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '4px 6px' }}>
+                          {/* Date - Top Left, subtle */}
+                          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 'auto' }}>
+                            <span className={cn(
+                              'text-xs font-normal leading-none',
+                              day.isOtherMonth ? 'text-muted-foreground/60' : 'text-muted-foreground'
+                            )}>
                               {dayDate.getDate()}
                             </span>
-                            <div className="flex items-center gap-1">
-                              {day.hasReflection && <BookOpen className="w-3 h-3 text-green-500" />}
-                            </div>
+                            {day.hasReflection && (
+                              <div className="w-1.5 h-1.5 rounded-full bg-green-500" style={{ marginTop: '2px' }} />
+                            )}
                           </div>
                           
                           {isWeekend ? (
-                            <div className="flex flex-col items-center justify-center flex-1 text-center pb-2">
-                              <div className="text-xs text-muted-foreground/70">Weekend</div>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, textAlign: 'center' }}>
+                              <div className="text-[10px] text-muted-foreground/50 font-normal">Weekend</div>
                             </div>
                           ) : (
-                            <div className="flex flex-col items-center justify-center flex-1 gap-0.5 pb-2">
-                              {formatPnL(day.pnl)}
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, gap: '4px' }}>
+                              {/* P&L - Hero element, large and bold */}
+                              {day.pnl !== 0 && (
+                                <div className={cn(
+                                  'text-base font-bold tracking-tight leading-none whitespace-nowrap',
+                                  day.pnl > 0 ? 'text-green-500' : 'text-red-500'
+                                )}>
+                                  {formatCurrency(day.pnl)}
+                                </div>
+                              )}
+                              
+                              {/* Trade Count - Very subtle */}
                               {day.tradesCount > 0 && (
-                                <div className="text-xs text-muted-foreground text-center">
+                                <div className="text-[10px] text-muted-foreground/50 font-normal leading-none">
                                   {day.tradesCount} trade{day.tradesCount > 1 ? 's' : ''}
                                 </div>
                               )}
@@ -201,12 +213,15 @@ export const ShareCalendarSnapshot: React.FC = () => {
                   })}
 
                   {/* Week Summary */}
-                  <div className={cn(
-                    'relative p-3 rounded-xl border border-border/50 bg-card aspect-[6/5] w-full',
-                    data.weeklySummaries[weekIndex]?.totalPnl > 0 && 'border-green-500/30 bg-green-50/10',
-                    data.weeklySummaries[weekIndex]?.totalPnl < 0 && 'border-red-500/30 bg-red-50/10',
-                  )}>
-                    <div className="flex flex-col items-center justify-center h-full text-center space-y-1">
+                  <div 
+                    className={cn(
+                      'relative rounded-xl border border-border/50 bg-card w-full',
+                      data.weeklySummaries[weekIndex]?.totalPnl > 0 && 'border-green-500/30 bg-green-50/10',
+                      data.weeklySummaries[weekIndex]?.totalPnl < 0 && 'border-red-500/30 bg-red-50/10',
+                    )}
+                    style={{ aspectRatio: '6/5', minHeight: '80px', display: 'flex', flexDirection: 'column' }}
+                  >
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', textAlign: 'center', gap: '4px', padding: '12px' }}>
                       <div className="text-xs font-medium text-muted-foreground">
                         Week {data.weeklySummaries[weekIndex]?.weekNumber}
                       </div>
@@ -222,7 +237,7 @@ export const ShareCalendarSnapshot: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                </div>
+                </React.Fragment>
               ))}
             </div>
 

@@ -174,7 +174,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
     };
   };
 
-  const handleDownload = async () => {
+  const handleShare = async () => {
     setIsGenerating(true);
     try {
       // Build share data
@@ -182,31 +182,51 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
       const themeParam = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
       const dataParam = encodeURIComponent(btoa(JSON.stringify(payload)));
       
-      // Add cache-busting timestamp to ensure we get the latest version
+      // Add cache-busting timestamp
       const cacheBuster = `v=${Date.now()}`;
       const shareUrl = `${window.location.origin}/share/calendar?theme=${themeParam}&accent=${accentColor}&data=${dataParam}&${cacheBuster}`;
       
-      // Use server-side screenshot API for pixel-perfect rendering (capture full page with gradient)
+      // Generate image for sharing
       const api = `/api/screenshot-calendar?url=${encodeURIComponent(shareUrl)}&width=1200&height=800`;
-      
       const resp = await fetch(api);
       if (!resp.ok) throw new Error('Screenshot API failed');
       const blob = await resp.blob();
       
-      // Download the blob
+      // Try native share API first (works great on mobile)
+      if (navigator.share && navigator.canShare) {
+        const file = new File([blob], `Refine-${currentMonth}-${currentYear}.png`, { type: 'image/png' });
+        const shareData = {
+          files: [file],
+          title: `${currentMonth} ${currentYear} Trading Calendar`,
+          text: `My trading performance for ${currentMonth} ${currentYear} 📊`,
+        };
+        
+        if (navigator.canShare(shareData)) {
+          await navigator.share(shareData);
+          toast.success('Shared successfully!');
+          setIsGenerating(false);
+          return;
+        }
+      }
+      
+      // Fallback: Download for desktop
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.download = `Refine-Calendar-${currentMonth}-${currentYear}.png`;
+      link.download = `Refine-${currentMonth}-${currentYear}.png`;
       link.href = url;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
       
-      toast.success('Calendar downloaded!');
-    } catch (error) {
-      console.error('Error downloading calendar:', error);
-      toast.error('Failed to download calendar');
+      toast.success('Calendar downloaded! Share it on your socials 🚀');
+    } catch (error: any) {
+      console.error('Error sharing calendar:', error);
+      if (error.name === 'AbortError') {
+        toast.error('Share cancelled');
+      } else {
+        toast.error('Failed to generate image');
+      }
     } finally {
       setIsGenerating(false);
     }
@@ -400,51 +420,21 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
           {/* Modal Header */}
           <div className="flex items-center justify-between p-6 border-b">
             <div>
-              <h2 className="text-xl font-semibold">Share Calendar</h2>
+              <h2 className="text-xl font-semibold">Calendar Preview</h2>
               <p className="text-sm text-muted-foreground">
-                Generate a shareable image of your trading calendar
+                Your trading calendar for {currentMonth} {currentYear}
               </p>
             </div>
             <div className="flex items-center gap-2">
               <motion.button
-                onClick={handleShareToX}
+                onClick={handleShare}
                 disabled={isGenerating}
-                className="px-4 py-2 bg-black text-white rounded-lg hover:bg-black/90 transition-colors flex items-center gap-2"
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2 disabled:opacity-50"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
                 <Share className="w-4 h-4" />
-                X.com
-              </motion.button>
-              <motion.button
-                onClick={handleShareToInstagram}
-                disabled={isGenerating}
-                className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors flex items-center gap-2"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <Share className="w-4 h-4" />
-                Instagram
-              </motion.button>
-              <motion.button
-                onClick={handleCopyImage}
-                disabled={isGenerating}
-                className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors flex items-center gap-2"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <Copy className="w-4 h-4" />
-                Copy
-              </motion.button>
-              <motion.button
-                onClick={handleDownload}
-                disabled={isGenerating}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <Download className="w-4 h-4" />
-                {isGenerating ? 'Generating...' : 'Download'}
+                {isGenerating ? 'Generating...' : 'Share'}
               </motion.button>
               <motion.button
                 onClick={onClose}
@@ -461,18 +451,18 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
           <div 
             ref={canvasRef}
             className={cn(
-              "p-6 flex-1 flex items-center justify-center overflow-hidden",
+              "p-4 flex-1 flex items-center justify-center overflow-hidden",
               theme === 'dark' 
                 ? "bg-gradient-to-br from-indigo-950 via-purple-900 to-pink-900" 
                 : "bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100"
             )}
           >
             <div
-              className="relative p-8 w-full max-w-5xl flex items-center justify-center"
+              className="relative p-6 w-full max-w-6xl flex items-center justify-center"
               style={{ aspectRatio: '16/10' }}
             >
               {/* Calendar Content - Exact replica of CalendarView */}
-              <div className="max-w-4xl w-[85%] relative" data-share-calendar-card>
+              <div className="max-w-5xl w-[92%] relative" data-share-calendar-card>
                 <div 
                   className={`${theme}`}
                   style={{
@@ -517,22 +507,20 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
                 </div>
 
                 {/* Simple Uniform Calendar Grid */}
-                <div className="space-y-1">
+                <div className="grid grid-cols-8" style={{ gap: '4px', rowGap: '4px' }}>
                   {/* Headers Row */}
-                  <div className="grid grid-cols-8 gap-1">
-                    {DAYS_OF_WEEK.map((day) => (
-                      <div key={day} className="text-center font-semibold text-muted-foreground py-2">
-                        {day}
-                      </div>
-                    ))}
-                    <div className="text-center font-semibold text-muted-foreground py-2">
-                      Week
+                  {DAYS_OF_WEEK.map((day) => (
+                    <div key={day} className="text-center font-semibold text-muted-foreground py-2">
+                      {day}
                     </div>
+                  ))}
+                  <div className="text-center font-semibold text-muted-foreground py-2">
+                    Week
                   </div>
 
-                  {/* Calendar Rows */}
+                  {/* Calendar Rows - flattened into single grid */}
                   {calendarData.weeks.map((week: any, weekIndex: number) => (
-                    <div key={weekIndex} className="grid grid-cols-8 gap-1">
+                    <React.Fragment key={weekIndex}>
                       {/* Week Days - All 7 days including Saturday */}
                       {week.map((day: any, dayIndex: number) => {
                         const isWeekend = day.date.getDay() === 0 || day.date.getDay() === 6; // Sunday or Saturday
@@ -541,39 +529,44 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
                           <div
                             key={`${weekIndex}-${dayIndex}`}
                             className={`${getDayClassName(day)} w-full`}
-                            style={{ aspectRatio: '6/5', minHeight: '80px' }}
+                            style={{ aspectRatio: '6/5', minHeight: '80px', display: 'flex', flexDirection: 'column' }}
                           >
-                            <div className="flex flex-col h-full justify-between">
-                              {/* Date - Top Left */}
-                              <div className="flex items-center justify-between px-2 pt-2 flex-shrink-0">
+                            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '4px 6px' }}>
+                              {/* Date - Top Left, subtle */}
+                              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 'auto' }}>
                                 <span className={cn(
-                                  'text-sm font-medium',
-                                  day.isOtherMonth ? 'text-muted-foreground' : 'text-foreground'
+                                  'text-xs font-normal leading-none',
+                                  day.isOtherMonth ? 'text-muted-foreground/60' : 'text-muted-foreground'
                                 )}>
                                   {day.date.getDate()}
                                 </span>
-                                <div className="flex items-center gap-1">
-                                  {day.hasReflection && (
-                                    <BookOpen className="w-3 h-3 text-green-500" />
-                                  )}
-                                </div>
+                                {day.hasReflection && (
+                                  <div className="w-1.5 h-1.5 rounded-full bg-green-500" style={{ marginTop: '2px' }} />
+                                )}
                               </div>
                               
                               {/* Center Content - Apple Style */}
                               {isWeekend ? (
-                                <div className="flex flex-col items-center justify-center flex-1 text-center pb-2">
-                                  <div className="text-xs text-muted-foreground/70">
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, textAlign: 'center' }}>
+                                  <div className="text-[10px] text-muted-foreground/50 font-normal">
                                     Weekend
                                   </div>
                                 </div>
                               ) : (
-                                <div className="flex flex-col items-center justify-center flex-1 gap-0.5 pb-2">
-                                  {/* P&L - Centered, bold */}
-                                  {formatPnL(day.pnl)}
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, gap: '4px' }}>
+                                  {/* P&L - Hero element, large and bold */}
+                                  {day.pnl !== 0 && (
+                                    <div className={cn(
+                                      'text-base font-bold tracking-tight leading-none whitespace-nowrap',
+                                      day.pnl > 0 ? 'text-green-500' : 'text-red-500'
+                                    )}>
+                                      {formatCurrencyApple(day.pnl, { showSign: false })}
+                                    </div>
+                                  )}
                                   
-                                  {/* Trade Count - Centered below P&L */}
+                                  {/* Trade Count - Very subtle */}
                                   {day.tradesCount > 0 && (
-                                    <div className="text-xs text-muted-foreground text-center">
+                                    <div className="text-[10px] text-muted-foreground/50 font-normal leading-none">
                                       {day.tradesCount} trade{day.tradesCount > 1 ? 's' : ''}
                                     </div>
                                   )}
@@ -585,12 +578,15 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
                       })}
 
                       {/* Week Summary */}
-                      <div className={cn(
-                        'relative p-3 rounded-xl border border-border/50 transition-all duration-200 cursor-pointer bg-card aspect-[6/5] w-full',
-                        weeklyData[weekIndex]?.totalPnl > 0 && 'border-green-500/30 bg-green-50/10',
-                        weeklyData[weekIndex]?.totalPnl < 0 && 'border-red-500/30 bg-red-50/10',
-                      )}>
-                        <div className="flex flex-col items-center justify-center h-full text-center space-y-1">
+                      <div 
+                        className={cn(
+                          'relative rounded-xl border border-border/50 transition-all duration-200 cursor-pointer bg-card w-full',
+                          weeklyData[weekIndex]?.totalPnl > 0 && 'border-green-500/30 bg-green-50/10',
+                          weeklyData[weekIndex]?.totalPnl < 0 && 'border-red-500/30 bg-red-50/10',
+                        )}
+                        style={{ aspectRatio: '6/5', minHeight: '80px', display: 'flex', flexDirection: 'column' }}
+                      >
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', textAlign: 'center', gap: '4px', padding: '12px' }}>
                           <div className="text-xs font-medium text-muted-foreground">
                             Week {weeklyData[weekIndex]?.weekNumber}
                           </div>
@@ -606,7 +602,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
                           </div>
                         </div>
                       </div>
-                    </div>
+                    </React.Fragment>
                   ))}
                 </div>
 
