@@ -12,64 +12,85 @@ export interface StreakStyling {
   milestone: 'starter' | 'building' | 'week' | 'fortnight' | 'legendary';
 }
 
-export function getStreakStyling(streak: number): StreakStyling {
-  // 30+ days: Legendary (Gold gradient with shimmer)
+export function getStreakStyling(streak: number, dayPosition?: number): StreakStyling {
+  // dayPosition: how many days ago this flame is (0 = today, 1 = yesterday, etc.)
+  const isToday = dayPosition === 0;
+  
+  // 30+ days: Legendary (Gold with shimmer)
   if (streak >= 30) {
     return {
       className: "text-yellow-500",
-      glowClass: "drop-shadow-[0_0_8px_rgba(234,179,8,0.8)]",
+      glowClass: "drop-shadow-[0_0_10px_rgba(234,179,8,0.9)]",
       animationType: 'shimmer',
-      tooltip: `✨ ${streak} day LEGENDARY streak! You're unstoppable!`,
+      tooltip: isToday 
+        ? `✨ ${streak} day LEGENDARY streak! You're unstoppable!`
+        : dayPosition !== undefined
+        ? `Day ${streak - dayPosition} of your legendary streak`
+        : `✨ ${streak} day LEGENDARY streak!`,
       badge: '🏆 Legendary',
       milestone: 'legendary'
     };
   }
   
-  // 14-29 days: Fortnight Fire (Intense orange with strong pulse)
+  // 14-29 days: Fortnight Fire (Deep orange with strong pulse)
   if (streak >= 14) {
     return {
       className: "text-orange-600",
-      glowClass: "drop-shadow-[0_0_6px_rgba(234,88,12,0.7)]",
+      glowClass: "drop-shadow-[0_0_8px_rgba(234,88,12,0.8)]",
       animationType: 'pulse-strong',
-      tooltip: `🔥🔥 ${streak} day streak! You're on fire!`,
+      tooltip: isToday
+        ? `🔥🔥 ${streak} day streak! You're on fire!`
+        : dayPosition !== undefined
+        ? `Day ${streak - dayPosition} of your streak`
+        : `🔥🔥 ${streak} day streak!`,
       badge: '⚡ Fortnight Fire',
       milestone: 'fortnight'
     };
   }
   
-  // 7-13 days: Week Warrior (Orange with soft pulse)
+  // 7-13 days: Week Warrior (Orange with soft pulse + stronger glow)
   if (streak >= 7) {
     return {
       className: "text-orange-500",
-      glowClass: "drop-shadow-[0_0_4px_rgba(249,115,22,0.6)]",
+      glowClass: "drop-shadow-[0_0_6px_rgba(249,115,22,0.7)]",
       animationType: 'pulse-soft',
-      tooltip: `🔥 ${streak} day streak! Keep it going!`,
+      tooltip: isToday
+        ? `🔥 ${streak} day streak! Keep it going!`
+        : dayPosition !== undefined
+        ? `Day ${streak - dayPosition} of your streak`
+        : `🔥 ${streak} day streak!`,
       badge: '💪 Week Warrior',
       milestone: 'week'
     };
   }
   
-  // 3-6 days: Building Momentum (Brighter, subtle glow)
+  // 3-6 days: Building Momentum (Brighter orange, visible glow)
   if (streak >= 3) {
     return {
       className: "text-orange-500",
-      glowClass: "drop-shadow-[0_0_2px_rgba(249,115,22,0.4)]",
+      glowClass: "drop-shadow-[0_0_4px_rgba(249,115,22,0.6)]",
       animationType: 'none',
-      tooltip: `🔥 ${streak} day streak - Momentum building!`,
+      tooltip: isToday
+        ? `🔥 ${streak} day streak - Momentum building!`
+        : dayPosition !== undefined
+        ? `Day ${streak - dayPosition} - Building momentum`
+        : `🔥 ${streak} days`,
       badge: null,
       milestone: 'building'
     };
   }
   
-  // 1-2 days: Warm-up (Subtle orange)
+  // 1-2 days: Warm-up (Lighter orange, no glow)
   if (streak >= 1) {
     return {
       className: "text-orange-400",
       glowClass: null,
       animationType: 'none',
-      tooltip: streak === 1 
-        ? '✅ Day 1! Start your streak!' 
-        : `🔥 ${streak} days - Keep going!`,
+      tooltip: isToday
+        ? (streak === 1 ? '✅ Day 1! Start your streak!' : `🔥 Day ${streak} - Keep going!`)
+        : dayPosition !== undefined
+        ? (dayPosition === streak - 1 ? 'Started your streak!' : `Day ${streak - dayPosition}`)
+        : `Day ${streak}`,
       badge: null,
       milestone: 'starter'
     };

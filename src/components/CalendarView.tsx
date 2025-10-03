@@ -1088,7 +1088,14 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                                 <CalendarIcon className="w-2 h-2 sm:w-3 sm:h-3 lg:w-3 lg:h-3 2xl:w-4 2xl:h-4 3xl:w-5 3xl:h-5 text-primary" />
                               )}
                               {day.hasReflection && (() => {
-                                const streakStyle = getStreakStyling(currentStreak);
+                                // Calculate how many days ago this day is from today
+                                const today = new Date();
+                                today.setHours(0, 0, 0, 0);
+                                const dayDate = new Date(day.date);
+                                dayDate.setHours(0, 0, 0, 0);
+                                const dayPosition = Math.floor((today.getTime() - dayDate.getTime()) / (1000 * 60 * 60 * 24));
+                                
+                                const streakStyle = getStreakStyling(currentStreak, dayPosition);
                                 const animation = getStreakAnimation(streakStyle.animationType);
                                 
                                 return (
@@ -1201,7 +1208,14 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                           <CalendarIcon className="w-2 h-2 sm:w-3 sm:h-3 lg:w-3 lg:h-3 2xl:w-4 2xl:h-4 3xl:w-5 3xl:h-5 text-primary" />
                         )}
                         {day.hasReflection && (() => {
-                          const streakStyle = getStreakStyling(currentStreak);
+                          // Calculate how many days ago this day is from today
+                          const today = new Date();
+                          today.setHours(0, 0, 0, 0);
+                          const dayDate = new Date(day.date);
+                          dayDate.setHours(0, 0, 0, 0);
+                          const dayPosition = Math.floor((today.getTime() - dayDate.getTime()) / (1000 * 60 * 60 * 24));
+                          
+                          const streakStyle = getStreakStyling(currentStreak, dayPosition);
                           const animation = getStreakAnimation(streakStyle.animationType);
                           
                           return (
