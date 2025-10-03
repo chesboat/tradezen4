@@ -244,10 +244,10 @@ ${shareUrl}`,
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
       
-      // Open Twitter with pre-filled tweet
+      // Open X.com with pre-filled post
       const { caption } = generateShareCaption();
-      const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(caption)}`;
-      window.open(twitterUrl, '_blank');
+      const xUrl = `https://x.com/intent/tweet?text=${encodeURIComponent(caption)}`;
+      window.open(xUrl, '_blank');
       
       toast.success('📸 Image downloaded! Opening X.com...');
     } catch (error: any) {
