@@ -390,31 +390,42 @@ export const useDailyReflectionStore = create<DailyReflectionState>()(
         
         // Helper to check if a day has Insight Blocks (new system)
         const hasInsightBlocks = (dateStr: string): boolean => {
-          // Dynamically import to avoid circular deps
-          const { useReflectionTemplateStore } = require('@/store/useReflectionTemplateStore');
-          const getInsightReflection = useReflectionTemplateStore.getState().getReflectionByDate;
-          const insightReflection = getInsightReflection(dateStr, accountId);
-          
-          if (!insightReflection || !insightReflection.insightBlocks) return false;
-          
-          // Only count if blocks have actual content
-          return insightReflection.insightBlocks.some(block => 
-            block.content && block.content.trim().length > 0
-          );
+          try {
+            // Access store directly without dynamic import to avoid circular deps
+            // This is safe because we're only reading state, not causing re-renders
+            const reflectionTemplateStore = (window as any).__reflectionTemplateStore;
+            if (!reflectionTemplateStore) return false;
+            
+            const insightReflection = reflectionTemplateStore.getReflectionByDate(dateStr, accountId);
+            if (!insightReflection || !insightReflection.insightBlocks) return false;
+            
+            // Only count if blocks have actual content
+            return insightReflection.insightBlocks.some((block: any) => 
+              block.content && block.content.trim().length > 0
+            );
+          } catch (e) {
+            // If store not available yet, return false
+            return false;
+          }
         };
         
         // Helper to check if user traded on a specific day (weekend check)
         const hasTrades = (dateStr: string): boolean => {
-          // Dynamically import to avoid circular deps
-          const { useTradeStore } = require('@/store/useTradeStore');
-          const trades = useTradeStore.getState().trades;
-          
-          return trades.some(trade => {
-            const tradeDate = new Date(trade.entryTime);
-            const dayStart = new Date(dateStr + 'T00:00:00');
-            const dayEnd = new Date(dateStr + 'T23:59:59.999');
-            return tradeDate >= dayStart && tradeDate <= dayEnd && trade.accountId === accountId;
-          });
+          try {
+            // Access store directly without dynamic import
+            const tradeStore = (window as any).__tradeStore;
+            if (!tradeStore) return false;
+            
+            const trades = tradeStore.trades || [];
+            return trades.some((trade: any) => {
+              const tradeDate = new Date(trade.entryTime);
+              const dayStart = new Date(dateStr + 'T00:00:00');
+              const dayEnd = new Date(dateStr + 'T23:59:59.999');
+              return tradeDate >= dayStart && tradeDate <= dayEnd && trade.accountId === accountId;
+            });
+          } catch (e) {
+            return false;
+          }
         };
         
         // Helper to check if a day is a weekend

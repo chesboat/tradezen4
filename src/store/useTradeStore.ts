@@ -308,6 +308,15 @@ export const initializeTradeStore = async () => {
   await useTradeStore.getState().initializeTrades();
 };
 
+// Expose store globally for cross-store access (avoids circular deps)
+if (typeof window !== 'undefined') {
+  (window as any).__tradeStore = useTradeStore.getState();
+  // Keep reference updated
+  useTradeStore.subscribe(() => {
+    (window as any).__tradeStore = useTradeStore.getState();
+  });
+}
+
 // Selector hooks for performance optimization
 export const useTrades = () => useTradeStore((state) => state.trades);
 export const useTradeActions = () => useTradeStore((state) => ({

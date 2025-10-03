@@ -1093,3 +1093,12 @@ export const useReflectionTemplateStore = create<ReflectionTemplateState>()(
 // Initialize built-in templates and load from storage on store creation
 useReflectionTemplateStore.getState().loadBuiltInTemplates();
 useReflectionTemplateStore.getState().loadFromStorage();
+
+// Expose store globally for cross-store access (avoids circular deps)
+if (typeof window !== 'undefined') {
+  (window as any).__reflectionTemplateStore = useReflectionTemplateStore.getState();
+  // Keep reference updated
+  useReflectionTemplateStore.subscribe(() => {
+    (window as any).__reflectionTemplateStore = useReflectionTemplateStore.getState();
+  });
+}
