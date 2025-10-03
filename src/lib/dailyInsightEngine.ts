@@ -5,6 +5,7 @@
  */
 
 import { Trade } from '@/types';
+import { findStrongestHabitCorrelation } from './habitCorrelation';
 
 export interface DailyInsight {
   id: string;
@@ -12,7 +13,7 @@ export interface DailyInsight {
   title: string;
   message: string;
   suggestion: string;
-  icon: '🎯' | '⏰' | '🔥' | '⚡' | '📊' | '🎓' | '⚠️' | '💡';
+  icon: '🎯' | '⏰' | '🔥' | '⚡' | '📊' | '🎓' | '⚠️' | '💡' | '💪' | '🎮' | '🧘' | '☕';
   severity: 'success' | 'warning' | 'danger' | 'info';
   metric?: {
     label: string;
@@ -25,6 +26,7 @@ export interface DailyInsight {
   };
   confidence: number; // 0-100, how confident we are in this insight
   impact: number; // 0-100, how impactful this insight is
+  habitId?: string; // For habit correlation insights
 }
 
 type InsightType = 
@@ -35,7 +37,8 @@ type InsightType =
   | 'session-performance'
   | 'rule-adherence'
   | 'win-streak'
-  | 'loss-streak';
+  | 'loss-streak'
+  | 'habit-correlation';
 
 const INSIGHT_CACHE_KEY = 'tradzen_daily_insight';
 const INSIGHT_DATE_KEY = 'tradzen_daily_insight_date';
@@ -78,7 +81,11 @@ function cacheInsight(insight: DailyInsight) {
  * Generate today's daily insight
  * Returns the most impactful, statistically significant insight
  */
-export function generateDailyInsight(trades: Trade[], habits?: any[]): DailyInsight | null {
+export function generateDailyInsight(
+  trades: Trade[],
+  habits?: Array<{ id: string; label: string; emoji: string }>,
+  habitDays?: Array<{ date: string; ruleId: string; completed: boolean }>
+): DailyInsight | null {
   // Check cache first
   const cached = getTodaysInsight();
   if (cached) {
@@ -92,6 +99,7 @@ export function generateDailyInsight(trades: Trade[], habits?: any[]): DailyInsi
 
   // Generate all possible insights
   const insights: DailyInsight[] = [
+    detectHabitCorrelation(trades, habits, habitDays), // Check habits first (highest impact!)
     detectOvertrading(trades),
     detectTimeOfDayPattern(trades),
     detectRevengTrading(trades),
@@ -116,6 +124,57 @@ export function generateDailyInsight(trades: Trade[], habits?: any[]): DailyInsi
   }
 
   return bestInsight;
+}
+
+/**
+ * Detect habit-trading correlation (Apple's secret weapon!)
+ * Works with ANY habit the user creates
+ */
+function detectHabitCorrelation(
+  trades: Trade[],
+  habits?: Array<{ id: string; label: string; emoji: string }>,
+  habitDays?: Array<{ date: string; ruleId: string; completed: boolean }>
+): DailyInsight | null {
+  if (!habits || !habitDays || habits.length === 0 || habitDays.length === 0) {
+    return null;
+  }
+
+  const correlation = findStrongestHabitCorrelation(habits, habitDays, trades);
+  
+  if (!correlation) return null;
+
+  // Map habit emoji to insight icon (or use a default)
+  const getIcon = (emoji: string): DailyInsight['icon'] => {
+    // Common mappings
+    if (emoji === '💪' || emoji === '🏋️') return '💪';
+    if (emoji === '🧘' || emoji === '🧘‍♂️') return '🧘';
+    if (emoji === '☕') return '☕';
+    if (emoji === '🎮') return '🎮';
+    // Default to lightbulb for discovery
+    return '💡';
+  };
+
+  return {
+    id: 'habit-correlation',
+    type: 'habit-correlation',
+    title: 'Interesting Connection',
+    message: `${correlation.primaryInsight}. ${correlation.secondaryInsights.slice(0, 2).join('. ')}.`,
+    suggestion: `Consider making "${correlation.habitLabel}" a daily priority. Your trading clearly benefits from it.`,
+    icon: getIcon(correlation.habitEmoji),
+    severity: 'success',
+    metric: {
+      label: `${correlation.habitEmoji} ${correlation.habitLabel} Days`,
+      value: `${correlation.sampleSize}`,
+      comparison: `${correlation.winRateImprovement.toFixed(0)}% better win rate`,
+    },
+    actions: {
+      primary: { label: 'View Analysis', action: 'view-habit-correlation' },
+      secondary: { label: 'Track Habit', action: 'open-habits' },
+    },
+    confidence: correlation.confidence,
+    impact: 100, // Highest impact - this is YOUR unique insight!
+    habitId: correlation.habitId,
+  };
 }
 
 /**

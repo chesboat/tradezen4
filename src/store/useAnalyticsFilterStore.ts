@@ -15,6 +15,7 @@ export type AnalyticsFilterType =
   | 'session-first'
   | 'session-last'
   | 'loss-pattern'
+  | 'habit-correlation'
   | null;
 
 export interface AnalyticsFilter {

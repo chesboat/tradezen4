@@ -795,10 +795,30 @@ export const MinimalDashboard: React.FC = () => {
   });
   const yesterdayPnL = yesterdayTrades.reduce((sum, t) => sum + (t.pnl || 0), 0);
 
+  // Get habits data for correlation analysis
+  const { rules, logs: habitLogs } = useRuleTallyStore();
+  
+  // Format habit data for insight engine
+  const habitsForInsights = useMemo(() => {
+    return rules.map(r => ({
+      id: r.id,
+      label: r.label,
+      emoji: r.emoji || '⭐',
+    }));
+  }, [rules]);
+
+  const habitDaysForInsights = useMemo(() => {
+    return habitLogs.map(log => ({
+      date: log.date,
+      ruleId: log.ruleId,
+      completed: log.tallyCount > 0,
+    }));
+  }, [habitLogs]);
+
   // Generate daily insight (Apple-style: one insight per day)
   const dailyInsight = useMemo(() => {
-    return generateDailyInsight(accountTrades);
-  }, [accountTrades]);
+    return generateDailyInsight(accountTrades, habitsForInsights, habitDaysForInsights);
+  }, [accountTrades, habitsForInsights, habitDaysForInsights]);
 
   const [insightDismissed, setInsightDismissed] = useState(false);
   const { setFilter } = useAnalyticsFilterStore();
@@ -858,6 +878,43 @@ export const MinimalDashboard: React.FC = () => {
         const filter = createLossPatternFilter();
         setFilter(filter);
         setCurrentView('analytics');
+        break;
+      }
+      
+      case 'view-habit-correlation': {
+        // Filter analytics to show trades on habit days vs non-habit days
+        if (dailyInsight?.habitId) {
+          const habitId = dailyInsight.habitId;
+          const habitDaysSet = new Set(
+            habitDaysForInsights
+              .filter(d => d.ruleId === habitId && d.completed)
+              .map(d => d.date)
+          );
+          
+          const habit = habitsForInsights.find(h => h.id === habitId);
+          if (habit) {
+            const filter = {
+              type: 'habit-correlation' as const,
+              label: `${habit.emoji} ${habit.label} Days`,
+              description: `Trades on days you completed "${habit.label}"`,
+              filterFn: (trade: Trade) => {
+                const tradeDate = new Date(trade.entryTime).toISOString().split('T')[0];
+                return habitDaysSet.has(tradeDate);
+              },
+              comparisonFilterFn: (trade: Trade) => {
+                const tradeDate = new Date(trade.entryTime).toISOString().split('T')[0];
+                return !habitDaysSet.has(tradeDate);
+              },
+            };
+            setFilter(filter);
+            setCurrentView('analytics');
+          }
+        }
+        break;
+      }
+      
+      case 'open-habits': {
+        setCurrentView('habits');
         break;
       }
       
