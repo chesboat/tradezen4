@@ -571,6 +571,14 @@ export const useRuleTallyStore = create<RuleTallyState>()(
   )
 );
 
+// Expose store globally for debugging and cross-store access
+if (typeof window !== 'undefined') {
+  (window as any).__ruleTallyStore = useRuleTallyStore.getState();
+  useRuleTallyStore.subscribe(() => {
+    (window as any).__ruleTallyStore = useRuleTallyStore.getState();
+  });
+}
+
 // Initialize rule tally store when auth state changes
 export const initializeRuleTallyStore = async () => {
   return useRuleTallyStore.getState().initializeStore();
