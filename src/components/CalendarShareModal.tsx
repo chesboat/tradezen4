@@ -624,7 +624,7 @@ ${shareUrl}`,
                 </div>
 
                 {/* Simple Uniform Calendar Grid - Different horizontal and vertical gaps */}
-                <div className="grid grid-cols-8 gap-x-1 gap-y-2">
+                <div className="grid grid-cols-8 gap-x-1 gap-y-4">
                   {/* Headers Row */}
                   {DAYS_OF_WEEK.map((day) => (
                     <div key={day} className="text-center font-semibold text-muted-foreground py-2">
