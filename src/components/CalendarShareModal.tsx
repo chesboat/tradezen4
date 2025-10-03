@@ -206,13 +206,38 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
         }, 'image/png');
       });
       
+      // Generate public share link
+      const payload = buildRenderData();
+      const themeParam = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+      const dataParam = encodeURIComponent(btoa(JSON.stringify(payload)));
+      const shareUrl = `${window.location.origin}/share/calendar?theme=${themeParam}&accent=${accentColor}&data=${dataParam}`;
+      
+      // Calculate win rate
+      const totalWins = weeklyData.reduce((sum, week) => {
+        // Count winning days across the week
+        const weekDays = calendarData.weeks[weeklyData.indexOf(week)]?.filter((day: any) => !day.isOtherMonth && !day.isWeekend && day.tradesCount > 0) || [];
+        return sum + weekDays.filter((day: any) => day.pnl > 0).length;
+      }, 0);
+      const winRate = totalTrades > 0 ? Math.round((totalWins / totalTrades) * 100) : 0;
+      
+      // Build suggested caption with stats
+      const pnlSign = monthlyPnL >= 0 ? '+' : '';
+      const caption = `${currentMonth} ${currentYear} 📊
+
+P&L: ${pnlSign}${formatCurrencyApple(monthlyPnL, { showSign: false })}
+${totalTrades} trade${totalTrades !== 1 ? 's' : ''}${winRate > 0 ? `, ${winRate}% win rate` : ''}
+
+Refining my edge, daily.
+
+${shareUrl}`;
+      
       // Try native share API first (works great on mobile)
       if (navigator.share && navigator.canShare) {
         const file = new File([blob], `Refine-${currentMonth}-${currentYear}.png`, { type: 'image/png' });
         const shareData = {
           files: [file],
           title: `${currentMonth} ${currentYear} Trading Calendar`,
-          text: `My trading performance for ${currentMonth} ${currentYear} 📊`,
+          text: caption,
         };
         
         if (navigator.canShare(shareData)) {
@@ -223,7 +248,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
         }
       }
       
-      // Fallback: Download for desktop
+      // Fallback: Download for desktop + auto-copy caption
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.download = `Refine-${currentMonth}-${currentYear}.png`;
@@ -233,7 +258,13 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
       
-      toast.success('Calendar downloaded! Share it on your socials 🚀');
+      // Auto-copy caption to clipboard
+      try {
+        await navigator.clipboard.writeText(caption);
+        toast.success('📸 Image saved! Caption copied - paste it on your socials 🚀');
+      } catch (clipboardError) {
+        toast.success('Calendar downloaded! Share it on your socials 🚀');
+      }
     } catch (error: any) {
       console.error('Error sharing calendar:', error);
       if (error.name === 'AbortError') {

@@ -252,6 +252,22 @@ export const ShareCalendarSnapshot: React.FC = () => {
           </div>
         </div>
       </div>
+      
+      {/* CTA for conversions - only shown on web, not in screenshots */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-background/95 via-background/80 to-transparent backdrop-blur-sm border-t border-border/50">
+        <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
+          <div className="flex-1">
+            <div className="font-semibold text-foreground">Track your edge like this trader</div>
+            <div className="text-sm text-muted-foreground">Journal, analyze, and refine your trading strategy</div>
+          </div>
+          <a
+            href="/"
+            className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium whitespace-nowrap"
+          >
+            Start Free Trial
+          </a>
+        </div>
+      </div>
     </div>
   );
 };
