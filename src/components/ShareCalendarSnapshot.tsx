@@ -154,6 +154,12 @@ export const ShareCalendarSnapshot: React.FC<ShareCalendarSnapshotProps> = ({
     );
   };
 
+  // Apply theme to document
+  React.useEffect(() => {
+    document.documentElement.classList.remove('light', 'dark');
+    document.documentElement.classList.add(theme);
+  }, [theme]);
+
   return (
     <div className={cn('min-h-screen overflow-x-hidden flex items-center justify-center bg-gradient-to-br', gradientClass, theme)}>
       {/* Match preview exactly */}

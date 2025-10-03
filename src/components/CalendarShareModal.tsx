@@ -197,6 +197,9 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
         weeklySummaries: renderData.weeklySummaries,
       };
       
+      // Detect user's actual theme (respecting system preference if set to 'system')
+      const effectiveTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+      
       // Build share payload
       const payload = {
         id: shareId,
@@ -206,7 +209,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
         monthlyPnl: monthlyPnL,
         totalTrades,
         calendarData: flattenedCalendarData,
-        theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
+        theme: effectiveTheme,
         accentColor,
         isPublic: true,
         createdAt: new Date().toISOString(),
