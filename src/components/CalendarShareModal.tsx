@@ -509,7 +509,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
                       </div>
                     </div>
                     
-                    <div className="px-4 py-2 bg-primary/10 text-primary rounded-lg flex items-center justify-center text-sm font-medium">
+                    <div className="px-4 py-2 bg-primary/10 text-primary rounded-lg flex items-center justify-center text-sm font-medium leading-none">
                       TODAY
                     </div>
                   </div>
