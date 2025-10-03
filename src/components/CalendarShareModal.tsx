@@ -623,8 +623,8 @@ ${shareUrl}`,
                   </div>
                 </div>
 
-                {/* Simple Uniform Calendar Grid - Using gap-1 for html2canvas compatibility */}
-                <div className="grid grid-cols-8 gap-1">
+                {/* Simple Uniform Calendar Grid - Using gap-2 for proper spacing in html2canvas */}
+                <div className="grid grid-cols-8 gap-2">
                   {/* Headers Row */}
                   {DAYS_OF_WEEK.map((day) => (
                     <div key={day} className="text-center font-semibold text-muted-foreground py-2">
@@ -646,7 +646,14 @@ ${shareUrl}`,
                           <div
                             key={`${weekIndex}-${dayIndex}`}
                             className={`${getDayClassName(day)}`}
-                            style={{ aspectRatio: '6/5', minHeight: '80px', display: 'flex', flexDirection: 'column', width: '100%' }}
+                            style={{ 
+                              aspectRatio: '6/5', 
+                              minHeight: '80px', 
+                              display: 'flex', 
+                              flexDirection: 'column', 
+                              width: '100%',
+                              boxSizing: 'border-box'
+                            }}
                           >
                             <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '4px 6px' }}>
                               {/* Date - Top Left, subtle */}
@@ -701,7 +708,14 @@ ${shareUrl}`,
                           weeklyData[weekIndex]?.totalPnl > 0 && 'border-green-500/30 bg-green-50/10',
                           weeklyData[weekIndex]?.totalPnl < 0 && 'border-red-500/30 bg-red-50/10',
                         )}
-                        style={{ aspectRatio: '6/5', minHeight: '80px', display: 'flex', flexDirection: 'column', width: '100%' }}
+                        style={{ 
+                          aspectRatio: '6/5', 
+                          minHeight: '80px', 
+                          display: 'flex', 
+                          flexDirection: 'column', 
+                          width: '100%',
+                          boxSizing: 'border-box'
+                        }}
                       >
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', textAlign: 'center', gap: '4px', padding: '12px' }}>
                           <div className="text-xs font-medium text-muted-foreground">
