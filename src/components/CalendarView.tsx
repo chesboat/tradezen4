@@ -1095,7 +1095,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                                 dayDate.setHours(0, 0, 0, 0);
                                 const dayPosition = Math.floor((today.getTime() - dayDate.getTime()) / (1000 * 60 * 60 * 24));
                                 
-                                const streakStyle = getStreakStyling(currentStreak, dayPosition);
+                                // Show what the streak was ON THAT DAY (not current streak)
+                                const streakOnThatDay = Math.max(1, currentStreak - dayPosition);
+                                const streakStyle = getStreakStyling(streakOnThatDay, dayPosition);
                                 const animation = getStreakAnimation(streakStyle.animationType);
                                 
                                 return (
@@ -1215,7 +1217,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                           dayDate.setHours(0, 0, 0, 0);
                           const dayPosition = Math.floor((today.getTime() - dayDate.getTime()) / (1000 * 60 * 60 * 24));
                           
-                          const streakStyle = getStreakStyling(currentStreak, dayPosition);
+                          // Show what the streak was ON THAT DAY (not current streak)
+                          const streakOnThatDay = Math.max(1, currentStreak - dayPosition);
+                          const streakStyle = getStreakStyling(streakOnThatDay, dayPosition);
                           const animation = getStreakAnimation(streakStyle.animationType);
                           
                           return (

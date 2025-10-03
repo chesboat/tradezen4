@@ -13,6 +13,7 @@ export interface StreakStyling {
 }
 
 export function getStreakStyling(streak: number, dayPosition?: number): StreakStyling {
+  // streak: the streak count ON THAT SPECIFIC DAY (not current streak)
   // dayPosition: how many days ago this flame is (0 = today, 1 = yesterday, etc.)
   const isToday = dayPosition === 0;
   
@@ -24,9 +25,7 @@ export function getStreakStyling(streak: number, dayPosition?: number): StreakSt
       animationType: 'shimmer',
       tooltip: isToday 
         ? `✨ ${streak} day LEGENDARY streak! You're unstoppable!`
-        : dayPosition !== undefined
-        ? `Day ${streak - dayPosition} of your legendary streak`
-        : `✨ ${streak} day LEGENDARY streak!`,
+        : `Day ${streak} - Legendary!`,
       badge: '🏆 Legendary',
       milestone: 'legendary'
     };
@@ -40,9 +39,7 @@ export function getStreakStyling(streak: number, dayPosition?: number): StreakSt
       animationType: 'pulse-strong',
       tooltip: isToday
         ? `🔥🔥 ${streak} day streak! You're on fire!`
-        : dayPosition !== undefined
-        ? `Day ${streak - dayPosition} of your streak`
-        : `🔥🔥 ${streak} day streak!`,
+        : `Day ${streak} - On fire!`,
       badge: '⚡ Fortnight Fire',
       milestone: 'fortnight'
     };
@@ -56,9 +53,7 @@ export function getStreakStyling(streak: number, dayPosition?: number): StreakSt
       animationType: 'pulse-soft',
       tooltip: isToday
         ? `🔥 ${streak} day streak! Keep it going!`
-        : dayPosition !== undefined
-        ? `Day ${streak - dayPosition} of your streak`
-        : `🔥 ${streak} day streak!`,
+        : `Day ${streak} - Week warrior!`,
       badge: '💪 Week Warrior',
       milestone: 'week'
     };
@@ -72,9 +67,7 @@ export function getStreakStyling(streak: number, dayPosition?: number): StreakSt
       animationType: 'none',
       tooltip: isToday
         ? `🔥 ${streak} day streak - Momentum building!`
-        : dayPosition !== undefined
-        ? `Day ${streak - dayPosition} - Building momentum`
-        : `🔥 ${streak} days`,
+        : `Day ${streak} - Building momentum`,
       badge: null,
       milestone: 'building'
     };
@@ -88,9 +81,7 @@ export function getStreakStyling(streak: number, dayPosition?: number): StreakSt
       animationType: 'none',
       tooltip: isToday
         ? (streak === 1 ? '✅ Day 1! Start your streak!' : `🔥 Day ${streak} - Keep going!`)
-        : dayPosition !== undefined
-        ? (dayPosition === streak - 1 ? 'Started your streak!' : `Day ${streak - dayPosition}`)
-        : `Day ${streak}`,
+        : (streak === 1 ? 'Started your streak!' : `Day ${streak}`),
       badge: null,
       milestone: 'starter'
     };
