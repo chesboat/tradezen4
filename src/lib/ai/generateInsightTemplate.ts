@@ -57,9 +57,6 @@ export const generateInsightTemplate = async (
   customPrompt?: string
 ): Promise<CustomTemplate> => {
   try {
-    // Check if API key is available
-    const apiKey = (import.meta as any).env.VITE_OPENAI_API_KEY;
-    console.log('🔑 OpenAI API Key Status:', apiKey ? 'CONFIGURED' : 'NOT CONFIGURED');
     console.log('📊 Context for AI:', {
       tradeCount: context.stats.tradeCount,
       pnl: context.stats.totalPnL,
@@ -69,14 +66,8 @@ export const generateInsightTemplate = async (
       notesPreview: context.notes.map(n => n.content.substring(0, 50))
     });
     
-    if (apiKey) {
     console.log('🤖 Attempting AI generation with GPT-5-mini...');
-      return await generateAIInsightTemplate(context, customPrompt);
-    }
-    
-    console.log('⚡ Using local generation (no API key)');
-    // Fallback to intelligent local generation
-    return generateLocalInsightTemplate(context, customPrompt);
+    return await generateAIInsightTemplate(context, customPrompt);
   } catch (error) {
     console.error('❌ Failed to generate AI insight template:', error);
     console.log('🛟 Using fallback template generation');
@@ -223,12 +214,11 @@ Return JSON format:
     console.error('❌ OpenAI API Error Details:', {
       error: error,
       message: error instanceof Error ? error.message : 'Unknown error',
-      tradeCount: context.stats.tradeCount,
-      apiKeyPresent: !!apiKey
+      tradeCount: context.stats.tradeCount
     });
     
     if (error instanceof Error && error.message.includes('API key')) {
-      console.error('🔑 API Key Issue - Check your .env file and restart the dev server');
+      console.error('🔑 API Key Issue - Check backend configuration');
     }
     
     throw error;

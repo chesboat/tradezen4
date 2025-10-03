@@ -67,14 +67,8 @@ Focus tomorrow: stick to your risk levels, review setups before entering, and cl
 
 export const generateDailySummary = async (data: DailyJournalData): Promise<string> => {
   try {
-    // Try AI first if API key is available
-    const apiKey = (import.meta as any).env.VITE_OPENAI_API_KEY;
-    if (apiKey) {
-      return await generateAISummaryWithAPI(data);
-    }
-    
-    // Fallback to local generation
-    return generateLocalSummary(data);
+    // Try AI via secure backend
+    return await generateAISummaryWithAPI(data);
   } catch (error) {
     console.error('Failed to generate AI summary:', error);
     return generateFallbackSummary(data);

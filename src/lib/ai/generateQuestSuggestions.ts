@@ -64,18 +64,10 @@ export const generateQuestSuggestions = async (
   request: QuestSuggestionRequest
 ): Promise<Quest[]> => {
   try {
-    const apiKey = (import.meta as any).env.VITE_OPENAI_API_KEY;
-    
-    if (!apiKey) {
-      console.log('⚡ No API key - using smart local quest generation');
-      return generateSmartLocalQuests(request);
-    }
-
     console.log('🤖 Generating AI quest suggestions...');
-    const result = await generateAIQuests(request, apiKey);
+    const result = await generateAIQuests(request);
     console.log('✅ AI quest generation completed, generated:', result.length, 'quests');
     return result;
-    
   } catch (error) {
     console.error('❌ Failed to generate AI quests:', error);
     console.log('🛟 Falling back to smart local generation');
@@ -84,8 +76,7 @@ export const generateQuestSuggestions = async (
 };
 
 const generateAIQuests = async (
-  request: QuestSuggestionRequest,
-  apiKey: string
+  request: QuestSuggestionRequest
 ): Promise<Quest[]> => {
   const userPrompt = `
 Analyze this trader's recent performance and generate personalized quest suggestions:
