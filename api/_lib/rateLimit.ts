@@ -157,26 +157,27 @@ export async function checkRateLimit(
 }
 
 /**
- * Extract user ID from request (from Firebase auth token)
+ * Extract user ID from request (from Firebase auth token or request body)
  */
 export function extractUserId(req: VercelRequest): string | null {
-  // Check for Authorization header with Firebase ID token
-  const authHeader = req.headers.authorization;
-  
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return null;
-  }
-
-  // For now, we'll use a simple approach
-  // In production, you'd verify the Firebase token here
-  // For simplicity, we'll use user ID from request body if available
+  // First, check for userId in request body (sent by client)
   const userId = (req.body as any)?.userId;
   
   if (userId) {
     return userId;
   }
 
-  // Fallback to IP-based rate limiting if no user ID
+  // Fallback: Check for Authorization header with Firebase ID token
+  const authHeader = req.headers.authorization;
+  
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    // In production, you'd verify the Firebase token here and extract userId
+    // For now, we'll just use the body userId which is simpler
+    console.warn('Authorization header found but userId not in body');
+  }
+
+  // Last resort: IP-based identification
+  console.warn('No userId found - using IP-based identification');
   const ip = req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || 'unknown';
   return `ip_${Array.isArray(ip) ? ip[0] : ip}`;
 }
