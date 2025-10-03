@@ -23,6 +23,7 @@ import { useAccountFilterStore, getAccountIdsForSelection } from '@/store/useAcc
 import { useQuickNoteStore } from '@/store/useQuickNoteStore';
 import { useDailyReflectionStore } from '@/store/useDailyReflectionStore';
 import { useWeeklyReviewStore } from '@/store/useWeeklyReviewStore';
+import { useReflectionTemplateStore } from '@/store/useReflectionTemplateStore';
 import { useSidebarStore } from '@/store/useSidebarStore';
 import { useActivityLogStore } from '@/store/useActivityLogStore';
 import { useTodoStore } from '@/store/useTodoStore';
@@ -57,6 +58,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
   const { getNotesForDate } = useQuickNoteStore();
   const { reflections, getReflectionByDate, getReflectionStreak } = useDailyReflectionStore();
   const { getMondayOfWeek, isWeekReviewAvailable, getCurrentWeekReview, getReviewByWeek } = useWeeklyReviewStore();
+  const { getReflectionByDate: getInsightReflection } = useReflectionTemplateStore();
   
   // Calculate current reflection streak
   const currentStreak = useMemo(() => {
@@ -286,13 +288,20 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
       return ids.includes(r.accountId);
     });
     
-    // Require actual written content to show the flame
-    const hasReflection = Boolean(reflection && (
+    // Check for old-style reflection fields
+    const hasOldReflection = Boolean(reflection && (
       (reflection.reflection && reflection.reflection.trim().length > 0) ||
       (reflection.keyFocus && reflection.keyFocus.trim().length > 0) ||
       (reflection.goals && reflection.goals.trim().length > 0) ||
       (reflection.lessons && reflection.lessons.trim().length > 0)
     ));
+    
+    // Also check for new Insight Blocks (Insight Blocks 2.0)
+    const insightReflection = selectedAccountId ? getInsightReflection(dateString, selectedAccountId) : null;
+    const hasInsightBlocks = Boolean(insightReflection && insightReflection.insightBlocks && insightReflection.insightBlocks.length > 0);
+    
+    // Show flame if either old reflection OR new insight blocks exist
+    const hasReflection = hasOldReflection || hasInsightBlocks;
     
     return {
       date,
@@ -307,7 +316,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
       winRate,
       isOtherMonth,
     };
-  }, [trades, selectedAccountId, getNotesForDate, reflections]);
+  }, [trades, selectedAccountId, getNotesForDate, reflections, getInsightReflection]);
 
   // Calculate calendar data
   const calendarData = useMemo(() => {
