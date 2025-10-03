@@ -58,7 +58,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
   const { getNotesForDate } = useQuickNoteStore();
   const { reflections, getReflectionByDate, getReflectionStreak } = useDailyReflectionStore();
   const { getMondayOfWeek, isWeekReviewAvailable, getCurrentWeekReview, getReviewByWeek } = useWeeklyReviewStore();
-  const { getReflectionByDate: getInsightReflection } = useReflectionTemplateStore();
+  const { getReflectionByDate: getInsightReflection, reflectionData: insightReflectionData } = useReflectionTemplateStore();
   
   // Calculate current reflection streak
   const currentStreak = useMemo(() => {
@@ -297,11 +297,50 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
     ));
     
     // Also check for new Insight Blocks (Insight Blocks 2.0)
-    const insightReflection = selectedAccountId ? getInsightReflection(dateString, selectedAccountId) : null;
-    const hasInsightBlocks = Boolean(insightReflection && insightReflection.insightBlocks && insightReflection.insightBlocks.length > 0);
+    // Check all accounts that match the filter, not just selectedAccountId
+    let hasInsightBlocks = false;
+    if (selectedAccountId) {
+      const ids = getAccountIdsForSelection(selectedAccountId);
+      for (const accountId of ids) {
+        const insightReflection = getInsightReflection(dateString, accountId);
+        if (insightReflection && insightReflection.insightBlocks && insightReflection.insightBlocks.length > 0) {
+          // Only count if blocks have actual content (non-empty text)
+          const hasContent = insightReflection.insightBlocks.some(block => 
+            block.content && block.content.trim().length > 0
+          );
+          if (hasContent) {
+            hasInsightBlocks = true;
+            // Debug logging (temporary)
+            if (dateString === new Date().toISOString().split('T')[0]) {
+              console.log(`[Calendar] Found Insight Blocks for today (${dateString}):`, {
+                accountId,
+                blocksCount: insightReflection.insightBlocks.length,
+                blocks: insightReflection.insightBlocks.map(b => ({ 
+                  title: b.title, 
+                  contentLength: b.content?.length || 0 
+                }))
+              });
+            }
+            break;
+          }
+        }
+      }
+    }
     
-    // Show flame if either old reflection OR new insight blocks exist
+    // Show flame if either old reflection OR new insight blocks exist with content
     const hasReflection = hasOldReflection || hasInsightBlocks;
+    
+    // Debug logging for today (temporary)
+    if (dateString === new Date().toISOString().split('T')[0]) {
+      console.log(`[Calendar] Today's reflection status:`, {
+        dateString,
+        selectedAccountId,
+        accountIds: selectedAccountId ? getAccountIdsForSelection(selectedAccountId) : [],
+        hasOldReflection,
+        hasInsightBlocks,
+        hasReflection
+      });
+    }
     
     return {
       date,
@@ -316,7 +355,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
       winRate,
       isOtherMonth,
     };
-  }, [trades, selectedAccountId, getNotesForDate, reflections, getInsightReflection]);
+  }, [trades, selectedAccountId, getNotesForDate, reflections, getInsightReflection, insightReflectionData]);
 
   // Calculate calendar data
   const calendarData = useMemo(() => {

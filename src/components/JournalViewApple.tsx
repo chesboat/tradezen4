@@ -10,6 +10,7 @@ import {
 import { useTradeStore } from '@/store/useTradeStore';
 import { useQuickNoteStore } from '@/store/useQuickNoteStore';
 import { useDailyReflectionStore } from '@/store/useDailyReflectionStore';
+import { useReflectionTemplateStore } from '@/store/useReflectionTemplateStore';
 import { useAccountFilterStore, getAccountIdsForSelection } from '@/store/useAccountFilterStore';
 import { summarizeWinLossScratch } from '@/lib/utils';
 import { cn } from '@/lib/utils';
@@ -29,6 +30,7 @@ export const JournalViewApple: React.FC = () => {
   const { trades } = useTradeStore();
   const { notes } = useQuickNoteStore();
   const { reflections } = useDailyReflectionStore();
+  const { getReflectionByDate: getInsightReflection, reflectionData: insightReflectionData } = useReflectionTemplateStore();
   
   const [selectedDay, setSelectedDay] = useState<DayEntry | null>(null);
   const [daysToShow] = useState(60); // Show 2 months by default
@@ -56,9 +58,60 @@ export const JournalViewApple: React.FC = () => {
       const totalPnL = dayTrades.reduce((sum, trade) => sum + (trade.pnl || 0), 0);
       const { winRateExclScratches } = summarizeWinLossScratch(dayTrades);
       
-      // Check if reflection exists
+      // Check if reflection exists (check both old fields and new Insight Blocks)
       const ids = getAccountIdsForSelection(selectedAccountId || null);
-      const hasReflection = reflections.find(r => r.date === dateStr && ids.includes(r.accountId)) !== undefined;
+      const reflection = reflections.find(r => r.date === dateStr && ids.includes(r.accountId));
+      
+      // Check for old-style reflection fields with actual content
+      const hasOldReflection = Boolean(reflection && (
+        (reflection.reflection && reflection.reflection.trim().length > 0) ||
+        (reflection.keyFocus && reflection.keyFocus.trim().length > 0) ||
+        (reflection.goals && reflection.goals.trim().length > 0) ||
+        (reflection.lessons && reflection.lessons.trim().length > 0)
+      ));
+      
+      // Also check for new Insight Blocks (Insight Blocks 2.0)
+      // Check all accounts that match the filter, not just selectedAccountId
+      let hasInsightBlocks = false;
+      for (const accountId of ids) {
+        const insightReflection = getInsightReflection(dateStr, accountId);
+        if (insightReflection && insightReflection.insightBlocks && insightReflection.insightBlocks.length > 0) {
+          // Only count if blocks have actual content (non-empty text)
+          const hasContent = insightReflection.insightBlocks.some(block => 
+            block.content && block.content.trim().length > 0
+          );
+          if (hasContent) {
+            hasInsightBlocks = true;
+            // Debug logging (temporary)
+            if (dateStr === new Date().toISOString().split('T')[0]) {
+              console.log(`[JournalViewApple] Found Insight Blocks for today (${dateStr}):`, {
+                accountId,
+                blocksCount: insightReflection.insightBlocks.length,
+                blocks: insightReflection.insightBlocks.map(b => ({ 
+                  title: b.title, 
+                  contentLength: b.content?.length || 0 
+                }))
+              });
+            }
+            break;
+          }
+        }
+      }
+      
+      // Show checkmark if either old reflection OR new insight blocks exist with content
+      const hasReflection = hasOldReflection || hasInsightBlocks;
+      
+      // Debug logging for today (temporary)
+      if (dateStr === new Date().toISOString().split('T')[0]) {
+        console.log(`[JournalViewApple] Today's reflection status:`, {
+          dateStr,
+          selectedAccountId,
+          accountIds: ids,
+          hasOldReflection,
+          hasInsightBlocks,
+          hasReflection
+        });
+      }
       
       entries.push({
         date: dateStr,
@@ -71,7 +124,7 @@ export const JournalViewApple: React.FC = () => {
     }
     
     return entries;
-  }, [trades, notes, selectedAccountId, daysToShow, reflections]);
+  }, [trades, notes, selectedAccountId, daysToShow, reflections, getInsightReflection, insightReflectionData]);
 
   // Group entries by month
   const groupedEntries = useMemo(() => {

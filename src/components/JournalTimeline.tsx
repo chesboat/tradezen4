@@ -28,7 +28,7 @@ export const JournalTimeline: React.FC<JournalTimelineProps> = ({ className }) =
   const { selectedAccountId } = useAccountFilterStore();
   const { trades } = useTradeStore();
   const { notes } = useQuickNoteStore();
-  const { getReflectionByDate: getInsightReflection } = useReflectionTemplateStore();
+  const { getReflectionByDate: getInsightReflection, reflectionData: insightReflectionData } = useReflectionTemplateStore();
   const { 
     reflections,
     getReflectionStreak,
@@ -102,11 +102,47 @@ export const JournalTimeline: React.FC<JournalTimelineProps> = ({ className }) =
       ));
       
       // Also check for new Insight Blocks (Insight Blocks 2.0)
-      const insightReflection = selectedAccountId ? getInsightReflection(dateStr, selectedAccountId) : null;
-      const hasInsightBlocks = Boolean(insightReflection && insightReflection.insightBlocks && insightReflection.insightBlocks.length > 0);
+      // Check all accounts that match the filter, not just selectedAccountId
+      let hasInsightBlocks = false;
+      for (const accountId of ids) {
+        const insightReflection = getInsightReflection(dateStr, accountId);
+        if (insightReflection && insightReflection.insightBlocks && insightReflection.insightBlocks.length > 0) {
+          // Only count if blocks have actual content (non-empty text)
+          const hasContent = insightReflection.insightBlocks.some(block => 
+            block.content && block.content.trim().length > 0
+          );
+          if (hasContent) {
+            hasInsightBlocks = true;
+            // Debug logging (temporary)
+            if (dateStr === new Date().toISOString().split('T')[0]) {
+              console.log(`[JournalTimeline] Found Insight Blocks for today (${dateStr}):`, {
+                accountId,
+                blocksCount: insightReflection.insightBlocks.length,
+                blocks: insightReflection.insightBlocks.map(b => ({ 
+                  title: b.title, 
+                  contentLength: b.content?.length || 0 
+                }))
+              });
+            }
+            break;
+          }
+        }
+      }
       
-      // Show checkmark if either old reflection OR new insight blocks exist
+      // Show checkmark if either old reflection OR new insight blocks exist with content
       const hasReflection = hasOldReflection || hasInsightBlocks;
+      
+      // Debug logging for today (temporary)
+      if (dateStr === new Date().toISOString().split('T')[0]) {
+        console.log(`[JournalTimeline] Today's reflection status:`, {
+          dateStr,
+          selectedAccountId,
+          accountIds: ids,
+          hasOldReflection,
+          hasInsightBlocks,
+          hasReflection
+        });
+      }
       
       entries.push({
         date: dateStr,
@@ -148,7 +184,7 @@ export const JournalTimeline: React.FC<JournalTimelineProps> = ({ className }) =
     }
     
     return filteredEntries; // Most recent first (entries are already generated in newest-to-oldest order)
-  }, [trades, notes, selectedAccountId, daysToShow, showOnlyReflected, selectedTagFilter, reflections, getReflectionTags, getInsightReflection]);
+  }, [trades, notes, selectedAccountId, daysToShow, showOnlyReflected, selectedTagFilter, reflections, getReflectionTags, getInsightReflection, insightReflectionData]);
 
 
 
