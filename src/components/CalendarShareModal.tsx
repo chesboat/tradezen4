@@ -623,8 +623,8 @@ ${shareUrl}`,
                   </div>
                 </div>
 
-                {/* Simple Uniform Calendar Grid - Using gap-2 for proper spacing in html2canvas */}
-                <div className="grid grid-cols-8 gap-2">
+                {/* Simple Uniform Calendar Grid - Different horizontal and vertical gaps */}
+                <div className="grid grid-cols-8 gap-x-1 gap-y-2">
                   {/* Headers Row */}
                   {DAYS_OF_WEEK.map((day) => (
                     <div key={day} className="text-center font-semibold text-muted-foreground py-2">
