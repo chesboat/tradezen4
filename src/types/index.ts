@@ -29,6 +29,12 @@ export interface Trade extends FirestoreDocument {
   notes?: string;
   attachedQuickNotes?: string[];
   accountId: string;
+  // Review system
+  markedForReview?: boolean;
+  reviewNote?: string;
+  reviewTags?: string[];
+  reviewedAt?: string | Date;
+  reviewImages?: string[]; // Chart screenshots/annotations
 }
 
 export interface QuickNote extends FirestoreDocument {

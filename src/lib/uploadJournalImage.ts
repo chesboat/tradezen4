@@ -2,6 +2,8 @@
 // and returns the permanent HTTPS asset URL.
 
 import { auth } from '@/lib/firebase';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import app from '@/lib/firebase';
 
 export async function uploadJournalImage(file: File): Promise<string> {
   if (!file || !file.type.startsWith('image/')) {
@@ -9,8 +11,30 @@ export async function uploadJournalImage(file: File): Promise<string> {
   }
 
   const user = auth.currentUser;
-  const idToken = user ? await user.getIdToken() : undefined;
+  
+  // For local development, use Firebase Storage as fallback
+  const isDev = import.meta.env.DEV;
+  if (isDev) {
+    try {
+      if (!user) throw new Error('Must be authenticated to upload images');
+      
+      const storage = getStorage(app as any);
+      const timestamp = Date.now();
+      const randomId = Math.random().toString(36).substring(2, 9);
+      const fileName = `journal-images/${user.uid}/${timestamp}-${randomId}`;
+      const storageRef = ref(storage, fileName);
+      
+      await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(storageRef);
+      return url;
+    } catch (error) {
+      console.error('Firebase Storage upload failed:', error);
+      throw new Error('Failed to upload image. Please try again.');
+    }
+  }
 
+  // Production: use Vercel Blob API
+  const idToken = user ? await user.getIdToken() : undefined;
   const base = (import.meta as any).env?.VITE_API_BASE_URL as string | undefined;
   const endpoint = `${base ? base.replace(/\/$/, '') : ''}/api/upload-journal-image`;
 

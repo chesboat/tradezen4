@@ -55,7 +55,12 @@ export const PublicShareDialog: React.FC<PublicShareDialogProps> = ({ date, acco
               </label>
               <label className="flex items-center gap-3">
                 <input type="checkbox" checked={options.includeNotes} onChange={() => toggle('includeNotes')} />
-                <span>Include notes</span>
+                <div className="flex flex-col">
+                  <span>Include quick notes</span>
+                  <span className="text-xs text-muted-foreground">
+                    (Notes already in Insight Blocks will show automatically)
+                  </span>
+                </div>
               </label>
               <label className="flex items-center gap-3">
                 <input type="checkbox" checked={options.includeMood} onChange={() => toggle('includeMood')} />

@@ -23,6 +23,7 @@ import { formatCurrency, formatDate, getMoodEmoji } from '@/lib/localStorageUtil
 import { cn, summarizeWinLossScratch } from '@/lib/utils';
 import { ReflectionHub } from './ReflectionHub';
 import { CircularProgress } from './ui/CircularProgress';
+import { NoteContent } from './NoteContent';
 
 interface JournalDayCardProps {
   date: string;
@@ -577,7 +578,7 @@ export const JournalDayCard: React.FC<JournalDayCardProps> = ({
                   <div className="space-y-2">
                     {dayNotes.map((note) => (
                       <div key={note.id} className="p-3 bg-muted/30 rounded-lg">
-                        <p className="text-sm text-foreground">{note.content}</p>
+                        <NoteContent content={note.content} className="text-sm text-foreground leading-relaxed whitespace-pre-wrap" />
                         {note.tags && note.tags.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-2">
                             {note.tags.map((tag, index) => (

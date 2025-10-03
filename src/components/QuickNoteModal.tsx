@@ -10,6 +10,7 @@ import { useActivityLogStore } from '@/store/useActivityLogStore';
 import { TagInput } from '@/components/TagPill';
 import { getMoodEmoji } from '@/lib/localStorageUtils';
 import { useTodoStore } from '@/store/useTodoStore';
+import { NoteContent } from './NoteContent';
 
 interface QuickNoteModalProps {
   attachToTradeId?: string;
@@ -55,26 +56,40 @@ export const QuickNoteModal: React.FC<QuickNoteModalProps> = ({
   });
 
   const [isLoading, setIsLoading] = useState(false);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showNotesToggle, setShowNotesToggle] = useState(false);
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [isDragOver, setIsDragOver] = useState(false);
   const { addTask } = useTodoStore();
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const noteContainerRef = useRef<HTMLDivElement>(null);
   const autoSaveTimeoutRef = useRef<number>();
 
-  // Load existing note if editing
+  // Load existing note if editing - Apple-style: separate images from text
   useEffect(() => {
     if (editingNoteId) {
       const noteToEdit = notes.find(note => note.id === editingNoteId);
       if (noteToEdit) {
+        // Extract images from markdown content
+        const imageRegex = /!\[image\]\((https?:\/\/[^)]+)\)/g;
+        const images: string[] = [];
+        let match;
+        while ((match = imageRegex.exec(noteToEdit.content)) !== null) {
+          images.push(match[1]);
+        }
+        
+        // Remove image markdown from visible content
+        const textContent = noteToEdit.content.replace(imageRegex, '').trim();
+        
         setFormData({
-          content: noteToEdit.content,
+          content: textContent,
           tags: noteToEdit.tags,
           mood: noteToEdit.mood,
         });
+        setUploadedImages(images);
       }
     } else {
       // Load draft if available
@@ -85,6 +100,7 @@ export const QuickNoteModal: React.FC<QuickNoteModalProps> = ({
           tags: draft.tags || [],
           mood: draft.mood,
         });
+        setUploadedImages([]);
       }
     }
   }, [editingNoteId, notes, loadDraft]);
@@ -159,15 +175,104 @@ export const QuickNoteModal: React.FC<QuickNoteModalProps> = ({
     setFormData(prev => ({ ...prev, mood: prev.mood === mood ? undefined : mood }));
   };
 
+  // 🍎 Apple Notes-style image handling
+  const handleImageUpload = async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      console.warn('Not an image file');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      console.warn('File too large (max 10MB)');
+      return;
+    }
+
+    setIsUploadingImage(true);
+    try {
+      const uploadedUrl = await useQuickNoteStore.getState().uploadImage(file);
+      setUploadedImages(prev => [...prev, uploadedUrl]);
+      // Apple-style: Don't show markdown in textarea - just keep images in gallery
+    } catch (error) {
+      console.error('Image upload failed:', error);
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  // Handle drag and drop (Apple Notes style - entire note area is drop zone)
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Only set to false if we're leaving the container entirely
+    if (e.currentTarget === e.target) {
+      setIsDragOver(false);
+    }
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+
+    const files = Array.from(e.dataTransfer.files || []);
+    const imageFiles = files.filter(f => f.type.startsWith('image/'));
+    
+    for (const file of imageFiles) {
+      await handleImageUpload(file);
+    }
+  };
+
+  // Handle paste (Cmd+V) - Apple Notes style
+  useEffect(() => {
+    const handlePaste = async (e: ClipboardEvent) => {
+      // Only handle if modal is open and textarea is focused
+      if (!isModalOpen || document.activeElement !== textareaRef.current) return;
+
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      for (const item of Array.from(items)) {
+        if (item.kind === 'file' && item.type.startsWith('image/')) {
+          e.preventDefault();
+          const file = item.getAsFile();
+          if (file) {
+            await handleImageUpload(file);
+          }
+        }
+      }
+    };
+
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, [isModalOpen]);
+
+  const handleRemoveImage = (imageUrl: string) => {
+    setUploadedImages(prev => prev.filter(url => url !== imageUrl));
+    // Apple-style: Images are separate from text, no need to modify content
+  };
+
   const handleSave = async () => {
-    if (!selectedAccountId || !formData.content.trim()) return;
+    // Combine text content with image markdown (Apple-style: hidden from user, added on save)
+    const textContent = formData.content.trim();
+    const imageMarkdown = uploadedImages.map(url => `![image](${url})`).join('\n\n');
+    const finalContent = textContent && imageMarkdown 
+      ? `${textContent}\n\n${imageMarkdown}`
+      : textContent || imageMarkdown;
+
+    if (!selectedAccountId || !finalContent) return;
 
     setIsLoading(true);
 
     try {
       const targetAccountIds = getAccountIdsForSelection(selectedAccountId);
       const baseNote = {
-        content: formData.content.trim(),
+        content: finalContent, // Apple-style: Combined text + image markdown
         tags: formData.tags,
         mood: formData.mood,
         attachedToTradeId: attachToTradeId,
@@ -185,9 +290,9 @@ export const QuickNoteModal: React.FC<QuickNoteModalProps> = ({
           addActivity({
             type: 'note',
             title: 'Quick Note Added',
-            description: formData.content.length > 50 
-              ? `${formData.content.substring(0, 50)}...`
-              : formData.content,
+            description: textContent.length > 50 
+              ? `${textContent.substring(0, 50)}...`
+              : textContent || 'Image attachment',
             // Quick notes don't award XP - remove misleading xpEarned field
             relatedId: newNote.id,
             accountId,
@@ -221,9 +326,10 @@ export const QuickNoteModal: React.FC<QuickNoteModalProps> = ({
     
     closeModal();
     setFormData({ content: '', tags: [], mood: undefined });
+    setUploadedImages([]);
+    setIsDragOver(false);
     setAutoSaveStatus('idle');
     setShowNotesToggle(false);
-    setImagePreview(null);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -353,21 +459,101 @@ export const QuickNoteModal: React.FC<QuickNoteModalProps> = ({
 
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {/* Note Text */}
+              {/* Note Text - Apple Notes style drop zone */}
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-muted-foreground">
                   What's on your mind?
                 </label>
-                <textarea
-                  ref={textareaRef}
-                  value={formData.content}
-                  onChange={handleContentChange}
-                  placeholder="Trade idea, emotion, lesson learned, mistake to avoid..."
-                  className="w-full min-h-[100px] max-h-[200px] px-4 py-3 bg-muted/30 border border-border/50 rounded-xl 
-                           text-foreground placeholder:text-muted-foreground resize-none
-                           focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20"
-                />
-                <div className="flex items-center justify-end">
+                <div
+                  ref={noteContainerRef}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  className={cn(
+                    "relative rounded-xl transition-all duration-200",
+                    isDragOver && "ring-2 ring-primary/50 ring-offset-2"
+                  )}
+                >
+                  <textarea
+                    ref={textareaRef}
+                    value={formData.content}
+                    onChange={handleContentChange}
+                    placeholder="Trade idea, emotion, lesson learned, mistake to avoid... (Drop images or press Cmd+V to paste)"
+                    className={cn(
+                      "w-full min-h-[100px] max-h-[200px] px-4 py-3 border rounded-xl",
+                      "text-foreground placeholder:text-muted-foreground resize-none",
+                      "focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20",
+                      "transition-all duration-200",
+                      isDragOver
+                        ? "bg-primary/5 border-primary/30"
+                        : "bg-muted/30 border-border/50"
+                    )}
+                  />
+                  {/* Apple-style drag overlay */}
+                  <AnimatePresence>
+                    {isDragOver && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="absolute inset-0 bg-primary/10 rounded-xl border-2 border-dashed border-primary/50 flex items-center justify-center pointer-events-none"
+                      >
+                        <div className="flex flex-col items-center gap-2 text-primary">
+                          <ImageIcon className="w-8 h-8" />
+                          <p className="text-sm font-medium">Drop images here</p>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+                
+                {/* Uploaded Images Gallery - Apple style */}
+                {uploadedImages.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="grid grid-cols-2 sm:grid-cols-3 gap-2"
+                  >
+                    {uploadedImages.map((imageUrl, idx) => (
+                      <motion.div
+                        key={imageUrl}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: idx * 0.05 }}
+                        className="relative group"
+                      >
+                        <img
+                          src={imageUrl}
+                          alt={`Upload ${idx + 1}`}
+                          className="w-full h-24 object-cover rounded-lg border border-border/50"
+                        />
+                        <button
+                          onClick={() => handleRemoveImage(imageUrl)}
+                          className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center shadow-lg"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </motion.div>
+                    ))}
+                  </motion.div>
+                )}
+
+                {/* Upload status */}
+                {isUploadingImage && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex items-center gap-2 text-sm text-muted-foreground"
+                  >
+                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                    <span>Uploading image...</span>
+                  </motion.div>
+                )}
+
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground">
+                    💡 Tip: Drop images or press Cmd+V to paste screenshots
+                  </p>
                   <button
                     className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted hover:bg-muted/80 text-xs"
                     onClick={() => {
@@ -395,84 +581,6 @@ export const QuickNoteModal: React.FC<QuickNoteModalProps> = ({
                   placeholder="Add tags..."
                   maxTags={8}
                 />
-              </div>
-
-              {/* Image attachment */}
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                  <ImageIcon className="w-4 h-4" />
-                  Image (optional)
-                </label>
-                <div
-                  className="flex items-center gap-3 p-3 rounded-xl border border-border/50 bg-muted/20"
-                  onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                  onDrop={async (e) => {
-                    e.preventDefault();
-                    const file = e.dataTransfer.files?.[0];
-                    if (file) {
-                      setIsUploadingImage(true);
-                      const url = URL.createObjectURL(file);
-                      setImagePreview(url);
-                      try {
-                        const uploaded = await useQuickNoteStore.getState().uploadImage(file);
-                        setFormData(prev => ({ ...prev, content: prev.content + `\n\n![image](${uploaded})` }));
-                      } catch (err) {
-                        console.error('Image upload failed', err);
-                      } finally {
-                        setIsUploadingImage(false);
-                      }
-                    }
-                  }}
-                >
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      setIsUploadingImage(true);
-                      const url = URL.createObjectURL(file);
-                      setImagePreview(url);
-                      try {
-                        const uploaded = await useQuickNoteStore.getState().uploadImage(file);
-                        setFormData(prev => ({ ...prev, content: prev.content + `\n\n![image](${uploaded})` }));
-                      } catch (err) {
-                        console.error('Image upload failed', err);
-                      } finally {
-                        setIsUploadingImage(false);
-                      }
-                    }}
-                    className="hidden"
-                    id="qn-file"
-                  />
-                  <label htmlFor="qn-file" className="px-3 py-2 rounded-lg bg-muted hover:bg-muted/60 cursor-pointer text-sm">Select image</label>
-                  <button
-                    className="px-3 py-2 rounded-lg bg-muted hover:bg-muted/60 text-sm"
-                    onClick={async () => {
-                      try {
-                        setIsUploadingImage(true);
-                        const clipboardItems = await (navigator as any).clipboard.read();
-                        for (const item of clipboardItems) {
-                          const type = item.types.find((t: string) => t.startsWith('image/'));
-                          if (type) {
-                            const blob = await item.getType(type);
-                            const uploaded = await useQuickNoteStore.getState().uploadImage(blob);
-                            setImagePreview(URL.createObjectURL(blob));
-                            setFormData(prev => ({ ...prev, content: prev.content + `\n\n![image](${uploaded})` }));
-                            break;
-                          }
-                        }
-                      } catch (err) {
-                        console.error('Paste image failed', err);
-                      } finally {
-                        setIsUploadingImage(false);
-                      }
-                    }}
-                  >Paste from clipboard</button>
-                  {imagePreview && (
-                    <img src={imagePreview} alt="preview" className="h-16 rounded border border-border/50" />
-                  )}
-                </div>
               </div>
 
               {/* Mood Selector */}
@@ -530,9 +638,9 @@ export const QuickNoteModal: React.FC<QuickNoteModalProps> = ({
                         className="p-3 bg-muted/20 border border-border/50 rounded-lg"
                         whileHover={{ backgroundColor: 'var(--muted)' }}
                       >
-                        <p className="text-sm text-foreground line-clamp-2">
-                          {note.content}
-                        </p>
+                        <div className="text-sm text-foreground line-clamp-2">
+                          <NoteContent content={note.content} className="text-sm text-foreground leading-relaxed whitespace-pre-wrap" />
+                        </div>
                         <div className="flex items-center gap-2 mt-1">
                           {note.mood && (
                             <span className="text-xs">{getMoodEmoji(note.mood)}</span>

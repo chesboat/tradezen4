@@ -69,7 +69,7 @@ interface TradesViewProps {
 }
 
 export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
-  const { trades, deleteTrade, updateTrade } = useTradeStore();
+  const { trades, deleteTrade, updateTrade, toggleMarkForReview, getMarkedForReview } = useTradeStore();
   const { accounts, selectedAccountId } = useAccountFilterStore();
   
   // Default to cards on mobile, table on desktop
@@ -119,7 +119,7 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
   const [editingExitId, setEditingExitId] = useState<string | null>(null);
   const [editingExitValue, setEditingExitValue] = useState<string>('');
   const [editingTagsId, setEditingTagsId] = useState<string | null>(null);
-  const [quickFilter, setQuickFilter] = useState<'all' | 'today' | 'week' | 'winners' | 'losers'>('all');
+  const [quickFilter, setQuickFilter] = useState<'all' | 'today' | 'week' | 'winners' | 'losers' | 'marked'>('all');
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [swipedTradeId, setSwipedTradeId] = useState<string | null>(null);
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
@@ -419,6 +419,8 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
       filtered = filtered.filter(trade => (trade.pnl || 0) > 0);
     } else if (quickFilter === 'losers') {
       filtered = filtered.filter(trade => (trade.pnl || 0) < 0);
+    } else if (quickFilter === 'marked') {
+      filtered = filtered.filter(trade => trade.markedForReview && !trade.reviewedAt);
     }
 
     // Apply filters (Apple-style smart search with hashtag support)
@@ -812,26 +814,40 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
         {/* Quick Filter Chips (Apple-style) */}
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-xs text-muted-foreground">Quick filters:</span>
-          {(['all', 'today', 'week', 'winners', 'losers'] as const).map((filter) => (
-            <motion.button
-              key={filter}
-              onClick={() => setQuickFilter(filter)}
-              className={cn(
-                'px-3 py-1.5 rounded-full text-xs font-medium transition-all',
-                quickFilter === filter
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'bg-muted/50 text-muted-foreground hover:bg-muted/70'
-              )}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              {filter === 'all' ? 'All' :
-               filter === 'today' ? 'Today' :
-               filter === 'week' ? 'This Week' :
-               filter === 'winners' ? '✓ Winners' :
-               '✗ Losers'}
-            </motion.button>
-          ))}
+          {(['all', 'today', 'week', 'winners', 'losers', 'marked'] as const).map((filter) => {
+            const markedCount = filter === 'marked' ? getMarkedForReview().length : 0;
+            return (
+              <motion.button
+                key={filter}
+                onClick={() => setQuickFilter(filter)}
+                className={cn(
+                  'px-3 py-1.5 rounded-full text-xs font-medium transition-all relative',
+                  quickFilter === filter
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'bg-muted/50 text-muted-foreground hover:bg-muted/70'
+                )}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                {filter === 'all' ? 'All' :
+                 filter === 'today' ? 'Today' :
+                 filter === 'week' ? 'This Week' :
+                 filter === 'winners' ? '✓ Winners' :
+                 filter === 'losers' ? '✗ Losers' :
+                 filter === 'marked' ? (
+                   <span className="flex items-center gap-1.5">
+                     <Star className="w-3 h-3 fill-current" />
+                     For Review
+                     {markedCount > 0 && (
+                       <span className="ml-0.5 px-1.5 py-0.5 bg-yellow-500 text-white rounded-full text-[10px] font-bold">
+                         {markedCount}
+                       </span>
+                     )}
+                   </span>
+                 ) : filter}
+              </motion.button>
+            );
+          })}
         </div>
 
         {/* Active Tag Filters (Apple-style - only show when filtering) */}
@@ -1113,8 +1129,9 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     className={cn(
-                      'border-t border-border hover:bg-muted/20 transition-colors cursor-pointer',
-                      selectedTrades.has(trade.id) && 'bg-primary/10'
+                      'border-t border-border hover:bg-muted/20 transition-colors cursor-pointer relative',
+                      selectedTrades.has(trade.id) && 'bg-primary/10',
+                      trade.markedForReview && 'border-l-2 border-l-yellow-500 bg-yellow-500/[0.03]'
                     )}
                     onMouseDown={() => handleLongPressStart(trade.id)}
                     onMouseUp={handleLongPressEnd}
@@ -1134,28 +1151,34 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                       </td>
                     )}
                     <td className="p-3 text-sm">
-                      {/* Date - Click to edit */}
-                      <div 
-                        className="cursor-pointer hover:text-primary transition-colors"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDateDoubleClick(trade);
-                        }}
-                        title="Click to edit date"
-                      >
-                        {editingDateId === trade.id ? (
-                          <input
-                            type="date"
-                            value={editingDateValue}
-                            onChange={(e) => setEditingDateValue(e.target.value)}
-                            onBlur={() => handleDateSave(trade.id, trade)}
-                            onKeyDown={(e) => handleDateKeyDown(e, trade.id, trade)}
-                            className="w-32 px-1 py-0.5 bg-primary/10 border border-primary rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                            autoFocus
-                          />
-                        ) : (
-                          new Date(trade.entryTime).toLocaleDateString()
+                      <div className="flex items-center gap-2">
+                        {/* Star indicator for marked trades */}
+                        {trade.markedForReview && (
+                          <Star className="w-3.5 h-3.5 fill-yellow-500 text-yellow-500 flex-shrink-0" />
                         )}
+                        {/* Date - Click to edit */}
+                        <div 
+                          className="cursor-pointer hover:text-primary transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDateDoubleClick(trade);
+                          }}
+                          title="Click to edit date"
+                        >
+                          {editingDateId === trade.id ? (
+                            <input
+                              type="date"
+                              value={editingDateValue}
+                              onChange={(e) => setEditingDateValue(e.target.value)}
+                              onBlur={() => handleDateSave(trade.id, trade)}
+                              onKeyDown={(e) => handleDateKeyDown(e, trade.id, trade)}
+                              className="w-32 px-1 py-0.5 bg-primary/10 border border-primary rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                              autoFocus
+                            />
+                          ) : (
+                            new Date(trade.entryTime).toLocaleDateString()
+                          )}
+                        </div>
                       </div>
                       
                       {/* Time - Click to edit */}
@@ -1423,14 +1446,32 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                               <span className="text-sm">Edit Trade</span>
                             </button>
                             <button
-                              onClick={() => {
-                                // Add to favorites logic here
+                              onClick={async () => {
+                                try {
+                                  const newState = await toggleMarkForReview(trade.id);
+                                  // Show toast notification
+                                  const toast = document.createElement('div');
+                                  toast.className = 'fixed bottom-4 left-1/2 -translate-x-1/2 z-50 px-4 py-3 bg-card border border-border rounded-xl shadow-lg flex items-center gap-3';
+                                  toast.innerHTML = `
+                                    <div class="w-2 h-2 rounded-full bg-yellow-500"></div>
+                                    <span class="text-sm font-medium">${newState ? 'Marked for review' : 'Unmarked'}</span>
+                                  `;
+                                  document.body.appendChild(toast);
+                                  setTimeout(() => toast.remove(), 2000);
+                                } catch (error) {
+                                  console.error('Failed to toggle review mark:', error);
+                                }
                                 setOpenMenuId(null);
                               }}
                               className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-muted/50 transition-colors text-left"
                             >
-                              <Star className="w-4 h-4 text-yellow-500" />
-                              <span className="text-sm">Mark for Review</span>
+                              <Star className={cn(
+                                "w-4 h-4",
+                                trade.markedForReview ? "fill-yellow-500 text-yellow-500" : "text-yellow-500"
+                              )} />
+                              <span className="text-sm">
+                                {trade.markedForReview ? 'Unmark for Review' : 'Mark for Review'}
+                              </span>
                             </button>
                             <div className="h-px bg-border my-1" />
                             <button

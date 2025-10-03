@@ -1228,47 +1228,45 @@ const InsightBlockCard: React.FC<InsightBlockCardProps> = ({
   return (
     <motion.div
       layout="position"
-      className="bg-background border border-border rounded-xl shadow-sm hover:shadow-md transition-all"
+      className="group bg-background border border-border rounded-xl shadow-sm hover:shadow-md transition-all"
     >
-      {/* Block Header */}
-      <div className="flex items-center gap-3 p-4 bg-muted/20 border-b border-border rounded-t-xl">
-        <div className="flex items-center gap-2">
-          <GripVertical className="w-4 h-4 text-muted-foreground cursor-grab" />
-          <span className="text-2xl">{block.emoji}</span>
-        </div>
-        
-        <input
-          type="text"
-          value={block.title}
-          onChange={(e) => handleTitleChange(e.target.value)}
-          className="flex-1 bg-transparent border-none outline-none text-lg font-semibold focus:ring-2 focus:ring-primary/20 rounded px-2 py-1"
-        />
-        
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span>{wordCount} words</span>
-          {block.images && block.images.length > 0 && (
-            <span className="flex items-center gap-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 px-2 py-1 rounded-lg font-medium">
-              <ImageIcon className="w-3 h-3" />
-              {block.images.length}
-            </span>
-          )}
-          {xpEarned > 0 && (
-            <span className="bg-primary/10 text-primary px-2 py-1 rounded-lg font-medium">
-              +{xpEarned} XP
-            </span>
-          )}
+      {/* Apple-style Block Header - Clean with hover actions */}
+      <div className="flex items-center justify-between p-4 bg-muted/20 hover:bg-muted/30 border-b border-border rounded-t-xl transition-colors">
+        {/* Left: Emoji + Title */}
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <span className="text-2xl flex-shrink-0">{block.emoji}</span>
+          
+          <input
+            type="text"
+            value={block.title}
+            onChange={(e) => handleTitleChange(e.target.value)}
+            className="flex-1 bg-transparent border-none outline-none text-lg font-semibold focus:ring-2 focus:ring-primary/20 rounded px-2 py-1 min-w-0"
+          />
         </div>
 
-        <div className="flex items-center gap-1">
-          {/* Favorite Star */}
+        {/* Right: Smart Actions (Apple-style hover visibility) */}
+        <div className="flex items-center gap-1 flex-shrink-0">
+          {/* Word count (hover only, if content exists) */}
+          {block.content && wordCount > 0 && (
+            <span className="text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity mr-2">
+              {wordCount} words
+            </span>
+          )}
+          
+          {/* Grip handle (hover only) */}
+          <div className="opacity-0 group-hover:opacity-100 transition-opacity cursor-grab p-1">
+            <GripVertical className="w-4 h-4 text-muted-foreground" />
+          </div>
+          
+          {/* Favorite Star (hover only, template blocks only) */}
           {block.templateId && block.templateBlockId && (
             <motion.button
               onClick={onToggleFavorite}
               className={cn(
-                "p-1 rounded transition-colors",
+                "p-1 rounded transition-all",
                 block.isFavorite 
-                  ? "text-yellow-500 hover:text-yellow-600" 
-                  : "text-muted-foreground hover:text-yellow-500"
+                  ? "text-yellow-500 hover:text-yellow-600 opacity-100" 
+                  : "text-muted-foreground hover:text-yellow-500 opacity-0 group-hover:opacity-100"
               )}
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
@@ -1278,6 +1276,7 @@ const InsightBlockCard: React.FC<InsightBlockCardProps> = ({
             </motion.button>
           )}
 
+          {/* Expand/Collapse (always visible) */}
           <motion.button
             onClick={toggleExpanded}
             className="p-1 hover:bg-muted rounded transition-colors"
@@ -1285,20 +1284,21 @@ const InsightBlockCard: React.FC<InsightBlockCardProps> = ({
             whileTap={{ scale: 0.9 }}
           >
             {block.isExpanded ? (
-              <ChevronUp className="w-4 h-4" />
+              <ChevronUp className="w-4 h-4 text-muted-foreground" />
             ) : (
-              <ChevronDown className="w-4 h-4" />
+              <ChevronDown className="w-4 h-4 text-muted-foreground" />
             )}
           </motion.button>
           
+          {/* More menu (hover only) */}
           <div className="relative">
             <motion.button
               onClick={() => setShowActions(!showActions)}
-              className="p-1 hover:bg-muted rounded transition-colors"
+              className="p-1 hover:bg-muted rounded transition-all opacity-0 group-hover:opacity-100"
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
             >
-              <MoreHorizontal className="w-4 h-4" />
+              <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
             </motion.button>
 
             <AnimatePresence>
@@ -1307,36 +1307,68 @@ const InsightBlockCard: React.FC<InsightBlockCardProps> = ({
                   initial={{ opacity: 0, scale: 0.95, y: -10 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                  className="absolute top-full right-0 mt-1 bg-background border border-border rounded-lg shadow-lg z-50 py-1 min-w-[120px]"
+                  transition={{ duration: 0.15 }}
+                  className="absolute top-full right-0 mt-1 bg-background border border-border rounded-xl shadow-2xl z-50 overflow-hidden min-w-[180px]"
                 >
-                  <motion.button
-                    onClick={() => {
-                      onDuplicate();
-                      setShowActions(false);
-                    }}
-                    className="w-full text-left px-3 py-2 hover:bg-muted transition-colors flex items-center gap-2"
-                    whileHover={{ scale: 1.02 }}
-                  >
-                    <Copy className="w-3 h-3" />
-                    <span className="text-sm">Duplicate</span>
-                  </motion.button>
-                  <motion.button
-                    onClick={() => {
-                      onDelete();
-                      setShowActions(false);
-                    }}
-                    className="w-full text-left px-3 py-2 hover:bg-muted transition-colors flex items-center gap-2 text-red-600"
-                    whileHover={{ scale: 1.02 }}
-                  >
-                    <Trash2 className="w-3 h-3" />
-                    <span className="text-sm">Delete</span>
-                  </motion.button>
+                  {/* Quick Actions */}
+                  <div className="py-1">
+                    <motion.button
+                      onClick={() => {
+                        onDuplicate();
+                        setShowActions(false);
+                      }}
+                      className="w-full text-left px-4 py-2 hover:bg-muted transition-colors flex items-center gap-3 text-sm"
+                      whileHover={{ x: 2 }}
+                    >
+                      <Copy className="w-4 h-4 text-muted-foreground" />
+                      <span>Duplicate</span>
+                    </motion.button>
+                  </div>
+                  
+                  {/* Destructive Action */}
+                  <div className="border-t border-border py-1">
+                    <motion.button
+                      onClick={() => {
+                        onDelete();
+                        setShowActions(false);
+                      }}
+                      className="w-full text-left px-4 py-2 hover:bg-red-500/10 transition-colors flex items-center gap-3 text-sm text-red-600 dark:text-red-400"
+                      whileHover={{ x: 2 }}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      <span>Delete</span>
+                    </motion.button>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
         </div>
       </div>
+      
+      {/* Apple-style Metadata Footer (collapsed state only) */}
+      {!block.isExpanded && block.content && (
+        <div className="px-4 py-2 flex items-center gap-3 text-xs text-muted-foreground border-b border-border/50">
+          {block.images && block.images.length > 0 && (
+            <>
+              <span className="flex items-center gap-1.5">
+                <ImageIcon className="w-3 h-3" />
+                {block.images.length} {block.images.length === 1 ? 'image' : 'images'}
+              </span>
+              <span>•</span>
+            </>
+          )}
+          {xpEarned > 0 && (
+            <>
+              <span className="text-primary font-medium">+{xpEarned} XP</span>
+              <span>•</span>
+            </>
+          )}
+          <span className="line-clamp-1 flex-1 text-muted-foreground/70">
+            {block.content.replace(/<[^>]*>/g, '').substring(0, 100)}...
+          </span>
+        </div>
+      )}
 
       {/* Block Content */}
       <AnimatePresence initial={false}>
@@ -1345,7 +1377,10 @@ const InsightBlockCard: React.FC<InsightBlockCardProps> = ({
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
+            transition={{ 
+              duration: 0.2,  // Apple-style fast timing
+              ease: [0.25, 0.1, 0.25, 1]  // Apple's cubic-bezier
+            }}
             className="overflow-visible"
           >
             <div className="p-4 space-y-4">
@@ -1364,27 +1399,34 @@ const InsightBlockCard: React.FC<InsightBlockCardProps> = ({
                 />
               )}
               
-              {/* Image Upload Toggle */}
-              <div className="flex items-center justify-between">
+              {/* Apple-style Attachment Bar (like Messages.app) */}
+              <div className="flex items-center gap-2 pt-2 flex-wrap">
                 <motion.button
                   onClick={() => setShowImageUpload(!showImageUpload)}
-                  className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground bg-muted/30 hover:bg-muted/50 rounded-lg transition-colors"
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-lg transition-all",
+                    showImageUpload
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                  )}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <Camera className="w-4 h-4" />
-                  <span>Add Screenshots</span>
-                  {showImageUpload ? (
-                    <ChevronUp className="w-3 h-3" />
-                  ) : (
-                    <ChevronDown className="w-3 h-3" />
+                  <Camera className="w-3.5 h-3.5" />
+                  <span>Photos</span>
+                  {block.images && block.images.length > 0 && (
+                    <span className="ml-1 px-1.5 py-0.5 bg-primary/20 text-primary rounded-full text-[10px] font-bold">
+                      {block.images.length}
+                    </span>
                   )}
                 </motion.button>
                 
-                {block.images && block.images.length > 0 && (
-                  <span className="text-xs text-muted-foreground">
-                    {block.images.length}/5 images
-                  </span>
+                {/* XP Badge (show when expanded if earned) */}
+                {xpEarned > 0 && (
+                  <div className="ml-auto flex items-center gap-1.5 px-2 py-1 bg-primary/10 text-primary rounded-lg text-xs font-medium">
+                    <Sparkles className="w-3 h-3" />
+                    +{xpEarned} XP
+                  </div>
                 )}
               </div>
               

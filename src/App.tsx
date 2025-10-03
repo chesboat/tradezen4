@@ -1,6 +1,7 @@
 import React from 'react';
 import { PublicSharePageClean as PublicSharePage } from './components/PublicSharePageClean';
 import { PublicNoteView } from './components/PublicNoteView';
+import { PublicTradeInsightView } from './components/PublicTradeInsightView';
 import { SettingsPage } from './components/SettingsPage';
 import { Sidebar } from './components/Sidebar';
 import { AppleMobileNav } from './components/AppleMobileNav';
@@ -438,6 +439,9 @@ function App() {
   if (typeof window !== 'undefined') {
     if (window.location.pathname.startsWith('/share/note/')) {
       return <PublicNoteView />;
+    }
+    if (window.location.pathname.startsWith('/share/insight/')) {
+      return <PublicTradeInsightView />;
     }
     if (window.location.pathname.startsWith('/share/')) {
       return <PublicSharePage />;

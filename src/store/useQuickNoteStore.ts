@@ -153,8 +153,11 @@ export const useQuickNoteStore = create<QuickNoteState>((set, get) => ({
       const currentNotes = get().notes;
       const newTags = [...new Set([...get().allTags, ...((note as any).tags || [])])];
       
+      // Check if note already exists (prevent duplicates from Firestore snapshot)
+      const noteExists = currentNotes.some(n => n.id === formattedNote.id);
+      
       set({ 
-        notes: [formattedNote, ...currentNotes],
+        notes: noteExists ? currentNotes : [formattedNote, ...currentNotes],
         allTags: newTags
       });
       return formattedNote;

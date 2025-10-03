@@ -86,12 +86,12 @@ export const CustomTemplateEditor: React.FC<CustomTemplateEditorProps> = ({
   useEffect(() => {
     if (editingTemplate) {
       setFormData({
-        name: editingTemplate.name,
+        name: editingTemplate.name || '',
         description: editingTemplate.description || '',
         emoji: editingTemplate.emoji || '📝',
-        category: editingTemplate.category,
-        isDefault: editingTemplate.isDefault,
-        blocks: [...editingTemplate.blocks],
+        category: editingTemplate.category || 'trading',
+        isDefault: editingTemplate.isDefault || false,
+        blocks: editingTemplate.blocks ? [...editingTemplate.blocks] : [],
       });
     } else {
       setFormData(DEFAULT_FORM_DATA);

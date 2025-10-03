@@ -8,6 +8,67 @@ import { getStorage, ref as storageRef, getDownloadURL } from 'firebase/storage'
 // Helper function to generate unique IDs
 const generateId = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
 
+/**
+ * Create a public share for a single trade insight
+ */
+export async function createTradeInsightShare(tradeId: string) {
+  const tStore = (await import('@/store/useTradeStore')).useTradeStore.getState();
+  const trade = tStore.trades.find(t => t.id === tradeId);
+  
+  if (!trade) {
+    throw new Error('Trade not found');
+  }
+  
+  if (!trade.reviewNote && (!trade.reviewImages || trade.reviewImages.length === 0)) {
+    throw new Error('This trade needs analysis (notes or charts) before sharing');
+  }
+  
+  const shareId = `trade-${generateId()}`;
+  
+  // Create a lightweight share document for the trade insight
+  // Remove undefined values (Firestore doesn't support them)
+  const shareData: any = {
+    id: shareId,
+    type: 'trade-insight',
+    isPublic: true,
+    createdAt: serverTimestamp(),
+    
+    // Trade core data
+    symbol: trade.symbol,
+    direction: trade.direction,
+    entryPrice: trade.entryPrice,
+    exitPrice: trade.exitPrice,
+    quantity: trade.quantity,
+    pnl: trade.pnl || 0,
+    riskRewardRatio: trade.riskRewardRatio || 0,
+    entryTime: trade.entryTime,
+    exitTime: trade.exitTime,
+    
+    // Review/insight data
+    reviewNote: trade.reviewNote || '',
+    reviewImages: trade.reviewImages || [],
+    reviewedAt: trade.reviewedAt || null,
+    
+    // Optional metadata (only include if defined)
+    tags: trade.tags || [],
+  };
+  
+  // Only add strategy if it exists
+  if (trade.strategy) {
+    shareData.strategy = trade.strategy;
+  }
+  
+  const shareDoc = doc(db, 'publicShares', shareId);
+  await setDoc(shareDoc, shareData);
+  
+  console.log('📈 Trade insight shared:', shareId);
+  
+  return { 
+    id: shareId, 
+    url: `${window.location.origin}/share/insight/${shareId}` 
+  };
+}
+
 export type PublicShareOptions = {
   includeImages: boolean;
   includeNotes: boolean;
@@ -403,8 +464,18 @@ export async function createPublicShareSnapshot(date: string, accountId: string,
     viewCount: 0,
   };
 
-  if (options.includeNotes) {
-    payload.notes = (notes || []).map((n: any) => ({ content: n.content, tags: n.tags || [] }));
+  if (options.includeNotes && notes && notes.length > 0) {
+    // Include quick notes (raw notes that haven't been converted to insight blocks)
+    // Note: If notes are already in Insight Blocks, consider keeping this toggle OFF
+    const mappedNotes = (notes || []).map((n: any) => ({ 
+      content: n.content, 
+      title: n.title,
+      tags: n.tags || [] 
+    })).filter((n: any) => n.content && n.content.trim().length > 0);
+    
+    if (mappedNotes.length > 0) {
+      payload.notes = mappedNotes;
+    }
   }
   if (options.includeMood && daily) {
     payload.mood = {
@@ -432,6 +503,51 @@ export async function createPublicShareSnapshot(date: string, accountId: string,
       notes: trade.notes,
       tags: trade.tags || []
     }));
+  }
+  
+  // Include reviewed trades (Trade Insights) - trades with review notes or screenshots
+  const reviewedTrades = dayTrades.filter(trade => 
+    trade.reviewedAt && (trade.reviewNote || (trade.reviewImages && trade.reviewImages.length > 0))
+  );
+  
+  if (reviewedTrades.length > 0) {
+    // Resolve review image URLs to permanent download URLs
+    const reviewedTradesWithResolvedImages = await Promise.all(
+      reviewedTrades.map(async (trade) => {
+        const resolvedImages = trade.reviewImages 
+          ? await Promise.all(
+              filterBlobUrls(trade.reviewImages, `review images for trade ${trade.symbol}`).map(url => resolveStorageUrl(url, shareId))
+            )
+          : [];
+        
+        return {
+          id: trade.id,
+          symbol: trade.symbol,
+          direction: trade.direction,
+          entryPrice: trade.entryPrice,
+          exitPrice: trade.exitPrice,
+          quantity: trade.quantity,
+          pnl: trade.pnl || 0,
+          result: trade.result,
+          riskRewardRatio: trade.riskRewardRatio || 0,
+          entryTime: trade.entryTime,
+          exitTime: trade.exitTime,
+          reviewNote: trade.reviewNote || '',
+          reviewImages: resolvedImages,
+          reviewedAt: trade.reviewedAt,
+          tags: trade.tags || [],
+          strategy: trade.strategy
+        };
+      })
+    );
+    
+    payload.tradeInsights = reviewedTradesWithResolvedImages;
+    
+    console.log('📊 Public share - including trade insights:', {
+      count: reviewedTradesWithResolvedImages.length,
+      withImages: reviewedTradesWithResolvedImages.filter(t => t.reviewImages.length > 0).length,
+      totalImages: reviewedTradesWithResolvedImages.reduce((sum, t) => sum + t.reviewImages.length, 0)
+    });
   }
   if (options.includeStats) {
     payload.stats = {

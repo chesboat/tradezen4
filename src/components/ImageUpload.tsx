@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -21,39 +21,61 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const canUploadMore = currentImages.length < maxImages;
 
   const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0 || !canUploadMore) return;
     
-    const file = files[0];
-    if (!file.type.startsWith('image/')) {
+    // Filter image files
+    const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+    
+    if (imageFiles.length === 0) {
       setUploadError('Please select an image file');
       return;
     }
 
-    // Check file size (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      setUploadError('Image size must be less than 10MB');
-      return;
-    }
+    // Calculate how many we can upload
+    const slotsAvailable = maxImages - currentImages.length;
+    const filesToUpload = imageFiles.slice(0, slotsAvailable);
 
     setIsUploading(true);
     setUploadError(null);
+    setUploadProgress({ current: 0, total: filesToUpload.length });
 
     try {
       // Use the existing upload functionality from QuickNoteStore
       const { useQuickNoteStore } = await import('@/store/useQuickNoteStore');
       const uploadImage = useQuickNoteStore.getState().uploadImage;
-      const imageUrl = await uploadImage(file);
-      onImageUpload(imageUrl);
+      
+      // Upload all images sequentially
+      for (let i = 0; i < filesToUpload.length; i++) {
+        const file = filesToUpload[i];
+        setUploadProgress({ current: i + 1, total: filesToUpload.length });
+        
+        // Check file size (max 10MB)
+        if (file.size > 10 * 1024 * 1024) {
+          setUploadError(`${file.name} is too large (max 10MB)`);
+          continue;
+        }
+
+        const imageUrl = await uploadImage(file);
+        onImageUpload(imageUrl);
+      }
+
+      // Show message if some files were skipped
+      if (imageFiles.length > filesToUpload.length) {
+        setUploadError(`Only uploaded ${filesToUpload.length} of ${imageFiles.length} images (${maxImages} max)`);
+      }
     } catch (error) {
       console.error('Image upload failed:', error);
       setUploadError('Failed to upload image. Please try again.');
     } finally {
       setIsUploading(false);
+      setUploadProgress(null);
     }
   };
 
@@ -91,8 +113,45 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
     e.target.value = '';
   };
 
+  const handlePaste = async (e: ClipboardEvent) => {
+    if (disabled || !canUploadMore) return;
+    
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (const item of Array.from(items)) {
+      if (item.kind === 'file' && item.type.startsWith('image/')) {
+        e.preventDefault();
+        const file = item.getAsFile();
+        if (file) {
+          await handleFiles([file] as any);
+          break; // Only handle the first image
+        }
+      }
+    }
+  };
+
+  // Add paste event listener when component mounts
+  useEffect(() => {
+    const handleGlobalPaste = (e: ClipboardEvent) => {
+      // Only handle paste if the container or its children are focused/hovered
+      if (containerRef.current?.contains(document.activeElement)) {
+        handlePaste(e);
+      }
+    };
+
+    window.addEventListener('paste', handleGlobalPaste);
+    return () => {
+      window.removeEventListener('paste', handleGlobalPaste);
+    };
+  }, [disabled, canUploadMore, currentImages.length]); // Re-attach when these change
+
   return (
-    <div className={cn("space-y-2", className)}>
+    <div 
+      ref={containerRef}
+      className={cn("space-y-2", className)}
+      tabIndex={0} // Make focusable for paste events
+    >
       <div
         className={cn(
           "relative border-2 border-dashed rounded-xl p-4 transition-all duration-200",
@@ -113,6 +172,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
           ref={fileInputRef}
           type="file"
           accept="image/*"
+          multiple
           onChange={handleFileChange}
           className="hidden"
           disabled={disabled || !canUploadMore}
@@ -128,7 +188,11 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
               className="flex flex-col items-center gap-2 py-2"
             >
               <Loader2 className="w-6 h-6 text-primary animate-spin" />
-              <p className="text-sm text-muted-foreground">Uploading image...</p>
+              <p className="text-sm text-muted-foreground">
+                {uploadProgress && uploadProgress.total > 1
+                  ? `Uploading ${uploadProgress.current} of ${uploadProgress.total}...`
+                  : 'Uploading image...'}
+              </p>
             </motion.div>
           ) : (
             <motion.div

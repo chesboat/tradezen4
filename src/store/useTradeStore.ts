@@ -23,6 +23,9 @@ interface TradeState {
   getRecentTrades: () => Trade[];
   getFilteredByTier: (tier: 'trial' | 'basic' | 'premium') => Trade[]; // NEW: Filter by tier limits
   initializeTrades: (userIdOverride?: string) => Promise<void>;
+  // Review system
+  toggleMarkForReview: (id: string) => Promise<boolean>; // Returns new state
+  getMarkedForReview: () => Trade[];
 }
 
 /**
@@ -272,6 +275,31 @@ export const useTradeStore = create<TradeState>((set, get) => ({
   // Filter trades by tier retention limits
   getFilteredByTier: (tier: 'trial' | 'basic' | 'premium') => {
     return filterByRetention(get().trades, tier);
+  },
+
+  // Toggle mark for review
+  toggleMarkForReview: async (id: string) => {
+    try {
+      const trade = get().trades.find(t => t.id === id);
+      if (!trade) throw new Error('Trade not found');
+
+      const newMarkedState = !trade.markedForReview;
+      
+      await get().updateTrade(id, {
+        markedForReview: newMarkedState,
+        reviewedAt: newMarkedState ? undefined : trade.reviewedAt, // Clear reviewedAt when unmarking
+      });
+
+      return newMarkedState;
+    } catch (error) {
+      console.error('Failed to toggle mark for review:', error);
+      throw error;
+    }
+  },
+
+  // Get trades marked for review
+  getMarkedForReview: () => {
+    return get().trades.filter(trade => trade.markedForReview && !trade.reviewedAt);
   },
 }));
 

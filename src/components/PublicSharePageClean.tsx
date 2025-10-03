@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { useSystemTheme } from '@/hooks/useSystemTheme';
 import { 
   Calendar,
   TrendingUp,
@@ -10,7 +11,11 @@ import {
   Trophy,
   Flame,
   ExternalLink,
-  Sparkles
+  Sparkles,
+  Lightbulb,
+  Camera,
+  Maximize2,
+  X as CloseIcon
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/localStorageUtils';
 import { cn } from '@/lib/utils';
@@ -85,6 +90,9 @@ const resolveInlineStorageLinksInHtml = async (html: string): Promise<string> =>
 };
 
 export const PublicSharePageClean: React.FC = () => {
+  // Apple-style: Respect viewer's system preference for journal shares
+  useSystemTheme();
+  
   const [id] = React.useState(() => {
     if (typeof window !== 'undefined') {
       return window.location.pathname.split('/').pop() || '';
@@ -95,6 +103,7 @@ export const PublicSharePageClean: React.FC = () => {
   const [notFound, setNotFound] = React.useState(false);
   const [imagesByBlock, setImagesByBlock] = React.useState<{ [blockId: string]: string[] }>({});
   const [blocksById, setBlocksById] = React.useState<{ [blockId: string]: any }>({});
+  const [lightboxImage, setLightboxImage] = React.useState<string | null>(null);
 
   // Load share data
   React.useEffect(() => {
@@ -162,7 +171,7 @@ export const PublicSharePageClean: React.FC = () => {
 
   if (notFound) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-white dark:bg-background flex items-center justify-center p-4">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -178,7 +187,7 @@ export const PublicSharePageClean: React.FC = () => {
 
   if (!data) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center">
+      <div className="min-h-screen bg-white dark:bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading journal...</p>
@@ -188,15 +197,17 @@ export const PublicSharePageClean: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 py-4 md:py-12 px-4">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ type: "spring", damping: 25, stiffness: 300 }}
-        className="max-w-3xl mx-auto"
-      >
-        {/* Main Card */}
-        <div className="bg-background/95 backdrop-blur-sm border border-border/50 rounded-3xl shadow-2xl overflow-hidden">
+    <>
+      {/* Apple-style: Clean solid backgrounds in both light and dark modes */}
+      <div className="min-h-screen bg-white dark:bg-background py-4 md:py-12 px-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: "spring", damping: 25, stiffness: 300 }}
+          className="max-w-3xl mx-auto"
+        >
+          {/* Main Card */}
+          <div className="bg-background/95 backdrop-blur-sm border border-border/50 rounded-3xl shadow-2xl overflow-hidden">
           
           {/* Header */}
           <div className="p-6 md:p-8 border-b border-border/50">
@@ -260,6 +271,124 @@ export const PublicSharePageClean: React.FC = () => {
               </div>
             )}
           </div>
+
+          {/* 🎯 Trade Insights Section - Premium Positioning */}
+          {data.tradeInsights && data.tradeInsights.length > 0 && (
+            <div className="px-6 md:px-8 pb-6 md:pb-8 space-y-4 bg-gradient-to-br from-purple-500/5 via-blue-500/5 to-transparent border-t-2 border-purple-500/10">
+              <div className="flex items-center justify-between pt-6">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
+                    <Lightbulb className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-semibold text-foreground">
+                      Trade Insights
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      Analyzed & Annotated
+                    </p>
+                  </div>
+                </div>
+                <span className="px-3 py-1 bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20 text-purple-600 dark:text-purple-400 rounded-full text-xs font-medium">
+                  {data.tradeInsights.length} {data.tradeInsights.length === 1 ? 'Insight' : 'Insights'}
+                </span>
+              </div>
+
+              <div className="space-y-4">
+                {data.tradeInsights.map((trade: any, idx: number) => (
+                  <motion.div
+                    key={trade.id || idx}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                    className="bg-gradient-to-br from-background to-muted/20 border-2 border-border/50 rounded-2xl p-5 shadow-lg hover:shadow-xl transition-all"
+                  >
+                    {/* Trade Header */}
+                    <div className="flex items-center justify-between gap-2 mb-3">
+                      <div className="flex items-center gap-2 flex-1">
+                        <div className={cn(
+                          "w-2 h-2 rounded-full",
+                          (trade.pnl || 0) > 0 ? "bg-green-500" : (trade.pnl || 0) < 0 ? "bg-red-500" : "bg-gray-400"
+                        )} />
+                        <span className="font-semibold text-foreground">{trade.symbol}</span>
+                        <span className="text-xs px-1.5 py-0.5 bg-muted rounded">
+                          {trade.direction === 'long' ? '↑' : '↓'} {trade.direction}
+                        </span>
+                        {trade.reviewImages && trade.reviewImages.length > 0 && (
+                          <span className="flex items-center gap-1 text-xs px-1.5 py-0.5 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded">
+                            <Camera className="w-3 h-3" />
+                            {trade.reviewImages.length}
+                          </span>
+                        )}
+                        <span className={cn(
+                          "text-sm font-semibold ml-auto",
+                          (trade.pnl || 0) >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
+                        )}>
+                          {(trade.pnl || 0) >= 0 ? "+" : ""}{formatCurrency(trade.pnl || 0)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Trade Details */}
+                    <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground mb-3">
+                      <div>Entry: <span className="text-foreground">${trade.entryPrice?.toFixed(2)}</span></div>
+                      <div>Exit: <span className="text-foreground">${trade.exitPrice?.toFixed(2) || 'Open'}</span></div>
+                      <div>R:R: <span className="text-foreground">{(trade.riskRewardRatio || 0).toFixed(2)}:1</span></div>
+                      <div>Qty: <span className="text-foreground">{trade.quantity}</span></div>
+                    </div>
+
+                    {/* Key Learnings */}
+                    {trade.reviewNote && (
+                      <div className="mb-3">
+                        <div className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1">
+                          <Lightbulb className="w-3 h-3" />
+                          Key Learnings
+                        </div>
+                        <div className="text-sm text-foreground bg-background/50 p-3 rounded-lg border border-border/50">
+                          {trade.reviewNote}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Chart Screenshots Gallery */}
+                    {trade.reviewImages && trade.reviewImages.length > 0 && (
+                      <div>
+                        <div className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
+                          <Camera className="w-3 h-3" />
+                          Chart Analysis ({trade.reviewImages.length})
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          {trade.reviewImages.map((imageUrl: string, imgIdx: number) => (
+                            <motion.div
+                              key={imgIdx}
+                              className="relative group cursor-pointer"
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                              onClick={() => setLightboxImage(imageUrl)}
+                            >
+                              <img
+                                src={imageUrl}
+                                alt={`Chart analysis ${imgIdx + 1}`}
+                                className="w-full h-32 object-cover rounded-lg border-2 border-border/50 transition-all"
+                              />
+                              {/* Hover overlay with expand icon */}
+                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center pointer-events-none">
+                                <Maximize2 className="w-6 h-6 text-white" />
+                              </div>
+                              {/* Image number badge */}
+                              <div className="absolute top-1 right-1 w-5 h-5 bg-black/60 text-white text-[10px] rounded-full flex items-center justify-center font-medium pointer-events-none">
+                                {imgIdx + 1}
+                              </div>
+                            </motion.div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Trades Section */}
           {data.trades && data.trades.length > 0 && (
@@ -423,6 +552,42 @@ export const PublicSharePageClean: React.FC = () => {
         </div>
       </motion.div>
     </div>
+
+      {/* Lightbox for Trade Insight Images */}
+      <AnimatePresence>
+        {lightboxImage && (
+          <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[110] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setLightboxImage(null)}
+        >
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            className="absolute top-6 right-6 w-12 h-12 bg-white/90 hover:bg-white rounded-full flex items-center justify-center transition-all shadow-2xl backdrop-blur-sm border border-white/20"
+            onClick={(e) => {
+              e.stopPropagation();
+              setLightboxImage(null);
+            }}
+          >
+            <CloseIcon className="w-6 h-6 text-black" />
+          </motion.button>
+          <motion.img
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            src={lightboxImage}
+            alt="Chart analysis"
+            className="max-w-full max-h-full object-contain rounded-lg"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 };
 

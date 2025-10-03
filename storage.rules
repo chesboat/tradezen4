@@ -3,6 +3,12 @@ rules_version = '2';
 // Firebase Storage Security Rules
 service firebase.storage {
   match /b/{bucket}/o {
+    // Allow authenticated users to read/write their own journal images
+    match /journal-images/{userId}/{allPaths=**} {
+      allow read: if true; // Public read for sharing trade reviews
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
     // Allow authenticated users to read/write their own files
     match /quickNotes/{userId}/{allPaths=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;

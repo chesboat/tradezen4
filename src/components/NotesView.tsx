@@ -35,7 +35,8 @@ import {
   Pin,
   Archive,
   Inbox,
-  ChevronLeft
+  ChevronLeft,
+  Image as ImageIcon
 } from 'lucide-react';
 import { NoteContent } from './NoteContent';
 import { SmartTagFilterBar } from './SmartTagFilterBar';
@@ -73,6 +74,24 @@ interface UnifiedNote {
   wordCount?: number;
   readingTime?: number;
   lastViewedAt?: string;
+}
+
+// Helper function to clean preview text (Apple-style: hide markdown/markup)
+function cleanPreviewText(content: string): { text: string; hasImages: boolean } {
+  let cleaned = content;
+  
+  // Strip markdown image syntax: ![alt](url) or ![image](url)
+  const imageMatches = cleaned.match(/!\[.*?\]\(.*?\)/g);
+  const hasImages = !!imageMatches && imageMatches.length > 0;
+  cleaned = cleaned.replace(/!\[.*?\]\(.*?\)/g, '');
+  
+  // Strip HTML tags (for rich notes)
+  cleaned = cleaned.replace(/<[^>]*>/g, '');
+  
+  // Strip extra whitespace
+  cleaned = cleaned.replace(/\s+/g, ' ').trim();
+  
+  return { text: cleaned.substring(0, 100), hasImages };
 }
 
 export const NotesView: React.FC = () => {
@@ -132,6 +151,10 @@ export const NotesView: React.FC = () => {
   const [editingFolder, setEditingFolder] = useState<string | null>(null);
   const [editingFolderName, setEditingFolderName] = useState('');
   const folderNavRef = useRef<HTMLDivElement | null>(null);
+  
+  // Context menu state (Apple-style right-click)
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; noteId: string } | null>(null);
+  const [hoveredNoteId, setHoveredNoteId] = useState<string | null>(null);
 
   // Long-press handlers (Apple-style)
   const handleLongPressStart = useCallback((noteId: string) => {
@@ -151,6 +174,25 @@ export const NotesView: React.FC = () => {
       setLongPressTimer(null);
     }
   }, [longPressTimer]);
+  
+  // Handle right-click context menu
+  const handleContextMenu = useCallback((e: React.MouseEvent, noteId: string) => {
+    e.preventDefault();
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      noteId,
+    });
+  }, []);
+  
+  // Close context menu
+  useEffect(() => {
+    const handleClick = () => setContextMenu(null);
+    if (contextMenu) {
+      document.addEventListener('click', handleClick);
+      return () => document.removeEventListener('click', handleClick);
+    }
+  }, [contextMenu]);
 
   const handleNoteClick = useCallback((noteId: string) => {
     if (selectionMode) {
@@ -211,18 +253,22 @@ export const NotesView: React.FC = () => {
   const unifiedNotes = useMemo((): UnifiedNote[] => {
     const quick: UnifiedNote[] = quickNotes
       .filter(n => !selectedAccountId || n.accountId === selectedAccountId)
-      .map(note => ({
-        id: note.id,
-        type: 'quick' as const,
-        title: note.content.substring(0, 50).trim() + (note.content.length > 50 ? '...' : ''),
-        content: note.content,
-        tags: note.tags || [],
-        createdAt: (note.createdAt instanceof Date ? note.createdAt.toISOString() : note.createdAt) as string,
-        updatedAt: (note.updatedAt instanceof Date ? note.updatedAt.toISOString() : (note.updatedAt || note.createdAt)) as string,
-        accountId: note.accountId,
-        mood: note.mood,
-        images: note.images,
-      }));
+      .map(note => {
+        // Clean content first, then extract title (Apple-style: no markdown in previews)
+        const cleaned = cleanPreviewText(note.content).text;
+        return {
+          id: note.id,
+          type: 'quick' as const,
+          title: cleaned.substring(0, 50).trim() + (cleaned.length > 50 ? '...' : ''),
+          content: note.content,
+          tags: note.tags || [],
+          createdAt: (note.createdAt instanceof Date ? note.createdAt.toISOString() : note.createdAt) as string,
+          updatedAt: (note.updatedAt instanceof Date ? note.updatedAt.toISOString() : (note.updatedAt || note.createdAt)) as string,
+          accountId: note.accountId,
+          mood: note.mood,
+          images: note.images,
+        };
+      });
 
     const rich: UnifiedNote[] = richNotes.map(note => ({
       id: note.id,
@@ -412,8 +458,58 @@ export const NotesView: React.FC = () => {
   const handleDeleteNote = async (note: UnifiedNote) => {
     if (note.type === 'quick') {
       await deleteQuickNote(note.id);
+      toast.success('Note deleted');
     } else {
       await deleteRichNote(note.id);
+      toast.success('Note deleted');
+    }
+  };
+  
+  // Quick action: Toggle favorite
+  const handleToggleFavorite = async (noteId: string) => {
+    const note = unifiedNotes.find(n => n.id === noteId);
+    if (!note || note.type !== 'rich') return;
+    
+    const { toggleFavorite } = useRichNotesStore.getState();
+    await toggleFavorite(noteId);
+  };
+  
+  // Context menu actions
+  const handleContextAction = async (action: 'delete' | 'favorite' | 'select', noteId: string) => {
+    const note = unifiedNotes.find(n => n.id === noteId);
+    if (!note) return;
+    
+    setContextMenu(null);
+    
+    switch (action) {
+      case 'delete':
+        if (confirm('Delete this note?')) {
+          await handleDeleteNote(note);
+        }
+        break;
+      case 'favorite':
+        if (note.type === 'rich') {
+          await handleToggleFavorite(noteId);
+        }
+        break;
+      case 'select':
+        setSelectionMode(true);
+        setSelectedNotes(new Set([noteId]));
+        break;
+    }
+  };
+  
+  // Batch delete selected notes
+  const handleBatchDelete = async () => {
+    if (selectedNotes.size === 0) return;
+    
+    if (confirm(`Delete ${selectedNotes.size} note${selectedNotes.size > 1 ? 's' : ''}?`)) {
+      for (const noteId of Array.from(selectedNotes)) {
+        const note = unifiedNotes.find(n => n.id === noteId);
+        if (note) await handleDeleteNote(note);
+      }
+      setSelectionMode(false);
+      setSelectedNotes(new Set());
     }
   };
 
@@ -638,13 +734,18 @@ export const NotesView: React.FC = () => {
                       key={note.id}
                       onMouseDown={() => handleLongPressStart(note.id)}
                       onMouseUp={handleLongPressEnd}
-                      onMouseLeave={handleLongPressEnd}
+                      onMouseEnter={() => setHoveredNoteId(note.id)}
+                      onMouseLeave={() => {
+                        handleLongPressEnd();
+                        setHoveredNoteId(null);
+                      }}
                       onTouchStart={() => handleLongPressStart(note.id)}
                       onTouchEnd={handleLongPressEnd}
                       onClick={() => handleNoteClick(note.id)}
                       onDoubleClick={() => handleNoteDoubleClick(note.id)}
+                      onContextMenu={(e) => handleContextMenu(e, note.id)}
                       className={cn(
-                        "px-4 py-3 border-b border-border cursor-pointer transition-colors relative",
+                        "px-4 py-3 border-b border-border cursor-pointer transition-colors relative group",
                         selectedNoteId === note.id && "bg-primary/5 border-l-2 border-l-primary",
                         selectedNotes.has(note.id) && selectionMode && "bg-primary/10",
                         selectedNoteId !== note.id && !selectedNotes.has(note.id) && "hover:bg-muted/30"
@@ -671,19 +772,68 @@ export const NotesView: React.FC = () => {
                           )}
                         </div>
                         
-                        <p className="text-xs text-muted-foreground line-clamp-2">
-                          {note.content.replace(/<[^>]*>/g, '').substring(0, 100)}
-                        </p>
-                        
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <span>{new Date(note.updatedAt).toLocaleDateString()}</span>
-                          {note.type === 'rich' ? (
-                            <FileEdit className="w-3 h-3 text-violet-500" />
-                          ) : (
-                            <StickyNote className="w-3 h-3 text-yellow-500" />
-                          )}
-                        </div>
+                        {(() => {
+                          const { text, hasImages } = cleanPreviewText(note.content);
+                          return (
+                            <>
+                              <p className="text-xs text-muted-foreground line-clamp-2">
+                                {text}
+                              </p>
+                              
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <span>{new Date(note.updatedAt).toLocaleDateString()}</span>
+                                {note.type === 'rich' ? (
+                                  <FileEdit className="w-3 h-3 text-violet-500" />
+                                ) : (
+                                  <StickyNote className="w-3 h-3 text-yellow-500" />
+                                )}
+                                {hasImages && (
+                                  <div className="flex items-center gap-0.5 px-1.5 py-0.5 bg-purple-500/10 text-purple-600 rounded">
+                                    <ImageIcon className="w-3 h-3" />
+                                  </div>
+                                )}
+                              </div>
+                            </>
+                          );
+                        })()}
                       </div>
+                      
+                      {/* Hover Actions (Apple-style) */}
+                      {!selectionMode && hoveredNoteId === note.id && (
+                        <motion.div
+                          initial={{ opacity: 0, x: 10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 bg-background/80 backdrop-blur-sm rounded-lg border border-border/50 p-1 shadow-lg"
+                        >
+                          {note.type === 'rich' && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleToggleFavorite(note.id);
+                              }}
+                              className={cn(
+                                "p-1.5 rounded hover:bg-muted transition-colors",
+                                note.isFavorite && "text-yellow-500"
+                              )}
+                              title={note.isFavorite ? "Unfavorite" : "Favorite"}
+                            >
+                              <Star className={cn("w-3.5 h-3.5", note.isFavorite && "fill-current")} />
+                            </button>
+                          )}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (confirm('Delete this note?')) {
+                                handleDeleteNote(note);
+                              }
+                            }}
+                            className="p-1.5 rounded hover:bg-red-500/10 text-muted-foreground hover:text-red-500 transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </motion.div>
+                      )}
                     </motion.div>
                   ))}
                 </div>
@@ -785,10 +935,14 @@ export const NotesView: React.FC = () => {
                 
                 {/* Note Content */}
                 <div className="flex-1 overflow-y-auto px-6 py-4">
-                  <div 
-                    className="prose prose-sm max-w-none dark:prose-invert"
-                    dangerouslySetInnerHTML={{ __html: selectedNote.content }}
-                  />
+                  {selectedNote.type === 'rich' ? (
+                    <div 
+                      className="prose prose-sm max-w-none dark:prose-invert"
+                      dangerouslySetInnerHTML={{ __html: selectedNote.content }}
+                    />
+                  ) : (
+                    <NoteContent content={selectedNote.content} className="text-sm text-foreground leading-relaxed whitespace-pre-wrap" />
+                  )}
                   
                   {/* Tags */}
                   {selectedNote.tags.length > 0 && (
@@ -827,6 +981,96 @@ export const NotesView: React.FC = () => {
         }}
         noteId={editingRichNoteId}
       />
+      
+      {/* Context Menu (Apple-style right-click) */}
+      <AnimatePresence>
+        {contextMenu && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.1 }}
+            style={{
+              position: 'fixed',
+              left: contextMenu.x,
+              top: contextMenu.y,
+              zIndex: 100,
+            }}
+            className="bg-background border border-border rounded-xl shadow-2xl overflow-hidden min-w-[180px]"
+          >
+            <div className="py-1">
+              {(() => {
+                const note = unifiedNotes.find(n => n.id === contextMenu.noteId);
+                return (
+                  <>
+                    {note?.type === 'rich' && (
+                      <button
+                        onClick={() => handleContextAction('favorite', contextMenu.noteId)}
+                        className="w-full text-left px-4 py-2 hover:bg-muted transition-colors flex items-center gap-3 text-sm"
+                      >
+                        <Star className={cn("w-4 h-4", note.isFavorite && "fill-yellow-500 text-yellow-500")} />
+                        <span>{note.isFavorite ? 'Unfavorite' : 'Favorite'}</span>
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleContextAction('select', contextMenu.noteId)}
+                      className="w-full text-left px-4 py-2 hover:bg-muted transition-colors flex items-center gap-3 text-sm"
+                    >
+                      <CheckSquare className="w-4 h-4" />
+                      <span>Select</span>
+                    </button>
+                    <div className="h-px bg-border my-1" />
+                    <button
+                      onClick={() => handleContextAction('delete', contextMenu.noteId)}
+                      className="w-full text-left px-4 py-2 hover:bg-red-500/10 transition-colors flex items-center gap-3 text-sm text-red-500"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      <span>Delete</span>
+                    </button>
+                  </>
+                );
+              })()}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      {/* Selection Mode Bar (Apple-style) */}
+      <AnimatePresence>
+        {selectionMode && (
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50"
+          >
+            <div className="bg-background border-2 border-border rounded-2xl shadow-2xl px-6 py-4 flex items-center gap-4">
+              <div className="text-sm font-medium">
+                {selectedNotes.size} selected
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleBatchDelete}
+                  disabled={selectedNotes.size === 0}
+                  className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectionMode(false);
+                    setSelectedNotes(new Set());
+                  }}
+                  className="px-4 py-2 bg-muted hover:bg-muted/70 rounded-lg text-sm font-medium transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

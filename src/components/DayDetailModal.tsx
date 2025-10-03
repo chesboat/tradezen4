@@ -27,9 +27,17 @@ import {
   Send,
   ArrowUp,
   ArrowDown,
-  RotateCcw
+  RotateCcw,
+  ChevronRight,
+  Lightbulb,
+  CheckCircle2,
+  Camera,
+  Image as ImageIcon,
+  Maximize2,
+  X as CloseIcon
 } from 'lucide-react';
 import { PublicShareDialog } from './PublicShareDialog';
+import { ImageUpload } from './ImageUpload';
 import { useTradeStore } from '@/store/useTradeStore';
 import { useQuickNoteStore } from '@/store/useQuickNoteStore';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
@@ -65,6 +73,7 @@ interface GPTInsight {
 
 export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onClose }) => {
   const trades = useTradeStore(state => state.trades);
+  const { updateTrade } = useTradeStore();
   const { getNotesForDate } = useQuickNoteStore();
   const quickNotesAll = useQuickNoteStore(state => state.notes);
   const { selectedAccountId } = useAccountFilterStore();
@@ -124,6 +133,12 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
   const [isQuestPinned, setIsQuestPinned] = useState(false);
   const [reflectionTags, setReflectionTags] = useState<string[]>([]);
   
+  // Marked trades review states
+  const [expandedMarkedTradeId, setExpandedMarkedTradeId] = useState<string | null>(null);
+  const [markedTradeReviewNotes, setMarkedTradeReviewNotes] = useState<Record<string, string>>({});
+  const [reviewImages, setReviewImages] = useState<Record<string, string[]>>({});
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  
   // Legacy reflection states removed - now handled by ReflectionHub
 
   // Get day's trades (handle null day case)
@@ -157,6 +172,59 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
     if (!selectedTagFilter) return dayNotes;
     return dayNotes.filter(n => (n.tags || []).includes(selectedTagFilter));
   }, [dayNotes, selectedTagFilter]);
+
+  // Get today's marked trades (only unreviewed)
+  const markedTrades = useMemo(() => {
+    return dayTrades.filter(trade => trade.markedForReview && !trade.reviewedAt);
+  }, [dayTrades]);
+
+  // Get today's reviewed trades
+  const reviewedTrades = useMemo(() => {
+    return dayTrades.filter(trade => trade.markedForReview && trade.reviewedAt);
+  }, [dayTrades]);
+
+  // Handle marking trade as reviewed
+  const handleMarkTradeReviewed = async (tradeId: string) => {
+    const reviewNote = markedTradeReviewNotes[tradeId] || '';
+    const images = reviewImages[tradeId] || [];
+    
+    await updateTrade(tradeId, {
+      reviewedAt: new Date(),
+      reviewNote: reviewNote || undefined,
+      reviewImages: images.length > 0 ? images : undefined,
+    });
+
+    // Clear the state
+    setMarkedTradeReviewNotes(prev => {
+      const updated = { ...prev };
+      delete updated[tradeId];
+      return updated;
+    });
+    setReviewImages(prev => {
+      const updated = { ...prev };
+      delete updated[tradeId];
+      return updated;
+    });
+
+    // Collapse the expanded trade
+    setExpandedMarkedTradeId(null);
+  };
+
+  // Handle image upload
+  const handleImageUpload = (tradeId: string, imageUrl: string) => {
+    setReviewImages(prev => ({
+      ...prev,
+      [tradeId]: [...(prev[tradeId] || []), imageUrl]
+    }));
+  };
+
+  // Handle image removal
+  const handleImageRemove = (tradeId: string, imageUrl: string) => {
+    setReviewImages(prev => ({
+      ...prev,
+      [tradeId]: (prev[tradeId] || []).filter(url => url !== imageUrl)
+    }));
+  };
 
   // Get daily reflection data
   const dateString = day?.date ? day.date.toISOString().split('T')[0] : '';
@@ -1060,6 +1128,316 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
                       <div className="text-xs text-muted-foreground">Avg R:R</div>
                     </motion.div>
                   </div>
+
+                  {/* Marked Trades for Review Section */}
+                  {markedTrades.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mb-6"
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <Star className="w-5 h-5 fill-yellow-500 text-yellow-500" />
+                          <h3 className="font-semibold text-foreground">Marked for Review</h3>
+                          <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-600 rounded-full text-xs font-medium">
+                            {markedTrades.length}
+                          </span>
+                        </div>
+                        <span className="text-xs text-muted-foreground">Review while fresh 🔥</span>
+                      </div>
+                      <div className="space-y-3">
+                        {markedTrades.map((trade) => (
+                          <motion.div
+                            key={trade.id}
+                            initial={{ opacity: 0, y: 5 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="bg-background border border-border rounded-lg overflow-hidden"
+                          >
+                            {/* Trade Summary */}
+                            <div
+                              className="p-4 cursor-pointer hover:bg-muted/30 transition-colors"
+                              onClick={() => setExpandedMarkedTradeId(expandedMarkedTradeId === trade.id ? null : trade.id)}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3 flex-1">
+                                  <div className={cn(
+                                    "w-2 h-2 rounded-full",
+                                    (trade.pnl || 0) > 0 ? "bg-green-500" : (trade.pnl || 0) < 0 ? "bg-red-500" : "bg-gray-400"
+                                  )} />
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-semibold">{trade.symbol}</span>
+                                      <span className="text-xs px-1.5 py-0.5 bg-muted rounded">
+                                        {trade.direction === 'long' ? '↑' : '↓'} {trade.direction}
+                                      </span>
+                                      {trade.reviewImages && trade.reviewImages.length > 0 && (
+                                        <span className="flex items-center gap-1 text-xs px-1.5 py-0.5 bg-purple-500/10 text-purple-600 rounded">
+                                          <Camera className="w-3 h-3" />
+                                          {trade.reviewImages.length}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground mt-0.5">
+                                      {new Date(trade.entryTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <div className={cn(
+                                    "font-semibold",
+                                    (trade.pnl || 0) >= 0 ? "text-green-600" : "text-red-600"
+                                  )}>
+                                    {formatCurrency(trade.pnl || 0)}
+                                  </div>
+                                  {expandedMarkedTradeId === trade.id ? (
+                                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                                  ) : (
+                                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Expanded Trade Details */}
+                            <AnimatePresence>
+                              {expandedMarkedTradeId === trade.id && (
+                                <motion.div
+                                  initial={{ opacity: 0, height: 0 }}
+                                  animate={{ opacity: 1, height: 'auto' }}
+                                  exit={{ opacity: 0, height: 0 }}
+                                  className="border-t border-border"
+                                >
+                                  <div className="p-4 space-y-3 bg-muted/20">
+                                    {/* Trade Details */}
+                                    <div className="grid grid-cols-2 gap-3 text-sm">
+                                      <div>
+                                        <div className="text-muted-foreground text-xs">Entry</div>
+                                        <div className="font-medium">${trade.entryPrice.toFixed(2)}</div>
+                                      </div>
+                                      <div>
+                                        <div className="text-muted-foreground text-xs">Exit</div>
+                                        <div className="font-medium">${trade.exitPrice?.toFixed(2) || 'Open'}</div>
+                                      </div>
+                                      <div>
+                                        <div className="text-muted-foreground text-xs">Quantity</div>
+                                        <div className="font-medium">{trade.quantity}</div>
+                                      </div>
+                                      <div>
+                                        <div className="text-muted-foreground text-xs">R:R</div>
+                                        <div className="font-medium">{trade.riskRewardRatio}:1</div>
+                                      </div>
+                                    </div>
+
+                                    {/* Original Notes */}
+                                    {trade.notes && (
+                                      <div>
+                                        <div className="text-xs text-muted-foreground mb-1">Original Notes</div>
+                                        <div className="text-sm bg-background/50 p-2 rounded border border-border/50">
+                                          {trade.notes}
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Chart Screenshots */}
+                                    <div>
+                                      <label className="text-xs font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+                                        <Camera className="w-3.5 h-3.5 text-purple-500" />
+                                        Chart Review (Optional)
+                                      </label>
+                                      
+                                      {/* Image Thumbnails */}
+                                      {(reviewImages[trade.id] || []).length > 0 && (
+                                        <div className="flex flex-wrap gap-3 mb-2">
+                                          {(reviewImages[trade.id] || []).map((imageUrl, idx) => (
+                                            <motion.div
+                                              key={imageUrl}
+                                              initial={{ opacity: 0, scale: 0.8 }}
+                                              animate={{ opacity: 1, scale: 1 }}
+                                              className="relative group cursor-pointer"
+                                              onClick={() => setLightboxImage(imageUrl)}
+                                            >
+                                              <img
+                                                src={imageUrl}
+                                                alt={`Chart review ${idx + 1}`}
+                                                className="w-32 h-32 object-cover rounded-lg border-2 border-border/50 transition-all"
+                                              />
+                                              {/* Hover overlay with expand icon */}
+                                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center pointer-events-none">
+                                                <Maximize2 className="w-6 h-6 text-white" />
+                                              </div>
+                                              {/* Image number badge */}
+                                              <div className="absolute top-1 left-1 w-5 h-5 bg-black/60 text-white text-[10px] rounded-full flex items-center justify-center font-medium pointer-events-none">
+                                                {idx + 1}
+                                              </div>
+                                              {/* Remove button */}
+                                              <button
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  handleImageRemove(trade.id, imageUrl);
+                                                }}
+                                                className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center shadow-lg"
+                                              >
+                                                <X className="w-3 h-3" />
+                                              </button>
+                                            </motion.div>
+                                          ))}
+                                        </div>
+                                      )}
+                                      
+                                      {/* Image Upload */}
+                                      <ImageUpload
+                                        onImageUpload={(url) => handleImageUpload(trade.id, url)}
+                                        currentImages={reviewImages[trade.id] || []}
+                                        maxImages={4}
+                                        className="mb-2"
+                                      />
+                                      <p className="text-[10px] text-muted-foreground">
+                                        Paste (Cmd+V) or drag your annotated chart • Max 4 images
+                                      </p>
+                                    </div>
+
+                                    {/* Review Note Input */}
+                                    <div>
+                                      <label className="text-xs font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+                                        <Lightbulb className="w-3.5 h-3.5 text-blue-500" />
+                                        What did you learn from this trade?
+                                      </label>
+                                      <textarea
+                                        className="w-full p-2 text-sm bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+                                        rows={2}
+                                        placeholder="Key lessons, insights, or patterns to remember..."
+                                        value={markedTradeReviewNotes[trade.id] || ''}
+                                        onChange={(e) => setMarkedTradeReviewNotes(prev => ({
+                                          ...prev,
+                                          [trade.id]: e.target.value
+                                        }))}
+                                      />
+                                    </div>
+
+                                    {/* Action Button */}
+                                    <motion.button
+                                      onClick={() => handleMarkTradeReviewed(trade.id)}
+                                      className="w-full py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                                      whileTap={{ scale: 0.98 }}
+                                    >
+                                      <CheckCircle2 className="w-4 h-4" />
+                                      Mark as Reviewed
+                                    </motion.button>
+                                  </div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </motion.div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* Reviewed Trades Section */}
+                  {reviewedTrades.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="space-y-3 mb-8"
+                    >
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="w-5 h-5 text-green-500" />
+                        <h3 className="text-sm font-medium text-foreground uppercase tracking-wide">
+                          Reviewed Today
+                        </h3>
+                        <span className="px-2 py-0.5 bg-green-500/20 text-green-600 rounded-full text-xs font-medium">
+                          {reviewedTrades.length}
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        {reviewedTrades.map((trade) => (
+                          <motion.div
+                            key={trade.id}
+                            initial={{ opacity: 0, y: 5 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="bg-gradient-to-r from-green-500/5 to-transparent border border-green-500/20 rounded-lg p-4"
+                          >
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1">
+                                {/* Trade Header */}
+                                <div className="flex items-center gap-2 mb-2">
+                                  <div className={cn(
+                                    "w-2 h-2 rounded-full",
+                                    (trade.pnl || 0) > 0 ? "bg-green-500" : (trade.pnl || 0) < 0 ? "bg-red-500" : "bg-gray-400"
+                                  )} />
+                                  <span className="font-semibold">{trade.symbol}</span>
+                                  <span className="text-xs px-1.5 py-0.5 bg-muted rounded">
+                                    {trade.direction === 'long' ? '↑' : '↓'} {trade.direction}
+                                  </span>
+                                  {trade.reviewImages && trade.reviewImages.length > 0 && (
+                                    <span className="flex items-center gap-1 text-xs px-1.5 py-0.5 bg-purple-500/10 text-purple-600 rounded">
+                                      <Camera className="w-3 h-3" />
+                                      {trade.reviewImages.length}
+                                    </span>
+                                  )}
+                                  <span className={cn(
+                                    "text-sm font-semibold ml-auto",
+                                    (trade.pnl || 0) >= 0 ? "text-green-600" : "text-red-600"
+                                  )}>
+                                    {formatCurrency(trade.pnl || 0)}
+                                  </span>
+                                </div>
+
+                                {/* Trade Details */}
+                                <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground mb-3">
+                                  <div>Entry: ${trade.entryPrice.toFixed(2)}</div>
+                                  <div>Exit: ${trade.exitPrice?.toFixed(2) || 'Open'}</div>
+                                </div>
+
+                                {/* Review Note */}
+                                {trade.reviewNote && (
+                                  <div className="mb-3">
+                                    <div className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1">
+                                      <Lightbulb className="w-3 h-3" />
+                                      Review Notes
+                                    </div>
+                                    <div className="text-sm text-foreground bg-background/50 p-2 rounded border border-border/50">
+                                      {trade.reviewNote}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Review Images Thumbnails */}
+                                {trade.reviewImages && trade.reviewImages.length > 0 && (
+                                  <div className="flex flex-wrap gap-3">
+                                    {trade.reviewImages.map((imageUrl, idx) => (
+                                      <motion.div
+                                        key={idx}
+                                        className="relative group cursor-pointer"
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        onClick={() => setLightboxImage(imageUrl)}
+                                      >
+                                        <img
+                                          src={imageUrl}
+                                          alt={`Review chart ${idx + 1}`}
+                                          className="w-32 h-32 object-cover rounded-lg border-2 border-border/50 transition-all"
+                                        />
+                                        {/* Hover overlay with expand icon */}
+                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center pointer-events-none">
+                                          <Maximize2 className="w-6 h-6 text-white" />
+                                        </div>
+                                        {/* Image number badge */}
+                                        <div className="absolute top-1 right-1 w-5 h-5 bg-black/60 text-white text-[10px] rounded-full flex items-center justify-center font-medium pointer-events-none">
+                                          {idx + 1}
+                                        </div>
+                                      </motion.div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
 
                   {/* HERO SECTION: Daily Reflection - Template 2.0 */}
                   <ReflectionHub 
@@ -2100,6 +2478,37 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
           </motion.div>
           <PublicShareDialog date={dateString} accountId={selectedAccountId || 'all'} isOpen={shareOpen} onClose={() => setShareOpen(false)} />
           
+          {/* Lightbox for Chart Images */}
+          <AnimatePresence>
+            {lightboxImage && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[110] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
+                onClick={() => setLightboxImage(null)}
+              >
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  className="absolute top-6 right-6 w-12 h-12 bg-white/90 hover:bg-white rounded-full flex items-center justify-center transition-all shadow-2xl backdrop-blur-sm border border-white/20"
+                  onClick={() => setLightboxImage(null)}
+                >
+                  <X className="w-6 h-6 text-black" />
+                </motion.button>
+                <motion.img
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  src={lightboxImage}
+                  alt="Chart review"
+                  className="max-w-full max-h-full object-contain rounded-lg"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
 
         </motion.div>
       )}

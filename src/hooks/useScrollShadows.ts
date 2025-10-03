@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 export function useScrollShadows<T extends HTMLElement>() {
   const [hasTop, setHasTop] = useState(false);
   const [hasBottom, setHasBottom] = useState(false);
   const [hasOverflow, setHasOverflow] = useState(false);
+  const cleanupRef = useRef<(() => void) | null>(null);
 
   const update = useCallback((el: HTMLElement) => {
     const { scrollTop, scrollHeight, clientHeight } = el;
@@ -14,7 +15,14 @@ export function useScrollShadows<T extends HTMLElement>() {
   }, []);
 
   const attach = useCallback((el: T | null) => {
+    // Clean up previous ref if exists
+    if (cleanupRef.current) {
+      cleanupRef.current();
+      cleanupRef.current = null;
+    }
+
     if (!el) return;
+    
     const onScroll = () => update(el);
     update(el);
     el.addEventListener('scroll', onScroll, { passive: true });
@@ -49,7 +57,8 @@ export function useScrollShadows<T extends HTMLElement>() {
       // ignore storage errors
     }
 
-    return () => {
+    // Store cleanup function in ref instead of returning it
+    cleanupRef.current = () => {
       el.removeEventListener('scroll', onScroll);
       if (ro) ro.disconnect();
       const onResize = (el as any).__tz_onResize as (() => void) | undefined;

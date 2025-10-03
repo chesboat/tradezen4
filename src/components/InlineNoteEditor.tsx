@@ -24,17 +24,21 @@ import {
   Trash2,
   Share2,
   Copy,
-  ExternalLink
+  ExternalLink,
+  Image as ImageIcon,
+  Loader2
 } from 'lucide-react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import Underline from '@tiptap/extension-underline';
 import Link from '@tiptap/extension-link';
+import TiptapImage from '@tiptap/extension-image';
 import { RichNote } from '@/types';
 import { useRichNotesStore } from '@/store/useRichNotesStore';
 import { cn } from '@/lib/utils';
 import toast from 'react-hot-toast';
+import { uploadJournalImage } from '@/lib/uploadJournalImage';
 
 interface InlineNoteEditorProps {
   noteId: string;
@@ -65,9 +69,11 @@ export const InlineNoteEditor: React.FC<InlineNoteEditorProps> = ({ noteId, onCl
   const [savingStatus, setSavingStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [hasChanges, setHasChanges] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   
   const titleInputRef = useRef<HTMLInputElement>(null);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout>();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Store initial values to detect changes
   const initialValuesRef = useRef({
@@ -78,13 +84,57 @@ export const InlineNoteEditor: React.FC<InlineNoteEditorProps> = ({ noteId, onCl
     folder: existingNote?.folder || '',
   });
 
+  // Image upload handler
+  const handleImageUpload = async (file: File): Promise<string> => {
+    setIsUploadingImage(true);
+    try {
+      const url = await uploadJournalImage(file);
+      return url;
+    } catch (error) {
+      console.error('Image upload failed:', error);
+      toast.error('Failed to upload image');
+      throw error;
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  // Handle image selection from file input
+  const handleImageFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !editor) return;
+
+    try {
+      const url = await handleImageUpload(file);
+      editor.chain().focus().setImage({ src: url }).run();
+      toast.success('Image added');
+    } catch (error) {
+      // Error already handled in handleImageUpload
+    }
+    
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   // TipTap editor
   const editor = useEditor({
     extensions: [
       StarterKit,
       Underline,
       Link.configure({ openOnClick: false }),
-      Placeholder.configure({ placeholder: 'Start typing your note...' }),
+      TiptapImage.configure({
+        inline: true,
+        allowBase64: false,
+        HTMLAttributes: {
+          class: 'max-w-full h-auto rounded-lg my-4',
+        },
+      }),
+      Placeholder.configure({ 
+        placeholder: 'Start typing your note... (Drag & drop or paste images)',
+        emptyEditorClass: 'is-editor-empty',
+      }),
     ],
     content: existingNote?.content || '<p></p>',
     onUpdate: ({ editor }) => {
@@ -94,6 +144,53 @@ export const InlineNoteEditor: React.FC<InlineNoteEditorProps> = ({ noteId, onCl
     editorProps: {
       attributes: {
         class: 'prose prose-sm dark:prose-invert max-w-none focus:outline-none min-h-[400px] px-6 py-4',
+      },
+      // Handle drag and drop
+      handleDrop: (view, event, slice, moved) => {
+        if (!moved && event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0]) {
+          const file = event.dataTransfer.files[0];
+          if (file.type.startsWith('image/')) {
+            event.preventDefault();
+            
+            handleImageUpload(file).then((url) => {
+              const { schema } = view.state;
+              const coordinates = view.posAtCoords({ left: event.clientX, top: event.clientY });
+              if (coordinates) {
+                const node = schema.nodes.image.create({ src: url });
+                const transaction = view.state.tr.insert(coordinates.pos, node);
+                view.dispatch(transaction);
+                toast.success('Image added');
+              }
+            }).catch(() => {
+              // Error already handled
+            });
+            
+            return true;
+          }
+        }
+        return false;
+      },
+      // Handle paste
+      handlePaste: (view, event, slice) => {
+        const items = event.clipboardData?.items;
+        if (!items) return false;
+
+        for (const item of Array.from(items)) {
+          if (item.type.startsWith('image/')) {
+            event.preventDefault();
+            const file = item.getAsFile();
+            if (file) {
+              handleImageUpload(file).then((url) => {
+                editor?.chain().focus().setImage({ src: url }).run();
+                toast.success('Image pasted');
+              }).catch(() => {
+                // Error already handled
+              });
+            }
+            return true;
+          }
+        }
+        return false;
       },
     },
   });
@@ -492,6 +589,33 @@ export const InlineNoteEditor: React.FC<InlineNoteEditorProps> = ({ noteId, onCl
           >
             <Code className="w-4 h-4" />
           </button>
+          
+          <div className="w-px h-6 bg-border mx-2" />
+          
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploadingImage}
+            className={cn(
+              'p-2 rounded hover:bg-accent transition-colors relative',
+              isUploadingImage && 'opacity-50 cursor-not-allowed'
+            )}
+            title="Add image"
+          >
+            {isUploadingImage ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <ImageIcon className="w-4 h-4" />
+            )}
+          </button>
+          
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageFileSelect}
+            className="hidden"
+          />
         </div>
       )}
 
