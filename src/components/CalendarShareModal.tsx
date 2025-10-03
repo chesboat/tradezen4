@@ -177,31 +177,26 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
   };
 
   const generateShareCaption = () => {
-    // Generate public share link
-    const payload = buildRenderData();
-    const themeParam = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
-    const dataParam = encodeURIComponent(btoa(JSON.stringify(payload)));
-    const shareUrl = `${window.location.origin}/share/calendar?theme=${themeParam}&accent=${accentColor}&data=${dataParam}`;
-    
-    // Calculate win rate
-    const totalWins = weeklyData.reduce((sum, week) => {
-      const weekDays = calendarData.weeks[weeklyData.indexOf(week)]?.filter((day: any) => !day.isOtherMonth && !day.isWeekend && day.tradesCount > 0) || [];
-      return sum + weekDays.filter((day: any) => day.pnl > 0).length;
-    }, 0);
-    const winRate = totalTrades > 0 ? Math.round((totalWins / totalTrades) * 100) : 0;
-    
-    // Build caption with stats
+    // Build caption with stats (no URL - it's too long for tweets)
     const pnlSign = monthlyPnL >= 0 ? '+' : '';
+    
+    // Calculate win rate from actual calendar data (days with positive P&L)
+    const tradingDays = calendarData.weeks.flat().filter((day: any) => 
+      !day.isOtherMonth && !day.isWeekend && day.tradesCount > 0
+    );
+    const winningDays = tradingDays.filter((day: any) => day.pnl > 0).length;
+    const winRate = tradingDays.length > 0 ? Math.round((winningDays / tradingDays.length) * 100) : 0;
+    
     return {
       caption: `${currentMonth} ${currentYear} 📊
 
 P&L: ${pnlSign}${formatCurrencyApple(monthlyPnL, { showSign: false })}
-${totalTrades} trade${totalTrades !== 1 ? 's' : ''}${winRate > 0 ? `, ${winRate}% win rate` : ''}
+${totalTrades} trade${totalTrades !== 1 ? 's' : ''}, ${winRate}% win rate
 
 Refining my edge, daily.
 
-${shareUrl}`,
-      shareUrl
+refine.trading`,
+      shareUrl: `${window.location.origin}/share/calendar` // Shortened URL for CTA
     };
   };
 
