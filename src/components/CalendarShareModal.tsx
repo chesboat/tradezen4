@@ -176,8 +176,42 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
     };
   };
 
-  const generateShareCaption = () => {
-    // Build caption with stats (no URL - it's too long for tweets)
+  const createPublicShareLink = async (): Promise<string> => {
+    try {
+      // Generate short ID for the share
+      const shareId = Math.random().toString(36).slice(2, 10);
+      
+      // Build share payload
+      const payload = {
+        id: shareId,
+        type: 'calendar',
+        month: currentMonth,
+        year: currentYear,
+        monthlyPnl: monthlyPnL,
+        totalTrades,
+        calendarData: buildRenderData(),
+        theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
+        accentColor,
+        isPublic: true,
+        createdAt: new Date().toISOString(),
+      };
+      
+      // Save to Firestore public shares
+      const { db } = await import('@/lib/firebase');
+      const { doc, setDoc, collection } = await import('firebase/firestore');
+      const shareRef = doc(collection(db, 'publicShares'), shareId);
+      await setDoc(shareRef, payload);
+      
+      // Return short URL
+      return `${window.location.origin}/share/c/${shareId}`;
+    } catch (error) {
+      console.error('Failed to create public share:', error);
+      // Fallback to homepage if share creation fails
+      return `${window.location.origin}`;
+    }
+  };
+
+  const generateShareCaption = async () => {
     const pnlSign = monthlyPnL >= 0 ? '+' : '';
     
     // Calculate win rate from actual calendar data (days with positive P&L)
@@ -187,6 +221,9 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
     const winningDays = tradingDays.filter((day: any) => day.pnl > 0).length;
     const winRate = tradingDays.length > 0 ? Math.round((winningDays / tradingDays.length) * 100) : 0;
     
+    // Create public share link
+    const shareUrl = await createPublicShareLink();
+    
     return {
       caption: `${currentMonth} ${currentYear} 📊
 
@@ -195,8 +232,8 @@ ${totalTrades} trade${totalTrades !== 1 ? 's' : ''}, ${winRate}% win rate
 
 Refining my edge, daily.
 
-refine.trading`,
-      shareUrl: `${window.location.origin}/share/calendar` // Shortened URL for CTA
+${shareUrl}`,
+      shareUrl
     };
   };
 
@@ -239,8 +276,8 @@ refine.trading`,
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
       
-      // Open X.com with pre-filled post
-      const { caption } = generateShareCaption();
+      // Open X.com with pre-filled post (including share link)
+      const { caption } = await generateShareCaption();
       const xUrl = `https://x.com/intent/tweet?text=${encodeURIComponent(caption)}`;
       window.open(xUrl, '_blank');
       
@@ -292,8 +329,8 @@ refine.trading`,
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
       
-      // Copy caption for Instagram
-      const { caption } = generateShareCaption();
+      // Copy caption for Instagram (with share link)
+      const { caption } = await generateShareCaption();
       try {
         await navigator.clipboard.writeText(caption);
         toast.success('📸 Image downloaded! Caption copied - open Instagram and paste 🚀');
@@ -340,7 +377,7 @@ refine.trading`,
         }, 'image/png');
       });
       
-      const { caption, shareUrl } = generateShareCaption();
+      const { caption, shareUrl } = await generateShareCaption();
       
       // Try native share API first (works great on mobile)
       if (navigator.share && navigator.canShare) {

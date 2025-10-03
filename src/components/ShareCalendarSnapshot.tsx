@@ -23,17 +23,46 @@ type RenderData = {
   monthlyPnl: number;
 };
 
-export const ShareCalendarSnapshot: React.FC = () => {
+interface ShareCalendarSnapshotProps {
+  data?: RenderData;
+  theme?: 'light' | 'dark';
+  accentColor?: 'blue' | 'purple' | 'green' | 'orange' | 'red' | 'pink' | 'mono';
+}
+
+export const ShareCalendarSnapshot: React.FC<ShareCalendarSnapshotProps> = ({ 
+  data: propsData, 
+  theme: propsTheme, 
+  accentColor: propsAccentColor 
+}) => {
+  // Support both props (new) and URL params (legacy)
   const params = new URLSearchParams(window.location.search);
-  const theme = (params.get('theme') as 'light' | 'dark') || 'dark';
-  const accentColor = (params.get('accent') as 'blue' | 'purple' | 'green' | 'orange' | 'red' | 'pink' | 'mono') || 'blue';
-  const raw = params.get('data') || '';
-  let data: RenderData | null = null;
-  try {
-    const json = atob(decodeURIComponent(raw));
-    const parsed = JSON.parse(json);
-    // Normalize dates
-    parsed.weeks = (parsed.weeks || []).map((w: any[]) => w.map((d: any) => {
+  const theme = propsTheme || (params.get('theme') as 'light' | 'dark') || 'dark';
+  const accentColor = propsAccentColor || (params.get('accent') as 'blue' | 'purple' | 'green' | 'orange' | 'red' | 'pink' | 'mono') || 'blue';
+  
+  let data: RenderData | null = propsData || null;
+  
+  // If no props data, try URL params (legacy support)
+  if (!data) {
+    const raw = params.get('data') || '';
+    try {
+      const json = atob(decodeURIComponent(raw));
+      const parsed = JSON.parse(json);
+      // Normalize dates
+      parsed.weeks = (parsed.weeks || []).map((w: any[]) => w.map((d: any) => {
+        const dateObj = typeof d.date === 'string' ? new Date(d.date) : d.date;
+        return {
+          ...d,
+          date: dateObj,
+          isWeekend: d.isWeekend ?? (dateObj.getDay() === 0 || dateObj.getDay() === 6)
+        };
+      }));
+      data = parsed;
+    } catch (e) {
+      console.error('Failed to parse share data:', e);
+    }
+  } else {
+    // Normalize dates from props
+    data.weeks = (data.weeks || []).map((w: any[]) => w.map((d: any) => {
       const dateObj = typeof d.date === 'string' ? new Date(d.date) : d.date;
       return {
         ...d,
@@ -41,9 +70,6 @@ export const ShareCalendarSnapshot: React.FC = () => {
         isWeekend: d.isWeekend ?? (dateObj.getDay() === 0 || dateObj.getDay() === 6)
       };
     }));
-    data = parsed;
-  } catch (e) {
-    console.error('Failed to parse share data:', e);
   }
 
   const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
