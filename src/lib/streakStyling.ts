@@ -17,11 +17,25 @@ export function getStreakStyling(streak: number, dayPosition?: number): StreakSt
   // dayPosition: how many days ago this flame is (0 = today, 1 = yesterday, etc.)
   const isToday = dayPosition === 0;
   
-  // 30+ days: Legendary (Gold with shimmer)
+  // 60+ days: ULTRA LEGENDARY - Blue Flame (Hottest!)
+  if (streak >= 60) {
+    return {
+      className: "text-cyan-400",
+      glowClass: "drop-shadow-[0_0_12px_rgba(34,211,238,1)]",
+      animationType: 'shimmer',
+      tooltip: isToday 
+        ? `💎 ${streak} day ULTRA streak! Blue flame achieved!`
+        : `Day ${streak} - Blue flame!`,
+      badge: '💎 Ultra Legendary',
+      milestone: 'legendary'
+    };
+  }
+  
+  // 30-59 days: Legendary - Yellow/White (Very Hot)
   if (streak >= 30) {
     return {
-      className: "text-yellow-500",
-      glowClass: "drop-shadow-[0_0_10px_rgba(234,179,8,0.9)]",
+      className: "text-yellow-400",
+      glowClass: "drop-shadow-[0_0_10px_rgba(250,204,21,0.9)]",
       animationType: 'shimmer',
       tooltip: isToday 
         ? `✨ ${streak} day LEGENDARY streak! You're unstoppable!`
@@ -31,25 +45,25 @@ export function getStreakStyling(streak: number, dayPosition?: number): StreakSt
     };
   }
   
-  // 14-29 days: Fortnight Fire (Deep orange with strong pulse)
+  // 14-29 days: Fortnight Fire - Red-Orange (Getting Hot!)
   if (streak >= 14) {
     return {
-      className: "text-orange-600",
-      glowClass: "drop-shadow-[0_0_8px_rgba(234,88,12,0.8)]",
+      className: "text-red-500",
+      glowClass: "drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]",
       animationType: 'pulse-strong',
       tooltip: isToday
-        ? `🔥🔥 ${streak} day streak! You're on fire!`
-        : `Day ${streak} - On fire!`,
-      badge: '⚡ Fortnight Fire',
+        ? `🔥🔥 ${streak} day streak! You're burning hot!`
+        : `Day ${streak} - Burning hot!`,
+      badge: '🔥 Fortnight Fire',
       milestone: 'fortnight'
     };
   }
   
-  // 7-13 days: Week Warrior (Orange with soft pulse + stronger glow)
+  // 7-13 days: Week Warrior - Deep Orange (Hot)
   if (streak >= 7) {
     return {
-      className: "text-orange-500",
-      glowClass: "drop-shadow-[0_0_6px_rgba(249,115,22,0.7)]",
+      className: "text-orange-600",
+      glowClass: "drop-shadow-[0_0_6px_rgba(234,88,12,0.7)]",
       animationType: 'pulse-soft',
       tooltip: isToday
         ? `🔥 ${streak} day streak! Keep it going!`
@@ -59,11 +73,25 @@ export function getStreakStyling(streak: number, dayPosition?: number): StreakSt
     };
   }
   
-  // 3-6 days: Building Momentum (Brighter orange, visible glow)
+  // 5-6 days: Heating Up - Brighter orange, bigger glow
+  if (streak >= 5) {
+    return {
+      className: "text-orange-500",
+      glowClass: "drop-shadow-[0_0_5px_rgba(249,115,22,0.7)]",
+      animationType: 'none',
+      tooltip: isToday
+        ? `🔥 ${streak} day streak - Heating up!`
+        : `Day ${streak} - Heating up`,
+      badge: null,
+      milestone: 'building'
+    };
+  }
+  
+  // 3-4 days: Building Momentum - Orange, small glow
   if (streak >= 3) {
     return {
       className: "text-orange-500",
-      glowClass: "drop-shadow-[0_0_4px_rgba(249,115,22,0.6)]",
+      glowClass: "drop-shadow-[0_0_3px_rgba(249,115,22,0.5)]",
       animationType: 'none',
       tooltip: isToday
         ? `🔥 ${streak} day streak - Momentum building!`

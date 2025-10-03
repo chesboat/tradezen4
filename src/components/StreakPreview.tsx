@@ -12,16 +12,18 @@ export const StreakPreview: React.FC = () => {
   const streakLevels = [
     { streak: 1, label: 'Day 1', description: 'Starting out' },
     { streak: 2, label: 'Day 2', description: 'Second day' },
-    { streak: 3, label: 'Day 3', description: 'Glow begins' },
+    { streak: 3, label: 'Day 3', description: 'Small glow appears' },
     { streak: 4, label: 'Day 4', description: 'Building momentum' },
-    { streak: 5, label: 'Day 5', description: 'Momentum' },
-    { streak: 6, label: 'Day 6', description: 'Momentum' },
+    { streak: 5, label: 'Day 5', description: 'Heating up!' },
+    { streak: 6, label: 'Day 6', description: 'Getting hotter' },
     { streak: 7, label: 'Day 7', description: 'Week - Pulse starts' },
     { streak: 10, label: 'Day 10', description: 'Week warrior' },
-    { streak: 14, label: 'Day 14', description: 'Fortnight - Strong pulse' },
-    { streak: 21, label: 'Day 21', description: 'On fire!' },
-    { streak: 30, label: 'Day 30', description: 'LEGENDARY - Gold shimmer' },
-    { streak: 50, label: 'Day 50', description: 'LEGENDARY' },
+    { streak: 14, label: 'Day 14', description: 'Red flame - Burning hot!' },
+    { streak: 21, label: 'Day 21', description: 'Still burning!' },
+    { streak: 30, label: 'Day 30', description: 'Yellow - Very hot!' },
+    { streak: 45, label: 'Day 45', description: 'LEGENDARY gold' },
+    { streak: 60, label: 'Day 60', description: 'BLUE FLAME - Hottest!' },
+    { streak: 90, label: 'Day 90', description: 'ULTRA LEGENDARY' },
   ];
 
   return (
@@ -117,10 +119,12 @@ export const StreakPreview: React.FC = () => {
                   <div className="flex justify-between">
                     <span>Color:</span>
                     <span className="font-mono">
-                      {streakStyle.className.includes('yellow') ? 'yellow-500' :
-                       streakStyle.className.includes('orange-600') ? 'orange-600' :
-                       streakStyle.className.includes('orange-500') ? 'orange-500' :
-                       streakStyle.className.includes('orange-400') ? 'orange-400' : 'gray'}
+                      {streakStyle.className.includes('cyan') ? 'cyan-400 💙' :
+                       streakStyle.className.includes('yellow') ? 'yellow-400 💛' :
+                       streakStyle.className.includes('red') ? 'red-500 ❤️' :
+                       streakStyle.className.includes('orange-600') ? 'orange-600 🔥' :
+                       streakStyle.className.includes('orange-500') ? 'orange-500 🧡' :
+                       streakStyle.className.includes('orange-400') ? 'orange-400 🧡' : 'gray'}
                     </span>
                   </div>
                   <div className="flex justify-between">
@@ -151,52 +155,73 @@ export const StreakPreview: React.FC = () => {
         {/* Legend */}
         <div className="mt-12 bg-muted/30 border border-border rounded-2xl p-6">
           <h2 className="text-xl font-semibold text-foreground mb-4">
-            🎨 Design Tiers
+            🔥 Flame Temperature Physics - Design Tiers
           </h2>
+          <p className="text-sm text-muted-foreground mb-6">
+            As your streak grows, your flame gets hotter and changes color - just like real fire!
+          </p>
           <div className="grid md:grid-cols-2 gap-4 text-sm">
             <div>
-              <div className="font-semibold text-foreground mb-2">Days 1-2: Warm-up</div>
+              <div className="font-semibold text-foreground mb-2">Days 1-2: Warm-up 🧡</div>
               <ul className="space-y-1 text-muted-foreground">
-                <li>• Orange-400 (lighter)</li>
+                <li>• Orange-400 (cool flame)</li>
                 <li>• No glow</li>
                 <li>• No animation</li>
-                <li>• Baseline look</li>
+                <li>• Just getting started</li>
               </ul>
             </div>
             <div>
-              <div className="font-semibold text-foreground mb-2">Days 3-6: Building Momentum</div>
+              <div className="font-semibold text-foreground mb-2">Days 3-4: Building Momentum 🧡</div>
               <ul className="space-y-1 text-muted-foreground">
-                <li>• Orange-500 (brighter)</li>
-                <li>• 4px glow appears</li>
+                <li>• Orange-500 (warming up)</li>
+                <li>• 3px glow appears</li>
                 <li>• No animation</li>
                 <li>• First visual upgrade</li>
               </ul>
             </div>
             <div>
-              <div className="font-semibold text-foreground mb-2">Days 7-13: Week Warrior 💪</div>
+              <div className="font-semibold text-foreground mb-2">Days 5-6: Heating Up 🔥</div>
               <ul className="space-y-1 text-muted-foreground">
-                <li>• Orange-500 (same)</li>
-                <li>• 6px glow (bigger)</li>
+                <li>• Orange-500 (same color)</li>
+                <li>• 5px glow (bigger)</li>
+                <li>• No animation</li>
+                <li>• Intensity building</li>
+              </ul>
+            </div>
+            <div>
+              <div className="font-semibold text-foreground mb-2">Days 7-13: Week Warrior 🔥</div>
+              <ul className="space-y-1 text-muted-foreground">
+                <li>• Orange-600 (hot flame)</li>
+                <li>• 6px glow</li>
                 <li>• Soft pulse animation</li>
                 <li>• First animation milestone</li>
               </ul>
             </div>
             <div>
-              <div className="font-semibold text-foreground mb-2">Days 14-29: Fortnight Fire ⚡</div>
+              <div className="font-semibold text-foreground mb-2">Days 14-29: Burning Hot ❤️</div>
               <ul className="space-y-1 text-muted-foreground">
-                <li>• Orange-600 (deeper)</li>
+                <li>• Red-500 (very hot!)</li>
                 <li>• 8px glow (intense)</li>
                 <li>• Strong pulse animation</li>
-                <li>• Power user territory</li>
+                <li>• Flame turns red!</li>
+              </ul>
+            </div>
+            <div>
+              <div className="font-semibold text-foreground mb-2">Days 30-59: LEGENDARY Gold 🏆</div>
+              <ul className="space-y-1 text-muted-foreground">
+                <li>• Yellow-400 (extremely hot)</li>
+                <li>• 10px glow (epic)</li>
+                <li>• Shimmer animation</li>
+                <li>• Golden flame achieved!</li>
               </ul>
             </div>
             <div className="md:col-span-2">
-              <div className="font-semibold text-foreground mb-2">Days 30+: LEGENDARY 🏆✨</div>
+              <div className="font-semibold text-foreground mb-2">Days 60+: ULTRA Blue Flame 💙💎</div>
               <ul className="space-y-1 text-muted-foreground">
-                <li>• Yellow-500 (GOLD!)</li>
-                <li>• 10px glow (maximum)</li>
+                <li>• Cyan-400 (HOTTEST possible flame)</li>
+                <li>• 12px glow (maximum)</li>
                 <li>• Shimmer animation</li>
-                <li>• Ultimate achievement - Apple Activity Rings vibes</li>
+                <li>• Ultimate achievement - The hottest flame in physics! Ultra rare.</li>
               </ul>
             </div>
           </div>
