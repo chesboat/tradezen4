@@ -48,13 +48,8 @@ function normalizeDateLike(value: any | undefined): string | undefined {
 function deserializeTasks(raw: any[]): ImprovementTask[] {
   // Handle corrupted localStorage data from previous bug
   if (!raw || !Array.isArray(raw)) {
-    console.warn('[TodoStore] Invalid tasks data in localStorage, clearing...');
-    // Immediately clear corrupted data to prevent infinite loops
-    try {
-      localStorage.removeItem(STORAGE_KEYS.TODO_TASKS);
-    } catch (e) {
-      console.error('[TodoStore] Failed to clear corrupted tasks:', e);
-    }
+    console.warn('[TodoStore] Invalid tasks data in localStorage, will clear on next save');
+    // Don't block - let the store initialize with empty array and clear on next write
     return [];
   }
   
@@ -82,16 +77,14 @@ function deserializeTasks(raw: any[]): ImprovementTask[] {
       };
     }).filter(Boolean) as ImprovementTask[];
     
-    console.log(`[TodoStore] Successfully deserialized ${validTasks.length} tasks`);
+    // Only log if we have tasks to avoid console spam
+    if (validTasks.length > 0) {
+      console.log(`[TodoStore] Successfully loaded ${validTasks.length} tasks`);
+    }
     return validTasks;
   } catch (error) {
-    console.error('[TodoStore] Error deserializing tasks, clearing localStorage:', error);
-    // Clear corrupted data
-    try {
-      localStorage.removeItem(STORAGE_KEYS.TODO_TASKS);
-    } catch (e) {
-      console.error('[TodoStore] Failed to clear corrupted tasks:', e);
-    }
+    console.error('[TodoStore] Error deserializing tasks:', error);
+    // Don't block - return empty and let Firestore sync fix it
     return [];
   }
 }
@@ -104,6 +97,19 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 
   initialize: async () => {
     try {
+      // Non-blocking: Proactively clean up any corrupted localStorage in the background
+      queueMicrotask(() => {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEYS.TODO_TASKS, null as any);
+          if (raw !== null && (!Array.isArray(raw) || raw.some((t: any) => !t || !t.id || !t.text))) {
+            console.log('[TodoStore] Cleaning up invalid localStorage data...');
+            localStorage.removeItem(STORAGE_KEYS.TODO_TASKS);
+          }
+        } catch (e) {
+          // Ignore cleanup errors - not critical
+        }
+      });
+
       const tasks = await taskService.getAll();
       // Keep most recent first
       const normalized = tasks
@@ -132,9 +138,17 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       const merged = Array.from(byId.values()).sort((a, b) => (new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
 
       set({ tasks: merged, categories });
-      localStorage.setItem(STORAGE_KEYS.TODO_TASKS, JSON.stringify(merged));
+      
+      // Write clean data back to localStorage
+      try {
+        localStorage.setItem(STORAGE_KEYS.TODO_TASKS, JSON.stringify(merged));
+      } catch (writeErr) {
+        console.warn('[TodoStore] Failed to write to localStorage:', writeErr);
+        // Continue anyway - Firestore is source of truth
+      }
     } catch (err) {
-      console.error('Failed to initialize tasks:', err);
+      console.error('[TodoStore] Failed to initialize tasks:', err);
+      // Don't throw - let the app load with empty tasks
     }
   },
 

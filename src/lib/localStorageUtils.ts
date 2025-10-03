@@ -4,26 +4,60 @@
 
 export const localStorage = {
   /**
-   * Get item from localStorage with JSON parsing
+   * Get item from localStorage with JSON parsing and validation
    */
   getItem: <T>(key: string, defaultValue: T): T => {
     try {
       const item = window.localStorage.getItem(key);
-      return item ? JSON.parse(item) : defaultValue;
+      if (!item) return defaultValue;
+      
+      const parsed = JSON.parse(item);
+      
+      // Validate data structure matches expected type
+      // If defaultValue is an array, ensure parsed is also an array
+      if (Array.isArray(defaultValue) && !Array.isArray(parsed)) {
+        console.warn(`[localStorage] Expected array for key "${key}", got ${typeof parsed}. Clearing invalid data.`);
+        window.localStorage.removeItem(key);
+        return defaultValue;
+      }
+      
+      // If defaultValue is an object (but not array), ensure parsed is too
+      if (defaultValue !== null && typeof defaultValue === 'object' && !Array.isArray(defaultValue)) {
+        if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+          console.warn(`[localStorage] Expected object for key "${key}", got ${typeof parsed}. Clearing invalid data.`);
+          window.localStorage.removeItem(key);
+          return defaultValue;
+        }
+      }
+      
+      return parsed as T;
     } catch (error) {
-      console.error(`Error reading localStorage key "${key}":`, error);
+      console.error(`[localStorage] Error reading key "${key}":`, error);
+      // Proactively clear corrupted data
+      try {
+        window.localStorage.removeItem(key);
+      } catch (e) {
+        // Ignore cleanup errors
+      }
       return defaultValue;
     }
   },
 
   /**
-   * Set item in localStorage with JSON stringification
+   * Set item in localStorage with JSON stringification and error recovery
    */
   setItem: <T>(key: string, value: T): void => {
     try {
-      window.localStorage.setItem(key, JSON.stringify(value));
+      const serialized = JSON.stringify(value);
+      window.localStorage.setItem(key, serialized);
     } catch (error) {
-      console.error(`Error setting localStorage key "${key}":`, error);
+      // Check if quota exceeded
+      if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+        console.error(`[localStorage] Quota exceeded for key "${key}". Consider clearing old data.`);
+      } else {
+        console.error(`[localStorage] Error setting key "${key}":`, error);
+      }
+      // Continue execution - don't block the app
     }
   },
 
