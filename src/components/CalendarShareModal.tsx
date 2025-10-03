@@ -178,8 +178,11 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
 
   const createPublicShareLink = async (): Promise<string> => {
     try {
+      console.log('[CalendarShare] Creating public share...');
+      
       // Generate short ID for the share
       const shareId = Math.random().toString(36).slice(2, 10);
+      console.log('[CalendarShare] Generated share ID:', shareId);
       
       // Build share payload
       const payload = {
@@ -196,16 +199,24 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
         createdAt: new Date().toISOString(),
       };
       
+      console.log('[CalendarShare] Payload:', payload);
+      
       // Save to Firestore public shares
       const { db } = await import('@/lib/firebase');
       const { doc, setDoc, collection } = await import('firebase/firestore');
       const shareRef = doc(collection(db, 'publicShares'), shareId);
+      
+      console.log('[CalendarShare] Saving to Firestore...');
       await setDoc(shareRef, payload);
+      console.log('[CalendarShare] Saved successfully!');
       
       // Return short URL
-      return `${window.location.origin}/share/c/${shareId}`;
+      const shareUrl = `${window.location.origin}/share/c/${shareId}`;
+      console.log('[CalendarShare] Share URL:', shareUrl);
+      return shareUrl;
     } catch (error) {
-      console.error('Failed to create public share:', error);
+      console.error('[CalendarShare] Failed to create public share:', error);
+      toast.error('Failed to create share link. Using homepage instead.');
       // Fallback to homepage if share creation fails
       return `${window.location.origin}`;
     }
