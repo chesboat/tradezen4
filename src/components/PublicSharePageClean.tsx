@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/localStorageUtils';
 import { cn } from '@/lib/utils';
+import { PublicShareNav } from './PublicShareNav';
 
 // Helper functions for loading share data
 const loadShareImages = async (shareId: string): Promise<{ [blockId: string]: string[] }> => {
@@ -198,6 +199,9 @@ export const PublicSharePageClean: React.FC = () => {
 
   return (
     <>
+      {/* Navigation for logged-in users */}
+      <PublicShareNav />
+      
       {/* Apple-style: Clean solid backgrounds in both light and dark modes */}
       <div className="min-h-screen bg-white dark:bg-background py-4 md:py-12 px-4">
         <motion.div

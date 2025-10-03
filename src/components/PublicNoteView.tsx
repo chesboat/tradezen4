@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { PublicShareNav } from './PublicShareNav';
 
 const categoryIcons = {
   study: <BookOpen className="w-4 h-4" />,
@@ -151,6 +152,9 @@ export const PublicNoteView: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Navigation for logged-in users */}
+      <PublicShareNav />
+      
       <style>{`
         .prose a {
           word-break: break-all;

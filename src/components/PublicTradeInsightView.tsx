@@ -15,6 +15,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { useSystemTheme } from '@/hooks/useSystemTheme';
+import { PublicShareNav } from './PublicShareNav';
 
 interface TradeInsightData {
   id: string;
@@ -139,6 +140,9 @@ export const PublicTradeInsightView: React.FC = () => {
 
   return (
     <>
+      {/* Navigation for logged-in users */}
+      <PublicShareNav />
+      
       <div className="min-h-screen bg-white dark:bg-background">
         {/* Header */}
         <header className="border-b border-border/50 backdrop-blur-xl bg-background/80 sticky top-0 z-40">
