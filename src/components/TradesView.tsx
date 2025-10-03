@@ -252,9 +252,12 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
   // Date inline editing handlers (Apple-style)
   const handleDateDoubleClick = (trade: Trade) => {
     setEditingDateId(trade.id);
-    // Format date as YYYY-MM-DD for input
+    // Format date as YYYY-MM-DD for input (use local date to avoid timezone issues)
     const date = new Date(trade.entryTime);
-    setEditingDateValue(date.toISOString().split('T')[0]);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    setEditingDateValue(`${year}-${month}-${day}`);
   };
 
   const handleDateSave = async (tradeId: string, trade: Trade) => {
