@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
-import ShareCalendarSnapshot from './components/ShareCalendarSnapshot';
+import { ShareCalendarSnapshot } from './components/ShareCalendarSnapshot';
 
 const mount = (el: HTMLElement, node: React.ReactNode) => {
   ReactDOM.createRoot(el).render(

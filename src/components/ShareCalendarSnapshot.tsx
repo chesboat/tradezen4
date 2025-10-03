@@ -163,7 +163,8 @@ export const ShareCalendarSnapshot: React.FC = () => {
               {data.weeks.map((week, weekIndex) => (
                 <div key={weekIndex} className="grid grid-cols-8 gap-1">
                   {week.map((day, dayIndex) => {
-                    const isWeekend = day.date.getDay() === 0 || day.date.getDay() === 6;
+                    const dayDate = new Date(day.date);
+                    const isWeekend = dayDate.getDay() === 0 || dayDate.getDay() === 6;
                     return (
                       <div
                         key={`${weekIndex}-${dayIndex}`}
@@ -172,7 +173,7 @@ export const ShareCalendarSnapshot: React.FC = () => {
                         <div className="flex flex-col h-full">
                           <div className="flex items-center justify-between px-2 pt-2">
                             <span className={cn('text-sm font-medium', day.isOtherMonth ? 'text-muted-foreground' : 'text-foreground')}>
-                              {day.date.getDate()}
+                              {dayDate.getDate()}
                             </span>
                             <div className="flex items-center gap-1">
                               {day.hasReflection && <BookOpen className="w-3 h-3 text-green-500" />}
