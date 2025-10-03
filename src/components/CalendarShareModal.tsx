@@ -478,16 +478,46 @@ ${shareUrl}`,
               </p>
             </div>
             <div className="flex items-center gap-2">
-              {/* Share to Public Page */}
+              {/* X.com Share */}
+              <motion.button
+                onClick={handleShare}
+                disabled={isGenerating}
+                className="px-4 py-2 bg-black dark:bg-white dark:text-black text-white rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2 disabled:opacity-50"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                title="Share to X"
+              >
+                {/* X logo (not Twitter) */}
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                </svg>
+                <span className="hidden sm:inline">X</span>
+              </motion.button>
+              
+              {/* Instagram Share */}
+              <motion.button
+                onClick={handleShare}
+                disabled={isGenerating}
+                className="px-4 py-2 bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 text-white rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2 disabled:opacity-50"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                title="Share to Instagram"
+              >
+                <Instagram className="w-4 h-4" />
+                <span className="hidden sm:inline">IG</span>
+              </motion.button>
+              
+              {/* More Share Options */}
               <motion.button
                 onClick={handleShare}
                 disabled={isGenerating}
                 className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2 disabled:opacity-50"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
+                title="More options"
               >
                 <Share className="w-4 h-4" />
-                {isGenerating ? 'Generating...' : 'Share'}
+                <span className="hidden sm:inline">More</span>
               </motion.button>
               
               <motion.button
