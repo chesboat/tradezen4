@@ -50,6 +50,7 @@ const bottomNavItems: NavItem[] = [
 
 // "More" tab items
 const moreTabItems: NavItem[] = [
+  { id: 'health', label: 'Trading Health', icon: Zap },
   { id: 'trades', label: 'Trades', icon: TrendingUp },
   { id: 'notes', label: 'Notes', icon: FileText },
   { id: 'habits', label: 'Habits', icon: Target },

@@ -77,6 +77,13 @@ const navGroups: NavGroup[] = [
         href: '/',
       },
       {
+        id: 'health',
+        label: 'Trading Health',
+        icon: Zap,
+        href: '/health',
+        badge: 'New',
+      },
+      {
         id: 'calendar',
         label: 'Calendar',
         icon: Calendar,

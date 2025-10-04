@@ -27,6 +27,7 @@ import { QuickNoteModal } from './components/QuickNoteModal';
 import InsightHistoryView from './components/InsightHistoryView';
 import HabitExperimentView from './components/HabitExperimentView';
 import PremiumInsightsShowcase from './components/PremiumInsightsShowcase';
+import { TradingHealthView } from './components/TradingHealthView';
 import { CommandBar } from './components/CommandBar';
 import { AuthPage } from './components/auth/AuthPage';
 import { useSidebarStore } from './store/useSidebarStore';
@@ -259,6 +260,9 @@ function AppContent() {
     switch (currentView) {
       case 'dashboard':
         return <MinimalDashboard />;
+      
+      case 'health':
+        return <TradingHealthView />;
 
       case 'habits':
         return <HabitTracker />;
