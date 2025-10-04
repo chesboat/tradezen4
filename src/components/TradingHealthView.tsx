@@ -302,30 +302,48 @@ export const TradingHealthView: React.FC = () => {
             transition={{ delay: 0.2 }}
             className="bg-card/50 backdrop-blur-sm border border-border rounded-3xl p-6 sm:p-8"
           >
-            <HealthRings
-              metrics={metrics}
-              size="large"
-              showLabels={true}
-              onRingClick={(ring) => setSelectedRing(ring)}
-            />
+            <div className="flex flex-col items-center gap-6">
+              {/* Pure Rings */}
+              <HealthRings
+                metrics={metrics}
+                size="large"
+                showLabels={true}
+                onRingClick={(ring) => setSelectedRing(ring)}
+              />
 
-            {/* Overall Status */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.8 }}
-              className="mt-8 flex items-center justify-center gap-3"
-            >
-              <div className={cn('px-4 py-2 rounded-full text-sm font-semibold', status.bg, status.color)}>
-                {status.text}
-              </div>
-              {metrics.edge.trend !== 'stable' && (
-                <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                  {getTrendIcon(metrics.edge.trend)}
+              {/* Overall Score - Below Rings */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.8 }}
+                className="flex flex-col items-center gap-2"
+              >
+                <div className="text-6xl sm:text-7xl font-bold text-foreground">
+                  {overallScore}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Overall Health Score
+                </div>
+              </motion.div>
+
+              {/* Status Badge */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1 }}
+                className="flex items-center justify-center gap-3"
+              >
+                <div className={cn('px-4 py-2 rounded-full text-sm font-semibold', status.bg, status.color)}>
+                  {status.text}
+                </div>
+                {metrics.edge.trend !== 'stable' && (
+                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                    {getTrendIcon(metrics.edge.trend)}
                   <span>Overall trending {metrics.edge.trend}</span>
                 </div>
               )}
             </motion.div>
+            </div>
           </motion.div>
         )}
 

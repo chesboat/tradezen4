@@ -154,27 +154,6 @@ export const HealthRings: React.FC<HealthRingsProps> = ({
           })}
         </svg>
 
-        {/* Center score */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="flex flex-col items-center justify-center gap-1">
-            <motion.div
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.8, duration: 0.5 }}
-              className="text-6xl sm:text-7xl md:text-8xl font-bold tracking-tight text-foreground leading-none"
-            >
-              {Math.round((metrics.edge.value + metrics.consistency.value + metrics.riskControl.value) / 3)}
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1 }}
-              className="text-xs uppercase tracking-widest text-muted-foreground opacity-50"
-            >
-              Overall
-            </motion.div>
-          </div>
-        </div>
       </div>
 
       {/* Labels */}
