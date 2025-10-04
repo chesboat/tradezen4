@@ -253,14 +253,34 @@ function calculateRiskControlRing(
   // Max consecutive losses
   let maxConsecutiveLosses = 0;
   let currentLossStreak = 0;
+  let losingStreakTrades: Trade[] = [];
+  let longestLosingStreakTrades: Trade[] = [];
+  
   sortedTrades.forEach(trade => {
     if (classifyTradeResult(trade) === 'loss') {
       currentLossStreak++;
-      maxConsecutiveLosses = Math.max(maxConsecutiveLosses, currentLossStreak);
+      losingStreakTrades.push(trade);
+      if (currentLossStreak > maxConsecutiveLosses) {
+        maxConsecutiveLosses = currentLossStreak;
+        longestLosingStreakTrades = [...losingStreakTrades];
+      }
     } else {
       currentLossStreak = 0;
+      losingStreakTrades = [];
     }
   });
+
+  // Debug logging for losing streak
+  if (maxConsecutiveLosses > 5) {
+    console.log(`[Risk Control] Max consecutive losses: ${maxConsecutiveLosses}`);
+    console.log('[Risk Control] Losing streak trades:', longestLosingStreakTrades.map(t => ({
+      id: t.id,
+      symbol: t.symbol,
+      pnl: t.pnl,
+      result: t.result,
+      time: t.timestamp || t.entryTime || t.createdAt,
+    })));
+  }
 
   // Score: Lower drawdown = higher score
   // < 5% = excellent (90+)
