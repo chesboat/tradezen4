@@ -61,6 +61,7 @@ const timePeriodOptions: TimePeriodOption[] = [
 const HeroAnalyticsPnL: React.FC<{
   currentPnL: number;
   previousPnL: number;
+  expectancy: number;
   totalTrades: number;
   winRate: number;
   profitFactor: number;
@@ -71,7 +72,7 @@ const HeroAnalyticsPnL: React.FC<{
   onPeriodChange: (period: TimePeriod) => void;
   onOpenCustomPicker: () => void;
   onUpgradeClick: (feature: string) => void;
-}> = ({ currentPnL, previousPnL, totalTrades, winRate, profitFactor, selectedPeriod, customStartDate, customEndDate, hasCustomDateRanges, onPeriodChange, onOpenCustomPicker, onUpgradeClick }) => {
+}> = ({ currentPnL, previousPnL, expectancy, totalTrades, winRate, profitFactor, selectedPeriod, customStartDate, customEndDate, hasCustomDateRanges, onPeriodChange, onOpenCustomPicker, onUpgradeClick }) => {
   const [dropdownOpen, setDropdownOpen] = React.useState(false);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
 
@@ -205,6 +206,23 @@ const HeroAnalyticsPnL: React.FC<{
                 <span className="text-sm text-muted-foreground/70">vs last period</span>
               </motion.div>
             )}
+
+            {/* Expectancy - Apple-style predictive metric */}
+            <motion.div 
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="flex items-center gap-2 mt-3"
+            >
+              <Zap className="w-4 h-4 text-primary" />
+              <span className={cn(
+                "text-lg sm:text-xl font-semibold",
+                expectancy > 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
+              )}>
+                {formatCurrency(expectancy)}
+              </span>
+              <span className="text-sm text-muted-foreground">expectancy/trade</span>
+            </motion.div>
           </div>
 
           {/* Quick Stats */}
@@ -1545,7 +1563,12 @@ export const AppleAnalyticsDashboard: React.FC = () => {
       const totalLosses = Math.abs(lossTrades.reduce((sum, t) => sum + (t.pnl || 0), 0));
       const profitFactor = totalLosses > 0 ? totalWins / totalLosses : 0;
 
-      return { totalPnL, totalTrades: tradeList.length, winRate: winRateExclScratches, profitFactor };
+      // Calculate expectancy
+      const avgWin = winTrades.length > 0 ? totalWins / winTrades.length : 0;
+      const avgLoss = lossTrades.length > 0 ? totalLosses / lossTrades.length : 0;
+      const expectancy = (winRateExclScratches / 100) * avgWin - (1 - winRateExclScratches / 100) * avgLoss;
+
+      return { totalPnL, totalTrades: tradeList.length, winRate: winRateExclScratches, profitFactor, expectancy };
     };
 
     const current = calculateMetrics(filteredTrades);
@@ -1560,6 +1583,7 @@ export const AppleAnalyticsDashboard: React.FC = () => {
       <HeroAnalyticsPnL
         currentPnL={metrics.current.totalPnL}
         previousPnL={metrics.previous.totalPnL}
+        expectancy={metrics.current.expectancy}
         totalTrades={metrics.current.totalTrades}
         winRate={metrics.current.winRate}
         profitFactor={metrics.current.profitFactor}
