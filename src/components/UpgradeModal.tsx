@@ -113,10 +113,10 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, fea
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
             onClick={(e) => e.stopPropagation()}
-            className="bg-card border border-border rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden"
+            className="bg-card border border-border rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] flex flex-col overflow-hidden"
           >
             {/* Header */}
-            <div className="relative p-8 bg-gradient-to-br from-primary/10 via-purple-500/5 to-background border-b border-border">
+            <div className="relative p-4 sm:p-8 bg-gradient-to-br from-primary/10 via-purple-500/5 to-background border-b border-border flex-shrink-0">
               <button
                 onClick={onClose}
                 className="absolute top-4 right-4 p-2 hover:bg-muted rounded-lg transition-colors"
@@ -144,14 +144,14 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, fea
             </div>
 
             {/* Content */}
-            <div className="p-8 overflow-y-auto max-h-[60vh]">
+            <div className="p-4 sm:p-8 overflow-y-auto flex-1">
               {/* Pricing */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
                 {/* Monthly */}
                 <button
                   onClick={() => setBillingPeriod('monthly')}
                   className={cn(
-                    "p-6 rounded-xl transition-all text-left",
+                    "p-4 sm:p-6 rounded-xl transition-all text-left",
                     billingPeriod === 'monthly'
                       ? 'border-2 border-primary bg-primary/5'
                       : 'border border-border hover:border-primary/50'
@@ -169,7 +169,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, fea
                 <button
                   onClick={() => setBillingPeriod('annual')}
                   className={cn(
-                    "relative p-6 rounded-xl transition-all text-left",
+                    "relative p-4 sm:p-6 rounded-xl transition-all text-left",
                     billingPeriod === 'annual'
                       ? 'border-2 border-primary bg-primary/5'
                       : 'border border-border hover:border-primary/50'
@@ -190,7 +190,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, fea
               </div>
 
               {/* Features List */}
-              <div className="space-y-4 mb-8">
+              <div className="space-y-3 sm:space-y-4 mb-6 sm:mb-8">
                 <h3 className="text-lg font-semibold">Everything in Premium:</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {PREMIUM_FEATURES.map((feature, index) => {
@@ -211,8 +211,8 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, fea
               </div>
 
               {/* Trust Signals */}
-              <div className="border-t border-border pt-6">
-                <div className="flex items-center justify-center gap-8 text-sm text-muted-foreground">
+              <div className="border-t border-border pt-4 sm:pt-6 pb-2">
+                <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 text-xs sm:text-sm text-muted-foreground">
                   <div className="flex items-center gap-2">
                     <Check className="w-4 h-4 text-green-500" />
                     <span>Cancel anytime</span>
@@ -229,14 +229,14 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, fea
               </div>
             </div>
 
-            {/* Footer */}
-            <div className="p-6 border-t border-border bg-muted/20">
+            {/* Footer - Sticky */}
+            <div className="p-4 sm:p-6 border-t border-border bg-muted/20 flex-shrink-0">
               <button
                 onClick={() => {
                   // TODO: Open Stripe checkout
                   console.log('Open Stripe checkout');
                 }}
-                className="w-full py-3 bg-gradient-to-r from-primary to-purple-600 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+                className="w-full py-3 sm:py-3.5 bg-gradient-to-r from-primary to-purple-600 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
               >
                 <Sparkles className="w-5 h-5" />
                 {buttonText}
