@@ -106,8 +106,8 @@ function calculateEdgeRing(
   const winningTrades = currentTrades.filter(t => classifyTradeResult(t) === 'win');
   const losingTrades = currentTrades.filter(t => classifyTradeResult(t) === 'loss');
   
-  const totalWinningPnl = winningTrades.reduce((sum, t) => sum + Math.abs(t.pnl), 0);
-  const totalLosingPnl = losingTrades.reduce((sum, t) => sum + Math.abs(t.pnl), 0);
+  const totalWinningPnl = winningTrades.reduce((sum, t) => sum + Math.abs(t.pnl || 0), 0);
+  const totalLosingPnl = losingTrades.reduce((sum, t) => sum + Math.abs(t.pnl || 0), 0);
   
   const avgWin = winningTrades.length > 0 ? totalWinningPnl / winningTrades.length : 0;
   const avgLoss = losingTrades.length > 0 ? totalLosingPnl / losingTrades.length : 0;
@@ -135,11 +135,11 @@ function calculateEdgeRing(
     const { winRate: prevWinRate } = summarizeWinLoss(previousTrades);
     
     const prevAvgWin = prevWinningTrades.length > 0
-      ? prevWinningTrades.reduce((sum, t) => sum + Math.abs(t.pnl), 0) / prevWinningTrades.length
+      ? prevWinningTrades.reduce((sum, t) => sum + Math.abs(t.pnl || 0), 0) / prevWinningTrades.length
       : 0;
     
     const prevAvgLoss = prevLosingTrades.length > 0
-      ? prevLosingTrades.reduce((sum, t) => sum + Math.abs(t.pnl), 0) / prevLosingTrades.length
+      ? prevLosingTrades.reduce((sum, t) => sum + Math.abs(t.pnl || 0), 0) / prevLosingTrades.length
       : 0;
     
     const prevExpectancy = (prevWinRate / 100) * prevAvgWin - (1 - prevWinRate / 100) * prevAvgLoss;
@@ -226,7 +226,7 @@ function calculateRiskControlRing(
   let equity = sortedTrades[0].accountBalance || 0;
   if (equity === 0) {
     // Estimate starting equity by working backwards from cumulative P&L
-    const totalPnl = sortedTrades.reduce((sum, t) => sum + t.pnl, 0);
+    const totalPnl = sortedTrades.reduce((sum, t) => sum + (t.pnl || 0), 0);
     // Assume a reasonable starting balance (can be adjusted)
     equity = Math.max(10000, Math.abs(totalPnl) * 20); // 20x the total P&L movement
   }

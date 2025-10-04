@@ -38,7 +38,7 @@ import { formatCurrency } from '@/lib/utils';
 
 export const TradingHealthView: React.FC = () => {
   const { trades } = useTradeStore();
-  const { userProfile } = useUserProfileStore();
+  const { profile: userProfile } = useUserProfileStore();
   const { selectedAccountId, accounts } = useAccountFilterStore();
 
   const [timeWindow, setTimeWindow] = useState<TimeWindow>('30d');
@@ -103,7 +103,7 @@ export const TradingHealthView: React.FC = () => {
         hasRiskRewardRatio: 'riskRewardRatio' in sample,
         hasAccountBalance: 'accountBalance' in sample,
         hasTags: 'tags' in sample && sample.tags?.length > 0,
-        hasNotes: 'notes' in sample && sample.notes?.length >= 10,
+        hasNotes: 'notes' in sample && (sample.notes?.length || 0) >= 10,
         pnlValue: sample.pnl,
         resultValue: sample.result,
         tagsCount: sample.tags?.length || 0,

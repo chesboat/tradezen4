@@ -117,7 +117,7 @@ export const UNIVERSAL_RULES: Rule[] = [
       const prevTrade = allTrades[tradeIndex - 1];
       
       // If previous trade was a loss
-      if (prevTrade.result === 'loss' && prevTrade.pnl < 0) {
+      if (prevTrade.result === 'loss' && (prevTrade.pnl || 0) < 0) {
         // Check if current trade happened within 30 minutes
         const tradeTime = trade.timestamp || trade.entryTime || trade.createdAt;
         const prevTime = prevTrade.timestamp || prevTrade.entryTime || prevTrade.createdAt;
@@ -128,7 +128,7 @@ export const UNIVERSAL_RULES: Rule[] = [
         // If trade within 30 min after loss AND larger size = likely revenge
         if (minutesDiff < 30) {
           const prevRrRatio = prevTrade.rrRatio || prevTrade.riskRewardRatio || 1;
-          const prevSize = Math.abs(prevTrade.pnl / prevRrRatio);
+          const prevSize = Math.abs((prevTrade.pnl || 0) / prevRrRatio);
           const currentSize = Math.abs(trade.riskAmount || 0);
           
           // Revenge trading: quick trade with 1.5x+ size increase

@@ -31,6 +31,9 @@ export interface Trade extends FirestoreDocument {
   notes?: string;
   attachedQuickNotes?: string[];
   accountId: string;
+  accountBalance?: number; // Account balance at time of trade (for risk % calculation)
+  timestamp?: string | Date; // Alternative timestamp field (some trades use this instead of entryTime)
+  rrRatio?: number; // Alternative field name for riskRewardRatio
   // Review system
   markedForReview?: boolean;
   reviewNote?: string;
@@ -154,6 +157,9 @@ export interface TradingAccount extends FirestoreDocument {
   // If set on a primary account, any trade logged to this account
   // will be replicated to each of these linked account IDs
   linkedAccountIds?: string[];
+  // Account grouping for analytics
+  isGroup?: boolean; // True if this is a group of accounts
+  groupId?: string; // ID of the group this account belongs to
   // Optional per-account session rules overrides
   sessionRules?: {
     maxTrades?: number | null;
