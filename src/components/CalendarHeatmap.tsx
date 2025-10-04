@@ -152,11 +152,11 @@ export const CalendarHeatmap: React.FC<CalendarHeatmapProps> = ({
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-card border border-border rounded-2xl p-8 relative overflow-hidden"
+        className="bg-card border border-border rounded-2xl p-8 relative overflow-hidden min-h-[300px]"
       >
         {/* Blurred preview */}
-        <div className="absolute inset-0 backdrop-blur-sm bg-background/50 z-10 flex items-center justify-center">
-          <div className="text-center space-y-4 max-w-md">
+        <div className="absolute inset-0 backdrop-blur-sm bg-card/90 z-10 flex items-center justify-center rounded-2xl">
+          <div className="text-center space-y-4 max-w-md px-6">
             <div className="w-16 h-16 mx-auto bg-primary/10 rounded-2xl flex items-center justify-center">
               <Lock className="w-8 h-8 text-primary" />
             </div>
@@ -174,7 +174,7 @@ export const CalendarHeatmap: React.FC<CalendarHeatmapProps> = ({
         </div>
 
         {/* Preview content (blurred) */}
-        <div className="space-y-4 opacity-30">
+        <div className="space-y-4 opacity-30 pointer-events-none">
           <div className="mb-4">
             <h2 className="text-xl font-bold">Performance Heatmap</h2>
           </div>

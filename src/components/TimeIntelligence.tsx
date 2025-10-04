@@ -311,17 +311,19 @@ export const TimeIntelligence: React.FC<TimeIntelligenceProps> = ({ trades, isPr
 
       {/* Premium Lock Overlay */}
       {!isPremium && (
-        <div className="absolute inset-0 bg-card/80 backdrop-blur-sm rounded-2xl flex items-center justify-center z-10 p-6">
-          <div className="text-center max-w-md">
-            <Lock className="w-10 h-10 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-2">Unlock Time Intelligence</h3>
-            <p className="text-muted-foreground mb-6">
+        <div className="absolute inset-0 bg-card/90 backdrop-blur-sm rounded-2xl flex items-center justify-center z-10 p-6">
+          <div className="text-center max-w-md space-y-4">
+            <div className="w-16 h-16 mx-auto bg-primary/10 rounded-2xl flex items-center justify-center">
+              <Lock className="w-8 h-8 text-primary" />
+            </div>
+            <h3 className="text-2xl font-bold">Unlock Time Intelligence</h3>
+            <p className="text-muted-foreground">
               Discover your most profitable hours and days. Optimize your trading schedule
-              based on data, not guesses. Upgrade to Premium to unlock.
+              based on data, not guesses.
             </p>
             <button 
               onClick={onUpgrade}
-              className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium mx-auto"
+              className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors font-semibold mx-auto"
             >
               <Sparkles className="w-5 h-5" />
               Upgrade to Premium
