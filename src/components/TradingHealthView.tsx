@@ -28,6 +28,7 @@ import { useUserProfileStore } from '@/store/useUserProfileStore';
 import { calculateTradingHealth } from '@/lib/tradingHealth/metricsEngine';
 import { HealthRings } from '@/components/tradingHealth/HealthRings';
 import { TradingHealthOnboarding } from '@/components/tradingHealth/TradingHealthOnboarding';
+import { TradingHealthDocs } from '@/components/tradingHealth/TradingHealthDocs';
 import type { TimeWindow } from '@/lib/tradingHealth/types';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/utils';
@@ -38,6 +39,7 @@ export const TradingHealthView: React.FC = () => {
 
   const [timeWindow, setTimeWindow] = useState<TimeWindow>('30d');
   const [selectedRing, setSelectedRing] = useState<'edge' | 'consistency' | 'riskControl' | null>(null);
+  const [showDocs, setShowDocs] = useState(false);
   
   // Check if user has seen onboarding
   const [showOnboarding, setShowOnboarding] = useState(() => {
@@ -89,6 +91,12 @@ export const TradingHealthView: React.FC = () => {
         onComplete={handleOnboardingComplete}
       />
 
+      {/* Help Documentation Modal */}
+      <TradingHealthDocs
+        isOpen={showDocs}
+        onClose={() => setShowDocs(false)}
+      />
+
       <div className="flex flex-col h-full overflow-y-auto">
         <div className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8">
         {/* Hero Header */}
@@ -102,6 +110,13 @@ export const TradingHealthView: React.FC = () => {
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground">
               Trading Health
             </h1>
+            <button
+              onClick={() => setShowDocs(true)}
+              className="ml-2 p-2 rounded-full hover:bg-muted transition-colors text-muted-foreground hover:text-primary"
+              aria-label="Open help documentation"
+            >
+              <HelpCircle className="w-5 h-5" />
+            </button>
           </div>
           <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
             Your complete trading performance in three rings. Close all three to build a consistently profitable edge.
