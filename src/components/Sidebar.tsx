@@ -13,14 +13,16 @@ import {
   BarChart3,
   PlusCircle,
   User,
-
   Target,
   HelpCircle,
   Zap,
   FileText,
   Tag,
   MessageCircle,
-  LogOut
+  LogOut,
+  History,
+  FlaskConical,
+  Sparkles
 } from 'lucide-react';
 import { useSidebarStore } from '@/store/useSidebarStore';
 import { useNavigationStore } from '@/store/useNavigationStore';
@@ -106,6 +108,30 @@ const navGroups: NavGroup[] = [
         label: 'Notes',
         icon: FileText,
         href: '/notes',
+      },
+    ],
+  },
+  {
+    title: 'INTELLIGENCE',
+    items: [
+      {
+        id: 'insights',
+        label: 'Insights',
+        icon: Sparkles,
+        href: '/insights',
+        badge: 'Premium',
+      },
+      {
+        id: 'insight-history',
+        label: 'History',
+        icon: History,
+        href: '/insight-history',
+      },
+      {
+        id: 'experiments',
+        label: 'Experiments',
+        icon: FlaskConical,
+        href: '/experiments',
       },
     ],
   },

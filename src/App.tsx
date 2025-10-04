@@ -24,6 +24,9 @@ import { JournalViewApple as JournalView } from './components/JournalViewApple';
 import { NotesView } from './components/NotesView';
 import { TradeLoggerModalApple as TradeLoggerModal } from './components/TradeLoggerModalApple';
 import { QuickNoteModal } from './components/QuickNoteModal';
+import InsightHistoryView from './components/InsightHistoryView';
+import HabitExperimentView from './components/HabitExperimentView';
+import PremiumInsightsShowcase from './components/PremiumInsightsShowcase';
 import { CommandBar } from './components/CommandBar';
 import { AuthPage } from './components/auth/AuthPage';
 import { useSidebarStore } from './store/useSidebarStore';
@@ -285,6 +288,12 @@ function AppContent() {
         return <SettingsPage />;
       case 'todos':
         return <MobileTodoPage />;
+      case 'insights':
+        return <PremiumInsightsShowcase />;
+      case 'insight-history':
+        return <InsightHistoryView />;
+      case 'experiments':
+        return <HabitExperimentView />;
       default:
         return <MinimalDashboard />;
     }
