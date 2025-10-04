@@ -22,6 +22,7 @@ import {
   AlertTriangle,
   ChevronRight,
   Sparkles,
+  HelpCircle,
 } from 'lucide-react';
 import { useTradeStore } from '@/store/useTradeStore';
 import { useUserProfileStore } from '@/store/useUserProfileStore';

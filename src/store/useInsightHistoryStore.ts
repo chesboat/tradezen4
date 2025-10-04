@@ -51,8 +51,8 @@ export const useInsightHistoryStore = create<InsightHistoryState>((set, get) => 
         return;
       }
       
-      // Save to Firestore
-      const docRef = await addDoc(collection(db, 'insightHistory'), {
+      // Save to Firestore (exclude undefined fields)
+      const docData: any = {
         userId: currentUser.uid,
         date,
         type: insight.type,
@@ -62,10 +62,16 @@ export const useInsightHistoryStore = create<InsightHistoryState>((set, get) => 
         metric: insight.metric,
         icon: insight.icon,
         severity: insight.severity,
-        actionType: insight.actionType,
         createdAt: Timestamp.now(),
         viewed: false,
-      });
+      };
+      
+      // Only include optional fields if they're defined
+      if (insight.actionType !== undefined) {
+        docData.actionType = insight.actionType;
+      }
+      
+      const docRef = await addDoc(collection(db, 'insightHistory'), docData);
       
       // Update local state
       const storedInsight: StoredInsight = {
