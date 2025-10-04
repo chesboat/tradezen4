@@ -306,7 +306,7 @@ export const TimeIntelligence: React.FC<TimeIntelligenceProps> = ({ trades, isPr
             Discover your best trading hours and days
           </p>
         </div>
-        <PremiumBadge variant="subtle" />
+        {/* Apple-style: No badges for features you have access to */}
       </div>
 
       {/* Premium Lock Overlay */}

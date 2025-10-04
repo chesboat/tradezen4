@@ -175,9 +175,8 @@ export const CalendarHeatmap: React.FC<CalendarHeatmapProps> = ({
 
         {/* Preview content (blurred) */}
         <div className="space-y-4 opacity-30">
-          <div className="flex items-center justify-between">
+          <div className="mb-4">
             <h2 className="text-xl font-bold">Performance Heatmap</h2>
-            <PremiumBadge />
           </div>
           <div className="space-y-1">
             {[1, 2, 3, 4, 5].map(i => (
@@ -233,13 +232,7 @@ export const CalendarHeatmap: React.FC<CalendarHeatmapProps> = ({
             Last {monthsToShow} months • {stats.totalDays} trading days
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <PremiumBadge variant="subtle" />
-          {/* Future: Export button */}
-          {/* <button className="p-2 hover:bg-muted rounded-lg transition-colors">
-            <Download className="w-4 h-4" />
-          </button> */}
-        </div>
+        {/* Apple-style: No badges for features you have access to */}
       </div>
 
       {/* Stats Summary */}

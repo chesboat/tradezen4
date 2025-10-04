@@ -115,13 +115,28 @@ export const accentColorPalettes = {
 export const useAccentColor = () => {
   const { profile, updateProfile, syncToFirestore } = useUserProfileStore();
   
-  // Initialize from profile preferences, fallback to localStorage, then default to blue
+  // Initialize from profile preferences, fallback to localStorage (with validation), then default to blue
   const [accentColor, setAccentColorState] = useState<AccentColor>(() => {
+    // Priority 1: Profile preference (most reliable)
     if (profile?.preferences?.accentColor) {
       return profile.preferences.accentColor;
     }
-    const saved = localStorage.getItem('refine-accent-color');
-    return (saved as AccentColor) || 'blue';
+    
+    // Priority 2: localStorage (but validate it's not a premium color for basic users)
+    const saved = localStorage.getItem('refine-accent-color') as AccentColor;
+    if (saved && accentColorPalettes[saved]) {
+      // If the saved color is premium and user doesn't have it stored in profile,
+      // they likely lost premium or this is a new user with stale localStorage
+      // Default to 'blue' (free color) to be safe
+      if (accentColorPalettes[saved].isPremium && !profile?.preferences?.accentColor) {
+        console.log('🎨 Saved color is premium but not in profile, defaulting to blue');
+        return 'blue';
+      }
+      return saved;
+    }
+    
+    // Priority 3: Default to blue (free color)
+    return 'blue';
   });
 
   // Sync from profile when it loads
