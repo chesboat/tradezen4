@@ -407,7 +407,13 @@ const EdgeBar: React.FC<EdgeMetric & { onClick?: () => void }> = ({
           )}
           <span className="text-xs">{statusIcons[status]}</span>
         </div>
-        <span className="text-sm font-semibold text-foreground tabular-nums">{value.toFixed(0)}</span>
+        <span className="text-sm font-semibold text-foreground tabular-nums">
+          {label === 'Expectancy' ? formatCurrency(value) : 
+           label === 'Win Rate' ? `${value.toFixed(1)}%` :
+           label === 'Profit Factor' ? `${value.toFixed(2)}` :
+           label === 'Max Drawdown' ? `${value.toFixed(1)}%` :
+           value.toFixed(0)}
+        </span>
       </div>
       
       {/* Progress Bar */}
@@ -433,109 +439,156 @@ const EdgeBar: React.FC<EdgeMetric & { onClick?: () => void }> = ({
 const YourEdgeAtAGlance: React.FC<{ trades: any[] }> = ({ trades }) => {
   const edge = React.useMemo(() => computeEdgeScore(trades), [trades]);
 
-  // Calculate expectancy for display (excludes scratches for accurate win rate)
-  const expectancy = React.useMemo(() => {
-    if (trades.length === 0) return 0;
+  // Calculate ACTUAL metrics (not scores) - Apple shows real values, not abstract scores
+  const actualMetrics = React.useMemo(() => {
+    if (trades.length === 0) {
+      return {
+        expectancy: 0,
+        winRate: 0,
+        profitFactor: 0,
+        avgWin: 0,
+        avgLoss: 0,
+        maxDrawdown: 0
+      };
+    }
+
     const { wins: winCount, losses: lossCount, winRateExclScratches } = summarizeWinLossScratch(trades);
+    
     // Use classifyTradeResult for consistent classification
-    const winningPnl = trades.filter((t: any) => classifyTradeResult(t) === 'win').reduce((sum: number, t: any) => sum + (t.pnl || 0), 0);
-    const losingPnl = trades.filter((t: any) => classifyTradeResult(t) === 'loss').reduce((sum: number, t: any) => sum + (t.pnl || 0), 0);
-    const avgWin = winCount > 0 ? winningPnl / winCount : 0;
-    const avgLoss = lossCount > 0 ? Math.abs(losingPnl) / lossCount : 0;
-    // Dollar-based expectancy: how much you expect to make per trade
-    return (winRateExclScratches / 100) * avgWin - (1 - winRateExclScratches / 100) * avgLoss;
+    const winningTrades = trades.filter((t: any) => classifyTradeResult(t) === 'win');
+    const losingTrades = trades.filter((t: any) => classifyTradeResult(t) === 'loss');
+    
+    const grossProfit = winningTrades.reduce((sum: number, t: any) => sum + (t.pnl || 0), 0);
+    const grossLoss = Math.abs(losingTrades.reduce((sum: number, t: any) => sum + (t.pnl || 0), 0));
+    
+    const avgWin = winCount > 0 ? grossProfit / winCount : 0;
+    const avgLoss = lossCount > 0 ? grossLoss / lossCount : 0;
+    
+    // ACTUAL profit factor (not a score)
+    const profitFactor = grossLoss > 0 ? grossProfit / grossLoss : (grossProfit > 0 ? 99 : 0);
+    
+    // Dollar-based expectancy
+    const expectancy = (winRateExclScratches / 100) * avgWin - (1 - winRateExclScratches / 100) * avgLoss;
+    
+    // Calculate max drawdown %
+    let equity = 0;
+    let peak = 0;
+    let maxDD = 0;
+    trades.forEach((t: any) => {
+      equity += (t.pnl || 0);
+      if (equity > peak) peak = equity;
+      if (peak > 0) maxDD = Math.max(maxDD, ((peak - equity) / peak) * 100);
+    });
+    
+    return {
+      expectancy,
+      winRate: winRateExclScratches,
+      profitFactor,
+      avgWin,
+      avgLoss,
+      maxDrawdown: maxDD
+    };
   }, [trades]);
 
-  // Apple approach: 5 key metrics with visual health indicator and contextual tooltips
+  // Apple approach: Clear, ACTUAL metrics (not abstract scores)
   const metrics: EdgeMetric[] = [
     {
       label: 'Expectancy',
-      value: Math.abs(expectancy),
-      max: Math.max(100, Math.abs(expectancy) * 1.5),
-      status: expectancy > 50 ? 'excellent' : expectancy > 20 ? 'good' : expectancy > 0 ? 'warning' : 'danger',
-      description: `${formatCurrency(expectancy)} per trade`,
+      value: Math.abs(actualMetrics.expectancy),
+      max: Math.max(100, Math.abs(actualMetrics.expectancy) * 1.5),
+      status: actualMetrics.expectancy > 50 ? 'excellent' : actualMetrics.expectancy > 20 ? 'good' : actualMetrics.expectancy > 0 ? 'warning' : 'danger',
+      description: `${formatCurrency(actualMetrics.expectancy)} per trade`,
       tooltip: {
         title: 'Expectancy',
         explanation: 'Your expected profit per trade based on your win rate and average win/loss sizes. This is the most important metric for long-term profitability.',
-        currentState: expectancy > 50 
-          ? `Outstanding! Your ${formatCurrency(expectancy)} expectancy means you're extremely profitable.`
-          : expectancy > 20
-          ? `Great work! Your ${formatCurrency(expectancy)} expectancy shows strong profitability.`
-          : expectancy > 0
-          ? `You're profitable at ${formatCurrency(expectancy)} per trade, but there's room to grow.`
-          : `Negative expectancy (${formatCurrency(expectancy)}) means you're losing money over time.`,
-        improvementTip: expectancy > 50
+        currentState: actualMetrics.expectancy > 50 
+          ? `Outstanding! Your ${formatCurrency(actualMetrics.expectancy)} expectancy means you're extremely profitable.`
+          : actualMetrics.expectancy > 20
+          ? `Great work! Your ${formatCurrency(actualMetrics.expectancy)} expectancy shows strong profitability.`
+          : actualMetrics.expectancy > 0
+          ? `You're profitable at ${formatCurrency(actualMetrics.expectancy)} per trade, but there's room to grow.`
+          : `Negative expectancy (${formatCurrency(actualMetrics.expectancy)}) means you're losing money over time.`,
+        improvementTip: actualMetrics.expectancy > 50
           ? undefined
-          : expectancy > 20
+          : actualMetrics.expectancy > 20
           ? 'To reach excellence: Increase your average win size by letting winners run longer, or improve your entry timing to boost win rate.'
-          : expectancy > 0
+          : actualMetrics.expectancy > 0
           ? 'Focus on two things: 1) Cut losing trades faster to reduce avg loss, 2) Let winners run to increase avg win. Even small improvements compound dramatically.'
           : 'Critical: Review your strategy immediately. Focus on proper risk management, better entry signals, and cutting losses quickly. Consider reducing position size while you rebuild your edge.'
       }
     },
     {
       label: 'Win Rate',
-      value: edge.breakdown.winRate,
+      value: actualMetrics.winRate,
       max: 100,
-      status: edge.breakdown.winRate >= 60 ? 'excellent' : edge.breakdown.winRate >= 50 ? 'good' : edge.breakdown.winRate >= 40 ? 'warning' : 'danger',
-      description: 'Percentage of profitable trades',
+      status: actualMetrics.winRate >= 60 ? 'excellent' : actualMetrics.winRate >= 50 ? 'good' : actualMetrics.winRate >= 40 ? 'warning' : 'danger',
+      description: `${actualMetrics.winRate.toFixed(1)}% of trades`,
       tooltip: {
         title: 'Win Rate',
         explanation: 'The percentage of your trades that are profitable. Note: A lower win rate can still be profitable if your winners are much bigger than your losers.',
-        currentState: edge.breakdown.winRate >= 60
-          ? `Excellent! Your ${edge.breakdown.winRate.toFixed(0)}% win rate is well above average.`
-          : edge.breakdown.winRate >= 50
-          ? `Good! Your ${edge.breakdown.winRate.toFixed(0)}% win rate is solid and sustainable.`
-          : edge.breakdown.winRate >= 40
-          ? `Your ${edge.breakdown.winRate.toFixed(0)}% win rate is below average but can still be profitable with proper risk/reward.`
-          : `Your ${edge.breakdown.winRate.toFixed(0)}% win rate is concerning and needs improvement.`,
-        improvementTip: edge.breakdown.winRate >= 60
+        currentState: actualMetrics.winRate >= 60
+          ? `Excellent! Your ${actualMetrics.winRate.toFixed(1)}% win rate is well above average.`
+          : actualMetrics.winRate >= 50
+          ? `Good! Your ${actualMetrics.winRate.toFixed(1)}% win rate is solid and sustainable.`
+          : actualMetrics.winRate >= 40
+          ? `Your ${actualMetrics.winRate.toFixed(1)}% win rate is below average but can still be profitable with proper risk/reward.`
+          : `Your ${actualMetrics.winRate.toFixed(1)}% win rate is concerning and needs improvement.`,
+        improvementTip: actualMetrics.winRate >= 60
           ? undefined
-          : edge.breakdown.winRate >= 50
+          : actualMetrics.winRate >= 50
           ? 'To reach excellence: Tighten your entry criteria and wait for higher-probability setups. Quality over quantity.'
-          : edge.breakdown.winRate >= 40
+          : actualMetrics.winRate >= 40
           ? 'You can still be profitable! Focus on risk/reward. Make sure your winners are at least 2x your losers. Review your best setups and stick to them.'
           : 'Review your trading journal to identify your highest win-rate setups and time periods. Eliminate low-probability trades and focus only on your best opportunities.'
       }
     },
     {
       label: 'Profit Factor',
-      value: edge.breakdown.profitFactor,
+      value: actualMetrics.profitFactor,
       max: 3,
-      status: edge.breakdown.profitFactor >= 2 ? 'excellent' : edge.breakdown.profitFactor >= 1.5 ? 'good' : edge.breakdown.profitFactor >= 1 ? 'warning' : 'danger',
-      description: 'Wins to losses ratio',
+      status: actualMetrics.profitFactor >= 2 ? 'excellent' : actualMetrics.profitFactor >= 1.5 ? 'good' : actualMetrics.profitFactor >= 1 ? 'warning' : 'danger',
+      description: `${actualMetrics.profitFactor.toFixed(2)}:1 ratio`,
       tooltip: {
         title: 'Profit Factor',
         explanation: 'How much money you make for every dollar you lose. For example, 2.0 means you make $2 for every $1 lost. Above 1.0 is profitable, above 2.0 is excellent.',
-        currentState: edge.breakdown.profitFactor >= 2
-          ? `Excellent! Your ${edge.breakdown.profitFactor.toFixed(2)} profit factor means you make $${edge.breakdown.profitFactor.toFixed(2)} for every $1 lost.`
-          : edge.breakdown.profitFactor >= 1.5
-          ? `Good! Your ${edge.breakdown.profitFactor.toFixed(2)} profit factor shows healthy profitability.`
-          : edge.breakdown.profitFactor >= 1
-          ? `You're profitable (${edge.breakdown.profitFactor.toFixed(2)}), but barely. Small improvements will make a big difference.`
-          : `Critical: Your profit factor of ${edge.breakdown.profitFactor.toFixed(2)} means you're losing money overall.`,
-        improvementTip: edge.breakdown.profitFactor >= 2
+        currentState: actualMetrics.profitFactor >= 2
+          ? `Excellent! Your ${actualMetrics.profitFactor.toFixed(2)} profit factor means you make $${actualMetrics.profitFactor.toFixed(2)} for every $1 lost.`
+          : actualMetrics.profitFactor >= 1.5
+          ? `Good! Your ${actualMetrics.profitFactor.toFixed(2)} profit factor shows healthy profitability.`
+          : actualMetrics.profitFactor >= 1
+          ? `You're profitable (${actualMetrics.profitFactor.toFixed(2)}), but barely. Small improvements will make a big difference.`
+          : `Critical: Your profit factor of ${actualMetrics.profitFactor.toFixed(2)} means you're losing money overall.`,
+        improvementTip: actualMetrics.profitFactor >= 2
           ? undefined
-          : edge.breakdown.profitFactor >= 1.5
+          : actualMetrics.profitFactor >= 1.5
           ? 'To reach excellence: Focus on asymmetric risk/reward. Target 3:1 or better on your setups and use trailing stops to capture bigger moves.'
-          : edge.breakdown.profitFactor >= 1
+          : actualMetrics.profitFactor >= 1
           ? 'Quick wins: 1) Cut losses at 1R consistently, 2) Trail winners to 2R or more, 3) Eliminate revenge trades and trades outside your plan.'
           : 'Emergency action needed: Your losses exceed your wins. Stop trading your current strategy. Review every trade, identify patterns in your losses, and rebuild with strict risk management (never risk more than 1% per trade).'
       }
     },
     {
-      label: 'Risk Control',
-      value: 100 - edge.breakdown.maxDrawdown,
-      max: 100,
-      status: edge.breakdown.maxDrawdown <= 15 ? 'excellent' : edge.breakdown.maxDrawdown <= 25 ? 'good' : edge.breakdown.maxDrawdown <= 35 ? 'warning' : 'danger',
-      description: `Max drawdown ${edge.breakdown.maxDrawdown.toFixed(0)}%`
-    },
-    {
-      label: 'Consistency',
-      value: edge.breakdown.consistency,
-      max: 100,
-      status: edge.breakdown.consistency >= 70 ? 'excellent' : edge.breakdown.consistency >= 55 ? 'good' : edge.breakdown.consistency >= 40 ? 'warning' : 'danger',
-      description: 'Stability of returns'
+      label: 'Max Drawdown',
+      value: actualMetrics.maxDrawdown,
+      max: 50,
+      status: actualMetrics.maxDrawdown <= 15 ? 'excellent' : actualMetrics.maxDrawdown <= 25 ? 'good' : actualMetrics.maxDrawdown <= 35 ? 'warning' : 'danger',
+      description: `${actualMetrics.maxDrawdown.toFixed(1)}% peak loss`,
+      tooltip: {
+        title: 'Max Drawdown',
+        explanation: 'The largest percentage decline from your equity peak. This shows your worst losing streak. Lower is better.',
+        currentState: actualMetrics.maxDrawdown <= 15
+          ? `Excellent! Your ${actualMetrics.maxDrawdown.toFixed(1)}% max drawdown shows strong risk control.`
+          : actualMetrics.maxDrawdown <= 25
+          ? `Good! Your ${actualMetrics.maxDrawdown.toFixed(1)}% max drawdown is manageable.`
+          : actualMetrics.maxDrawdown <= 35
+          ? `Your ${actualMetrics.maxDrawdown.toFixed(1)}% drawdown is concerning. Tighten risk management.`
+          : `Critical! Your ${actualMetrics.maxDrawdown.toFixed(1)}% drawdown is too high. You're risking too much.`,
+        improvementTip: actualMetrics.maxDrawdown <= 15
+          ? undefined
+          : actualMetrics.maxDrawdown <= 25
+          ? 'To improve: Use smaller position sizes and set stricter stop losses. Never risk more than 1-2% per trade.'
+          : 'Immediate action: Cut your position sizes in half. Set hard stop losses on every trade. Take a break after 2 consecutive losses.'
+      }
     }
   ];
 
@@ -596,7 +649,7 @@ const YourEdgeAtAGlance: React.FC<{ trades: any[] }> = ({ trades }) => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {metrics.map((metric) => (
           <EdgeBar key={metric.label} {...metric} />
         ))}
