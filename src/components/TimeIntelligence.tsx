@@ -288,6 +288,55 @@ export const TimeIntelligence: React.FC<TimeIntelligenceProps> = ({ trades, isPr
     </div>
   );
 
+  // Show locked state for non-premium users
+  if (!isPremium) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="bg-card rounded-2xl shadow-lg border border-border p-8 relative overflow-hidden min-h-[300px]"
+      >
+        {/* Blurred preview */}
+        <div className="absolute inset-0 backdrop-blur-sm bg-card/90 z-10 flex items-center justify-center rounded-2xl">
+          <div className="text-center space-y-4 max-w-md px-6">
+            <div className="w-16 h-16 mx-auto bg-primary/10 rounded-2xl flex items-center justify-center">
+              <Lock className="w-8 h-8 text-primary" />
+            </div>
+            <h3 className="text-2xl font-bold">Unlock Time Intelligence</h3>
+            <p className="text-muted-foreground">
+              Discover your most profitable hours and days. Optimize your trading schedule
+              based on data, not guesses.
+            </p>
+            <button 
+              onClick={onUpgrade}
+              className="px-6 py-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors font-semibold"
+            >
+              Upgrade to Premium
+            </button>
+          </div>
+        </div>
+
+        {/* Preview content (blurred) */}
+        <div className="space-y-4 opacity-30 pointer-events-none">
+          <div className="mb-4 flex items-center gap-2">
+            <Clock className="w-5 h-5" />
+            <h2 className="text-xl font-bold">Time Intelligence</h2>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            {[1, 2].map(i => (
+              <div key={i} className="p-4 bg-muted/50 rounded-xl">
+                <div className="h-4 w-20 bg-muted rounded mb-2" />
+                <div className="h-6 w-16 bg-muted rounded mb-1" />
+                <div className="h-3 w-24 bg-muted rounded" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -308,29 +357,6 @@ export const TimeIntelligence: React.FC<TimeIntelligenceProps> = ({ trades, isPr
         </div>
         {/* Apple-style: No badges for features you have access to */}
       </div>
-
-      {/* Premium Lock Overlay */}
-      {!isPremium && (
-        <div className="absolute inset-0 bg-card/90 backdrop-blur-sm rounded-2xl flex items-center justify-center z-10 p-6">
-          <div className="text-center max-w-md space-y-4">
-            <div className="w-16 h-16 mx-auto bg-primary/10 rounded-2xl flex items-center justify-center">
-              <Lock className="w-8 h-8 text-primary" />
-            </div>
-            <h3 className="text-2xl font-bold">Unlock Time Intelligence</h3>
-            <p className="text-muted-foreground">
-              Discover your most profitable hours and days. Optimize your trading schedule
-              based on data, not guesses.
-            </p>
-            <button 
-              onClick={onUpgrade}
-              className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors font-semibold mx-auto"
-            >
-              <Sparkles className="w-5 h-5" />
-              Upgrade to Premium
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Content */}
       {renderContent()}
