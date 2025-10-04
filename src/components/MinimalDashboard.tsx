@@ -35,6 +35,7 @@ import type { HabitCategory } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDisciplineUser, useTodayDay, useWeekDays } from '@/lib/disciplineHooks';
 import { todayInTZ, isAfterMarketClose } from '@/lib/time';
+import { setDisciplineMode } from '@/lib/discipline';
 import QuickLogButton from '@/components/discipline/QuickLogButton';
 import TradesLeftWidget from '@/components/discipline/TradesLeftWidget';
 import CheckInCard from '@/components/discipline/CheckInCard';
@@ -737,6 +738,29 @@ export const MinimalDashboard: React.FC = () => {
   // Expose mutate for onSnapshot to push cache updates
   (window as any).__disc_mutate = mutate;
 
+  // Handle enabling discipline mode from the nudge card
+  const handleEnableDiscipline = async () => {
+    if (!currentUser) return;
+    
+    const input = prompt('Set default daily bullets (1–10):', '3');
+    if (input == null) return; // cancelled
+    
+    const parsed = parseInt(input, 10);
+    if (!Number.isFinite(parsed) || parsed < 1 || parsed > 10) {
+      alert('Please enter a number between 1 and 10');
+      return;
+    }
+    
+    try {
+      await setDisciplineMode({ uid: currentUser.uid, enabled: true, defaultMax: parsed });
+      // Revalidate the discipline user data
+      mutate(['disc-user', currentUser.uid]);
+    } catch (error) {
+      console.error('Failed to enable discipline mode:', error);
+      alert('Failed to enable discipline mode. Please try again.');
+    }
+  };
+
   // Filter trades by selected account and time period
   const filteredTrades = useMemo(() => {
     let filtered = selectedAccountId ? trades.filter(t => t.accountId === selectedAccountId) : trades;
@@ -1002,7 +1026,7 @@ export const MinimalDashboard: React.FC = () => {
             <div>
               <QuickLogButton tz={tz} />
             </div>
-            <DisciplineNudgeCard onEnable={() => { /* handled in Settings */ }} />
+            <DisciplineNudgeCard onEnable={handleEnableDiscipline} />
           </div>
         )}
         
