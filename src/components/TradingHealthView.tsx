@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { useTradeStore } from '@/store/useTradeStore';
 import { useUserProfileStore } from '@/store/useUserProfileStore';
+import { useAccountFilterStore } from '@/store/useAccountFilterStore';
 import { calculateTradingHealth } from '@/lib/tradingHealth/metricsEngine';
 import { HealthRings } from '@/components/tradingHealth/HealthRings';
 import { TradingHealthOnboarding } from '@/components/tradingHealth/TradingHealthOnboarding';
@@ -37,6 +38,7 @@ import { formatCurrency } from '@/lib/utils';
 export const TradingHealthView: React.FC = () => {
   const { trades } = useTradeStore();
   const { userProfile } = useUserProfileStore();
+  const { selectedAccountId, accounts } = useAccountFilterStore();
 
   const [timeWindow, setTimeWindow] = useState<TimeWindow>('30d');
   const [selectedRing, setSelectedRing] = useState<'edge' | 'consistency' | 'riskControl' | null>(null);
@@ -53,24 +55,57 @@ export const TradingHealthView: React.FC = () => {
     setShowOnboarding(false);
   };
 
+  // Get selected account details
+  const selectedAccount = useMemo(() => {
+    if (!selectedAccountId) return null;
+    return accounts.find(a => a.id === selectedAccountId);
+  }, [selectedAccountId, accounts]);
+
+  // Filter trades based on account selection
+  // Apple-style: Smart filtering based on account type
+  const filteredTrades = useMemo(() => {
+    // If "All Accounts" or no selection, show all trades
+    if (!selectedAccountId) {
+      return trades;
+    }
+
+    // Check if selected account is a group
+    const isGroup = selectedAccount?.isGroup;
+
+    if (isGroup) {
+      // For groups: include all accounts in the group
+      const groupAccounts = accounts.filter(a => a.groupId === selectedAccountId);
+      const groupAccountIds = new Set(groupAccounts.map(a => a.id));
+      return trades.filter(t => groupAccountIds.has(t.accountId));
+    } else {
+      // For individual accounts: filter by accountId
+      return trades.filter(t => t.accountId === selectedAccountId);
+    }
+  }, [trades, selectedAccountId, selectedAccount, accounts]);
+
   // Debug: Log trades data
   React.useEffect(() => {
-    console.log('[Trading Health] Trades loaded:', trades.length);
-    if (trades.length > 0) {
-      console.log('[Trading Health] Sample trade:', trades[0]);
+    console.log('[Trading Health] Account Filter:', selectedAccountId || 'All Accounts');
+    if (selectedAccount) {
+      console.log('[Trading Health] Selected Account:', selectedAccount.name, 'isGroup:', selectedAccount.isGroup);
     }
-  }, [trades]);
+    console.log('[Trading Health] Total trades:', trades.length);
+    console.log('[Trading Health] Filtered trades:', filteredTrades.length);
+    if (filteredTrades.length > 0) {
+      console.log('[Trading Health] Sample trade:', filteredTrades[0]);
+    }
+  }, [trades, filteredTrades, selectedAccountId, selectedAccount]);
 
-  // Calculate metrics
+  // Calculate metrics using filtered trades
   const metrics = useMemo(() => {
-    console.log('[Trading Health] Calculating metrics for', trades.length, 'trades in', timeWindow, 'window');
-    const result = calculateTradingHealth(trades, timeWindow);
+    console.log('[Trading Health] Calculating metrics for', filteredTrades.length, 'trades in', timeWindow, 'window');
+    const result = calculateTradingHealth(filteredTrades, timeWindow);
     console.log('[Trading Health] Metrics calculated:', result);
     return result;
-  }, [trades, timeWindow]);
+  }, [filteredTrades, timeWindow]);
 
-  // Check if user has any trades
-  const hasTrades = trades.length > 0;
+  // Check if user has any trades (in current filter)
+  const hasTrades = filteredTrades.length > 0;
 
   const overallScore = Math.round(
     (metrics.edge.value + metrics.consistency.value + metrics.riskControl.value) / 3
@@ -133,6 +168,24 @@ export const TradingHealthView: React.FC = () => {
               <HelpCircle className="w-5 h-5" />
             </button>
           </div>
+          
+          {/* Account context indicator */}
+          {selectedAccount && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center justify-center gap-2 text-sm text-muted-foreground"
+            >
+              <span>Viewing:</span>
+              <span className="font-semibold text-foreground">{selectedAccount.name}</span>
+              {selectedAccount.isGroup && (
+                <span className="px-2 py-0.5 bg-primary/10 text-primary rounded-full text-xs">
+                  Group
+                </span>
+              )}
+            </motion.div>
+          )}
+          
           <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
             Your complete trading performance in three rings. Close all three to build a consistently profitable edge.
           </p>
@@ -173,11 +226,14 @@ export const TradingHealthView: React.FC = () => {
               
               <div className="space-y-3">
                 <h3 className="text-2xl font-bold text-foreground">
-                  Start Trading to See Your Health
+                  {selectedAccount 
+                    ? `No Trades for ${selectedAccount.name}` 
+                    : 'Start Trading to See Your Health'}
                 </h3>
                 <p className="text-muted-foreground leading-relaxed">
-                  Your Trading Health rings will appear here once you log your first trades. 
-                  The system tracks your Edge, Consistency, and Risk Control automatically.
+                  {selectedAccount
+                    ? `Log trades for ${selectedAccount.name} to see your Trading Health rings. The system tracks your Edge, Consistency, and Risk Control automatically.`
+                    : 'Your Trading Health rings will appear here once you log your first trades. The system tracks your Edge, Consistency, and Risk Control automatically.'}
                 </p>
               </div>
 
