@@ -93,6 +93,10 @@ function calculateEdgeRing(
       expectancy: 0,
       winRate: 0,
       profitFactor: 0,
+      wins: 0,
+      losses: 0,
+      totalWinningPnl: 0,
+      totalLosingPnl: 0,
     };
   }
 
@@ -102,20 +106,15 @@ function calculateEdgeRing(
   const winningTrades = currentTrades.filter(t => classifyTradeResult(t) === 'win');
   const losingTrades = currentTrades.filter(t => classifyTradeResult(t) === 'loss');
   
-  const avgWin = winningTrades.length > 0
-    ? winningTrades.reduce((sum, t) => sum + Math.abs(t.pnl), 0) / winningTrades.length
-    : 0;
+  const totalWinningPnl = winningTrades.reduce((sum, t) => sum + Math.abs(t.pnl), 0);
+  const totalLosingPnl = losingTrades.reduce((sum, t) => sum + Math.abs(t.pnl), 0);
   
-  const avgLoss = losingTrades.length > 0
-    ? losingTrades.reduce((sum, t) => sum + Math.abs(t.pnl), 0) / losingTrades.length
-    : 0;
+  const avgWin = winningTrades.length > 0 ? totalWinningPnl / winningTrades.length : 0;
+  const avgLoss = losingTrades.length > 0 ? totalLosingPnl / losingTrades.length : 0;
   
   const expectancy = (winRate / 100) * avgWin - (1 - winRate / 100) * avgLoss;
   
-  const profitFactor = losingTrades.length > 0
-    ? (winningTrades.reduce((sum, t) => sum + Math.abs(t.pnl), 0) /
-       losingTrades.reduce((sum, t) => sum + Math.abs(t.pnl), 0))
-    : 0;
+  const profitFactor = losingTrades.length > 0 ? (totalWinningPnl / totalLosingPnl) : 0;
 
   // Score: Normalize expectancy to 0-100 scale
   // Positive expectancy is good, higher is better
@@ -162,6 +161,10 @@ function calculateEdgeRing(
     expectancy,
     winRate,
     profitFactor,
+    wins,
+    losses,
+    totalWinningPnl,
+    totalLosingPnl,
   };
 }
 

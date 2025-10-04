@@ -311,8 +311,8 @@ const EdgeDetails: React.FC<{ data: any }> = ({ data }) => {
 
 // Consistency Details Component
 const ConsistencyDetails: React.FC<{ data: any }> = ({ data }) => {
-  const passingRules = data.ruleResults?.filter((r: any) => r.passed) || [];
-  const failingRules = data.ruleResults?.filter((r: any) => !r.passed) || [];
+  const passingRules = data.ruleBreakdown?.filter((r: any) => r.passed) || [];
+  const failingRules = data.ruleBreakdown?.filter((r: any) => !r.passed) || [];
 
   return (
     <div className="space-y-6">

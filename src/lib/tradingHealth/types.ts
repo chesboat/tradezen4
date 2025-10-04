@@ -25,6 +25,10 @@ export interface TradingHealthMetrics {
     expectancy: number;
     winRate: number;
     profitFactor: number;
+    wins: number;
+    losses: number;
+    totalWinningPnl: number;
+    totalLosingPnl: number;
   };
   consistency: RingMetric & {
     rulesFollowed: number;
@@ -42,7 +46,9 @@ export interface TradingHealthMetrics {
 }
 
 export interface RuleAdherence {
+  id: string;
   rule: string;
+  name: string;
   category: 'risk-management' | 'journaling' | 'discipline';
   passed: boolean;
   description: string;

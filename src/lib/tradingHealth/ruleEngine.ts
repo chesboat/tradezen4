@@ -199,7 +199,9 @@ export function checkTradeRules(
 export function calculateRuleAdherence(trades: Trade[]): RuleAdherence[] {
   if (trades.length === 0) {
     return UNIVERSAL_RULES.map(rule => ({
+      id: rule.id,
       rule: rule.name,
+      name: rule.name,
       category: rule.category,
       passed: false,
       description: rule.description,
@@ -216,7 +218,9 @@ export function calculateRuleAdherence(trades: Trade[]): RuleAdherence[] {
     const adherenceRate = passedCount / trades.length;
 
     return {
+      id: rule.id,
       rule: rule.name,
+      name: rule.name,
       category: rule.category,
       passed: adherenceRate >= 0.8, // 80%+ adherence = passed
       description: rule.description,
