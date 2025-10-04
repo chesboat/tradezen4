@@ -10,7 +10,7 @@ import { useAccountFilterStore } from '@/store/useAccountFilterStore';
 import { useAnalyticsFilterStore } from '@/store/useAnalyticsFilterStore';
 import { computeEdgeScore } from '@/lib/edgeScore';
 import { formatCurrency } from '@/lib/localStorageUtils';
-import { cn, summarizeWinLossScratch } from '@/lib/utils';
+import { cn, summarizeWinLossScratch, classifyTradeResult } from '@/lib/utils';
 import { useDailyReflectionStore } from '@/store/useDailyReflectionStore';
 import { useActivityLogStore } from '@/store/useActivityLogStore';
 import { useTodoStore } from '@/store/useTodoStore';
@@ -328,11 +328,12 @@ const YourEdgeAtAGlance: React.FC<{ trades: any[] }> = ({ trades }) => {
   // Calculate expectancy for display (excludes scratches for accurate win rate)
   const expectancy = React.useMemo(() => {
     if (trades.length === 0) return 0;
-    const { winRateExclScratches } = summarizeWinLossScratch(trades);
-    const wins = trades.filter((t: any) => t.result === 'win');
-    const losses = trades.filter((t: any) => t.result === 'loss');
-    const avgWin = wins.length > 0 ? wins.reduce((sum: number, t: any) => sum + (t.pnl || 0), 0) / wins.length : 0;
-    const avgLoss = losses.length > 0 ? Math.abs(losses.reduce((sum: number, t: any) => sum + (t.pnl || 0), 0)) / losses.length : 0;
+    const { wins: winCount, losses: lossCount, winRateExclScratches } = summarizeWinLossScratch(trades);
+    // Use classifyTradeResult for consistent classification
+    const winningPnl = trades.filter((t: any) => classifyTradeResult(t) === 'win').reduce((sum: number, t: any) => sum + (t.pnl || 0), 0);
+    const losingPnl = trades.filter((t: any) => classifyTradeResult(t) === 'loss').reduce((sum: number, t: any) => sum + (t.pnl || 0), 0);
+    const avgWin = winCount > 0 ? winningPnl / winCount : 0;
+    const avgLoss = lossCount > 0 ? Math.abs(losingPnl) / lossCount : 0;
     // Dollar-based expectancy: how much you expect to make per trade
     return (winRateExclScratches / 100) * avgWin - (1 - winRateExclScratches / 100) * avgLoss;
   }, [trades]);
@@ -1555,17 +1556,16 @@ export const AppleAnalyticsDashboard: React.FC = () => {
   const metrics = React.useMemo(() => {
     const calculateMetrics = (tradeList: any[]) => {
       const totalPnL = tradeList.reduce((sum, t) => sum + (t.pnl || 0), 0);
-      const { winRateExclScratches } = summarizeWinLossScratch(tradeList);
-      const winTrades = tradeList.filter(t => t.result === 'win');
-      const lossTrades = tradeList.filter(t => t.result === 'loss');
+      const { wins: winCount, losses: lossCount, winRateExclScratches } = summarizeWinLossScratch(tradeList);
       
-      const totalWins = winTrades.reduce((sum, t) => sum + (t.pnl || 0), 0);
-      const totalLosses = Math.abs(lossTrades.reduce((sum, t) => sum + (t.pnl || 0), 0));
+      // Use classifyTradeResult for consistent classification (matches summarizeWinLossScratch)
+      const totalWins = tradeList.filter(t => classifyTradeResult(t) === 'win').reduce((sum, t) => sum + (t.pnl || 0), 0);
+      const totalLosses = Math.abs(tradeList.filter(t => classifyTradeResult(t) === 'loss').reduce((sum, t) => sum + (t.pnl || 0), 0));
       const profitFactor = totalLosses > 0 ? totalWins / totalLosses : 0;
 
-      // Calculate expectancy
-      const avgWin = winTrades.length > 0 ? totalWins / winTrades.length : 0;
-      const avgLoss = lossTrades.length > 0 ? totalLosses / lossTrades.length : 0;
+      // Calculate expectancy using counts from summarizeWinLossScratch
+      const avgWin = winCount > 0 ? totalWins / winCount : 0;
+      const avgLoss = lossCount > 0 ? totalLosses / lossCount : 0;
       const expectancy = (winRateExclScratches / 100) * avgWin - (1 - winRateExclScratches / 100) * avgLoss;
 
       return { totalPnL, totalTrades: tradeList.length, winRate: winRateExclScratches, profitFactor, expectancy };

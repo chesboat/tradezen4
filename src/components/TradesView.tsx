@@ -532,11 +532,12 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
     const totalRisk = filteredTrades.reduce((sum, trade) => sum + trade.riskAmount, 0);
     const avgPnl = totalTrades > 0 ? totalPnl / totalTrades : 0;
     
+    // Use classifyTradeResult for consistent classification (matches summarizeWinLossScratch)
     const winningPnl = filteredTrades
-      .filter(t => t.result === 'win')
+      .filter(t => classifyTradeResult(t) === 'win')
       .reduce((sum, trade) => sum + (trade.pnl || 0), 0);
     const losingPnl = filteredTrades
-      .filter(t => t.result === 'loss')
+      .filter(t => classifyTradeResult(t) === 'loss')
       .reduce((sum, trade) => sum + (trade.pnl || 0), 0);
     
     const avgWin = winningTrades > 0 ? winningPnl / winningTrades : 0;
