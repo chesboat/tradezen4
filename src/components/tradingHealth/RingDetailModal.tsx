@@ -14,8 +14,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import type { TradingHealthMetrics } from '@/lib/tradingHealth/types';
-import { formatCurrency } from '@/lib/subscription';
-import { cn } from '@/lib/utils';
+import { formatCurrency, cn } from '@/lib/utils';
 
 interface RingDetailModalProps {
   isOpen: boolean;
