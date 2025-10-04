@@ -52,10 +52,24 @@ export const TradingHealthView: React.FC = () => {
     setShowOnboarding(false);
   };
 
+  // Debug: Log trades data
+  React.useEffect(() => {
+    console.log('[Trading Health] Trades loaded:', trades.length);
+    if (trades.length > 0) {
+      console.log('[Trading Health] Sample trade:', trades[0]);
+    }
+  }, [trades]);
+
   // Calculate metrics
   const metrics = useMemo(() => {
-    return calculateTradingHealth(trades, timeWindow);
+    console.log('[Trading Health] Calculating metrics for', trades.length, 'trades in', timeWindow, 'window');
+    const result = calculateTradingHealth(trades, timeWindow);
+    console.log('[Trading Health] Metrics calculated:', result);
+    return result;
   }, [trades, timeWindow]);
+
+  // Check if user has any trades
+  const hasTrades = trades.length > 0;
 
   const overallScore = Math.round(
     (metrics.edge.value + metrics.consistency.value + metrics.riskControl.value) / 3
@@ -143,40 +157,89 @@ export const TradingHealthView: React.FC = () => {
           </div>
         </motion.div>
 
-        {/* Rings Visualization */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.2 }}
-          className="bg-card/50 backdrop-blur-sm border border-border rounded-3xl p-6 sm:p-8"
-        >
-          <HealthRings
-            metrics={metrics}
-            size="large"
-            showLabels={true}
-            onRingClick={(ring) => setSelectedRing(ring)}
-          />
-
-          {/* Overall Status */}
+        {/* Empty State or Rings Visualization */}
+        {!hasTrades ? (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.8 }}
-            className="mt-8 flex items-center justify-center gap-3"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2 }}
+            className="bg-card/50 backdrop-blur-sm border border-border rounded-3xl p-8 sm:p-12 text-center"
           >
-            <div className={cn('px-4 py-2 rounded-full text-sm font-semibold', status.bg, status.color)}>
-              {status.text}
-            </div>
-            {metrics.edge.trend !== 'stable' && (
-              <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                {getTrendIcon(metrics.edge.trend)}
-                <span>Overall trending {metrics.edge.trend}</span>
+            <div className="max-w-md mx-auto space-y-6">
+              <div className="w-24 h-24 mx-auto bg-primary/10 rounded-3xl flex items-center justify-center">
+                <Sparkles className="w-12 h-12 text-primary" />
               </div>
-            )}
-          </motion.div>
-        </motion.div>
+              
+              <div className="space-y-3">
+                <h3 className="text-2xl font-bold text-foreground">
+                  Start Trading to See Your Health
+                </h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  Your Trading Health rings will appear here once you log your first trades. 
+                  The system tracks your Edge, Consistency, and Risk Control automatically.
+                </p>
+              </div>
 
-        {/* Detailed Breakdown */}
+              <div className="bg-muted/30 rounded-xl p-4 text-sm text-muted-foreground text-left space-y-2">
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                  <span>Log at least 5-10 trades to get meaningful scores</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                  <span>8 universal rules are checked automatically</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                  <span>30-day rolling window keeps your scores current</span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShowDocs(true)}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 transition-colors"
+              >
+                <HelpCircle className="w-5 h-5" />
+                Learn How Trading Health Works
+              </button>
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2 }}
+            className="bg-card/50 backdrop-blur-sm border border-border rounded-3xl p-6 sm:p-8"
+          >
+            <HealthRings
+              metrics={metrics}
+              size="large"
+              showLabels={true}
+              onRingClick={(ring) => setSelectedRing(ring)}
+            />
+
+            {/* Overall Status */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8 }}
+              className="mt-8 flex items-center justify-center gap-3"
+            >
+              <div className={cn('px-4 py-2 rounded-full text-sm font-semibold', status.bg, status.color)}>
+                {status.text}
+              </div>
+              {metrics.edge.trend !== 'stable' && (
+                <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                  {getTrendIcon(metrics.edge.trend)}
+                  <span>Overall trending {metrics.edge.trend}</span>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* Detailed Breakdown - Only show if has trades */}
+        {hasTrades && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Edge Ring Details */}
           <RingDetailCard
@@ -226,9 +289,10 @@ export const TradingHealthView: React.FC = () => {
             onExpand={() => setSelectedRing('riskControl')}
           />
         </div>
+        )}
 
-        {/* Streak Achievements */}
-        {metrics.consistency.currentStreak >= 3 && (
+        {/* Streak Achievements - Only show if has trades */}
+        {hasTrades && metrics.consistency.currentStreak >= 3 && (
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -250,7 +314,8 @@ export const TradingHealthView: React.FC = () => {
           </motion.div>
         )}
 
-        {/* Rule Breakdown */}
+        {/* Rule Breakdown - Only show if has trades */}
+        {hasTrades && (
         <div className="bg-card border border-border rounded-3xl p-6 sm:p-8">
           <h2 className="text-2xl font-bold text-foreground mb-6 flex items-center gap-2">
             <Target className="w-6 h-6 text-primary" />
@@ -306,6 +371,7 @@ export const TradingHealthView: React.FC = () => {
             ))}
           </div>
         </div>
+        )}
       </div>
     </div>
     </>
