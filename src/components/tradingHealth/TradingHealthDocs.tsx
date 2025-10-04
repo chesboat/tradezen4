@@ -36,6 +36,51 @@ interface DocSection {
   content: React.ReactNode;
 }
 
+// Helper components - must be defined before sections array
+const RuleCard: React.FC<{ title: string; description: string; check: string }> = ({ title, description, check }) => (
+  <div className="text-xs bg-muted/30 p-2 rounded-lg space-y-1">
+    <div className="font-semibold text-foreground">{title}</div>
+    <div className="text-muted-foreground">{description}</div>
+    <code className="text-[10px] text-primary">{check}</code>
+  </div>
+);
+
+const FAQItem: React.FC<{ question: string; answer: string }> = ({ question, answer }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div className="border border-border rounded-xl overflow-hidden">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors text-left"
+      >
+        <span className="font-semibold text-foreground text-sm">{question}</span>
+        <motion.div
+          animate={{ rotate: isOpen ? 180 : 0 }}
+          transition={{ duration: 0.2 }}
+        >
+          <ChevronDown className="w-4 h-4 text-muted-foreground" />
+        </motion.div>
+      </button>
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="px-4 pb-4 text-sm text-muted-foreground leading-relaxed">
+              {answer}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
 const sections: DocSection[] = [
   {
     id: 'overview',
@@ -488,50 +533,6 @@ const sections: DocSection[] = [
     ),
   },
 ];
-
-const RuleCard: React.FC<{ title: string; description: string; check: string }> = ({ title, description, check }) => (
-  <div className="text-xs bg-muted/30 p-2 rounded-lg space-y-1">
-    <div className="font-semibold text-foreground">{title}</div>
-    <div className="text-muted-foreground">{description}</div>
-    <code className="text-[10px] text-primary">{check}</code>
-  </div>
-);
-
-const FAQItem: React.FC<{ question: string; answer: string }> = ({ question, answer }) => {
-  const [isOpen, setIsOpen] = useState(false);
-
-  return (
-    <div className="border border-border rounded-xl overflow-hidden">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors text-left"
-      >
-        <span className="font-semibold text-foreground text-sm">{question}</span>
-        <motion.div
-          animate={{ rotate: isOpen ? 180 : 0 }}
-          transition={{ duration: 0.2 }}
-        >
-          <ChevronDown className="w-4 h-4 text-muted-foreground" />
-        </motion.div>
-      </button>
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
-          >
-            <div className="px-4 pb-4 text-sm text-muted-foreground leading-relaxed">
-              {answer}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-};
 
 export const TradingHealthDocs: React.FC<TradingHealthDocsProps> = ({
   isOpen,
