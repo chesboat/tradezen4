@@ -45,6 +45,7 @@ interface DailyReflectionState {
   
   // Global tag filter state
   selectedTagFilter: string | null;
+  selectedTagFilters: string[]; // Multi-select support (Apple Notes style)
   pinnedTags: string[];
   
   // Actions
@@ -83,6 +84,8 @@ interface DailyReflectionState {
   // Global tag filter actions
   setSelectedTagFilter: (tag: string | null) => void;
   clearTagFilter: () => void;
+  toggleTagFilter: (tag: string) => void;
+  clearTagFilters: () => void;
   
   // Pinned tag actions
   togglePinnedTag: (tag: string) => void;
@@ -114,6 +117,7 @@ export const useDailyReflectionStore = create<DailyReflectionState>()(
       currentStreak: 0,
       totalReflectionDays: 0,
       selectedTagFilter: null,
+      selectedTagFilters: [],
       pinnedTags: [],
 
       addReflection: (reflectionData) => {
@@ -586,6 +590,21 @@ export const useDailyReflectionStore = create<DailyReflectionState>()(
 
       clearTagFilter: () => {
         set({ selectedTagFilter: null });
+      },
+
+      toggleTagFilter: (tag) => {
+        const { selectedTagFilters } = get();
+        const isSelected = selectedTagFilters.includes(tag);
+        
+        const updatedFilters = isSelected
+          ? selectedTagFilters.filter(t => t !== tag)
+          : [...selectedTagFilters, tag];
+        
+        set({ selectedTagFilters: updatedFilters });
+      },
+
+      clearTagFilters: () => {
+        set({ selectedTagFilters: [] });
       },
 
       togglePinnedTag: (tag) => {

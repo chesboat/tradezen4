@@ -42,6 +42,7 @@ import { NoteContent } from './NoteContent';
 import { SmartTagFilterBar } from './SmartTagFilterBar';
 import { RichNoteEditorModal } from './RichNoteEditorModal';
 import { InlineNoteEditor } from './InlineNoteEditor';
+import { QuickNoteInlineEditor } from './QuickNoteInlineEditor';
 import { useQuickNoteStore, useQuickNoteModal } from '@/store/useQuickNoteStore';
 import { useRichNotesStore } from '@/store/useRichNotesStore';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
@@ -96,7 +97,7 @@ function cleanPreviewText(content: string): { text: string; hasImages: boolean }
 
 export const NotesView: React.FC = () => {
   const { selectedAccountId } = useAccountFilterStore();
-  const { selectedTagFilter } = useDailyReflectionStore();
+  const { selectedTagFilter, selectedTagFilters, toggleTagFilter, clearTagFilters } = useDailyReflectionStore();
   const notesFilters = useNotesFilterStore();
   const { addTask } = useTodoStore();
 
@@ -131,7 +132,7 @@ export const NotesView: React.FC = () => {
   
   // Apple-style 3-column layout state
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
-  const [smartFolder, setSmartFolder] = useState<'all' | 'recent' | 'favorites' | 'untagged'>('all');
+  const [smartFolder, setSmartFolder] = useState<'all' | 'recent' | 'favorites' | 'untagged' | 'quick'>('all');
   const [selectedFolderName, setSelectedFolderName] = useState<string | null>(null);
   const [isEditingNote, setIsEditingNote] = useState(false);
   
@@ -151,6 +152,9 @@ export const NotesView: React.FC = () => {
   const [editingFolder, setEditingFolder] = useState<string | null>(null);
   const [editingFolderName, setEditingFolderName] = useState('');
   const folderNavRef = useRef<HTMLDivElement | null>(null);
+  
+  // Tags section collapse state (Apple-style)
+  const [isTagsSectionCollapsed, setIsTagsSectionCollapsed] = useState(true);
   
   // Context menu state (Apple-style right-click)
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; noteId: string } | null>(null);
@@ -307,12 +311,21 @@ export const NotesView: React.FC = () => {
         if (!note.isFavorite) return false;
       } else if (smartFolder === 'untagged') {
         if (note.tags.length > 0) return false;
+      } else if (smartFolder === 'quick') {
+        if (note.type !== 'quick') return false;
       }
 
       // Folder filter (only applies to rich notes when not in smart folder mode)
       if (selectedFolderName && note.type === 'rich' && note.folder !== selectedFolderName) return false;
 
-      // Tag filter
+      // Tag filter (multi-select support - Apple Notes style)
+      if (selectedTagFilters.length > 0) {
+        // Note must have ALL selected tags (AND logic)
+        const hasAllTags = selectedTagFilters.every(tag => note.tags.includes(tag));
+        if (!hasAllTags) return false;
+      }
+      
+      // Legacy single tag filter (for compatibility)
       if (selectedTagFilter && !note.tags.includes(selectedTagFilter)) return false;
 
       // Search filter
@@ -344,9 +357,24 @@ export const NotesView: React.FC = () => {
     });
 
     return filtered;
-  }, [unifiedNotes, filterType, selectedTagFilter, query, startDate, endDate, selectedFolderName, smartFolder]);
+  }, [unifiedNotes, filterType, selectedTagFilter, selectedTagFilters, query, startDate, endDate, selectedFolderName, smartFolder]);
 
   const selectedIds = useMemo(() => Object.keys(selected).filter(id => selected[id]), [selected]);
+
+  // Get all tags with their counts from unified notes (Apple-style)
+  const allTagsWithCounts = useMemo(() => {
+    const tagMap = new Map<string, number>();
+    
+    unifiedNotes.forEach(note => {
+      note.tags.forEach(tag => {
+        tagMap.set(tag, (tagMap.get(tag) || 0) + 1);
+      });
+    });
+    
+    return Array.from(tagMap.entries())
+      .map(([tag, count]) => ({ tag, count }))
+      .sort((a, b) => b.count - a.count); // Sort by count descending
+  }, [unifiedNotes]);
 
   // Get the currently selected note for the right panel
   const selectedNote = useMemo(() => {
@@ -447,8 +475,9 @@ export const NotesView: React.FC = () => {
 
   const handleEditNote = (note: UnifiedNote) => {
     if (note.type === 'quick') {
-      const quickNote = quickNotes.find(n => n.id === note.id);
-      if (quickNote) setEditingNote(quickNote.id);
+      // Quick notes now edit inline - just select the note
+      setSelectedNoteId(note.id);
+      setMobileView('content');
     } else {
       setEditingRichNoteId(note.id);
       setIsRichNoteEditorOpen(true);
@@ -659,11 +688,28 @@ export const NotesView: React.FC = () => {
                 <Star className="w-4 h-4" />
                 <span>Favorites</span>
               </button>
+              
+              <button
+                onClick={() => {
+                  setSmartFolder('quick');
+                  setSelectedFolderName(null);
+                  setMobileView('list');
+                }}
+                className={cn(
+                  "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors",
+                  smartFolder === 'quick'
+                    ? "bg-primary/10 text-primary font-medium"
+                    : "text-muted-foreground hover:bg-muted/50"
+                )}
+              >
+                <StickyNote className="w-4 h-4" />
+                <span>Quick Notes</span>
+              </button>
             </div>
 
             {/* User Folders */}
             {getFolders().length > 0 && (
-              <div>
+              <div className="mb-4">
                 <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-2 mb-2">
                   Folders
                 </div>
@@ -688,6 +734,78 @@ export const NotesView: React.FC = () => {
                 ))}
               </div>
             )}
+
+            {/* Tags Section (Apple-style collapsible) */}
+            {allTagsWithCounts.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between px-2 py-1.5">
+                  <button
+                    onClick={() => setIsTagsSectionCollapsed(!isTagsSectionCollapsed)}
+                    className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide hover:text-foreground transition-colors"
+                  >
+                    <span>Tags</span>
+                    <ChevronDown 
+                      className={cn(
+                        "w-3.5 h-3.5 transition-transform duration-200",
+                        isTagsSectionCollapsed && "-rotate-90"
+                      )} 
+                    />
+                  </button>
+                  {selectedTagFilters.length > 0 && (
+                    <button
+                      onClick={() => {
+                        clearTagFilters();
+                        setSmartFolder('all');
+                        setSelectedFolderName(null);
+                      }}
+                      className="text-xs text-primary hover:text-primary/80 transition-colors"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+                
+                <AnimatePresence initial={false}>
+                  {!isTagsSectionCollapsed && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2, ease: "easeInOut" }}
+                      className="overflow-hidden"
+                    >
+                      {/* Apple-style flowing grid of tag pills */}
+                      <div className="px-2 py-2 flex flex-wrap gap-1.5">
+                        {allTagsWithCounts.map(({ tag, count }) => {
+                          const isSelected = selectedTagFilters.includes(tag);
+                          return (
+                            <motion.button
+                              key={tag}
+                              onClick={() => {
+                                toggleTagFilter(tag);
+                                setSmartFolder('all');
+                                setSelectedFolderName(null);
+                                setMobileView('list');
+                              }}
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                              className={cn(
+                                "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-all",
+                                isSelected
+                                  ? "bg-primary text-primary-foreground shadow-sm"
+                                  : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                              )}
+                            >
+                              <span>#{tag}</span>
+                            </motion.button>
+                          );
+                        })}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
           </div>
         </div>
 
@@ -698,17 +816,40 @@ export const NotesView: React.FC = () => {
           mobileView === 'list' ? "flex" : "hidden md:flex" // Show on mobile only in list view
         )}>
           {/* Note count + Mobile Folders Button */}
-          <div className="px-4 py-2 border-b border-border bg-muted/20 flex items-center justify-between">
-            <button
-              onClick={() => setMobileView('folders')}
-              className="md:hidden flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <Folder className="w-4 h-4" />
-              <span>Folders</span>
-            </button>
-            <div className="text-sm font-medium text-foreground">
-              {filteredNotes.length} {filteredNotes.length === 1 ? 'note' : 'notes'}
+          <div className="px-4 py-2 border-b border-border bg-muted/20">
+            <div className="flex items-center justify-between mb-1">
+              <button
+                onClick={() => setMobileView('folders')}
+                className="md:hidden flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Folder className="w-4 h-4" />
+                <span>Folders</span>
+              </button>
+              <div className="text-sm font-medium text-foreground">
+                {filteredNotes.length} {filteredNotes.length === 1 ? 'note' : 'notes'}
+              </div>
             </div>
+            
+            {/* Active tag filters (Apple-style) */}
+            {selectedTagFilters.length > 0 && (
+              <div className="flex items-center gap-1.5 flex-wrap mt-2">
+                {selectedTagFilters.map(tag => (
+                  <div
+                    key={tag}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-primary/10 text-primary border border-primary/20"
+                  >
+                    <Hash className="w-3 h-3" />
+                    <span>{tag}</span>
+                    <button
+                      onClick={() => toggleTagFilter(tag)}
+                      className="hover:bg-primary/20 rounded-full p-0.5 transition-colors"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Notes List */}
@@ -868,91 +1009,16 @@ export const NotesView: React.FC = () => {
                 />
               </div>
             ) : (
-              /* Quick Note: Read-only view with edit button */
-              <>
-                {/* Note Header */}
-                <div className="px-6 py-4 border-b border-border flex items-center justify-between">
-                  {/* Mobile Back Button */}
-                  <button
-                    onClick={() => setMobileView('list')}
-                    className="md:hidden mr-3 p-2 hover:bg-muted rounded-lg transition-colors"
-                  >
-                    <ChevronLeft className="w-5 h-5" />
-                  </button>
-                  
-                  <div className="flex-1">
-                    <h1 className="text-2xl font-semibold text-foreground mb-1">
-                      {selectedNote.title}
-                    </h1>
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <span>{new Date(selectedNote.updatedAt).toLocaleString()}</span>
-                      {selectedNote.wordCount && <span>• {selectedNote.wordCount} words</span>}
-                    </div>
-                  </div>
-                  
-                  <button
-                    onClick={() => setOpenMenuId(openMenuId === selectedNote.id ? null : selectedNote.id)}
-                    className="p-2 hover:bg-muted rounded-lg transition-colors"
-                  >
-                    <MoreVertical className="w-4 h-4" />
-                  </button>
-                  
-                  {/* Actions Menu */}
-                  <AnimatePresence>
-                    {openMenuId === selectedNote.id && (
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                        className="absolute right-6 top-16 z-50 w-48 bg-popover border border-border rounded-lg shadow-lg overflow-hidden"
-                        onMouseLeave={() => setOpenMenuId(null)}
-                      >
-                        <button
-                          onClick={() => {
-                            handleEditNote(selectedNote);
-                            setOpenMenuId(null);
-                          }}
-                          className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-muted/50 transition-colors text-left"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                          <span className="text-sm">Edit</span>
-                        </button>
-                        <div className="h-px bg-border my-1" />
-                        <button
-                          onClick={() => {
-                            handleDeleteNote(selectedNote);
-                            setOpenMenuId(null);
-                          }}
-                          className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-red-500/10 transition-colors text-left text-red-500"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                          <span className="text-sm">Delete</span>
-                        </button>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-                
-                {/* Note Content */}
-                <div className="flex-1 overflow-y-auto px-6 py-4">
-                  <NoteContent content={selectedNote.content} className="text-sm text-foreground leading-relaxed whitespace-pre-wrap" />
-                  
-                  {/* Tags */}
-                  {selectedNote.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-6 pt-6 border-t border-border">
-                      {selectedNote.tags.map(tag => (
-                        <span
-                          key={tag}
-                          className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-muted text-muted-foreground"
-                        >
-                          <Hash className="w-3 h-3" />
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </>
+              /* Quick Note: Inline editable view */
+              <QuickNoteInlineEditor
+                key={selectedNote.id}
+                noteId={selectedNote.id}
+                onClose={() => setMobileView('list')}
+                onDelete={() => {
+                  handleDeleteNote(selectedNote);
+                  setSelectedNoteId(null);
+                }}
+              />
             )
           ) : (
             <div className="flex-1 flex items-center justify-center text-center px-6">

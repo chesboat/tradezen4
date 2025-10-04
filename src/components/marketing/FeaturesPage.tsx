@@ -16,6 +16,11 @@ import {
   CheckCircle2,
   ArrowRight,
   FileText,
+  Sparkles,
+  FlaskConical,
+  History,
+  Settings,
+  LineChart,
 } from 'lucide-react';
 
 interface FeaturesPageProps {
@@ -24,6 +29,21 @@ interface FeaturesPageProps {
 
 export const FeaturesPage: React.FC<FeaturesPageProps> = ({ onGetStarted }) => {
   const featureSections = [
+    {
+      icon: <Sparkles className="w-12 h-12" />,
+      title: 'Trading Intelligence Suite',
+      badge: 'Premium',
+      description: 'AI-powered insights that discover what you can\'t see',
+      features: [
+        'Daily Insights: One actionable insight every morning',
+        'Habit Correlation: Which habits actually improve your win rate',
+        'Experiment Mode: Scientific A/B testing for your trading habits',
+        'Insight History: Full archive of all discoveries',
+        'Correlation Charts: Visual proof of what works',
+        'Custom Scheduling: Prioritize the insights you care about',
+      ],
+      image: '🧠',
+    },
     {
       icon: <Brain className="w-12 h-12" />,
       title: 'AI Trading Coach',
@@ -234,6 +254,26 @@ export const FeaturesPage: React.FC<FeaturesPageProps> = ({ onGetStarted }) => {
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
+              {
+                icon: <FlaskConical className="w-6 h-6" />,
+                title: 'Habit Experiments',
+                description: 'Run scientific A/B tests to discover which habits actually improve your trading',
+              },
+              {
+                icon: <History className="w-6 h-6" />,
+                title: 'Insight Archive',
+                description: 'Never lose a discovery. Full searchable history of all your insights',
+              },
+              {
+                icon: <LineChart className="w-6 h-6" />,
+                title: 'Correlation Graphs',
+                description: 'Beautiful charts showing habit impact on win rate and P&L',
+              },
+              {
+                icon: <Settings className="w-6 h-6" />,
+                title: 'Custom Priorities',
+                description: 'Drag-and-drop insight scheduling. Focus on what matters to you',
+              },
               {
                 icon: <Users className="w-6 h-6" />,
                 title: 'Multi-Account Support',

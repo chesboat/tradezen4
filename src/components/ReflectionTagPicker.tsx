@@ -13,6 +13,7 @@ import { useDailyReflectionStore } from '@/store/useDailyReflectionStore';
 import { useActivityLogStore } from '@/store/useActivityLogStore';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
 import { generateReflectionTags, COMMON_REFLECTION_TAGS } from '@/lib/ai/generateReflectionTags';
+import { normalizeTagInput } from '@/lib/hashtagUtils';
 import { cn } from '@/lib/utils';
 
 interface ReflectionTagPickerProps {
@@ -154,16 +155,16 @@ export const ReflectionTagPicker: React.FC<ReflectionTagPickerProps> = ({
   }, [showDropdown]);
 
   const handleAddTag = (tag: string) => {
-    const trimmedTag = tag.trim();
-    if (!trimmedTag || !selectedAccountId) return;
+    const normalizedTag = normalizeTagInput(tag);
+    if (!normalizedTag || !selectedAccountId) return;
 
-    addReflectionTag(date, trimmedTag, selectedAccountId);
+    addReflectionTag(date, normalizedTag, selectedAccountId);
     
     // Log activity
     addActivity({
       type: 'journal',
       title: 'Reflection Tag Added',
-      description: `Added tag: ${trimmedTag}`,
+      description: `Added tag: ${normalizedTag}`,
       xpEarned: 5,
       relatedId: reflection?.id,
       accountId: selectedAccountId,
@@ -174,7 +175,7 @@ export const ReflectionTagPicker: React.FC<ReflectionTagPickerProps> = ({
     handleDropdownToggle(false);
     
     // Remove from suggested tags if it was there
-    setSuggestedTags(prev => prev.filter(t => t !== trimmedTag));
+    setSuggestedTags(prev => prev.filter(t => t !== normalizedTag));
   };
 
   const handleRemoveTag = (tag: string) => {

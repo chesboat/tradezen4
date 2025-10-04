@@ -123,6 +123,10 @@ export const useInsightHistoryStore = create<InsightHistoryState>((set, get) => 
           icon: data.icon,
           severity: data.severity,
           actionType: data.actionType,
+          confidence: data.confidence || 50,
+          impact: data.impact || 50,
+          habitId: data.habitId,
+          actions: data.actions,
           createdAt: data.createdAt?.toDate() || new Date(),
           viewed: data.viewed || false,
         });

@@ -5,26 +5,69 @@
 export const localStorage = {
   /**
    * Get item from localStorage with JSON parsing and validation
+   * BULLETPROOF: Handles all edge cases to prevent app crashes
    */
   getItem: <T>(key: string, defaultValue: T): T => {
     try {
       const item = window.localStorage.getItem(key);
-      if (!item) return defaultValue;
       
-      const parsed = JSON.parse(item);
+      // No data stored - return default
+      if (item === null || item === undefined) {
+        return defaultValue;
+      }
       
-      // Validate data structure matches expected type
-      // If defaultValue is an array, ensure parsed is also an array
-      if (Array.isArray(defaultValue) && !Array.isArray(parsed)) {
-        console.warn(`[localStorage] Expected array for key "${key}", got ${typeof parsed}. Clearing invalid data.`);
+      // Empty string - treat as no data
+      if (item === '') {
+        console.warn(`[localStorage] Empty string for key "${key}". Clearing and using default.`);
         window.localStorage.removeItem(key);
         return defaultValue;
       }
       
+      // Try to parse JSON
+      let parsed: any;
+      try {
+        parsed = JSON.parse(item);
+      } catch (parseError) {
+        console.warn(`[localStorage] Invalid JSON for key "${key}". Clearing invalid data.`);
+        window.localStorage.removeItem(key);
+        return defaultValue;
+      }
+      
+      // Validate data structure matches expected type
+      
+      // If defaultValue is an array, ensure parsed is also an array
+      if (Array.isArray(defaultValue)) {
+        if (!Array.isArray(parsed)) {
+          console.warn(`[localStorage] Expected array for key "${key}", got ${typeof parsed}. Clearing invalid data.`);
+          window.localStorage.removeItem(key);
+          return defaultValue;
+        }
+        // Additional validation: ensure array elements are valid
+        // If we expect objects with specific properties, check first element
+        if (defaultValue.length > 0 && parsed.length > 0) {
+          const expectedType = typeof defaultValue[0];
+          const actualType = typeof parsed[0];
+          if (expectedType !== actualType) {
+            console.warn(`[localStorage] Array elements type mismatch for key "${key}". Expected ${expectedType}, got ${actualType}. Clearing.`);
+            window.localStorage.removeItem(key);
+            return defaultValue;
+          }
+        }
+      }
+      
       // If defaultValue is an object (but not array), ensure parsed is too
-      if (defaultValue !== null && typeof defaultValue === 'object' && !Array.isArray(defaultValue)) {
+      else if (defaultValue !== null && typeof defaultValue === 'object' && !Array.isArray(defaultValue)) {
         if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
-          console.warn(`[localStorage] Expected object for key "${key}", got ${typeof parsed}. Clearing invalid data.`);
+          console.warn(`[localStorage] Expected object for key "${key}", got ${Array.isArray(parsed) ? 'array' : typeof parsed}. Clearing invalid data.`);
+          window.localStorage.removeItem(key);
+          return defaultValue;
+        }
+      }
+      
+      // If defaultValue is a primitive, ensure parsed matches
+      else if (typeof defaultValue !== 'object') {
+        if (typeof parsed !== typeof defaultValue) {
+          console.warn(`[localStorage] Type mismatch for key "${key}". Expected ${typeof defaultValue}, got ${typeof parsed}. Clearing.`);
           window.localStorage.removeItem(key);
           return defaultValue;
         }
@@ -32,7 +75,7 @@ export const localStorage = {
       
       return parsed as T;
     } catch (error) {
-      console.error(`[localStorage] Error reading key "${key}":`, error);
+      console.error(`[localStorage] Unexpected error reading key "${key}":`, error);
       // Proactively clear corrupted data
       try {
         window.localStorage.removeItem(key);
@@ -94,6 +137,75 @@ export const localStorage = {
       return true;
     } catch {
       return false;
+    }
+  },
+
+  /**
+   * Validate and sanitize all localStorage data at startup
+   * This prevents corrupted data from breaking the app
+   */
+  validateAndSanitizeAll: (): void => {
+    if (!localStorage.isAvailable()) {
+      console.warn('[localStorage] localStorage not available, skipping validation');
+      return;
+    }
+
+    const keysToValidate = Object.values(STORAGE_KEYS);
+    let cleanedCount = 0;
+
+    keysToValidate.forEach(key => {
+      try {
+        const raw = window.localStorage.getItem(key);
+        
+        // Skip if no data
+        if (raw === null || raw === undefined) return;
+        
+        // Check for empty strings
+        if (raw === '') {
+          window.localStorage.removeItem(key);
+          cleanedCount++;
+          return;
+        }
+        
+        // Try to parse JSON
+        try {
+          const parsed = JSON.parse(raw);
+          
+          // Check for null or undefined parsed values
+          if (parsed === null || parsed === undefined) {
+            window.localStorage.removeItem(key);
+            cleanedCount++;
+            return;
+          }
+          
+          // Additional checks for common corrupted patterns
+          // e.g., string when array expected
+          if (key.includes('tasks') || key.includes('tiles') || key.includes('notes')) {
+            if (!Array.isArray(parsed)) {
+              console.warn(`[localStorage] Startup cleanup: "${key}" should be array, got ${typeof parsed}`);
+              window.localStorage.removeItem(key);
+              cleanedCount++;
+            }
+          }
+        } catch (parseError) {
+          console.warn(`[localStorage] Startup cleanup: Invalid JSON in "${key}"`);
+          window.localStorage.removeItem(key);
+          cleanedCount++;
+        }
+      } catch (error) {
+        console.error(`[localStorage] Error validating "${key}":`, error);
+        // Try to remove the problematic key
+        try {
+          window.localStorage.removeItem(key);
+          cleanedCount++;
+        } catch (e) {
+          // Ignore
+        }
+      }
+    });
+
+    if (cleanedCount > 0) {
+      console.log(`[localStorage] Startup validation: cleaned ${cleanedCount} corrupted item(s)`);
     }
   },
 };

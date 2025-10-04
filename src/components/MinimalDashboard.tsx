@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useTradeStore } from '@/store/useTradeStore';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
+import type { Trade } from '@/types';
 import { useRuleTallyStore } from '@/store/useRuleTallyStore';
 import { useUserProfileStore } from '@/store/useUserProfileStore';
 import { LevelBadge } from './xp/LevelBadge';

@@ -24,12 +24,13 @@ export interface DailyInsight {
     primary?: { label: string; action: string };
     secondary?: { label: string; action: string };
   };
+  actionType?: string; // Action type for insights
   confidence: number; // 0-100, how confident we are in this insight
   impact: number; // 0-100, how impactful this insight is
   habitId?: string; // For habit correlation insights
 }
 
-type InsightType = 
+export type InsightType = 
   | 'overtrading'
   | 'time-of-day'
   | 'revenge-trading'
@@ -38,6 +39,7 @@ type InsightType =
   | 'rule-adherence'
   | 'win-streak'
   | 'loss-streak'
+  | 'loss-pattern'
   | 'habit-correlation';
 
 const INSIGHT_CACHE_KEY = 'tradzen_daily_insight';

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
+import { normalizeTagInput } from '@/lib/hashtagUtils';
 import { 
   Star, 
   Hash, 
@@ -299,8 +300,9 @@ export const InlineNoteEditor: React.FC<InlineNoteEditorProps> = ({ noteId, onCl
   };
 
   const handleAddTag = () => {
-    if (newTag.trim() && !tags.includes(newTag.trim())) {
-      setTags([...tags, newTag.trim()]);
+    const normalizedTag = normalizeTagInput(newTag);
+    if (normalizedTag && !tags.includes(normalizedTag)) {
+      setTags([...tags, normalizedTag]);
       setNewTag('');
     }
   };

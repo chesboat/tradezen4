@@ -4,11 +4,24 @@ import App from './App.tsx';
 import './index.css';
 import { ShareCalendarSnapshot } from './components/ShareCalendarSnapshot';
 import { PublicCalendarView } from './components/PublicCalendarView';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { localStorage } from './lib/localStorageUtils';
+
+// CRITICAL: Validate and sanitize localStorage before app initialization
+// This prevents corrupted data from breaking the entire app
+try {
+  localStorage.validateAndSanitizeAll();
+} catch (error) {
+  console.error('[Startup] Failed to validate localStorage:', error);
+  // Continue anyway - better to show app with defaults than crash
+}
 
 const mount = (el: HTMLElement, node: React.ReactNode) => {
   ReactDOM.createRoot(el).render(
     <React.StrictMode>
-      {node}
+      <ErrorBoundary>
+        {node}
+      </ErrorBoundary>
     </React.StrictMode>,
   );
 };

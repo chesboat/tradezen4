@@ -44,3 +44,16 @@ export function isValidHashtag(tag: string): boolean {
   const hashtagRegex = /^[a-zA-Z0-9_-]+$/;
   return hashtagRegex.test(tag) && tag.length > 0 && tag.length <= 50;
 }
+
+/**
+ * Normalize tag input by:
+ * - Trimming whitespace
+ * - Removing leading # (or multiple #'s)
+ * - Converting to lowercase
+ * 
+ * This ensures that whether user types "wisdom" or "#wisdom" or "##wisdom",
+ * it's stored consistently as "wisdom" (the display adds # when showing)
+ */
+export function normalizeTagInput(tag: string): string {
+  return tag.trim().replace(/^#+/, '').toLowerCase();
+}

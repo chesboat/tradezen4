@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Tag, X, Plus, Hash } from 'lucide-react';
+import { normalizeTagInput } from '@/lib/hashtagUtils';
 import { cn } from '@/lib/utils';
 
 interface BlockTagPickerProps {
@@ -59,8 +60,9 @@ export const BlockTagPicker: React.FC<BlockTagPickerProps> = ({
   }, []);
 
   const addTag = (tag: string) => {
-    if (tag && !tags.includes(tag)) {
-      onTagsChange([...tags, tag]);
+    const normalizedTag = normalizeTagInput(tag);
+    if (normalizedTag && !tags.includes(normalizedTag)) {
+      onTagsChange([...tags, normalizedTag]);
       setInputValue('');
       setIsOpen(false);
     }
@@ -74,7 +76,7 @@ export const BlockTagPicker: React.FC<BlockTagPickerProps> = ({
     if (e.key === 'Enter') {
       e.preventDefault();
       if (inputValue.trim()) {
-        addTag(inputValue.trim());
+        addTag(inputValue);
       } else if (filteredTags.length > 0) {
         addTag(filteredTags[0]);
       }

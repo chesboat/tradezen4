@@ -59,8 +59,8 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onGetStarted }) => {
               <span>30% cheaper than competitors</span>
             </div>
             <div className="flex items-center gap-2">
-              <Brain className="w-4 h-4 text-primary" />
-              <span>AI-powered insights</span>
+              <Sparkles className="w-4 h-4 text-primary" />
+              <span>Habit correlation AI</span>
             </div>
           </div>
         </motion.div>
@@ -253,11 +253,16 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onGetStarted }) => {
                     { name: 'Data History', basic: '30 days', premium: 'Unlimited' },
                     { name: 'Trading Accounts', basic: '3', premium: 'Unlimited' },
                     { name: 'Trades', basic: 'Unlimited', premium: 'Unlimited' },
+                    { name: 'Daily Insights', basic: '✗', premium: '✓' },
+                    { name: 'Habit Correlation AI', basic: 'Top 1', premium: 'Top 3' },
+                    { name: 'Experiment Mode', basic: '✗', premium: '✓' },
+                    { name: 'Insight History', basic: '✗', premium: '✓' },
+                    { name: 'Correlation Charts', basic: '✗', premium: '✓' },
+                    { name: 'Custom Insight Scheduling', basic: '✗', premium: '✓' },
                     { name: 'Setup Analytics', basic: '✗', premium: '✓' },
                     { name: 'Calendar Heatmap', basic: '✗', premium: '✓' },
                     { name: 'Time Intelligence', basic: '✗', premium: '✓' },
                     { name: 'Custom Date Ranges', basic: '✗', premium: '✓' },
-                    { name: 'AI Insights', basic: '50/month', premium: 'Unlimited' },
                     { name: 'AI Coach', basic: '✗', premium: '✓' },
                     { name: 'Emotional Analysis', basic: '✗', premium: '✓' },
                     { name: 'Habits', basic: '10', premium: 'Unlimited' },

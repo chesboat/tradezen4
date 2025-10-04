@@ -301,7 +301,13 @@ const InsightCard: React.FC<{ insight: StoredInsight; index: number }> = ({ insi
           {insight.metric && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Calendar className="w-4 h-4" />
-              <span>{insight.metric}</span>
+              <div>
+                <div className="font-medium">{insight.metric.label}</div>
+                <div>{insight.metric.value}</div>
+                {insight.metric.comparison && (
+                  <div className="text-xs">{insight.metric.comparison}</div>
+                )}
+              </div>
             </div>
           )}
         </div>

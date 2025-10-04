@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { normalizeTagInput } from '@/lib/hashtagUtils';
 
 interface TagPillProps {
   tag: string;
@@ -202,9 +203,9 @@ export const TagInput: React.FC<TagInputProps> = ({
   };
 
   const addTag = (tag: string) => {
-    const cleanTag = tag.toLowerCase().trim();
-    if (cleanTag && !tags.includes(cleanTag) && tags.length < maxTags) {
-      onAddTag(cleanTag);
+    const normalizedTag = normalizeTagInput(tag);
+    if (normalizedTag && !tags.includes(normalizedTag) && tags.length < maxTags) {
+      onAddTag(normalizedTag);
       setInputValue('');
       setShowSuggestions(false);
     }

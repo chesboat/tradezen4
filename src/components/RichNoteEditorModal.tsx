@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { normalizeTagInput } from '@/lib/hashtagUtils';
 import { 
   X, 
   Save, 
@@ -209,9 +210,9 @@ export const RichNoteEditorModal: React.FC<RichNoteEditorModalProps> = ({
   };
 
   const handleAddTag = () => {
-    const tag = newTag.trim().toLowerCase();
-    if (tag && !tags.includes(tag)) {
-      setTags([...tags, tag]);
+    const normalizedTag = normalizeTagInput(newTag);
+    if (normalizedTag && !tags.includes(normalizedTag)) {
+      setTags([...tags, normalizedTag]);
       setNewTag('');
     }
   };

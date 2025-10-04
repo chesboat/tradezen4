@@ -242,6 +242,12 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted, onViewPricing 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
               {
+                icon: <Sparkles className="w-8 h-8" />,
+                title: 'Trading Intelligence',
+                description: 'Daily insights that discover hidden patterns, habit correlations, and your best trading hours. AI finds what you miss.',
+                badge: 'Premium',
+              },
+              {
                 icon: <Brain className="w-8 h-8" />,
                 title: 'AI Trading Coach',
                 description: 'Get personalized insights on your psychology, patterns, and blind spots. Like having a trading coach in your pocket.',
@@ -405,6 +411,8 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted, onViewPricing 
                   </thead>
                   <tbody className="divide-y divide-border">
                     {[
+                      { name: 'Habit Correlation AI', refine: true, tradezella: false, edgewonk: false },
+                      { name: 'Experiment Mode', refine: true, tradezella: false, edgewonk: false },
                       { name: 'AI Trading Coach', refine: true, tradezella: false, edgewonk: false },
                       { name: 'Discipline Mode', refine: true, tradezella: false, edgewonk: false },
                       { name: 'Habit Tracking', refine: true, tradezella: false, edgewonk: false },
