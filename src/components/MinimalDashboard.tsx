@@ -45,6 +45,7 @@ import EODPromptOff from '@/components/discipline/EODPromptOff';
 import WeeklyReviewCard from '@/components/discipline/WeeklyReviewCard';
 import DisciplineNudgeCard from '@/components/discipline/DisciplineNudgeCard';
 import BulletMeter from '@/components/discipline/BulletMeter';
+import BulletCounterSetupModal from '@/components/discipline/BulletCounterSetupModal';
 import { useSWRConfig } from 'swr';
 import { DailyInsightCard, DailyInsightEmptyState } from './DailyInsightCard';
 import { generateDailyInsight } from '@/lib/dailyInsightEngine';
@@ -734,30 +735,28 @@ export const MinimalDashboard: React.FC = () => {
   const [overrideOpen, setOverrideOpen] = useState(false);
   const [eodOnOpen, setEodOnOpen] = useState(false);
   const [eodOffOpen, setEodOffOpen] = useState(false);
+  const [setupModalOpen, setSetupModalOpen] = useState(false);
   
   // Expose mutate for onSnapshot to push cache updates
   (window as any).__disc_mutate = mutate;
 
   // Handle enabling discipline mode from the nudge card
-  const handleEnableDiscipline = async () => {
+  const handleEnableDiscipline = () => {
+    setSetupModalOpen(true);
+  };
+
+  // Handle confirming the bullet count setup
+  const handleConfirmBulletSetup = async (bulletCount: number) => {
     if (!currentUser) return;
     
-    const input = prompt('Set default daily bullets (1–10):', '3');
-    if (input == null) return; // cancelled
-    
-    const parsed = parseInt(input, 10);
-    if (!Number.isFinite(parsed) || parsed < 1 || parsed > 10) {
-      alert('Please enter a number between 1 and 10');
-      return;
-    }
-    
     try {
-      await setDisciplineMode({ uid: currentUser.uid, enabled: true, defaultMax: parsed });
+      await setDisciplineMode({ uid: currentUser.uid, enabled: true, defaultMax: bulletCount });
       // Revalidate the discipline user data
       mutate(['disc-user', currentUser.uid]);
+      setSetupModalOpen(false);
     } catch (error) {
       console.error('Failed to enable discipline mode:', error);
-      alert('Failed to enable discipline mode. Please try again.');
+      // The error will be shown via the modal's UI
     }
   };
 
@@ -1185,6 +1184,11 @@ export const MinimalDashboard: React.FC = () => {
         </AnimatePresence>
       </div>
       <OverrideModal open={overrideOpen} onClose={() => setOverrideOpen(false)} tz={tz} />
+      <BulletCounterSetupModal 
+        isOpen={setupModalOpen} 
+        onClose={() => setSetupModalOpen(false)} 
+        onConfirm={handleConfirmBulletSetup}
+      />
     </div>
   );
 };
