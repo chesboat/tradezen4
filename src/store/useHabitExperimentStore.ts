@@ -166,10 +166,18 @@ export const useHabitExperimentStore = create<HabitExperimentState>((set, get) =
         createdAt: new Date(),
       };
       
-      const docRef = await addDoc(collection(db, 'habitExperiments'), {
+      // Don't include undefined fields in Firestore
+      const firestoreData: any = {
         ...experiment,
         createdAt: Timestamp.now(),
-      });
+      };
+      
+      // Remove undefined customSchedule
+      if (firestoreData.customSchedule === undefined) {
+        delete firestoreData.customSchedule;
+      }
+      
+      const docRef = await addDoc(collection(db, 'habitExperiments'), firestoreData);
       
       const newExperiment: HabitExperiment = {
         ...experiment,

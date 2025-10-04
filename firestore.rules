@@ -131,6 +131,24 @@ service cloud.firestore {
       allow read, write: if isOwner(userId);
     }
 
+    // Premium Intelligence Features
+    // Habit Experiments - structured A/B testing
+    match /habitExperiments/{experimentId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == resource.data.userId;
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.userId;
+    }
+    
+    // Insight History - archive of daily insights
+    match /insightHistory/{insightId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == resource.data.userId;
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.userId;
+    }
+    
+    // Insight Preferences - user customization of insights
+    match /insightPreferences/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
     // Default deny all other access
     match /{document=**} {
       allow read, write: if false;
