@@ -92,7 +92,22 @@ export const TradingHealthView: React.FC = () => {
     console.log('[Trading Health] Total trades:', trades.length);
     console.log('[Trading Health] Filtered trades:', filteredTrades.length);
     if (filteredTrades.length > 0) {
-      console.log('[Trading Health] Sample trade:', filteredTrades[0]);
+      const sample = filteredTrades[0];
+      console.log('[Trading Health] Sample trade:', sample);
+      console.log('[Trading Health] Trade fields check:', {
+        hasPnl: 'pnl' in sample,
+        hasResult: 'result' in sample,
+        hasRiskAmount: 'riskAmount' in sample,
+        hasRrRatio: 'rrRatio' in sample,
+        hasRiskRewardRatio: 'riskRewardRatio' in sample,
+        hasAccountBalance: 'accountBalance' in sample,
+        hasTags: 'tags' in sample && sample.tags?.length > 0,
+        hasNotes: 'notes' in sample && sample.notes?.length >= 10,
+        pnlValue: sample.pnl,
+        resultValue: sample.result,
+        tagsCount: sample.tags?.length || 0,
+        notesLength: sample.notes?.length || 0
+      });
     }
   }, [trades, filteredTrades, selectedAccountId, selectedAccount]);
 
@@ -101,6 +116,24 @@ export const TradingHealthView: React.FC = () => {
     console.log('[Trading Health] Calculating metrics for', filteredTrades.length, 'trades in', timeWindow, 'window');
     const result = calculateTradingHealth(filteredTrades, timeWindow);
     console.log('[Trading Health] Metrics calculated:', result);
+    console.log('[Trading Health] Edge Ring:', {
+      value: result.edge.value,
+      expectancy: result.edge.expectancy,
+      winRate: result.edge.winRate,
+      profitFactor: result.edge.profitFactor
+    });
+    console.log('[Trading Health] Consistency Ring:', {
+      value: result.consistency.value,
+      rulesFollowed: result.consistency.rulesFollowed,
+      totalRules: result.consistency.totalRules,
+      currentStreak: result.consistency.currentStreak
+    });
+    console.log('[Trading Health] Risk Control Ring:', {
+      value: result.riskControl.value,
+      currentDrawdown: result.riskControl.currentDrawdown,
+      peakEquity: result.riskControl.peakEquity,
+      maxConsecutiveLosses: result.riskControl.maxConsecutiveLosses
+    });
     return result;
   }, [filteredTrades, timeWindow]);
 
