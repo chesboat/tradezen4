@@ -17,7 +17,8 @@ import {
   Crown,
   Zap,
   Calendar,
-  CreditCard
+  CreditCard,
+  Sparkles
 } from 'lucide-react';
 import { useUserProfileStore } from '@/store/useUserProfileStore';
 import { useAuth } from '@/contexts/AuthContext';
@@ -379,9 +380,10 @@ export const SettingsPage: React.FC = () => {
             <div className="flex items-center justify-between mb-3">
               <label className="block text-sm font-medium">Accent Color</label>
               {!isPremium && (
-                <span className="text-xs text-muted-foreground bg-muted/30 px-2 py-1 rounded-md">
-                  Premium colors locked
-                </span>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span className="hidden sm:inline">5 premium colors</span>
+                  <Crown className="w-3.5 h-3.5 text-primary" />
+                </div>
               )}
             </div>
             <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
@@ -394,45 +396,75 @@ export const SettingsPage: React.FC = () => {
                     key={key}
                     onClick={() => {
                       if (isLocked) {
-                        toast.error('Upgrade to Premium to unlock this color');
+                        setShowUpgradeModal(true);
                         return;
                       }
                       setAccentColor(key);
                       toast.success(`Accent color changed to ${palette.name}`);
                     }}
-                    disabled={isLocked}
-                    className={`relative flex flex-col items-center gap-2 p-3 rounded-lg border transition-all ${
+                    className={`relative flex flex-col items-center gap-2 p-3 rounded-lg border transition-all group ${
                       isSelected
                         ? 'bg-primary/10 border-primary ring-2 ring-primary/20'
                         : isLocked
-                          ? 'bg-muted/20 border-border opacity-40 cursor-not-allowed'
+                          ? 'bg-gradient-to-br from-muted/10 to-muted/5 border-border/50 hover:border-primary/30 hover:shadow-md hover:scale-105 cursor-pointer'
                           : 'bg-background hover:bg-accent border-border hover:border-primary/30'
                     }`}
                   >
                     {/* Color Preview Circle */}
                     <div 
-                      className="w-8 h-8 rounded-full border-2 border-border flex items-center justify-center text-lg"
+                      className={`w-8 h-8 rounded-full border-2 ${isLocked ? 'border-dashed border-primary/20' : 'border-border'} flex items-center justify-center text-lg transition-transform ${isLocked ? 'group-hover:scale-110' : ''}`}
                       style={{
                         background: isLocked 
-                          ? 'hsl(0 0% 50%)' 
+                          ? `linear-gradient(135deg, hsl(${theme === 'dark' ? palette.dark.primary : palette.light.primary}) 0%, hsl(${theme === 'dark' ? palette.dark.primary : palette.light.primary}) 100%)`
                           : theme === 'dark' 
                             ? `hsl(${palette.dark.primary})`
-                            : `hsl(${palette.light.primary})`
+                            : `hsl(${palette.light.primary})`,
+                        opacity: isLocked ? 0.4 : 1
                       }}
                     >
                       {isLocked && (
-                        <span className="text-xs">🔒</span>
+                        <Crown className="w-4 h-4 text-white/90 drop-shadow" />
                       )}
                     </div>
                     
                     {/* Color Name */}
-                    <span className="text-xs font-medium text-center leading-tight">
+                    <span className={`text-xs font-medium text-center leading-tight transition-colors ${isLocked ? 'text-muted-foreground group-hover:text-primary' : ''}`}>
                       {palette.emoji} {palette.name.split(' ')[palette.name.split(' ').length - 1]}
                     </span>
                   </button>
                 );
               })}
             </div>
+            
+            {/* Premium CTA - Apple-style subtle but clear */}
+            {!isPremium && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="mt-4 p-4 rounded-xl bg-gradient-to-br from-primary/5 via-purple-500/5 to-pink-500/5 border border-primary/10"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center flex-shrink-0">
+                    <Sparkles className="w-5 h-5 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-semibold mb-1 text-sm">Make Refine truly yours</h4>
+                    <p className="text-xs text-muted-foreground mb-3">
+                      Unlock 5 beautiful accent colors and personalize every part of your trading journal.
+                    </p>
+                    <button
+                      onClick={() => setShowUpgradeModal(true)}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+                    >
+                      <Crown className="w-4 h-4" />
+                      Unlock Premium Colors
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+            
             <p className="text-xs text-muted-foreground mt-3">
               Accent color applies to buttons, links, and interactive elements throughout the app.
             </p>
