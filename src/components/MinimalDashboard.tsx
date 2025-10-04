@@ -47,6 +47,7 @@ import { useSWRConfig } from 'swr';
 import { DailyInsightCard, DailyInsightEmptyState } from './DailyInsightCard';
 import { generateDailyInsight } from '@/lib/dailyInsightEngine';
 import { useTodoStore } from '@/store/useTodoStore';
+import { useInsightHistoryStore } from '@/store/useInsightHistoryStore';
 import {
   useAnalyticsFilterStore,
   createGoldenHourFilter,
@@ -819,6 +820,16 @@ export const MinimalDashboard: React.FC = () => {
   const dailyInsight = useMemo(() => {
     return generateDailyInsight(accountTrades, habitsForInsights, habitDaysForInsights);
   }, [accountTrades, habitsForInsights, habitDaysForInsights]);
+
+  const { saveInsight } = useInsightHistoryStore();
+  
+  // Auto-save insight to history (Premium feature)
+  useEffect(() => {
+    if (dailyInsight) {
+      const today = new Date().toISOString().split('T')[0];
+      saveInsight(dailyInsight, today);
+    }
+  }, [dailyInsight, saveInsight]);
 
   const [insightDismissed, setInsightDismissed] = useState(false);
   const { setFilter } = useAnalyticsFilterStore();

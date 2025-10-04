@@ -10,6 +10,12 @@ export interface TierLimits {
   hasCustomDateRanges: boolean;
   hasTimeIntelligence: boolean;
   hasUnlimitedAI: boolean;
+  // Trading Intelligence Premium Features
+  hasInsightHistory: boolean;
+  hasMultipleCorrelations: boolean;
+  hasCorrelationCharts: boolean;
+  hasInsightScheduling: boolean;
+  hasExperimentMode: boolean;
 }
 
 export const TIER_LIMITS: Record<'trial' | 'basic' | 'premium', TierLimits> = {
@@ -20,6 +26,11 @@ export const TIER_LIMITS: Record<'trial' | 'basic' | 'premium', TierLimits> = {
     hasCustomDateRanges: true,
     hasTimeIntelligence: true,
     hasUnlimitedAI: true,
+    hasInsightHistory: true,
+    hasMultipleCorrelations: true,
+    hasCorrelationCharts: true,
+    hasInsightScheduling: true,
+    hasExperimentMode: true,
   },
   basic: {
     dataRetentionDays: 30, // 30-day limit
@@ -28,6 +39,11 @@ export const TIER_LIMITS: Record<'trial' | 'basic' | 'premium', TierLimits> = {
     hasCustomDateRanges: false,
     hasTimeIntelligence: false,
     hasUnlimitedAI: false,
+    hasInsightHistory: false,
+    hasMultipleCorrelations: false,
+    hasCorrelationCharts: false,
+    hasInsightScheduling: false,
+    hasExperimentMode: false,
   },
   premium: {
     dataRetentionDays: null, // Unlimited
@@ -36,6 +52,11 @@ export const TIER_LIMITS: Record<'trial' | 'basic' | 'premium', TierLimits> = {
     hasCustomDateRanges: true,
     hasTimeIntelligence: true,
     hasUnlimitedAI: true,
+    hasInsightHistory: true,
+    hasMultipleCorrelations: true,
+    hasCorrelationCharts: true,
+    hasInsightScheduling: true,
+    hasExperimentMode: true,
   },
 };
 
@@ -126,6 +147,26 @@ export function getFeatureUpgradeCTA(feature: keyof Omit<TierLimits, 'dataRetent
     hasUnlimitedAI: {
       title: 'Unlimited AI Insights',
       description: 'Get unlimited AI-powered insights and analysis. Upgrade to Premium to unlock.',
+    },
+    hasInsightHistory: {
+      title: 'Insight History Archive',
+      description: 'Access all your past daily insights. Never miss a discovery. Upgrade to Premium to unlock.',
+    },
+    hasMultipleCorrelations: {
+      title: 'Multiple Habit Correlations',
+      description: 'See your top 3 habit-performance connections, not just the strongest. Upgrade to Premium to unlock.',
+    },
+    hasCorrelationCharts: {
+      title: 'Correlation Performance Charts',
+      description: 'Visualize how your habits impact trading with beautiful charts. Upgrade to Premium to unlock.',
+    },
+    hasInsightScheduling: {
+      title: 'Custom Insight Priorities',
+      description: 'Choose which insights you see first. Personalize your daily intelligence. Upgrade to Premium to unlock.',
+    },
+    hasExperimentMode: {
+      title: 'Habit Experiment Mode',
+      description: 'A/B test your habits with structured experiments and comparison analytics. Upgrade to Premium to unlock.',
     },
   };
 

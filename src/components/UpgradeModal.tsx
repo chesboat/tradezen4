@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Check, Sparkles, Zap, TrendingUp, Clock, Calendar, Tag } from 'lucide-react';
+import { X, Check, Sparkles, Zap, TrendingUp, Clock, Calendar, Tag, History, BarChart3, Settings, FlaskConical } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface UpgradeModalProps {
@@ -44,6 +44,31 @@ const PREMIUM_FEATURES = [
     icon: Sparkles,
     title: 'Unlimited AI Insights',
     description: 'Get unlimited AI-powered analysis',
+  },
+  {
+    icon: History,
+    title: 'Insight History',
+    description: 'Never miss a discovery - see all past insights',
+  },
+  {
+    icon: BarChart3,
+    title: 'Multiple Correlations',
+    description: 'See top 3 habit connections, not just strongest',
+  },
+  {
+    icon: BarChart3,
+    title: 'Correlation Charts',
+    description: 'Visualize habit impact with beautiful graphs',
+  },
+  {
+    icon: Settings,
+    title: 'Insight Scheduling',
+    description: 'Prioritize which insights you see first',
+  },
+  {
+    icon: FlaskConical,
+    title: 'Experiment Mode',
+    description: 'A/B test habits with structured experiments',
   },
 ];
 
