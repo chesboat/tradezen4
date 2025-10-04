@@ -306,8 +306,7 @@ export const Dashboard: React.FC = () => {
   const wr = summarizeWinLossScratch(filteredTrades);
   const winningTrades = wr.wins;
   const losingTrades = wr.losses;
-  const breakEvenTrades = wr.scratches;
-  const winRate = wr.winRateExclScratches;
+  const winRate = wr.winRateExclScratches; // Now this is just the true win rate
 
   // Guardrails: risk used vs daily limit (if available), trades left, time since last trade
   const todayLossAbs = Math.abs(
@@ -671,7 +670,7 @@ export const Dashboard: React.FC = () => {
             <CircularProgress
               wins={winningTrades}
               losses={losingTrades}
-              breakeven={breakEvenTrades}
+              breakeven={0}
               size="sm"
               showLabels={false}
               showInlineNumbers={true}
@@ -1023,8 +1022,7 @@ export const Dashboard: React.FC = () => {
                     .sort((a, b) => new Date(b.entryTime).getTime() - new Date(a.entryTime).getTime())
                     .slice(0, 10)
                     .map((t) => {
-                      const cls = classifyTradeResult(t);
-                      const isScratch = cls === 'breakeven';
+                      // All trades are either wins or losses
                       return (
                         <tr key={t.id} className="border-t border-border/60 hover:bg-muted/20">
                           <td className="px-3 py-2 whitespace-nowrap">{new Date(t.entryTime).toLocaleDateString()}</td>
@@ -1037,16 +1035,7 @@ export const Dashboard: React.FC = () => {
                           <td className={`px-3 py-2 text-right ${((t.pnl || 0) >= 0) ? 'text-green-500' : 'text-red-500'}`}>{formatCurrency(t.pnl || 0)}</td>
                           <td className="px-3 py-2 text-right">{Number.isFinite(t.riskRewardRatio) ? t.riskRewardRatio.toFixed(2) : '—'}</td>
                           <td className="px-3 py-2">
-                            <div className="flex items-center gap-1">
-                              <span className="capitalize text-muted-foreground">{cls}</span>
-                              {isScratch && (
-                                <Tooltip content="Scratch (excluded from win rate)">
-                                  <span className="inline-flex items-center gap-1 text-[11px] text-yellow-500">
-                                    <MinusCircle className="w-3.5 h-3.5" />
-                                  </span>
-                                </Tooltip>
-                              )}
-                            </div>
+                            <span className="capitalize text-muted-foreground">{t.result}</span>
                           </td>
                         </tr>
                       );

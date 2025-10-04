@@ -330,7 +330,7 @@ export const TradeCSVImport: React.FC<TradeCSVImportProps> = ({ isOpen, onClose 
           quantity: r.quantity,
           riskAmount: Math.max(Math.abs(finalPnl), 0),
           riskRewardRatio: 1,
-          result: finalPnl === 0 ? 'breakeven' : finalPnl > 0 ? 'win' : 'loss',
+          result: finalPnl > 0 ? 'win' : 'loss', // Simple binary: profit = win, no profit = loss
           pnl: finalPnl,
           entryTime: r.entryTime || new Date(),
           exitTime: r.exitTime,

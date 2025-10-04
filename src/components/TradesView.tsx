@@ -184,7 +184,7 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
     const newPnl = parseFloat(editingPnlValue);
     if (!isNaN(newPnl)) {
       // Preserve the sign based on original result
-      const signedPnl = trade.result === 'loss' ? -Math.abs(newPnl) : trade.result === 'breakeven' ? 0 : Math.abs(newPnl);
+      const signedPnl = trade.result === 'loss' ? -Math.abs(newPnl) : Math.abs(newPnl);
       await updateTrade(tradeId, { pnl: signedPnl });
     }
     setEditingPnlId(null);
@@ -523,10 +523,10 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
     return filtered;
   }, [trades, filters, sortConfig, quickFilter, selectedAccountId, includeArchived, activeTag, selectedTagFilters]);
 
-  // Calculate statistics (exclude scratches from win rate)
+  // Calculate statistics (true, honest win rate - all trades count)
   const statistics = useMemo(() => {
     const totalTrades = filteredTrades.length;
-    const { wins: winningTrades, losses: losingTrades, scratches: breakEvenTrades, winRateExclScratches: winRate } = summarizeWinLossScratch(filteredTrades);
+    const { wins: winningTrades, losses: losingTrades, winRateExclScratches: winRate } = summarizeWinLossScratch(filteredTrades);
 
     const totalPnl = filteredTrades.reduce((sum, trade) => sum + (trade.pnl || 0), 0);
     const totalRisk = filteredTrades.reduce((sum, trade) => sum + trade.riskAmount, 0);
@@ -549,7 +549,6 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
       totalTrades,
       winningTrades,
       losingTrades,
-      breakEvenTrades,
       totalPnl,
       totalRisk,
       avgPnl,
@@ -699,7 +698,6 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
     switch (result) {
       case 'win': return 'text-green-500';
       case 'loss': return 'text-red-500';
-      case 'breakeven': return 'text-yellow-500';
       default: return 'text-muted-foreground';
     }
   };
@@ -708,7 +706,6 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
     switch (result) {
       case 'win': return <CheckCircle className="w-4 h-4 text-green-500" />;
       case 'loss': return <AlertCircle className="w-4 h-4 text-red-500" />;
-      case 'breakeven': return <Minus className="w-4 h-4 text-yellow-500" />;
       default: return null;
     }
   };
@@ -887,7 +884,6 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                     <option value="all">All Results</option>
                     <option value="win">Win</option>
                     <option value="loss">Loss</option>
-                    <option value="breakeven">Break Even</option>
                   </select>
                 </div>
 
@@ -1375,20 +1371,7 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                         <span className={cn('text-sm capitalize', trade.result && getResultColor(trade.result))}>
                           {trade.result || 'Pending'}
                         </span>
-                        {(() => {
-                          const classification = classifyTradeResult(trade);
-                          if (classification === 'breakeven') {
-                            return (
-                              <div className="group relative">
-                                <MinusCircle className="w-4 h-4 text-yellow-500/60" />
-                                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-popover border border-border rounded text-xs text-foreground opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
-                                  Scratch (excluded from win rate)
-                                </div>
-                              </div>
-                            );
-                          }
-                          return null;
-                        })()}
+                        {/* No scratch badges - every trade is simply a win or loss */}
                       </div>
                     </td>
                     <td className="p-3 relative">
@@ -1634,20 +1617,7 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                   <span className={cn('text-sm capitalize', trade.result && getResultColor(trade.result))}>
                     {trade.result || 'Pending'}
                   </span>
-                  {(() => {
-                    const classification = classifyTradeResult(trade);
-                    if (classification === 'breakeven') {
-                      return (
-                        <div className="group relative">
-                          <MinusCircle className="w-4 h-4 text-yellow-500/60" />
-                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-popover border border-border rounded text-xs text-foreground opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
-                            Scratch (excluded from win rate)
-                          </div>
-                        </div>
-                      );
-                    }
-                    return null;
-                  })()}
+                  {/* No scratch badges - every trade is simply a win or loss */}
                 </div>
                 <div className="flex items-center gap-2 relative">
                   <span 

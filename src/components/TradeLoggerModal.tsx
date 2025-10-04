@@ -440,9 +440,8 @@ export const TradeLoggerModal: React.FC<TradeLoggerModalProps> = ({
             }
           } else if (formData.result === 'loss') {
             await awardXp.tradeLoss(pnl);
-          } else if (formData.result === 'breakeven') {
-            await awardXp.tradeScratch(pnl);
           }
+          // No more scratches - every trade is either a win or loss
           
           console.log('✅ XP award completed');
         } catch (xpError) {
@@ -955,20 +954,6 @@ export const TradeLoggerModal: React.FC<TradeLoggerModalProps> = ({
                   >
                     <X className="w-4 h-4" />
                     LOSS
-                  </motion.button>
-                  <motion.button
-                    onClick={() => setFormData(prev => ({ ...prev, result: 'breakeven' }))}
-                    className={cn(
-                      'flex items-center justify-center gap-2 p-3 rounded-xl font-bold transition-all',
-                      formData.result === 'breakeven'
-                        ? 'bg-yellow-500 text-white shadow-lg'
-                        : 'bg-muted hover:bg-accent text-muted-foreground hover:text-accent-foreground'
-                    )}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <Target className="w-4 h-4" />
-                    EVEN
                   </motion.button>
                 </div>
               </div>

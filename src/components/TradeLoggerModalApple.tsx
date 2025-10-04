@@ -113,12 +113,12 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
 
   const handleSubmit = async () => {
     if (!symbol || !result || !selectedAccountId) return;
-    if (result !== 'breakeven' && !pnl) return;
+    if (!pnl) return; // P&L is always required
     
     setIsSubmitting(true);
     
     try {
-      const pnlValue = result === 'breakeven' ? 0 : parseFloat(pnl);
+      const pnlValue = parseFloat(pnl);
       
       // Calculate risk amount: If 2R profit = $343, then 1R = $343/2 = $171.50
       // For now, we default to 1R (actual R:R can be edited inline in trades table)
@@ -149,7 +149,7 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
         symbol: symbol.toUpperCase(),
         direction,
         result,
-        pnl: result === 'loss' ? -Math.abs(pnlValue) : result === 'breakeven' ? 0 : Math.abs(pnlValue),
+        pnl: result === 'loss' ? -Math.abs(pnlValue) : Math.abs(pnlValue),
         entryPrice: 0,
         exitPrice: result === 'win' ? Math.abs(pnlValue) : 0,
         quantity: 1,
@@ -187,7 +187,7 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
     }
   };
 
-  const canSubmit = symbol && result && (result === 'breakeven' || pnl) && !isSubmitting;
+  const canSubmit = symbol && result && pnl && !isSubmitting;
 
   return (
     <AnimatePresence>
@@ -371,26 +371,11 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
                     <AlertCircle className="w-5 h-5 mb-1" />
                     <span className="text-sm">Loss</span>
                   </button>
-                  <button
-                    onClick={() => {
-                      setResult('breakeven');
-                      setPnl('0');
-                    }}
-                    className={cn(
-                      "flex flex-col items-center justify-center py-3 rounded-xl font-medium transition-all",
-                      result === 'breakeven'
-                        ? "bg-yellow-500 text-white"
-                        : "bg-muted/30 text-foreground hover:bg-muted/50"
-                    )}
-                  >
-                    <Minus className="w-5 h-5 mb-1" />
-                    <span className="text-sm">Scratch</span>
-                  </button>
                 </div>
                 
                 {/* P&L appears inline below outcome */}
                 <AnimatePresence>
-                  {result && result !== 'breakeven' && (
+                  {result && (
                     <motion.div
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}

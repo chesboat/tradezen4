@@ -1,5 +1,7 @@
 export type TradeDirection = 'long' | 'short';
-export type TradeResult = 'win' | 'loss' | 'breakeven';
+// Simplified: Every trade is either a win or loss. No scratches/breakeven.
+// This provides honest, reliable data that traders can trust.
+export type TradeResult = 'win' | 'loss';
 export type MoodType = 'excellent' | 'good' | 'neutral' | 'poor' | 'terrible';
 export type QuestStatus = 'pending' | 'in_progress' | 'completed' | 'failed' | 'cancelled';
 export type WellnessActionType = 'breathwork' | 'meditation' | 'exercise' | 'gratitude' | 'break';

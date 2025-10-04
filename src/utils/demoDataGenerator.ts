@@ -89,10 +89,10 @@ const demoTrades: DemoTradeTemplate[] = [
     direction: 'long',
     riskAmount: 175,
     riskRewardRatio: 1.2,
-    result: 'breakeven',
+    result: 'loss',
     mood: 'neutral',
-    notes: 'Sideways action. Got out at breakeven.',
-    tags: ['sideways', 'breakeven', 'tech'],
+    notes: 'Sideways action. Small loss cutting early.',
+    tags: ['sideways', 'tech'],
     daysAgo: 7,
     entryPrice: 380.25,
     quantity: 80,
@@ -281,9 +281,9 @@ const demoTrades: DemoTradeTemplate[] = [
     direction: 'short',
     riskAmount: 350,
     riskRewardRatio: 2.0,
-    result: 'breakeven',
+    result: 'loss',
     mood: 'neutral',
-    notes: 'Crypto miner trade. Choppy action, got out flat.',
+    notes: 'Crypto miner trade. Choppy action, small loss.',
     tags: ['crypto', 'miner', 'choppy'],
     daysAgo: 55,
     entryPrice: 18.75,
@@ -322,10 +322,7 @@ export const generateDemoTrades = (accountId: string): Trade[] => {
           ? template.entryPrice - lossPriceMove
           : template.entryPrice + lossPriceMove;
         break;
-      case 'breakeven':
-        pnl = Math.random() * 20 - 10; // Small random P&L around breakeven
-        exitPrice = template.entryPrice + (pnl / template.quantity);
-        break;
+      // No more breakeven case - all trades are wins or losses
     }
 
     return {

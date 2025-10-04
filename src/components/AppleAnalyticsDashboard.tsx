@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   DollarSign, TrendingUp, TrendingDown, Activity, Calendar, 
   Trophy, AlertTriangle, ChevronDown, ChevronRight, X, ArrowUp, ArrowDown,
-  Target, Zap, MinusCircle, Lightbulb, Clock, Trash2, Lock, Sparkles
+  Target, Zap, MinusCircle, Lightbulb, Clock, Trash2, Lock, Sparkles, Info
 } from 'lucide-react';
 import { useTradeStore } from '@/store/useTradeStore';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
@@ -247,6 +247,101 @@ const HeroAnalyticsPnL: React.FC<{
 };
 
 // ===============================================
+// APPLE-STYLE METRIC TOOLTIP
+// ===============================================
+
+interface MetricTooltipProps {
+  title: string;
+  explanation: string;
+  currentState: string;
+  improvementTip?: string;
+  children: React.ReactNode;
+}
+
+const MetricTooltip: React.FC<MetricTooltipProps> = ({ title, explanation, currentState, improvementTip, children }) => {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const tooltipRef = React.useRef<HTMLDivElement>(null);
+
+  // Close on click outside
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (tooltipRef.current && !tooltipRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen]);
+
+  return (
+    <div className="relative inline-flex items-center" ref={tooltipRef}>
+      {children}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsOpen(!isOpen);
+        }}
+        className="ml-1.5 text-muted-foreground/60 hover:text-primary transition-colors cursor-help"
+        aria-label={`Info about ${title}`}
+      >
+        <Info className="w-3.5 h-3.5" />
+      </button>
+      
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: -10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: -10 }}
+            transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
+            className="absolute left-0 top-full mt-2 w-72 bg-popover border border-border rounded-xl shadow-2xl p-4 z-50"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Title */}
+            <div className="flex items-start justify-between mb-2">
+              <h4 className="text-sm font-semibold text-foreground">{title}</h4>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsOpen(false);
+                }}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            
+            {/* Explanation */}
+            <p className="text-xs text-muted-foreground mb-3 leading-relaxed">
+              {explanation}
+            </p>
+            
+            {/* Current State */}
+            <div className="bg-muted/30 rounded-lg p-2.5 mb-3">
+              <p className="text-xs font-medium text-foreground">
+                {currentState}
+              </p>
+            </div>
+            
+            {/* Improvement Tip */}
+            {improvementTip && (
+              <div className="flex items-start gap-2 bg-primary/5 rounded-lg p-2.5">
+                <Lightbulb className="w-3.5 h-3.5 text-primary flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-foreground leading-relaxed">
+                  {improvementTip}
+                </p>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+// ===============================================
 // YOUR EDGE AT A GLANCE (Horizontal Bars)
 // ===============================================
 
@@ -258,6 +353,12 @@ interface EdgeMetric {
   description: string;
   actionText?: string;
   onAction?: () => void;
+  tooltip?: {
+    title: string;
+    explanation: string;
+    currentState: string;
+    improvementTip?: string;
+  };
 }
 
 const EdgeBar: React.FC<EdgeMetric & { onClick?: () => void }> = ({
@@ -267,7 +368,8 @@ const EdgeBar: React.FC<EdgeMetric & { onClick?: () => void }> = ({
   status,
   description,
   actionText,
-  onClick
+  onClick,
+  tooltip
 }) => {
   const percentage = (value / max) * 100;
   
@@ -286,17 +388,23 @@ const EdgeBar: React.FC<EdgeMetric & { onClick?: () => void }> = ({
   };
 
   return (
-    <motion.button
-      onClick={onClick}
+    <motion.div
       className={cn(
         "w-full text-left p-4 rounded-xl transition-all duration-200",
         onClick && "hover:bg-muted/30 hover:scale-[1.01] cursor-pointer"
       )}
       whileTap={onClick ? { scale: 0.99 } : {}}
+      onClick={onClick}
     >
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-foreground">{label}</span>
+          {tooltip ? (
+            <MetricTooltip {...tooltip}>
+              <span className="text-sm font-medium text-foreground">{label}</span>
+            </MetricTooltip>
+          ) : (
+            <span className="text-sm font-medium text-foreground">{label}</span>
+          )}
           <span className="text-xs">{statusIcons[status]}</span>
         </div>
         <span className="text-sm font-semibold text-foreground tabular-nums">{value.toFixed(0)}</span>
@@ -318,7 +426,7 @@ const EdgeBar: React.FC<EdgeMetric & { onClick?: () => void }> = ({
           <span className="text-xs text-primary font-medium">{actionText} →</span>
         )}
       </div>
-    </motion.button>
+    </motion.div>
   );
 };
 
@@ -338,28 +446,82 @@ const YourEdgeAtAGlance: React.FC<{ trades: any[] }> = ({ trades }) => {
     return (winRateExclScratches / 100) * avgWin - (1 - winRateExclScratches / 100) * avgLoss;
   }, [trades]);
 
-  // Apple approach: 5 key metrics with visual health indicator
+  // Apple approach: 5 key metrics with visual health indicator and contextual tooltips
   const metrics: EdgeMetric[] = [
     {
       label: 'Expectancy',
       value: Math.abs(expectancy),
       max: Math.max(100, Math.abs(expectancy) * 1.5),
       status: expectancy > 50 ? 'excellent' : expectancy > 20 ? 'good' : expectancy > 0 ? 'warning' : 'danger',
-      description: `${formatCurrency(expectancy)} per trade`
+      description: `${formatCurrency(expectancy)} per trade`,
+      tooltip: {
+        title: 'Expectancy',
+        explanation: 'Your expected profit per trade based on your win rate and average win/loss sizes. This is the most important metric for long-term profitability.',
+        currentState: expectancy > 50 
+          ? `Outstanding! Your ${formatCurrency(expectancy)} expectancy means you're extremely profitable.`
+          : expectancy > 20
+          ? `Great work! Your ${formatCurrency(expectancy)} expectancy shows strong profitability.`
+          : expectancy > 0
+          ? `You're profitable at ${formatCurrency(expectancy)} per trade, but there's room to grow.`
+          : `Negative expectancy (${formatCurrency(expectancy)}) means you're losing money over time.`,
+        improvementTip: expectancy > 50
+          ? undefined
+          : expectancy > 20
+          ? 'To reach excellence: Increase your average win size by letting winners run longer, or improve your entry timing to boost win rate.'
+          : expectancy > 0
+          ? 'Focus on two things: 1) Cut losing trades faster to reduce avg loss, 2) Let winners run to increase avg win. Even small improvements compound dramatically.'
+          : 'Critical: Review your strategy immediately. Focus on proper risk management, better entry signals, and cutting losses quickly. Consider reducing position size while you rebuild your edge.'
+      }
     },
     {
       label: 'Win Rate',
       value: edge.breakdown.winRate,
       max: 100,
       status: edge.breakdown.winRate >= 60 ? 'excellent' : edge.breakdown.winRate >= 50 ? 'good' : edge.breakdown.winRate >= 40 ? 'warning' : 'danger',
-      description: 'Percentage of profitable trades'
+      description: 'Percentage of profitable trades',
+      tooltip: {
+        title: 'Win Rate',
+        explanation: 'The percentage of your trades that are profitable. Note: A lower win rate can still be profitable if your winners are much bigger than your losers.',
+        currentState: edge.breakdown.winRate >= 60
+          ? `Excellent! Your ${edge.breakdown.winRate.toFixed(0)}% win rate is well above average.`
+          : edge.breakdown.winRate >= 50
+          ? `Good! Your ${edge.breakdown.winRate.toFixed(0)}% win rate is solid and sustainable.`
+          : edge.breakdown.winRate >= 40
+          ? `Your ${edge.breakdown.winRate.toFixed(0)}% win rate is below average but can still be profitable with proper risk/reward.`
+          : `Your ${edge.breakdown.winRate.toFixed(0)}% win rate is concerning and needs improvement.`,
+        improvementTip: edge.breakdown.winRate >= 60
+          ? undefined
+          : edge.breakdown.winRate >= 50
+          ? 'To reach excellence: Tighten your entry criteria and wait for higher-probability setups. Quality over quantity.'
+          : edge.breakdown.winRate >= 40
+          ? 'You can still be profitable! Focus on risk/reward. Make sure your winners are at least 2x your losers. Review your best setups and stick to them.'
+          : 'Review your trading journal to identify your highest win-rate setups and time periods. Eliminate low-probability trades and focus only on your best opportunities.'
+      }
     },
     {
       label: 'Profit Factor',
       value: edge.breakdown.profitFactor,
       max: 3,
       status: edge.breakdown.profitFactor >= 2 ? 'excellent' : edge.breakdown.profitFactor >= 1.5 ? 'good' : edge.breakdown.profitFactor >= 1 ? 'warning' : 'danger',
-      description: 'Wins to losses ratio'
+      description: 'Wins to losses ratio',
+      tooltip: {
+        title: 'Profit Factor',
+        explanation: 'How much money you make for every dollar you lose. For example, 2.0 means you make $2 for every $1 lost. Above 1.0 is profitable, above 2.0 is excellent.',
+        currentState: edge.breakdown.profitFactor >= 2
+          ? `Excellent! Your ${edge.breakdown.profitFactor.toFixed(2)} profit factor means you make $${edge.breakdown.profitFactor.toFixed(2)} for every $1 lost.`
+          : edge.breakdown.profitFactor >= 1.5
+          ? `Good! Your ${edge.breakdown.profitFactor.toFixed(2)} profit factor shows healthy profitability.`
+          : edge.breakdown.profitFactor >= 1
+          ? `You're profitable (${edge.breakdown.profitFactor.toFixed(2)}), but barely. Small improvements will make a big difference.`
+          : `Critical: Your profit factor of ${edge.breakdown.profitFactor.toFixed(2)} means you're losing money overall.`,
+        improvementTip: edge.breakdown.profitFactor >= 2
+          ? undefined
+          : edge.breakdown.profitFactor >= 1.5
+          ? 'To reach excellence: Focus on asymmetric risk/reward. Target 3:1 or better on your setups and use trailing stops to capture bigger moves.'
+          : edge.breakdown.profitFactor >= 1
+          ? 'Quick wins: 1) Cut losses at 1R consistently, 2) Trail winners to 2R or more, 3) Eliminate revenge trades and trades outside your plan.'
+          : 'Emergency action needed: Your losses exceed your wins. Stop trading your current strategy. Review every trade, identify patterns in your losses, and rebuild with strict risk management (never risk more than 1% per trade).'
+      }
     },
     {
       label: 'Risk Control',

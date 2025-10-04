@@ -881,8 +881,7 @@ export const AnalyticsView: React.FC = () => {
                   .sort((a, b) => new Date(b.entryTime).getTime() - new Date(a.entryTime).getTime())
                   .slice(0, 20)
                   .map((t) => {
-                    const cls = classifyTradeResult(t);
-                    const isScratch = cls === 'breakeven';
+                    // All trades are either wins or losses
                     return (
                       <tr key={t.id} className="border-t border-border/60 hover:bg-muted/20">
                         <td className="px-3 py-2 whitespace-nowrap">{new Date(t.entryTime).toLocaleDateString()}</td>
@@ -895,17 +894,7 @@ export const AnalyticsView: React.FC = () => {
                         <td className={`px-3 py-2 text-right ${((t.pnl || 0) >= 0) ? 'text-green-500' : 'text-red-500'}`}>{formatCurrency(t.pnl || 0)}</td>
                         <td className="px-3 py-2 text-right">{Number.isFinite(t.riskRewardRatio) ? t.riskRewardRatio.toFixed(2) : '—'}</td>
                         <td className="px-3 py-2">
-                          <div className="flex items-center gap-1">
-                            <span className="capitalize text-muted-foreground">{cls}</span>
-                            {isScratch && (
-                              <Tooltip content="Scratch (excluded from win rate)">
-                                <span className="inline-flex items-center gap-1 text-[11px] text-yellow-500 bg-yellow-100 dark:bg-yellow-900 px-1 rounded">
-                                  <MinusCircle className="w-4 h-4" />
-                                  SCRATCH
-                                </span>
-                              </Tooltip>
-                            )}
-                          </div>
+                          <span className="capitalize text-muted-foreground">{t.result}</span>
                         </td>
                       </tr>
                     );
@@ -1080,8 +1069,7 @@ export const AnalyticsView: React.FC = () => {
                             </thead>
                             <tbody>
                               {filteredTrades.slice().sort((a, b) => new Date(b.entryTime).getTime() - new Date(a.entryTime).getTime()).slice(0, 20).map((t) => {
-                                const cls = classifyTradeResult(t);
-                                const isScratch = cls === 'breakeven';
+                                // All trades are either wins or losses
                                 return (
                                   <tr key={t.id} className="border-t border-border/60 hover:bg-muted/20">
                                     <td className="px-3 py-2 whitespace-nowrap">{new Date(t.entryTime).toLocaleDateString()}</td>
@@ -1089,7 +1077,7 @@ export const AnalyticsView: React.FC = () => {
                                     <td className="px-3 py-2"><span className={`px-2 py-0.5 rounded text-xs font-medium ${t.direction === 'long' ? 'bg-green-500/20 text-green-500' : 'bg-red-500/20 text-red-500'}`}>{t.direction?.toUpperCase()}</span></td>
                                     <td className={`px-3 py-2 text-right ${((t.pnl || 0) >= 0) ? 'text-green-500' : 'text-red-500'}`}>{formatCurrency(t.pnl || 0)}</td>
                                     <td className="px-3 py-2 text-right">{Number.isFinite(t.riskRewardRatio) ? t.riskRewardRatio.toFixed(2) : '—'}</td>
-                                    <td className="px-3 py-2"><div className="flex items-center gap-1"><span className="capitalize text-muted-foreground">{cls}</span>{isScratch && (<Tooltip content="Scratch (excluded from win rate)"><span className="inline-flex items-center gap-1 text-[11px] text-yellow-500"><MinusCircle className="w-3.5 h-3.5" /></span></Tooltip>)}</div></td>
+                                    <td className="px-3 py-2"><span className="capitalize text-muted-foreground">{t.result}</span></td>
                                   </tr>
                                 );
                               })}

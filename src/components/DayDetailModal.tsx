@@ -303,8 +303,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
     
     dayTrades.forEach(trade => {
       if (trade.mood && !processedTradesRef.current.has(trade.id)) {
-        const trigger = trade.result === 'win' ? 'trade-win' : 
-                       trade.result === 'loss' ? 'trade-loss' : 'trade-breakeven';
+        const trigger = trade.result === 'win' ? 'trade-win' : 'trade-loss';
         addMoodEntryForSelection(dateString, trade.mood, trigger, trade.id, new Date(trade.entryTime), selectedAccountId!);
         processedTradesRef.current.add(trade.id);
       }
@@ -520,8 +519,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
     if (!trigger) return '';
     const triggerMap: Record<string, string> = {
       'trade-win': 'a winning trade',
-      'trade-loss': 'a losing trade', 
-      'trade-breakeven': 'a breakeven trade',
+      'trade-loss': 'a losing trade',
       'note': 'journaling',
       'reflection': 'daily reflection'
     };
@@ -943,7 +941,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
     switch (result) {
       case 'win': return <Trophy className="w-4 h-4 text-green-500" />;
       case 'loss': return <X className="w-4 h-4 text-red-500" />;
-      case 'breakeven': return <Target className="w-4 h-4 text-yellow-500" />;
+      default: return null;
     }
   };
 
@@ -2277,19 +2275,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ day, isOpen, onC
                               </div>
                               <div className="text-sm text-muted-foreground flex items-center gap-1">
                                 {formatTime(trade.entryTime)}
-                                {(() => {
-                                  const cls = classifyTradeResult(trade);
-                                  if (cls === 'breakeven') {
-                                    return (
-                                      <Tooltip content="Scratch (excluded from win rate)">
-                                        <span className="inline-flex items-center gap-1 text-[11px] text-yellow-500">
-                                          <Minus className="w-3.5 h-3.5" />
-                                        </span>
-                                      </Tooltip>
-                                    );
-                                  }
-                                  return null;
-                                })()}
+                                {/* No scratch badges - every trade is simply a win or loss */}
                               </div>
                             </div>
                           </div>

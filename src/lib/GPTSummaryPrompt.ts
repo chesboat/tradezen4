@@ -10,7 +10,6 @@ export const generateDailySummaryPrompt = (data: GPTSummaryPrompt): string => {
   const totalTrades = trades.length;
   const winningTrades = trades.filter(t => t.result === 'win').length;
   const losingTrades = trades.filter(t => t.result === 'loss').length;
-  const breakEvenTrades = trades.filter(t => t.result === 'breakeven').length;
   const totalPnL = trades.reduce((sum, t) => sum + (t.pnl || 0), 0);
   const winRate = totalTrades > 0 ? Math.round((winningTrades / totalTrades) * 100) : 0;
   const avgRR = trades.length > 0 

@@ -191,42 +191,36 @@ function getComputedPnL(trade: Trade): number {
 }
 
 export function classifyTradeResult(trade: Trade, options: ClassificationOptions = {}): TradeResult {
-  const opts = { ...defaultClassificationOptions, ...options };
+  // Simple, honest classification: win if profitable, loss if not
+  // No scratch/breakeven bands - every trade is either a win or loss
   const pnl = getComputedPnL(trade);
-  const risk = Number(trade.riskAmount) || 0;
-
-  // Use hybrid approach: whichever band is more generous
-  if (risk > 0 && Number.isFinite(risk)) {
-    // Calculate R-based band
-    const rBand = risk * opts.breakevenBandR;
-    // Use whichever band is larger (more generous)
-    const band = Math.max(rBand, opts.breakevenBandUSD);
-    
-    if (pnl > band) return 'win';
-    if (pnl < -band) return 'loss';
-    return 'breakeven';
-  }
-
-  // Fallback: absolute dollar band only
-  const band = Math.max(0, opts.breakevenBandUSD);
-  if (pnl > band) return 'win';
-  if (pnl < -band) return 'loss';
-  return 'breakeven';
+  return pnl > 0 ? 'win' : 'loss';
 }
 
+// Renamed from summarizeWinLossScratch - no more scratches!
+// All trades are either wins or losses. Simple, honest, reliable.
+export function summarizeWinLoss(
+  trades: Trade[],
+  options: ClassificationOptions = {}
+): { wins: number; losses: number; winRate: number } {
+  let wins = 0, losses = 0;
+  
+  for (const t of trades) {
+    const r = classifyTradeResult(t, options);
+    if (r === 'win') wins++; else losses++;
+  }
+  
+  const total = wins + losses;
+  const winRate = total > 0 ? (wins / total) * 100 : 0;
+  
+  return { wins, losses, winRate };
+}
+
+// Backwards compatibility alias - will be removed after refactoring
 export function summarizeWinLossScratch(
   trades: Trade[],
   options: ClassificationOptions = {}
 ): { wins: number; losses: number; scratches: number; winRateExclScratches: number } {
-  let wins = 0, losses = 0, scratches = 0;
-  
-  for (const t of trades) {
-    const r = classifyTradeResult(t, options);
-    if (r === 'win') wins++; else if (r === 'loss') losses++; else scratches++;
-  }
-  
-  const denom = wins + losses;
-  const winRateExclScratches = denom > 0 ? (wins / denom) * 100 : 0;
-  
-  return { wins, losses, scratches, winRateExclScratches };
+  const { wins, losses, winRate } = summarizeWinLoss(trades, options);
+  return { wins, losses, scratches: 0, winRateExclScratches: winRate };
 }

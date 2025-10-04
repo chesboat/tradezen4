@@ -421,7 +421,7 @@ Rules:\n- Use data exactly as shown in the screenshot.\n- Numbers should be plai
           quantity: Number(row.quantity || 1),
           riskAmount: Number.isFinite(riskAmount) ? riskAmount : 0,
           riskRewardRatio: Number.isFinite(rr) && rr > 0 ? rr : 1,
-          result: pnlNet === 0 ? 'breakeven' : pnlNet > 0 ? 'win' : 'loss',
+          result: pnlNet > 0 ? 'win' : 'loss', // Simple binary: profit = win, no profit = loss
           pnl: pnlNet,
           entryTime: row.entryTime ? new Date(row.entryTime) : new Date(),
           exitTime: row.exitTime ? new Date(row.exitTime) : undefined,
