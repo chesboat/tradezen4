@@ -3,11 +3,13 @@
  * Clean, persuasive, beautiful
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Check, Sparkles, Zap, TrendingUp, Clock, Calendar, Tag, History, BarChart3, Settings, FlaskConical } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSubscription } from '@/hooks/useSubscription';
+import { SUBSCRIPTION_PLANS } from '@/types/subscription';
+import { formatPrice, getAnnualSavings } from '@/lib/subscription';
 
 interface UpgradeModalProps {
   isOpen: boolean;
@@ -75,13 +77,26 @@ const PREMIUM_FEATURES = [
 
 export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, feature }) => {
   const { isTrial, isBasic } = useSubscription();
+  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>('annual');
+  
+  const premiumPlan = SUBSCRIPTION_PLANS.premium;
   
   // Determine if user is a new/free user (neither trial nor basic)
   const isNewUser = !isTrial && !isBasic;
   
   // Button text changes based on user status
   const buttonText = isNewUser ? 'Start Free Trial' : 'Upgrade to Premium';
-  const subText = isNewUser ? '7-Day Free Trial • Cancel Anytime' : 'Billed at $39/month • Cancel Anytime';
+  
+  // Subtext changes based on billing period and user status
+  const subText = isNewUser 
+    ? '7-Day Free Trial • Cancel Anytime'
+    : billingPeriod === 'monthly'
+    ? `Billed at ${formatPrice(premiumPlan.monthlyPrice)}/month • Cancel Anytime`
+    : `Billed at ${formatPrice(premiumPlan.annualPrice)}/year • Cancel Anytime`;
+  
+  // Calculate savings
+  const annualSavings = getAnnualSavings(premiumPlan.monthlyPrice, premiumPlan.annualPrice);
+  const savingsPercentage = Math.round((annualSavings / (premiumPlan.monthlyPrice * 12)) * 100);
   
   return (
     <AnimatePresence>
@@ -133,21 +148,45 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, fea
               {/* Pricing */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                 {/* Monthly */}
-                <div className="p-6 border border-border rounded-xl hover:border-primary/50 transition-colors cursor-pointer">
+                <button
+                  onClick={() => setBillingPeriod('monthly')}
+                  className={cn(
+                    "p-6 rounded-xl transition-all text-left",
+                    billingPeriod === 'monthly'
+                      ? 'border-2 border-primary bg-primary/5'
+                      : 'border border-border hover:border-primary/50'
+                  )}
+                >
                   <div className="text-sm text-muted-foreground mb-2">Monthly</div>
-                  <div className="text-3xl font-bold mb-1">$29<span className="text-lg text-muted-foreground">/mo</span></div>
+                  <div className="text-3xl font-bold mb-1">
+                    {formatPrice(premiumPlan.monthlyPrice)}
+                    <span className="text-lg text-muted-foreground">/mo</span>
+                  </div>
                   <div className="text-sm text-muted-foreground">Billed monthly</div>
-                </div>
+                </button>
 
                 {/* Annual (Recommended) */}
-                <div className="relative p-6 border-2 border-primary rounded-xl bg-primary/5 cursor-pointer">
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-primary text-primary-foreground text-xs font-bold rounded-full">
-                    SAVE 30%
+                <button
+                  onClick={() => setBillingPeriod('annual')}
+                  className={cn(
+                    "relative p-6 rounded-xl transition-all text-left",
+                    billingPeriod === 'annual'
+                      ? 'border-2 border-primary bg-primary/5'
+                      : 'border border-border hover:border-primary/50'
+                  )}
+                >
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-green-500 text-white text-xs font-bold rounded-full">
+                    SAVE {savingsPercentage}%
                   </div>
                   <div className="text-sm text-muted-foreground mb-2">Annual</div>
-                  <div className="text-3xl font-bold mb-1">$20<span className="text-lg text-muted-foreground">/mo</span></div>
-                  <div className="text-sm text-muted-foreground">$240/year (save $108)</div>
-                </div>
+                  <div className="text-3xl font-bold mb-1">
+                    {formatPrice(premiumPlan.annualMonthlyPrice)}
+                    <span className="text-lg text-muted-foreground">/mo</span>
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {formatPrice(premiumPlan.annualPrice)}/year (save {formatPrice(annualSavings)})
+                  </div>
+                </button>
               </div>
 
               {/* Features List */}
