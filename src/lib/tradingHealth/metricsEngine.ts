@@ -234,7 +234,7 @@ function calculateRiskControlRing(
   let maxDrawdown = 0;
 
   sortedTrades.forEach(trade => {
-    equity += trade.pnl;
+    equity += (trade.pnl || 0);
     if (equity > peakEquity) {
       peakEquity = equity;
     }
@@ -299,15 +299,17 @@ function calculateRiskControlRing(
   // Calculate previous window for trend
   let previousScore = 100;
   if (previousTrades.length > 0) {
-    const prevSortedTrades = [...previousTrades].sort(
-      (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-    );
+    const prevSortedTrades = [...previousTrades].sort((a, b) => {
+      const aTime = a.timestamp || a.entryTime || a.createdAt;
+      const bTime = b.timestamp || b.entryTime || b.createdAt;
+      return new Date(aTime).getTime() - new Date(bTime).getTime();
+    });
     let prevEquity = prevSortedTrades[0].accountBalance || 10000;
     let prevPeakEquity = prevEquity;
     let prevMaxDrawdown = 0;
 
     prevSortedTrades.forEach(trade => {
-      prevEquity += trade.pnl;
+      prevEquity += (trade.pnl || 0);
       if (prevEquity > prevPeakEquity) {
         prevPeakEquity = prevEquity;
       }
