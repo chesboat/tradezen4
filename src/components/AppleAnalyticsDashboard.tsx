@@ -180,10 +180,10 @@ const HeroAnalyticsPnL: React.FC<{
         </div>
 
         {/* Hero P&L */}
-        <div className="flex items-end gap-8">
+        <div className="flex flex-col md:flex-row md:items-end gap-4 md:gap-8">
           <div>
             <h1 className={cn(
-              "text-6xl 2xl:text-7xl font-bold tabular-nums tracking-tight",
+              "text-4xl sm:text-5xl md:text-6xl 2xl:text-7xl font-bold tabular-nums tracking-tight",
               isPositive ? "text-green-500" : currentPnL < 0 ? "text-red-500" : "text-muted-foreground"
             )}>
               {formatCurrency(currentPnL)}
@@ -208,18 +208,18 @@ const HeroAnalyticsPnL: React.FC<{
           </div>
 
           {/* Quick Stats */}
-          <div className="flex gap-8 pb-2">
+          <div className="flex flex-wrap gap-4 sm:gap-6 md:gap-8 md:pb-2">
             <div>
-              <div className="text-2xl font-semibold text-foreground">{totalTrades}</div>
-              <div className="text-sm text-muted-foreground">trades</div>
+              <div className="text-xl sm:text-2xl font-semibold text-foreground">{totalTrades}</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">trades</div>
             </div>
             <div>
-              <div className="text-2xl font-semibold text-foreground">{winRate.toFixed(0)}%</div>
-              <div className="text-sm text-muted-foreground">win rate</div>
+              <div className="text-xl sm:text-2xl font-semibold text-foreground">{winRate.toFixed(0)}%</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">win rate</div>
             </div>
             <div>
-              <div className="text-2xl font-semibold text-foreground">{profitFactor.toFixed(1)}</div>
-              <div className="text-sm text-muted-foreground">profit factor</div>
+              <div className="text-xl sm:text-2xl font-semibold text-foreground">{profitFactor.toFixed(1)}</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">profit factor</div>
             </div>
           </div>
         </div>
