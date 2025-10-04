@@ -31,6 +31,7 @@ import { calculateTradingHealth } from '@/lib/tradingHealth/metricsEngine';
 import { HealthRings } from '@/components/tradingHealth/HealthRings';
 import { TradingHealthOnboarding } from '@/components/tradingHealth/TradingHealthOnboarding';
 import { TradingHealthDocs } from '@/components/tradingHealth/TradingHealthDocs';
+import { RingDetailModal } from '@/components/tradingHealth/RingDetailModal';
 import type { TimeWindow } from '@/lib/tradingHealth/types';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/utils';
@@ -463,6 +464,17 @@ export const TradingHealthView: React.FC = () => {
         </div>
         )}
       </div>
+
+      {/* Ring Detail Modal */}
+      {selectedRing && (
+        <RingDetailModal
+          isOpen={!!selectedRing}
+          onClose={() => setSelectedRing(null)}
+          ringType={selectedRing}
+          metrics={metrics}
+          timeWindow={timeWindow}
+        />
+      )}
     </div>
     </>
   );

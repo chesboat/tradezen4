@@ -119,7 +119,10 @@ export const UNIVERSAL_RULES: Rule[] = [
       // If previous trade was a loss
       if (prevTrade.result === 'loss' && prevTrade.pnl < 0) {
         // Check if current trade happened within 30 minutes
-        const timeDiff = new Date(trade.timestamp).getTime() - new Date(prevTrade.timestamp).getTime();
+        const tradeTime = trade.timestamp || trade.entryTime || trade.createdAt;
+        const prevTime = prevTrade.timestamp || prevTrade.entryTime || prevTrade.createdAt;
+        if (!tradeTime || !prevTime) return true; // Can't verify, pass
+        const timeDiff = new Date(tradeTime).getTime() - new Date(prevTime).getTime();
         const minutesDiff = timeDiff / (1000 * 60);
         
         // If trade within 30 min after loss AND larger size = likely revenge
@@ -145,12 +148,15 @@ export const UNIVERSAL_RULES: Rule[] = [
     name: 'No overtrading',
     category: 'discipline',
     description: 'Stayed within daily trade limit (if set)',
-    check: (trade, allTrades) => {
+    check: (trade: any, allTrades) => {
       // Get all trades from same day
-      const tradeDate = new Date(trade.timestamp).toDateString();
-      const tradesThisDay = allTrades.filter(
-        t => new Date(t.timestamp).toDateString() === tradeDate
-      );
+      const tradeTime = trade.timestamp || trade.entryTime || trade.createdAt;
+      if (!tradeTime) return true; // Can't verify, pass
+      const tradeDate = new Date(tradeTime).toDateString();
+      const tradesThisDay = allTrades.filter(t => {
+        const tTime = t.timestamp || t.entryTime || t.createdAt;
+        return tTime && new Date(tTime).toDateString() === tradeDate;
+      });
       
       // If more than 5 trades in one day, flag as overtrading
       // (This is a reasonable default - user can adjust via discipline mode)
@@ -251,7 +257,10 @@ export function calculateConsistencyStreak(trades: Trade[]): {
   // Group trades by day
   const tradesByDay = new Map<string, Trade[]>();
   trades.forEach(trade => {
-    const dateKey = new Date(trade.timestamp).toISOString().split('T')[0];
+    // Support multiple timestamp field names
+    const timestamp = trade.timestamp || trade.entryTime || trade.createdAt;
+    if (!timestamp) return;
+    const dateKey = new Date(timestamp).toISOString().split('T')[0];
     if (!tradesByDay.has(dateKey)) {
       tradesByDay.set(dateKey, []);
     }

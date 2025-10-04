@@ -22,7 +22,12 @@ export function filterTradesByWindow(
   const cutoffDate = new Date(now);
   cutoffDate.setDate(cutoffDate.getDate() - days);
 
-  return trades.filter(trade => new Date(trade.timestamp) >= cutoffDate);
+  return trades.filter(trade => {
+    // Support multiple timestamp field names
+    const tradeDate = trade.timestamp || trade.entryTime || trade.createdAt;
+    if (!tradeDate) return false;
+    return new Date(tradeDate) >= cutoffDate;
+  });
 }
 
 /**
@@ -43,7 +48,10 @@ function getPreviousWindowTrades(
   previousWindowStart.setDate(previousWindowStart.getDate() - days);
 
   return trades.filter(trade => {
-    const tradeDate = new Date(trade.timestamp);
+    // Support multiple timestamp field names
+    const timestamp = trade.timestamp || trade.entryTime || trade.createdAt;
+    if (!timestamp) return false;
+    const tradeDate = new Date(timestamp);
     return tradeDate >= previousWindowStart && tradeDate < windowStart;
   });
 }
@@ -205,9 +213,11 @@ function calculateRiskControlRing(
   }
 
   // Calculate running equity curve for current window
-  const sortedTrades = [...currentTrades].sort(
-    (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-  );
+  const sortedTrades = [...currentTrades].sort((a, b) => {
+    const aTime = a.timestamp || a.entryTime || a.createdAt;
+    const bTime = b.timestamp || b.entryTime || b.createdAt;
+    return new Date(aTime).getTime() - new Date(bTime).getTime();
+  });
 
   // Find starting equity from first trade with accountBalance, or estimate from P&L
   let equity = sortedTrades[0].accountBalance || 0;
