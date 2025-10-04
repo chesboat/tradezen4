@@ -22,7 +22,8 @@ import {
   LogOut,
   History,
   FlaskConical,
-  Sparkles
+  Sparkles,
+  Lock
 } from 'lucide-react';
 import { useSidebarStore } from '@/store/useSidebarStore';
 import { useNavigationStore } from '@/store/useNavigationStore';
@@ -55,6 +56,7 @@ interface NavItem {
   icon: React.ComponentType<{ className?: string }>;
   href?: string;
   badge?: string | number;
+  requiresPremium?: boolean; // Apple-style: mark premium features
   onClick?: () => void;
 }
 
@@ -119,21 +121,21 @@ const navGroups: NavGroup[] = [
         label: 'Insights',
         icon: Sparkles,
         href: '/insights',
-        badge: 'Premium',
+        requiresPremium: true,
       },
       {
         id: 'insight-history',
         label: 'History',
         icon: History,
         href: '/insight-history',
-        badge: 'Premium',
+        requiresPremium: true,
       },
       {
         id: 'experiments',
         label: 'Experiments',
         icon: FlaskConical,
         href: '/experiments',
-        badge: 'Premium',
+        requiresPremium: true,
       },
     ],
   },
@@ -263,6 +265,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
   const NavItem: React.FC<{ item: NavItem; isExpanded: boolean }> = ({ item, isExpanded }) => {
     const Icon = item.icon;
     const isActive = currentView === item.id;
+    const isLocked = item.requiresPremium && !isPremium;
 
     const navItem = (
       <button
@@ -271,7 +274,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
           isActive
             ? 'bg-primary/10 text-foreground'
             : 'text-muted-foreground hover:bg-accent/30 hover:text-foreground',
-          isExpanded ? 'justify-start px-3 py-2.5 gap-3' : 'justify-center px-3 py-2.5'
+          isExpanded ? 'justify-start px-3 py-2.5 gap-3' : 'justify-center px-3 py-2.5',
+          isLocked && 'opacity-60' // Apple-style: slightly faded for locked items
         )}
         onClick={() => handleNavItemClick(item)}
       >
@@ -288,19 +292,35 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
             )}>
               {item.label}
             </span>
-            {item.badge && (
+            
+            {/* Apple-style: Show lock for non-premium users, nothing for premium users */}
+            {isLocked && (
+              <Lock className="w-3.5 h-3.5 text-muted-foreground/70 ml-2 flex-shrink-0" />
+            )}
+            
+            {/* Show other badges (like quest counts) if present and not premium-related */}
+            {item.badge && !item.requiresPremium && (
               <span className="bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-full ml-2 flex-shrink-0">
                 {item.badge}
               </span>
             )}
           </div>
         )}
+        
+        {/* Show lock icon even in collapsed state for locked items */}
+        {!isExpanded && isLocked && (
+          <Lock className="w-3 h-3 text-muted-foreground/70 absolute top-1 right-1" />
+        )}
       </button>
     );
 
     if (!isExpanded) {
       return (
-        <Tooltip content={item.label} position="right" fullWidth>
+        <Tooltip 
+          content={isLocked ? `${item.label} (Premium)` : item.label} 
+          position="right" 
+          fullWidth
+        >
           {navItem}
         </Tooltip>
       );
