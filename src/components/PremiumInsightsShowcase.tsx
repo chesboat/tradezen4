@@ -283,7 +283,7 @@ const PremiumUpsell: React.FC<{ onUpgrade: () => void }> = ({ onUpgrade }) => {
           Start Free Trial - 7 Days Free
         </button>
         <p className="text-sm text-muted-foreground mt-3">
-          No credit card required • Cancel anytime
+          7-Day Free Trial • Cancel Anytime
         </p>
       </div>
     </div>

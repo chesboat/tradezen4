@@ -7,6 +7,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Check, Sparkles, Zap, TrendingUp, Clock, Calendar, Tag, History, BarChart3, Settings, FlaskConical } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useSubscription } from '@/hooks/useSubscription';
 
 interface UpgradeModalProps {
   isOpen: boolean;
@@ -73,6 +74,15 @@ const PREMIUM_FEATURES = [
 ];
 
 export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, feature }) => {
+  const { isTrial, isBasic } = useSubscription();
+  
+  // Determine if user is a new/free user (neither trial nor basic)
+  const isNewUser = !isTrial && !isBasic;
+  
+  // Button text changes based on user status
+  const buttonText = isNewUser ? 'Start Free Trial' : 'Upgrade to Premium';
+  const subText = isNewUser ? '7-Day Free Trial • Cancel Anytime' : 'Billed at $39/month • Cancel Anytime';
+  
   return (
     <AnimatePresence>
       {isOpen && (
@@ -190,10 +200,10 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, fea
                 className="w-full py-3 bg-gradient-to-r from-primary to-purple-600 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
               >
                 <Sparkles className="w-5 h-5" />
-                Start Free Trial
+                {buttonText}
               </button>
               <p className="text-xs text-center text-muted-foreground mt-3">
-                No credit card required for trial
+                {subText}
               </p>
             </div>
           </motion.div>
