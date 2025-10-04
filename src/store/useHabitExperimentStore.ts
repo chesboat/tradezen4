@@ -18,7 +18,7 @@ export interface HabitExperiment {
   
   // Experiment configuration
   duration: number; // days
-  method: 'alternate' | 'custom';
+  method: 'alternate' | 'everyday' | 'trading-days' | 'custom';
   customSchedule?: string[]; // Array of dates to complete habit
   
   // Status
@@ -76,7 +76,7 @@ interface HabitExperimentState {
     habitLabel: string,
     habitEmoji: string,
     duration: number,
-    method: 'alternate' | 'custom',
+    method: 'alternate' | 'everyday' | 'trading-days' | 'custom',
     customSchedule?: string[]
   ) => Promise<HabitExperiment>;
   completeExperiment: (experimentId: string, trades: Trade[]) => Promise<void>;
@@ -147,6 +147,10 @@ export const useHabitExperimentStore = create<HabitExperimentState>((set, get) =
       const startDate = new Date().toISOString().split('T')[0];
       const endDate = new Date(Date.now() + duration * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
       
+      // Generate expected habit days based on method
+      // Note: completedDays will be populated as user completes them
+      // For now, just store the method and schedule, actual completion will be tracked later
+      
       const experiment: Omit<HabitExperiment, 'id'> = {
         userId: currentUser.uid,
         habitId,
@@ -158,7 +162,7 @@ export const useHabitExperimentStore = create<HabitExperimentState>((set, get) =
         status: 'active',
         startDate,
         endDate,
-        completedDays: [],
+        completedDays: [], // Will be populated as user marks days complete
         createdAt: new Date(),
       };
       

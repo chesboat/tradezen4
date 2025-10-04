@@ -295,7 +295,12 @@ const ExperimentCard: React.FC<ExperimentCardProps> = ({ experiment, onClick }) 
           </div>
           
           <p className="text-sm text-muted-foreground mb-3">
-            {experiment.duration} days • {experiment.method === 'alternate' ? 'Alternate days' : 'Custom schedule'}
+            {experiment.duration} days • {
+              experiment.method === 'alternate' ? 'Alternate days' :
+              experiment.method === 'everyday' ? 'Every day' :
+              experiment.method === 'trading-days' ? 'Trading days only' :
+              'Custom schedule'
+            }
           </p>
           
           {experiment.status === 'active' && (
@@ -339,27 +344,68 @@ const ExperimentCard: React.FC<ExperimentCardProps> = ({ experiment, onClick }) 
   );
 };
 
-// Create Experiment Modal (simplified - just a placeholder for now)
+// Create Experiment Modal
 const CreateExperimentModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
   const { rules } = useRuleTallyStore();
   const { createExperiment } = useHabitExperimentStore();
   const [selectedHabit, setSelectedHabit] = useState('');
   const [duration, setDuration] = useState(14);
-  const [method, setMethod] = useState<'alternate' | 'custom'>('alternate');
+  const [method, setMethod] = useState<'alternate' | 'everyday' | 'trading-days' | 'custom'>('alternate');
+  const [customDays, setCustomDays] = useState<number[]>([]); // Array of day indices to complete habit
   
   const handleCreate = async () => {
     const habit = rules.find(r => r.id === selectedHabit);
     if (!habit) return;
+    
+    // Generate custom schedule if custom method selected
+    let customSchedule: string[] | undefined;
+    if (method === 'custom' && customDays.length > 0) {
+      const startDate = new Date();
+      customSchedule = customDays.map(dayIndex => {
+        const date = new Date(startDate);
+        date.setDate(date.getDate() + dayIndex);
+        return date.toISOString().split('T')[0];
+      });
+    }
     
     await createExperiment(
       habit.id,
       habit.label,
       habit.emoji || '💪',
       duration,
-      method
+      method,
+      customSchedule
     );
     
+    // Reset form
+    setSelectedHabit('');
+    setDuration(14);
+    setMethod('alternate');
+    setCustomDays([]);
     onClose();
+  };
+  
+  const toggleDay = (dayIndex: number) => {
+    setCustomDays(prev => 
+      prev.includes(dayIndex)
+        ? prev.filter(d => d !== dayIndex)
+        : [...prev, dayIndex].sort((a, b) => a - b)
+    );
+  };
+  
+  const getMethodExplanation = () => {
+    switch (method) {
+      case 'alternate':
+        return '📅 Complete the habit every other day (Day 1, 3, 5, 7, etc.)';
+      case 'everyday':
+        return '📆 Complete the habit every single day during the experiment';
+      case 'trading-days':
+        return '📊 Complete the habit only on days you trade (automatically detected)';
+      case 'custom':
+        return '🎯 Choose specific days below to complete the habit';
+      default:
+        return '';
+    }
   };
   
   return (
@@ -414,18 +460,50 @@ const CreateExperimentModal: React.FC<{ isOpen: boolean; onClose: () => void }> 
                 <label className="text-sm font-medium mb-2 block">Method</label>
                 <select
                   value={method}
-                  onChange={(e) => setMethod(e.target.value as 'alternate' | 'custom')}
+                  onChange={(e) => {
+                    setMethod(e.target.value as any);
+                    setCustomDays([]); // Reset custom days when changing method
+                  }}
                   className="w-full px-4 py-2 bg-muted border border-border rounded-lg"
                 >
                   <option value="alternate">Alternate Days</option>
+                  <option value="everyday">Every Day</option>
+                  <option value="trading-days">Trading Days Only</option>
                   <option value="custom">Custom Schedule</option>
                 </select>
                 <p className="text-xs text-muted-foreground mt-2">
-                  {method === 'alternate' 
-                    ? '📅 You\'ll complete the habit every other day (Day 1, 3, 5, etc.)'
-                    : '📋 Choose specific days to complete the habit (coming soon)'}
+                  {getMethodExplanation()}
                 </p>
               </div>
+              
+              {/* Custom Schedule Picker */}
+              {method === 'custom' && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium block">Select Days</label>
+                  <div className="grid grid-cols-7 gap-2 p-3 bg-muted/50 rounded-lg">
+                    {Array.from({ length: duration }, (_, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => toggleDay(i)}
+                        className={cn(
+                          'aspect-square flex items-center justify-center rounded-lg text-sm font-medium transition-colors',
+                          customDays.includes(i)
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-card border border-border hover:border-primary/50'
+                        )}
+                      >
+                        {i + 1}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {customDays.length === 0 
+                      ? 'Select days to complete the habit'
+                      : `${customDays.length} days selected`}
+                  </p>
+                </div>
+              )}
             </div>
             
             <div className="flex gap-3">
@@ -437,7 +515,7 @@ const CreateExperimentModal: React.FC<{ isOpen: boolean; onClose: () => void }> 
               </button>
               <button
                 onClick={handleCreate}
-                disabled={!selectedHabit}
+                disabled={!selectedHabit || (method === 'custom' && customDays.length === 0)}
                 className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
               >
                 Create Experiment
