@@ -209,7 +209,14 @@ function calculateRiskControlRing(
     (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
   );
 
-  let equity = sortedTrades[0].accountBalance || 10000; // Start with first trade's balance or default
+  // Find starting equity from first trade with accountBalance, or estimate from P&L
+  let equity = sortedTrades[0].accountBalance || 0;
+  if (equity === 0) {
+    // Estimate starting equity by working backwards from cumulative P&L
+    const totalPnl = sortedTrades.reduce((sum, t) => sum + t.pnl, 0);
+    // Assume a reasonable starting balance (can be adjusted)
+    equity = Math.max(10000, Math.abs(totalPnl) * 20); // 20x the total P&L movement
+  }
   let peakEquity = equity;
   let maxDrawdown = 0;
 
@@ -224,10 +231,11 @@ function calculateRiskControlRing(
 
   const currentDrawdown = ((peakEquity - equity) / peakEquity) * 100;
 
-  // Calculate avg risk per trade
-  const avgRisk = currentTrades
-    .filter(t => t.riskAmount && t.accountBalance)
-    .reduce((sum, t) => sum + ((t.riskAmount! / t.accountBalance!) * 100), 0) / currentTrades.length;
+  // Calculate avg risk per trade (only for trades with complete data)
+  const tradesWithRisk = currentTrades.filter(t => t.riskAmount && t.accountBalance);
+  const avgRisk = tradesWithRisk.length > 0
+    ? tradesWithRisk.reduce((sum, t) => sum + ((t.riskAmount! / t.accountBalance!) * 100), 0) / tradesWithRisk.length
+    : 0;
 
   // Max consecutive losses
   let maxConsecutiveLosses = 0;

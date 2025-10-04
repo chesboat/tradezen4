@@ -38,8 +38,9 @@ export const UNIVERSAL_RULES: Rule[] = [
     name: 'Position size appropriate',
     category: 'risk-management',
     description: 'Risk per trade stayed within 1-3% of account',
-    check: (trade) => {
-      if (!trade.riskAmount || !trade.accountBalance) return false;
+    check: (trade: any) => {
+      // Skip if no account balance available (can't calculate risk %)
+      if (!trade.riskAmount || !trade.accountBalance) return true; // Pass if can't verify
       const riskPercent = (trade.riskAmount / trade.accountBalance) * 100;
       return riskPercent >= 0.5 && riskPercent <= 3; // 0.5-3% is reasonable
     },
@@ -51,9 +52,11 @@ export const UNIVERSAL_RULES: Rule[] = [
     name: 'Minimum 1.5:1 R:R',
     category: 'risk-management',
     description: 'Trade had at least 1.5:1 risk-to-reward potential',
-    check: (trade) => {
-      if (!trade.rrRatio) return false;
-      return trade.rrRatio >= 1.5;
+    check: (trade: any) => {
+      // Check both possible field names
+      const rrRatio = trade.rrRatio || trade.riskRewardRatio;
+      if (!rrRatio) return false;
+      return rrRatio >= 1.5;
     },
     points: 2, // Important
     improvementTip: 'Target at least 1.5:1 or 2:1 R:R to build edge over time. Avoid low R:R trades.',
@@ -78,8 +81,10 @@ export const UNIVERSAL_RULES: Rule[] = [
     name: 'Added trade notes',
     category: 'journaling',
     description: 'Wrote at least a sentence about the trade',
-    check: (trade) => {
-      return !!trade.notes && trade.notes.length >= 10; // At least 10 chars
+    check: (trade: any) => {
+      // Check multiple possible fields for notes
+      const notes = trade.notes || trade.note || trade.description || '';
+      return notes && notes.length >= 10; // At least 10 chars
     },
     points: 2, // Important
     improvementTip: 'Document your thought process. What did you see? Why did you enter? This is how you improve.',
@@ -119,7 +124,8 @@ export const UNIVERSAL_RULES: Rule[] = [
         
         // If trade within 30 min after loss AND larger size = likely revenge
         if (minutesDiff < 30) {
-          const prevSize = Math.abs(prevTrade.pnl / (prevTrade.rrRatio || 1));
+          const prevRrRatio = prevTrade.rrRatio || prevTrade.riskRewardRatio || 1;
+          const prevSize = Math.abs(prevTrade.pnl / prevRrRatio);
           const currentSize = Math.abs(trade.riskAmount || 0);
           
           // Revenge trading: quick trade with 1.5x+ size increase
