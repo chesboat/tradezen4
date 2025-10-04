@@ -307,8 +307,27 @@ const EdgeBar: React.FC<EdgeMetric & { onClick?: () => void }> = ({
 const YourEdgeAtAGlance: React.FC<{ trades: any[] }> = ({ trades }) => {
   const edge = React.useMemo(() => computeEdgeScore(trades), [trades]);
 
-  // Apple approach: 4 key metrics with visual health indicator
+  // Calculate expectancy for display
+  const expectancy = React.useMemo(() => {
+    if (trades.length === 0) return 0;
+    const wins = trades.filter((t: any) => (t.pnl || 0) > 0);
+    const losses = trades.filter((t: any) => (t.pnl || 0) < 0);
+    const winRate = (wins.length / trades.length) * 100;
+    const avgWin = wins.length > 0 ? wins.reduce((sum: number, t: any) => sum + (t.pnl || 0), 0) / wins.length : 0;
+    const avgLoss = losses.length > 0 ? Math.abs(losses.reduce((sum: number, t: any) => sum + (t.pnl || 0), 0)) / losses.length : 0;
+    // Dollar-based expectancy: how much you expect to make per trade
+    return (winRate / 100) * avgWin - (1 - winRate / 100) * avgLoss;
+  }, [trades]);
+
+  // Apple approach: 5 key metrics with visual health indicator
   const metrics: EdgeMetric[] = [
+    {
+      label: 'Expectancy',
+      value: Math.abs(expectancy),
+      max: Math.max(100, Math.abs(expectancy) * 1.5),
+      status: expectancy > 50 ? 'excellent' : expectancy > 20 ? 'good' : expectancy > 0 ? 'warning' : 'danger',
+      description: `${formatCurrency(expectancy)} per trade`
+    },
     {
       label: 'Win Rate',
       value: edge.breakdown.winRate,
@@ -396,7 +415,7 @@ const YourEdgeAtAGlance: React.FC<{ trades: any[] }> = ({ trades }) => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
         {metrics.map((metric) => (
           <EdgeBar key={metric.label} {...metric} />
         ))}

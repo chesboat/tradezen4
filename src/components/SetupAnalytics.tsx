@@ -23,6 +23,7 @@ interface SetupPerformance {
   avgLoss: number;
   winLossRatio: number;
   profitFactor: number;
+  expectancy: number; // Dollar-based: expected profit per trade
   bestTrade: number;
   worstTrade: number;
 }
@@ -72,6 +73,9 @@ export const SetupAnalytics: React.FC<SetupAnalyticsProps> = ({ trades, isPremiu
       const winLossRatio = avgLoss > 0 ? avgWin / avgLoss : avgWin;
       const profitFactor = totalLossAmount > 0 ? totalWinAmount / totalLossAmount : totalWinAmount;
       
+      // Dollar-based expectancy: how much you expect to make per trade on average
+      const expectancy = (winRate / 100) * avgWin - (1 - winRate / 100) * avgLoss;
+      
       const bestTrade = Math.max(...tagTrades.map(t => t.pnl || 0));
       const worstTrade = Math.min(...tagTrades.map(t => t.pnl || 0));
 
@@ -85,6 +89,7 @@ export const SetupAnalytics: React.FC<SetupAnalyticsProps> = ({ trades, isPremiu
         avgLoss,
         winLossRatio,
         profitFactor,
+        expectancy,
         bestTrade,
         worstTrade,
       });
@@ -263,21 +268,21 @@ export const SetupAnalytics: React.FC<SetupAnalyticsProps> = ({ trades, isPremiu
 
               {/* Metrics */}
               <div className="flex items-center gap-4 sm:gap-6">
-                {/* Win Rate */}
-                <div className="text-right min-w-[60px]">
-                  <div className="text-sm sm:text-sm font-semibold">{setup.winRate.toFixed(0)}%</div>
-                  <div className="text-[10px] text-muted-foreground whitespace-nowrap">Win Rate</div>
+                {/* Expectancy (Primary Metric) */}
+                <div className="text-right min-w-[75px]">
+                  <div className={cn(
+                    "text-sm sm:text-base font-bold",
+                    setup.expectancy > 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
+                  )}>
+                    {formatCurrency(setup.expectancy)}
+                  </div>
+                  <div className="text-[10px] text-muted-foreground whitespace-nowrap">Expectancy</div>
                 </div>
 
-                {/* Avg P&L */}
-                <div className="text-right min-w-[70px]">
-                  <div className={cn(
-                    "text-sm sm:text-sm font-semibold",
-                    setup.avgPnL > 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
-                  )}>
-                    {formatCurrency(setup.avgPnL)}
-                  </div>
-                  <div className="text-[10px] text-muted-foreground whitespace-nowrap">Avg P&L</div>
+                {/* Win Rate */}
+                <div className="text-right min-w-[60px]">
+                  <div className="text-sm font-semibold">{setup.winRate.toFixed(0)}%</div>
+                  <div className="text-[10px] text-muted-foreground whitespace-nowrap">Win Rate</div>
                 </div>
 
                 {/* Total P&L */}

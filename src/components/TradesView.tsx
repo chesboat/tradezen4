@@ -541,7 +541,8 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
     
     const avgWin = winningTrades > 0 ? winningPnl / winningTrades : 0;
     const avgLoss = losingTrades > 0 ? Math.abs(losingPnl) / losingTrades : 0;
-    const expectancy = avgLoss > 0 ? (avgWin / avgLoss) * (winRate / 100) - (1 - winRate / 100) : 0;
+    // Dollar-based expectancy: how much you expect to make per trade on average
+    const expectancy = (winRate / 100) * avgWin - (1 - winRate / 100) * avgLoss;
 
     return {
       totalTrades,
@@ -773,9 +774,9 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
         </div>
         <div className="bg-muted/30 rounded-lg p-3 sm:p-4 text-center">
           <div className={cn('text-lg sm:text-2xl font-bold', statistics.expectancy >= 0 ? 'text-green-500' : 'text-red-500')}>
-            {statistics.expectancy.toFixed(2)}
+            {formatCurrency(statistics.expectancy)}
           </div>
-          <div className="text-xs sm:text-sm text-muted-foreground">Expectancy</div>
+          <div className="text-xs sm:text-sm text-muted-foreground">Expectancy/Trade</div>
         </div>
       </div>
 

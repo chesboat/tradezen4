@@ -253,7 +253,8 @@ const useTradeMetrics = (trades: any[]) => {
       profitFactor,
       sharpeRatio: 0, // Simplified for now
       maxDrawdown,
-      expectancy: avgLoss > 0 ? (avgWin / avgLoss) * (winRateExclScratches / 100) - (1 - winRateExclScratches / 100) : 0,
+      // Dollar-based expectancy: how much you expect to make per trade on average
+      expectancy: (winRateExclScratches / 100) * avgWin - (1 - winRateExclScratches / 100) * avgLoss,
       largestWin: Math.max(...trades.map(t => t.pnl || 0)),
       largestLoss: Math.min(...trades.map(t => t.pnl || 0)),
       consecutiveWins: maxWinStreak,
@@ -706,8 +707,8 @@ export const DashboardGrid: React.FC = () => {
                 <div className="text-sm text-muted-foreground">Avg R:R</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-purple-500 mb-2">{metrics.expectancy.toFixed(3)}</div>
-                <div className="text-sm text-muted-foreground">Expectancy</div>
+                <div className="text-2xl font-bold text-purple-500 mb-2">{formatCurrency(metrics.expectancy)}</div>
+                <div className="text-sm text-muted-foreground">Expectancy/Trade</div>
               </div>
             </div>
           </motion.div>

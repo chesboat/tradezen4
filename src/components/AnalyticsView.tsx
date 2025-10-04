@@ -203,7 +203,8 @@ export const AnalyticsView: React.FC = () => {
       profitFactor,
       sharpeRatio,
       maxDrawdown,
-      expectancy: avgLoss > 0 ? (avgWin / avgLoss) * (winRate / 100) - (1 - winRate / 100) : 0,
+      // Dollar-based expectancy: how much you expect to make per trade on average
+      expectancy: (winRate / 100) * avgWin - (1 - winRate / 100) * avgLoss,
       largestWin: Math.max(...filteredTrades.map(t => t.pnl || 0)),
       largestLoss: Math.min(...filteredTrades.map(t => t.pnl || 0)),
       consecutiveWins: maxWinStreak,
@@ -780,9 +781,9 @@ export const AnalyticsView: React.FC = () => {
               <span className="font-medium text-red-500">{formatCurrency(metrics.largestLoss)}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Expectancy:</span>
+              <span className="text-muted-foreground">Expectancy/Trade:</span>
               <span className={cn('font-medium', metrics.expectancy >= 0 ? 'text-green-500' : 'text-red-500')}>
-                {metrics.expectancy.toFixed(3)}
+                {formatCurrency(metrics.expectancy)}
               </span>
             </div>
           </div>
