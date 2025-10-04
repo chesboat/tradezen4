@@ -235,7 +235,7 @@ export const SetupAnalytics: React.FC<SetupAnalyticsProps> = ({ trades, isPremiu
             transition={{ delay: index * 0.05 }}
             className="p-4 bg-muted/30 hover:bg-muted/50 rounded-xl transition-colors"
           >
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
               {/* Tag Name & Trade Count */}
               <div className="flex items-center gap-3 min-w-0 flex-1">
                 {/* Color-coded tag pill */}
@@ -244,7 +244,7 @@ export const SetupAnalytics: React.FC<SetupAnalyticsProps> = ({ trades, isPremiu
                   const colorStyles = TAG_COLORS[tagColor];
                   return (
                     <div className={cn(
-                      "px-3 py-1.5 rounded-full flex items-center gap-1.5 border",
+                      "px-3 py-1.5 rounded-full flex items-center gap-1.5 border flex-shrink-0",
                       colorStyles.bg,
                       colorStyles.text,
                       colorStyles.border
@@ -262,34 +262,34 @@ export const SetupAnalytics: React.FC<SetupAnalyticsProps> = ({ trades, isPremiu
               </div>
 
               {/* Metrics */}
-              <div className="flex items-center gap-6">
+              <div className="flex items-center gap-4 sm:gap-6">
                 {/* Win Rate */}
-                <div className="text-right">
-                  <div className="text-sm font-semibold">{setup.winRate.toFixed(0)}%</div>
-                  <div className="text-[10px] text-muted-foreground">Win Rate</div>
+                <div className="text-right min-w-[60px]">
+                  <div className="text-sm sm:text-sm font-semibold">{setup.winRate.toFixed(0)}%</div>
+                  <div className="text-[10px] text-muted-foreground whitespace-nowrap">Win Rate</div>
                 </div>
 
                 {/* Avg P&L */}
-                <div className="text-right">
+                <div className="text-right min-w-[70px]">
                   <div className={cn(
-                    "text-sm font-semibold",
+                    "text-sm sm:text-sm font-semibold",
                     setup.avgPnL > 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
                   )}>
                     {formatCurrency(setup.avgPnL)}
                   </div>
-                  <div className="text-[10px] text-muted-foreground">Avg P&L</div>
+                  <div className="text-[10px] text-muted-foreground whitespace-nowrap">Avg P&L</div>
                 </div>
 
                 {/* Total P&L */}
-                <div className="text-right min-w-[80px]">
+                <div className="text-right min-w-[85px]">
                   <div className={cn(
-                    "text-lg font-bold flex items-center justify-end gap-1",
+                    "text-base sm:text-lg font-bold flex items-center justify-end gap-1",
                     setup.totalPnL > 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
                   )}>
                     {setup.totalPnL > 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
                     {formatCurrency(setup.totalPnL)}
                   </div>
-                  <div className="text-[10px] text-muted-foreground">Total P&L</div>
+                  <div className="text-[10px] text-muted-foreground whitespace-nowrap">Total P&L</div>
                 </div>
               </div>
             </div>
