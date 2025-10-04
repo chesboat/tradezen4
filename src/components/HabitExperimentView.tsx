@@ -420,6 +420,11 @@ const CreateExperimentModal: React.FC<{ isOpen: boolean; onClose: () => void }> 
                   <option value="alternate">Alternate Days</option>
                   <option value="custom">Custom Schedule</option>
                 </select>
+                <p className="text-xs text-muted-foreground mt-2">
+                  {method === 'alternate' 
+                    ? '📅 You\'ll complete the habit every other day (Day 1, 3, 5, etc.)'
+                    : '📋 Choose specific days to complete the habit (coming soon)'}
+                </p>
               </div>
             </div>
             

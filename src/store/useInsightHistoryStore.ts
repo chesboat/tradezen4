@@ -6,8 +6,7 @@
 
 import { create } from 'zustand';
 import { getDocs, collection, addDoc, query, where, orderBy, limit, Timestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { useAuth } from '@/contexts/AuthContext';
+import { db, auth } from '@/lib/firebase';
 import type { DailyInsight } from '@/lib/dailyInsightEngine';
 
 export interface StoredInsight extends DailyInsight {
@@ -39,7 +38,7 @@ export const useInsightHistoryStore = create<InsightHistoryState>((set, get) => 
   
   saveInsight: async (insight: DailyInsight, date: string) => {
     try {
-      const { currentUser } = useAuth.getState?.() || {};
+      const currentUser = auth.currentUser;
       if (!currentUser?.uid) return;
       
       // Check if insight for this date already exists
@@ -93,7 +92,7 @@ export const useInsightHistoryStore = create<InsightHistoryState>((set, get) => 
     try {
       set({ loading: true, error: null });
       
-      const { currentUser } = useAuth.getState?.() || {};
+      const currentUser = auth.currentUser;
       if (!currentUser?.uid) {
         set({ loading: false });
         return;

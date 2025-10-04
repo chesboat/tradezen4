@@ -6,8 +6,7 @@
 
 import { create } from 'zustand';
 import { collection, addDoc, getDocs, query, where, updateDoc, doc, Timestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { useAuth } from '@/contexts/AuthContext';
+import { db, auth } from '@/lib/firebase';
 import type { Trade } from '@/types';
 
 export interface HabitExperiment {
@@ -94,7 +93,7 @@ export const useHabitExperimentStore = create<HabitExperimentState>((set, get) =
     try {
       set({ loading: true, error: null });
       
-      const { currentUser } = useAuth.getState?.() || {};
+      const currentUser = auth.currentUser;
       if (!currentUser?.uid) {
         set({ loading: false });
         return;
@@ -142,7 +141,7 @@ export const useHabitExperimentStore = create<HabitExperimentState>((set, get) =
   
   createExperiment: async (habitId, habitLabel, habitEmoji, duration, method, customSchedule) => {
     try {
-      const { currentUser } = useAuth.getState?.() || {};
+      const currentUser = auth.currentUser;
       if (!currentUser?.uid) throw new Error('Not authenticated');
       
       const startDate = new Date().toISOString().split('T')[0];

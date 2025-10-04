@@ -6,8 +6,7 @@
 
 import { create } from 'zustand';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { useAuth } from '@/contexts/AuthContext';
+import { db, auth } from '@/lib/firebase';
 import type { InsightType } from '@/lib/dailyInsightEngine';
 
 export interface InsightPreference {
@@ -109,7 +108,7 @@ export const useInsightPreferencesStore = create<InsightPreferencesState>((set, 
     try {
       set({ loading: true, error: null });
       
-      const { currentUser } = useAuth.getState?.() || {};
+      const currentUser = auth.currentUser;
       if (!currentUser?.uid) {
         set({ preferences: DEFAULT_PREFERENCES, loading: false });
         return;
@@ -144,7 +143,7 @@ export const useInsightPreferencesStore = create<InsightPreferencesState>((set, 
   
   savePreferences: async (preferences: InsightPreference[]) => {
     try {
-      const { currentUser } = useAuth.getState?.() || {};
+      const currentUser = auth.currentUser;
       if (!currentUser?.uid) return;
       
       // Save to Firestore
