@@ -291,13 +291,13 @@ function generateSecondaryInsights(
 }
 
 /**
- * Find the strongest habit-trading correlation across all habits
+ * Find ALL habit-trading correlations, sorted by impact
  */
-export function findStrongestHabitCorrelation(
+export function findAllHabitCorrelations(
   habits: Array<{ id: string; label: string; emoji: string }>,
   habitDays: HabitDay[],
   trades: Trade[]
-): HabitCorrelation | null {
+): HabitCorrelation[] {
   const correlations: HabitCorrelation[] = [];
 
   for (const habit of habits) {
@@ -315,8 +315,6 @@ export function findStrongestHabitCorrelation(
     }
   }
 
-  if (correlations.length === 0) return null;
-
   // Sort by combined impact score (win rate + normalized P&L + confidence)
   correlations.sort((a, b) => {
     const scoreA = a.winRateImprovement + (a.avgPnLImprovement / 10) + (a.confidence / 10);
@@ -324,6 +322,31 @@ export function findStrongestHabitCorrelation(
     return scoreB - scoreA;
   });
 
-  return correlations[0];
+  return correlations;
+}
+
+/**
+ * Find the top 3 habit-trading correlations (Premium feature)
+ */
+export function findTopHabitCorrelations(
+  habits: Array<{ id: string; label: string; emoji: string }>,
+  habitDays: HabitDay[],
+  trades: Trade[],
+  limit: number = 3
+): HabitCorrelation[] {
+  const allCorrelations = findAllHabitCorrelations(habits, habitDays, trades);
+  return allCorrelations.slice(0, limit);
+}
+
+/**
+ * Find the strongest habit-trading correlation across all habits
+ */
+export function findStrongestHabitCorrelation(
+  habits: Array<{ id: string; label: string; emoji: string }>,
+  habitDays: HabitDay[],
+  trades: Trade[]
+): HabitCorrelation | null {
+  const allCorrelations = findAllHabitCorrelations(habits, habitDays, trades);
+  return allCorrelations.length > 0 ? allCorrelations[0] : null;
 }
 
