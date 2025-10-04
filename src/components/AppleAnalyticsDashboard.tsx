@@ -10,7 +10,7 @@ import { useAccountFilterStore } from '@/store/useAccountFilterStore';
 import { useAnalyticsFilterStore } from '@/store/useAnalyticsFilterStore';
 import { computeEdgeScore } from '@/lib/edgeScore';
 import { formatCurrency } from '@/lib/localStorageUtils';
-import { cn } from '@/lib/utils';
+import { cn, summarizeWinLossScratch } from '@/lib/utils';
 import { useDailyReflectionStore } from '@/store/useDailyReflectionStore';
 import { useActivityLogStore } from '@/store/useActivityLogStore';
 import { useTodoStore } from '@/store/useTodoStore';
@@ -307,16 +307,16 @@ const EdgeBar: React.FC<EdgeMetric & { onClick?: () => void }> = ({
 const YourEdgeAtAGlance: React.FC<{ trades: any[] }> = ({ trades }) => {
   const edge = React.useMemo(() => computeEdgeScore(trades), [trades]);
 
-  // Calculate expectancy for display
+  // Calculate expectancy for display (excludes scratches for accurate win rate)
   const expectancy = React.useMemo(() => {
     if (trades.length === 0) return 0;
-    const wins = trades.filter((t: any) => (t.pnl || 0) > 0);
-    const losses = trades.filter((t: any) => (t.pnl || 0) < 0);
-    const winRate = (wins.length / trades.length) * 100;
+    const { winRateExclScratches } = summarizeWinLossScratch(trades);
+    const wins = trades.filter((t: any) => t.result === 'win');
+    const losses = trades.filter((t: any) => t.result === 'loss');
     const avgWin = wins.length > 0 ? wins.reduce((sum: number, t: any) => sum + (t.pnl || 0), 0) / wins.length : 0;
     const avgLoss = losses.length > 0 ? Math.abs(losses.reduce((sum: number, t: any) => sum + (t.pnl || 0), 0)) / losses.length : 0;
     // Dollar-based expectancy: how much you expect to make per trade
-    return (winRate / 100) * avgWin - (1 - winRate / 100) * avgLoss;
+    return (winRateExclScratches / 100) * avgWin - (1 - winRateExclScratches / 100) * avgLoss;
   }, [trades]);
 
   // Apple approach: 5 key metrics with visual health indicator
@@ -1533,19 +1533,19 @@ export const AppleAnalyticsDashboard: React.FC = () => {
     });
   }, [trades, selectedPeriod]);
 
-  // Calculate metrics
+  // Calculate metrics (excludes scratches for accurate win rate)
   const metrics = React.useMemo(() => {
     const calculateMetrics = (tradeList: any[]) => {
       const totalPnL = tradeList.reduce((sum, t) => sum + (t.pnl || 0), 0);
-      const winTrades = tradeList.filter(t => (t.pnl || 0) > 0);
-      const lossTrades = tradeList.filter(t => (t.pnl || 0) < 0);
-      const winRate = tradeList.length > 0 ? (winTrades.length / tradeList.length) * 100 : 0;
+      const { winRateExclScratches } = summarizeWinLossScratch(tradeList);
+      const winTrades = tradeList.filter(t => t.result === 'win');
+      const lossTrades = tradeList.filter(t => t.result === 'loss');
       
       const totalWins = winTrades.reduce((sum, t) => sum + (t.pnl || 0), 0);
       const totalLosses = Math.abs(lossTrades.reduce((sum, t) => sum + (t.pnl || 0), 0));
       const profitFactor = totalLosses > 0 ? totalWins / totalLosses : 0;
 
-      return { totalPnL, totalTrades: tradeList.length, winRate, profitFactor };
+      return { totalPnL, totalTrades: tradeList.length, winRate: winRateExclScratches, profitFactor };
     };
 
     const current = calculateMetrics(filteredTrades);
