@@ -199,7 +199,8 @@ function calculateConsistencyRing(
  */
 function calculateRiskControlRing(
   currentTrades: Trade[],
-  previousTrades: Trade[]
+  previousTrades: Trade[],
+  accountBalance?: number
 ): TradingHealthMetrics['riskControl'] {
   if (currentTrades.length === 0) {
     return {
@@ -244,23 +245,41 @@ function calculateRiskControlRing(
   const currentDrawdown = peakEquity > 0 ? ((peakEquity - equity) / peakEquity) * 100 : 0;
 
   // Calculate avg risk per trade
-  // If accountBalance is tracked, use it for accurate risk %
-  // Otherwise, calculate risk as % of peak equity
-  const tradesWithAccountBalance = currentTrades.filter(t => t.riskAmount && t.accountBalance);
+  const tradesWithRisk = currentTrades.filter(t => t.riskAmount && t.riskAmount > 0);
   let avgRisk = 0;
   
-  if (tradesWithAccountBalance.length > 0) {
-    // Accurate calculation: risk % of account balance
-    avgRisk = tradesWithAccountBalance.reduce((sum, t) => 
-      sum + ((t.riskAmount! / t.accountBalance!) * 100), 0
-    ) / tradesWithAccountBalance.length;
-  } else if (peakEquity > 0) {
-    // Fallback: calculate risk as % of peak equity
-    const tradesWithRisk = currentTrades.filter(t => t.riskAmount && t.riskAmount > 0);
-    if (tradesWithRisk.length > 0) {
-      avgRisk = tradesWithRisk.reduce((sum, t) => 
-        sum + ((t.riskAmount! / peakEquity) * 100), 0
-      ) / tradesWithRisk.length;
+  if (tradesWithRisk.length > 0) {
+    // Calculate average risk amount
+    const avgRiskAmount = tradesWithRisk.reduce((sum, t) => sum + t.riskAmount!, 0) / tradesWithRisk.length;
+    
+    // Debug logging
+    console.log('[Risk Control] Avg Risk Calculation:', {
+      tradesWithRisk: tradesWithRisk.length,
+      avgRiskAmount,
+      accountBalance,
+      peakEquity,
+      sampleRiskAmounts: tradesWithRisk.slice(0, 5).map(t => t.riskAmount),
+    });
+    
+    // Priority 1: Use provided account balance (most accurate for prop firms)
+    if (accountBalance && accountBalance > 0) {
+      avgRisk = (avgRiskAmount / accountBalance) * 100;
+      console.log('[Risk Control] Using account balance:', avgRisk.toFixed(2) + '%');
+    }
+    // Priority 2: Use trade-level accountBalance if tracked
+    else {
+      const tradesWithBalance = tradesWithRisk.filter(t => t.accountBalance && t.accountBalance > 0);
+      if (tradesWithBalance.length > 0) {
+        avgRisk = tradesWithBalance.reduce((sum, t) => 
+          sum + ((t.riskAmount! / t.accountBalance!) * 100), 0
+        ) / tradesWithBalance.length;
+        console.log('[Risk Control] Using trade-level balance:', avgRisk.toFixed(2) + '%');
+      }
+      // Priority 3: Fallback to peak equity
+      else if (peakEquity > 0) {
+        avgRisk = (avgRiskAmount / peakEquity) * 100;
+        console.log('[Risk Control] Using peak equity fallback:', avgRisk.toFixed(2) + '%');
+      }
     }
   }
 
@@ -360,14 +379,15 @@ function calculateRiskControlRing(
  */
 export function calculateTradingHealth(
   allTrades: Trade[],
-  window: TimeWindow = '30d'
+  window: TimeWindow = '30d',
+  accountBalance?: number
 ): TradingHealthMetrics {
   const currentTrades = filterTradesByWindow(allTrades, window);
   const previousTrades = getPreviousWindowTrades(allTrades, window);
 
   const edge = calculateEdgeRing(currentTrades, previousTrades);
   const consistency = calculateConsistencyRing(currentTrades, previousTrades);
-  const riskControl = calculateRiskControlRing(currentTrades, previousTrades);
+  const riskControl = calculateRiskControlRing(currentTrades, previousTrades, accountBalance);
 
   return {
     edge,

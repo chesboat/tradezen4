@@ -115,7 +115,9 @@ export const TradingHealthView: React.FC = () => {
   // Calculate metrics using filtered trades
   const metrics = useMemo(() => {
     console.log('[Trading Health] Calculating metrics for', filteredTrades.length, 'trades in', timeWindow, 'window');
-    const result = calculateTradingHealth(filteredTrades, timeWindow);
+    // Pass account balance for accurate risk calculations
+    const accountBalance = selectedAccount && !selectedAccount.isGroup ? selectedAccount.balance : undefined;
+    const result = calculateTradingHealth(filteredTrades, timeWindow, accountBalance);
     console.log('[Trading Health] Metrics calculated:', result);
     console.log('[Trading Health] Edge Ring:', {
       value: result.edge.value,
