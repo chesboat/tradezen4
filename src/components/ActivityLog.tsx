@@ -359,7 +359,7 @@ const ActivityItem: React.FC<{ activity: ActivityLogEntry; isExpanded: boolean }
 
 export const ActivityLog: React.FC<ActivityLogProps> = ({ className }) => {
   const { isExpanded, activities, toggleActivityLog, addActivity, clearActivities } = useActivityLogStore();
-  const [filter, setFilter] = useState<ActivityType | 'all'>('all');
+  const [filter, setFilter] = useState<ActivityType | 'all' | 'health'>('all');
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [visibleActivities, setVisibleActivities] = useState(20);
@@ -504,8 +504,14 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ className }) => {
   }, [activities.length, addActivity]);
 
   // Filter and sort activities (Apple-style: priority first, then time)
+  const tradingHealthTypes: ActivityType[] = ['ring_change', 'streak_event', 'rule_violation', 'health_suggestion', 'health_warning', 'milestone', 'daily_summary'];
+  
   const filteredActivities = activities
-    .filter(activity => filter === 'all' || activity.type === filter)
+    .filter(activity => {
+      if (filter === 'all') return true;
+      if (filter === 'health') return tradingHealthTypes.includes(activity.type);
+      return activity.type === filter;
+    })
     .sort(sortByPriority)
     .slice(0, visibleActivities);
 
@@ -543,6 +549,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ className }) => {
 
   const filterOptions = [
     { value: 'all', label: 'All', icon: Activity },
+    { value: 'health', label: 'Health', icon: Zap }, // Trading Health (flagship feature)
     { value: 'trade', label: 'Trades', icon: TrendingUp },
     { value: 'note', label: 'Notes', icon: BookOpen },
     { value: 'rich_note', label: 'Rich Notes', icon: FileEdit },
@@ -632,7 +639,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ className }) => {
                         ? 'bg-primary text-primary-foreground' 
                         : 'bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                     }`}
-                    onClick={() => setFilter(option.value as ActivityType | 'all')}
+                    onClick={() => setFilter(option.value as ActivityType | 'all' | 'health')}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
