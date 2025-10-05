@@ -422,10 +422,10 @@ const ConsistencyDetails: React.FC<{ data: any }> = ({ data }) => {
             />
           ) : (
             <>
-              {failingRules.some((r: any) => r.id === 'trade-notes-added') && (
+              {failingRules.some((r: any) => r.id === 'reviewed-or-marked') && (
                 <ImprovementTip
                   type="info"
-                  text='Add notes to every trade explaining your reasoning. Even "Clean breakout" counts!'
+                  text='Mark important trades for review to capture learning opportunities. Click the flag icon on trades that deserve deeper analysis.'
                 />
               )}
               {failingRules.some((r: any) => r.id === 'position-size-consistent') && (

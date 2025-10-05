@@ -227,9 +227,9 @@ const sections: DocSection[] = [
                   check="0.5% ≤ risk% ≤ 3%"
                 />
                 <RuleCard
-                  title="Minimum 1.5:1 R:R"
-                  description="Trade had at least 1.5:1 risk-to-reward potential"
-                  check="trade.rrRatio ≥ 1.5"
+                  title="Following YOUR edge"
+                  description="R:R ratio appropriate for your win rate (1.5:1 standard, lower OK for 70%+ win rate)"
+                  check="Adaptive: 1.5:1 OR (70%+ WR + 1:1) OR (80%+ WR + 0.5:1)"
                 />
               </div>
             </div>
@@ -247,9 +247,9 @@ const sections: DocSection[] = [
                   check="trade.tags.length > 0"
                 />
                 <RuleCard
-                  title="Added trade notes"
-                  description="Wrote at least a sentence about the trade"
-                  check="trade.notes.length ≥ 10"
+                  title="Reviewed or marked trade"
+                  description="Marked important trades for review OR already reviewed them"
+                  check="trade.markedForReview || trade.reviewedAt"
                 />
                 <RuleCard
                   title="Marked result"

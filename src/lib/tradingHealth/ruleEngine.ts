@@ -5,6 +5,7 @@
 
 import type { Trade } from '@/types';
 import type { RuleResult, TradeRuleCheck, RuleAdherence } from './types';
+import { summarizeWinLoss } from '@/lib/utils';
 
 // 8 Universal Rules - Automatic, No Setup Required
 interface Rule {
@@ -49,17 +50,36 @@ export const UNIVERSAL_RULES: Rule[] = [
   },
   {
     id: 'risk-reward-minimum',
-    name: 'Minimum 1.5:1 R:R',
+    name: 'Following YOUR edge',
     category: 'risk-management',
-    description: 'Trade had at least 1.5:1 risk-to-reward potential',
-    check: (trade: any) => {
+    description: 'R:R ratio appropriate for your win rate',
+    check: (trade: any, allTrades: Trade[]) => {
       // Check both possible field names
       const rrRatio = trade.rrRatio || trade.riskRewardRatio;
       if (!rrRatio) return false;
-      return rrRatio >= 1.5;
+      
+      // Universal good practice: 1.5:1 always passes
+      if (rrRatio >= 1.5) return true;
+      
+      // Adaptive: Recognize profitable high-win-rate systems
+      const last30Trades = allTrades.slice(-30);
+      if (last30Trades.length < 10) {
+        // Not enough data, use standard 1.5:1
+        return rrRatio >= 1.5;
+      }
+      
+      const { winRate } = summarizeWinLoss(last30Trades);
+      
+      // High win rate systems (70%+) can use lower R:R
+      if (winRate >= 70 && rrRatio >= 1.0) return true;
+      
+      // Very high win rate systems (80%+) can go even lower
+      if (winRate >= 80 && rrRatio >= 0.5) return true;
+      
+      return false;
     },
     points: 2, // Important
-    improvementTip: 'Target at least 1.5:1 or 2:1 R:R to build edge over time. Avoid low R:R trades.',
+    improvementTip: 'For most traders: target 1.5:1+ R:R. High win rate systems (70%+) can use lower R:R if consistently profitable.',
   },
 
   // ==========================================
@@ -77,17 +97,16 @@ export const UNIVERSAL_RULES: Rule[] = [
     improvementTip: 'Tag every trade with your setup (e.g., #breakout, #reversal) to track which strategies work.',
   },
   {
-    id: 'trade-notes-added',
-    name: 'Added trade notes',
+    id: 'reviewed-or-marked',
+    name: 'Reviewed or marked trade',
     category: 'journaling',
-    description: 'Wrote at least a sentence about the trade',
+    description: 'Marked important trades for review OR already reviewed them',
     check: (trade: any) => {
-      // Check multiple possible fields for notes
-      const notes = trade.notes || trade.note || trade.description || '';
-      return notes && notes.length >= 10; // At least 10 chars
+      // Pass if trade is marked for review or has been reviewed
+      return trade.markedForReview === true || trade.reviewedAt !== undefined;
     },
     points: 2, // Important
-    improvementTip: 'Document your thought process. What did you see? Why did you enter? This is how you improve.',
+    improvementTip: 'Mark important trades for review to capture learning opportunities. Review them later to improve.',
   },
   {
     id: 'result-marked',
