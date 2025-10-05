@@ -776,19 +776,37 @@ const ForYouCard: React.FC<ForYouCardProps> = ({ metrics, timeWindow }) => {
   const suggestions = React.useMemo(() => {
     const tips: Array<{ title: string; description: string; icon: any; action?: string; priority: number }> = [];
 
-    // Edge suggestions
+    // Edge suggestions - Apple-style actionable guidance
     if (metrics.edge.expectancy < 0) {
+      // Negative expectancy - immediate action needed
       tips.push({
-        title: 'Focus on Quality Over Quantity',
-        description: 'Your expectancy is negative. Take fewer, higher-probability setups. Wait for A+ setups only.',
+        title: 'Stop Trading & Analyze',
+        description: 'Your expectancy is negative. Review your last 20 trades in Notes. Tag losing patterns. Only trade A+ setups that match your winners.',
         icon: Target,
         priority: 10
       });
+    } else if (metrics.edge.value < 40) {
+      // Low edge score (but positive expectancy)
+      tips.push({
+        title: 'Study Your Best Setups',
+        description: 'Use Setup Analytics to find your most profitable patterns. Focus on your top 2-3 setups. Backtest new ideas before trading them live.',
+        icon: Target,
+        priority: 9
+      });
     } else if (metrics.edge.profitFactor < 1.5) {
+      // Decent edge, but needs improvement
       tips.push({
         title: 'Let Winners Run Longer',
-        description: `Your profit factor is ${metrics.edge.profitFactor.toFixed(2)}. Use trailing stops to capture bigger moves.`,
+        description: `Your profit factor is ${metrics.edge.profitFactor.toFixed(2)}. Use trailing stops to capture bigger moves. Review your best trades and replicate their exit strategy.`,
         icon: TrendingUp,
+        priority: 7
+      });
+    } else if (metrics.edge.winRate < 40) {
+      // Low win rate (but could be valid for high R:R)
+      tips.push({
+        title: 'Refine Your Entry Timing',
+        description: 'Your win rate is low. Use Notes to journal pre-trade plans. Wait for confirmation before entering. Tag trades by setup quality (A/B/C) to track accuracy.',
+        icon: Target,
         priority: 7
       });
     }
@@ -832,7 +850,7 @@ const ForYouCard: React.FC<ForYouCardProps> = ({ metrics, timeWindow }) => {
     if (metrics.edge.trend === 'declining') {
       tips.push({
         title: 'Your Edge is Declining',
-        description: 'Review recent trades. Market conditions may have changed, or you may be forcing trades.',
+        description: 'Review recent trades in Notes. Market conditions may have changed. Check Time Intelligence for performance shifts by hour/day.',
         icon: TrendingDown,
         priority: 8
       });
@@ -841,9 +859,29 @@ const ForYouCard: React.FC<ForYouCardProps> = ({ metrics, timeWindow }) => {
     if (metrics.consistency.trend === 'declining') {
       tips.push({
         title: 'Discipline is Slipping',
-        description: "You're following fewer rules than before. Review your last few trades for patterns.",
+        description: "You're following fewer rules than before. Review your last few trades for patterns. Mark important trades for deeper review.",
         icon: AlertTriangle,
         priority: 7
+      });
+    }
+
+    // Advanced Edge optimization (for traders doing well)
+    if (metrics.edge.value >= 60 && metrics.edge.value < 75 && metrics.edge.wins > 20) {
+      tips.push({
+        title: 'Optimize Your Best Setups',
+        description: 'Your edge is solid. Use Experiment Mode to A/B test variations of your best setups. Document findings in Notes to refine your process.',
+        icon: Target,
+        priority: 6
+      });
+    }
+
+    // Sample size warning
+    if (metrics.edge.wins + metrics.edge.losses < 20) {
+      tips.push({
+        title: 'Build Your Sample Size',
+        description: `You have ${metrics.edge.wins + metrics.edge.losses} trades. You need 30+ trades to get reliable Edge metrics. Focus on following your process consistently.`,
+        icon: Info,
+        priority: 4
       });
     }
 
@@ -851,7 +889,7 @@ const ForYouCard: React.FC<ForYouCardProps> = ({ metrics, timeWindow }) => {
     if (metrics.edge.value >= 70 && metrics.consistency.value >= 70 && metrics.riskControl.value >= 70) {
       tips.push({
         title: 'All Rings Closed!',
-        description: "Exceptional trading. Keep doing what you're doing. Review your process to ensure it's sustainable.",
+        description: "Exceptional trading. Document your process in Notes to ensure it's repeatable. Consider teaching others what's working for you.",
         icon: Award,
         priority: 10
       });
