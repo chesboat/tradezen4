@@ -35,7 +35,7 @@ interface JournalSnapshot {
 const JOURNAL_SNAPSHOT_KEY = 'journal-activity-snapshot';
 
 const getLastJournalSnapshot = (userId: string): JournalSnapshot | null => {
-  const snapshot = storage.getItem<JournalSnapshot>(JOURNAL_SNAPSHOT_KEY, null);
+  const snapshot = storage.getItem<JournalSnapshot | null>(JOURNAL_SNAPSHOT_KEY, null);
   if (!snapshot || snapshot.userId !== userId) return null;
   return snapshot;
 };

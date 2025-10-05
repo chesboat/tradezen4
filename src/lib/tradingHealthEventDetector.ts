@@ -17,7 +17,6 @@ interface StoredHealthSnapshot {
     edge: { value: number; expectancy: number };
     consistency: { value: number; currentStreak: number };
     riskControl: { value: number; currentDrawdown: number };
-    overall: number;
   };
   userId: string;
 }
@@ -28,7 +27,7 @@ const HEALTH_SNAPSHOT_KEY = 'trading-health-snapshot';
  * Get the last stored health snapshot
  */
 const getLastSnapshot = (userId: string): StoredHealthSnapshot | null => {
-  const snapshot = storage.getItem<StoredHealthSnapshot>(HEALTH_SNAPSHOT_KEY, null);
+  const snapshot = storage.getItem<StoredHealthSnapshot | null>(HEALTH_SNAPSHOT_KEY, null);
   if (!snapshot || snapshot.userId !== userId) return null;
   return snapshot;
 };
@@ -52,7 +51,6 @@ const storeSnapshot = (metrics: TradingHealthMetrics, userId: string) => {
         value: metrics.riskControl.value, 
         currentDrawdown: metrics.riskControl.currentDrawdown 
       },
-      overall: metrics.overall,
     },
     userId,
   };

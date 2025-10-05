@@ -152,17 +152,17 @@ export const TradingHealthView: React.FC = () => {
 
   // Auto-detect and log Trading Health events (Apple-style: intelligent, not noisy)
   useEffect(() => {
-    if (!hasTrades || !userProfile?.uid) return;
+    if (!hasTrades || !userProfile?.id) return;
 
     // Only detect events when on 30d window (to avoid duplicate events on window changes)
     if (timeWindow === '30d') {
       // Detect significant changes (ring scores, streaks, warnings)
-      detectTradingHealthEvents(metrics, userProfile.uid);
+      detectTradingHealthEvents(metrics, userProfile.id);
       
       // Check if we should generate a daily summary
-      checkDailySummarySchedule(metrics, userProfile.uid);
+      checkDailySummarySchedule(metrics, userProfile.id);
     }
-  }, [metrics, userProfile?.uid, timeWindow, hasTrades]);
+  }, [metrics, userProfile?.id, timeWindow, hasTrades]);
 
   const overallScore = Math.round(
     (metrics.edge.value + metrics.consistency.value + metrics.riskControl.value) / 3
