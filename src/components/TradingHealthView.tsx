@@ -785,7 +785,7 @@ const ForYouCard: React.FC<ForYouCardProps> = ({ metrics, timeWindow }) => {
     if (metrics.consistency.trend === 'declining') {
       tips.push({
         title: 'Discipline is Slipping',
-        description: 'You're following fewer rules than before. Review your last few trades for patterns.',
+        description: "You're following fewer rules than before. Review your last few trades for patterns.",
         icon: AlertTriangle,
         priority: 7
       });
@@ -795,7 +795,7 @@ const ForYouCard: React.FC<ForYouCardProps> = ({ metrics, timeWindow }) => {
     if (metrics.edge.value >= 70 && metrics.consistency.value >= 70 && metrics.riskControl.value >= 70) {
       tips.push({
         title: 'All Rings Closed!',
-        description: 'Exceptional trading. Keep doing what you're doing. Review your process to ensure it's sustainable.',
+        description: "Exceptional trading. Keep doing what you're doing. Review your process to ensure it's sustainable.",
         icon: Award,
         priority: 10
       });
