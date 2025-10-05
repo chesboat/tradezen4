@@ -90,7 +90,7 @@ const HeroPnLCard: React.FC<{
   
   return (
     <motion.div
-      className="col-span-full bg-background rounded-3xl p-6 sm:p-8 border border-border"
+      className="col-span-full bg-background rounded-3xl p-6 sm:p-8 border border-border overflow-visible"
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.5 }}

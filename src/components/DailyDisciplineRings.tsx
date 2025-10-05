@@ -87,8 +87,9 @@ export const DailyDisciplineRings: React.FC<DailyDisciplineRingsProps> = ({
       });
     }
 
-    const ruleAdherenceRate = totalRules > 0 ? (rulesFollowed / totalRules) * 100 : 100;
-    const followedRules = todayTrades.length === 0 || ruleAdherenceRate >= 80;
+    const ruleAdherenceRate = totalRules > 0 ? (rulesFollowed / totalRules) * 100 : 0;
+    // Only complete if you HAVE trades AND followed 80%+ of rules
+    const followedRules = todayTrades.length > 0 && ruleAdherenceRate >= 80;
 
     // Discipline Ring: No critical rule violations today
     const hasCriticalViolations = todayTrades.some(trade => {
@@ -103,7 +104,8 @@ export const DailyDisciplineRings: React.FC<DailyDisciplineRingsProps> = ({
         (revengeRule && !revengeRule.check(trade, trades))
       );
     });
-    const noDisciplineViolations = !hasCriticalViolations;
+    // Only complete if you HAVE trades AND no violations
+    const noDisciplineViolations = todayTrades.length > 0 && !hasCriticalViolations;
 
     return [
       {
@@ -286,7 +288,11 @@ export const DailyDisciplineRings: React.FC<DailyDisciplineRingsProps> = ({
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.9, y: 10 }}
                   transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                  className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-[100] pointer-events-none"
+                  className={cn(
+                    "absolute bottom-full mb-2 z-[100] pointer-events-none",
+                    // Smart positioning: last ring aligns right to avoid overflow
+                    index === rings.length - 1 ? "right-0" : "left-1/2 -translate-x-1/2"
+                  )}
                 >
                   <div className="bg-popover/95 backdrop-blur-xl border border-border/50 rounded-2xl shadow-2xl p-4 min-w-[280px] max-w-[320px]">
                     {/* Header */}
@@ -384,7 +390,10 @@ export const DailyDisciplineRings: React.FC<DailyDisciplineRingsProps> = ({
 
                   {/* Pointer/Arrow */}
                   <div
-                    className="absolute left-1/2 -translate-x-1/2 w-3 h-3 bg-popover/95 border-r border-b border-border/50 rotate-45"
+                    className={cn(
+                      "absolute w-3 h-3 bg-popover/95 border-r border-b border-border/50 rotate-45",
+                      index === rings.length - 1 ? "right-4" : "left-1/2 -translate-x-1/2"
+                    )}
                     style={{ bottom: '-6px' }}
                   />
                 </motion.div>
