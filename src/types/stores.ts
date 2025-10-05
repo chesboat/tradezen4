@@ -11,8 +11,10 @@ export interface ActivityLogState {
   activities: ActivityLogEntry[];
   toggleActivityLog: () => void;
   setActivityLogExpanded: (expanded: boolean) => void;
-  addActivity: (activity: Omit<ActivityLogEntry, 'id' | 'createdAt' | 'updatedAt'>) => void;
-  clearActivities: () => void;
+  addActivity: (activity: Omit<ActivityLogEntry, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  clearActivities: () => Promise<void>;
+  initializeActivityLog: (userId: string) => void;
+  cleanup: () => void;
 }
 
 export interface AccountFilterState {

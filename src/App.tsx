@@ -108,6 +108,16 @@ function AppContent() {
     return () => clearInterval(interval);
   }, [currentUser, loading]);
 
+  // Cleanup on logout
+  React.useEffect(() => {
+    if (!loading && !currentUser) {
+      // User logged out, cleanup all subscriptions
+      console.log('User logged out, cleaning up activity log...');
+      const activityLogStore = useActivityLogStore.getState();
+      activityLogStore.cleanup();
+    }
+  }, [loading, currentUser]);
+
   // Initialize data when user is authenticated
   React.useEffect(() => {
     const initializeData = async () => {
@@ -158,6 +168,10 @@ function AppContent() {
           
           // Initialize weekly review store with real-time Firebase subscription
           await initializeWeeklyReviewStore();
+          
+          // Initialize activity log with real-time Firebase subscription
+          const activityLogStore = useActivityLogStore.getState();
+          activityLogStore.initializeActivityLog(currentUser.uid);
           
           // Check for weekly review todo after all stores are initialized
           await checkAndAddWeeklyReviewTodo();

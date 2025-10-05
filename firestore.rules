@@ -149,6 +149,11 @@ service cloud.firestore {
       allow read, write: if isOwner(userId);
     }
 
+    // Activity Log - intelligent journal-wide milestone tracking
+    match /users/{userId}/activityLog/{activityId} {
+      allow read, write: if isOwner(userId);
+    }
+
     // Default deny all other access
     match /{document=**} {
       allow read, write: if false;
