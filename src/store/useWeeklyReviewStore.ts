@@ -173,7 +173,12 @@ export const useWeeklyReviewStore = create<WeeklyReviewState>()(
             awardXp.weeklyReview().catch(console.error);
           });
 
-          // Add activity log entry for completion
+          // Add activity log entry for completion (Apple-style intelligent tracking)
+          import('@/lib/journalActivityLogger').then(({ logWeeklyReviewCompleted }) => {
+            logWeeklyReviewCompleted();
+          });
+          
+          // Also add legacy activity log entry for backward compatibility
           import('./useActivityLogStore').then(({ useActivityLogStore }) => {
             useActivityLogStore.getState().addActivity({
               type: 'weekly_review',

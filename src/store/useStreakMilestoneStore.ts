@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import type { MilestoneCelebration } from '@/lib/streakMilestones';
 import { checkForNewMilestone, markMilestoneCelebrated } from '@/lib/streakMilestones';
+import { logJournalStreakMilestone } from '@/lib/journalActivityLogger';
 
 interface StreakMilestoneState {
   currentMilestone: MilestoneCelebration | null;
@@ -31,6 +32,9 @@ export const useStreakMilestoneStore = create<StreakMilestoneState>()(
           
           // Show celebration
           set({ currentMilestone: milestone });
+          
+          // Log to Activity Log (Apple-style intelligent tracking)
+          logJournalStreakMilestone(milestone.streak);
           
           // Mark as celebrated so it doesn't show again
           markMilestoneCelebrated(milestone.streak);

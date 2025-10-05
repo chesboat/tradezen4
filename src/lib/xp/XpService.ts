@@ -1,6 +1,7 @@
 import { useUserProfileStore } from '@/store/useUserProfileStore';
 import { db } from '@/lib/firebase';
 import { doc, setDoc, updateDoc, onSnapshot, serverTimestamp, increment, getDoc } from 'firebase/firestore';
+import { logLevelUp } from '@/lib/journalActivityLogger';
 
 /**
  * XP Service - Facade for all XP operations
@@ -56,6 +57,13 @@ export class XpService {
             canPrestige: canPrestigeNow,
             updatedAt: serverTimestamp(),
           });
+          
+          // Log level up to Activity Log (Apple-style celebration)
+          if (data.level !== newLevel && data.level < newLevel) {
+            const totalXp = Number(data.total || 0);
+            logLevelUp(newLevel, totalXp);
+          }
+          
           console.log('✨ XP awarded and level updated:', { 
             delta, 
             newSeasonXp, 
