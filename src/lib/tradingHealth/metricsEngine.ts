@@ -204,7 +204,7 @@ function calculateRiskControlRing(
 ): TradingHealthMetrics['riskControl'] {
   if (currentTrades.length === 0) {
     return {
-      value: 100, // No trades = no drawdown = perfect score
+      value: 80, // No trades = no drawdown = perfect score (capped at goal)
       goal: 80,
       status: 'excellent',
       trend: 'stable',
@@ -331,14 +331,14 @@ function calculateRiskControlRing(
   }
 
   // Score: Lower drawdown = higher score
-  // < 5% = excellent (90+)
-  // < 10% = good (70-89)
+  // < 5% = excellent (80 - perfect score)
+  // < 10% = good (70-79)
   // < 15% = needs work (50-69)
   // < 20% = critical (30-49)
   // >= 20% = danger (0-29)
   let score = 0;
-  if (maxDrawdown < 5) score = 95;
-  else if (maxDrawdown < 10) score = 80;
+  if (maxDrawdown < 5) score = 80; // Capped at goal
+  else if (maxDrawdown < 10) score = 75;
   else if (maxDrawdown < 15) score = 60;
   else if (maxDrawdown < 20) score = 40;
   else if (maxDrawdown < 30) score = 25;
@@ -369,8 +369,8 @@ function calculateRiskControlRing(
       }
     });
 
-    if (prevMaxDrawdown < 5) previousScore = 95;
-    else if (prevMaxDrawdown < 10) previousScore = 80;
+    if (prevMaxDrawdown < 5) previousScore = 80; // Capped at goal
+    else if (prevMaxDrawdown < 10) previousScore = 75;
     else if (prevMaxDrawdown < 15) previousScore = 60;
     else if (prevMaxDrawdown < 20) previousScore = 40;
     else if (prevMaxDrawdown < 30) previousScore = 25;
