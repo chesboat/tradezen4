@@ -22,6 +22,7 @@ import { CustomDateRangePicker } from './CustomDateRangePicker';
 import { TimeIntelligence } from './TimeIntelligence';
 import { UpgradeModal } from './UpgradeModal';
 import { hasFeature } from '@/lib/tierLimits';
+import { calculateTradingHealth } from '@/lib/tradingHealth/metricsEngine';
 
 // ===============================================
 // TYPES & UTILITIES
@@ -400,7 +401,7 @@ const EdgeBar: React.FC<EdgeMetric & { onClick?: () => void }> = ({
         <div className="flex items-center gap-2">
           {tooltip ? (
             <MetricTooltip {...tooltip}>
-              <span className="text-sm font-medium text-foreground">{label}</span>
+          <span className="text-sm font-medium text-foreground">{label}</span>
             </MetricTooltip>
           ) : (
             <span className="text-sm font-medium text-foreground">{label}</span>
@@ -592,69 +593,168 @@ const YourEdgeAtAGlance: React.FC<{ trades: any[] }> = ({ trades }) => {
     }
   ];
 
-  // Calculate overall health (like Apple Watch activity score)
-  const healthScore = edge.score;
-  const healthPercentage = (healthScore / 100) * 100;
+  return null; // Removed - replaced with TradingHealthPreviewCard below
+};
 
-  return (
-    <div className="bg-background border border-border rounded-2xl p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <Activity className="w-5 h-5 text-muted-foreground" />
-          <h2 className="text-xl font-semibold text-foreground">Trading Health</h2>
-        </div>
-        
-        {/* Trading Health Ring (Apple Watch style) */}
-        <div className="relative">
-          <svg className="w-20 h-20 -rotate-90">
-            {/* Background ring */}
+// ===============================================
+// TRADING HEALTH PREVIEW (Gateway to Full View)
+// ===============================================
+
+const TradingHealthPreviewCard: React.FC<{ trades: any[] }> = ({ trades }) => {
+  const navigate = useNavigationStore(state => state.setView);
+  const { selectedAccountId, accounts } = useAccountFilterStore();
+  
+  // Import the same calculation logic from Trading Health
+  const selectedAccount = React.useMemo(() => {
+    if (!selectedAccountId || selectedAccountId === 'all') return null;
+    return accounts.find(acc => acc.id === selectedAccountId);
+  }, [selectedAccountId, accounts]);
+
+  const filteredTrades = React.useMemo(() => {
+    if (!selectedAccountId || selectedAccountId === 'all') {
+      return trades;
+    }
+    
+    const account = accounts.find(acc => acc.id === selectedAccountId);
+    
+    if (account?.isGroup && account.groupId) {
+      const groupAccounts = accounts.filter(acc => 
+        acc.groupId === account.groupId && !acc.isGroup
+      );
+      const groupIds = groupAccounts.map(acc => acc.id);
+      return trades.filter(t => groupIds.includes(t.accountId));
+    }
+    
+    return trades.filter(t => t.accountId === selectedAccountId);
+  }, [trades, selectedAccountId, accounts]);
+
+  const metrics = React.useMemo(() => {
+    const accountBalance = selectedAccount?.balance;
+    return calculateTradingHealth(filteredTrades, '30d', accountBalance);
+  }, [filteredTrades, selectedAccount]);
+
+  const overallScore = Math.round((metrics.edge.value + metrics.consistency.value + metrics.riskControl.value) / 3);
+  const overallStatus = overallScore >= 70 ? 'excellent' : overallScore >= 50 ? 'good' : overallScore >= 30 ? 'warning' : 'critical';
+  
+  const statusText = {
+    excellent: 'Excellent',
+    good: 'Good',
+    warning: 'Needs Work',
+    critical: 'Critical'
+  };
+
+  const statusColors = {
+    excellent: 'text-green-500',
+    good: 'text-blue-500',
+    warning: 'text-yellow-500',
+    critical: 'text-red-500'
+  };
+
+  // Mini ring component
+  const MiniRing: React.FC<{ value: number; goal: number; color: string; label: string }> = ({ value, goal, color, label }) => {
+    const percentage = Math.min((value / goal) * 100, 100);
+    const circumference = 2 * Math.PI * 28;
+    const offset = circumference - (percentage / 100) * circumference;
+
+    return (
+      <div className="flex flex-col items-center gap-1.5">
+        <div className="relative w-16 h-16">
+          <svg className="w-full h-full -rotate-90">
+            {/* Background */}
             <circle
-              cx="40"
-              cy="40"
-              r="32"
+              cx="32"
+              cy="32"
+              r="28"
               stroke="currentColor"
-              strokeWidth="6"
+              strokeWidth="5"
               fill="none"
               className="text-muted/20"
             />
-            {/* Progress ring */}
+            {/* Progress */}
             <motion.circle
-              cx="40"
-              cy="40"
-              r="32"
-              stroke="url(#healthGradient)"
-              strokeWidth="6"
+              cx="32"
+              cy="32"
+              r="28"
+              stroke={color}
+              strokeWidth="5"
               fill="none"
               strokeLinecap="round"
-              strokeDasharray={`${2 * Math.PI * 32}`}
-              initial={{ strokeDashoffset: 2 * Math.PI * 32 }}
-              animate={{ strokeDashoffset: 2 * Math.PI * 32 * (1 - healthPercentage / 100) }}
-              transition={{ duration: 1.5, ease: "easeOut" }}
+              strokeDasharray={circumference}
+              initial={{ strokeDashoffset: circumference }}
+              animate={{ strokeDashoffset: offset }}
+              transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
             />
-            <defs>
-              <linearGradient id="healthGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#3b82f6" />
-                <stop offset="50%" stopColor="#8b5cf6" />
-                <stop offset="100%" stopColor="#ec4899" />
-              </linearGradient>
-            </defs>
           </svg>
-          {/* Center score */}
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center">
-              <div className="text-xl font-bold text-foreground">{healthScore}</div>
-              <div className="text-[9px] text-muted-foreground uppercase tracking-wide">Health</div>
+            <span className="text-xs font-bold text-foreground">{value}</span>
             </div>
           </div>
+        <span className="text-[10px] text-muted-foreground font-medium">{label}</span>
+      </div>
+    );
+  };
+
+  return (
+    <motion.div
+      className="bg-gradient-to-br from-card via-card to-primary/5 border border-border rounded-2xl p-6 cursor-pointer hover:border-primary/50 transition-all duration-300 hover:shadow-lg"
+      onClick={() => navigate('health')}
+      whileHover={{ scale: 1.01 }}
+      whileTap={{ scale: 0.99 }}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+            <Zap className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <h2 className="text-xl font-semibold text-foreground">Trading Health</h2>
+            <p className="text-xs text-muted-foreground">30-day rolling window</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        {metrics.map((metric) => (
-          <EdgeBar key={metric.label} {...metric} />
-        ))}
+        {/* Overall Score Badge */}
+        <div className="text-right">
+          <div className="text-3xl font-bold text-foreground tabular-nums">{overallScore}</div>
+          <div className={cn('text-xs font-semibold', statusColors[overallStatus])}>{statusText[overallStatus]}</div>
       </div>
     </div>
+
+      {/* 3 Mini Rings */}
+      <div className="flex items-center justify-center gap-6 sm:gap-10 mb-6">
+        <MiniRing
+          value={metrics.edge.value}
+          goal={metrics.edge.goal}
+          color="#FF375F"
+          label="Edge"
+        />
+        <MiniRing
+          value={metrics.consistency.value}
+          goal={metrics.consistency.goal}
+          color="#7AFF45"
+          label="Consistency"
+        />
+        <MiniRing
+          value={metrics.riskControl.value}
+          goal={metrics.riskControl.goal}
+          color="#0AFFFE"
+          label="Risk Control"
+        />
+      </div>
+
+      {/* CTA */}
+      <div className="flex items-center justify-between p-3 bg-muted/30 rounded-xl hover:bg-muted/50 transition-colors">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-foreground">View Full Health Report</span>
+          {metrics.consistency.currentStreak >= 3 && (
+            <span className="text-xs px-2 py-0.5 bg-orange-500/10 text-orange-500 rounded-full flex items-center gap-1">
+              🔥 {metrics.consistency.currentStreak} day streak
+            </span>
+          )}
+        </div>
+        <ChevronRight className="w-5 h-5 text-muted-foreground" />
+      </div>
+    </motion.div>
   );
 };
 
@@ -1942,8 +2042,8 @@ export const AppleAnalyticsDashboard: React.FC = () => {
           </motion.div>
         )}
 
-        {/* Your Edge at a Glance */}
-        <YourEdgeAtAGlance trades={filteredTrades} />
+        {/* Trading Health Preview */}
+        <TradingHealthPreviewCard trades={filteredTrades} />
 
         {/* Smart Insights */}
         <SmartInsightsCard trades={filteredTrades} />
