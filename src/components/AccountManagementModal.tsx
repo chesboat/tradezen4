@@ -207,9 +207,11 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
 
     const balance = parseFloat(form.balance);
     if (!form.balance || isNaN(balance)) {
-      newErrors.balance = 'Valid balance is required';
+      newErrors.balance = 'Account size is required';
     } else if (balance < 0) {
-      newErrors.balance = 'Balance cannot be negative';
+      newErrors.balance = 'Account size cannot be negative';
+    } else if (balance === 0 && form.status === 'active') {
+      newErrors.balance = 'Active accounts need an account size (e.g., $50,000 for prop firms)';
     }
 
     if (!form.currency) {
@@ -439,12 +441,12 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
               </div>
             </div>
 
-            {/* Balance & Currency */}
+            {/* Account Size & Currency */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium flex items-center gap-2">
                   <DollarSign className="w-4 h-4" />
-                  Balance
+                  Account Size
                 </label>
                 <input
                   type="number"
@@ -452,7 +454,7 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
                   min="0"
                   value={form.balance}
                   onChange={(e) => updateForm('balance', e.target.value)}
-                  placeholder="10000"
+                  placeholder="50000"
                   className={cn(
                     "w-full px-3 py-2 border rounded-lg transition-colors bg-background text-foreground placeholder:text-muted-foreground",
                     "focus:outline-none focus:ring-2 focus:ring-primary/50",
@@ -461,10 +463,17 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
                       : "border-border focus:border-primary"
                   )}
                 />
-                {errors.balance && (
+                {errors.balance ? (
                   <p className="text-sm text-red-500 flex items-center gap-1">
                     <AlertTriangle className="w-3 h-3" />
                     {errors.balance}
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    {form.type === 'prop' 
+                      ? 'Size of your prop firm account (e.g., $50k eval or funded)'
+                      : 'Your trading capital (simulated or real)'
+                    }
                   </p>
                 )}
               </div>
