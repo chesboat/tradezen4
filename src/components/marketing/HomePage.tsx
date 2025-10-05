@@ -276,6 +276,123 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted, onViewPricing 
         </div>
       </section>
 
+      {/* Trading Health Testimonials */}
+      <section className="py-20 bg-background">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
+              Real Results from Trading Health
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Traders who close their rings consistently see measurable improvements in their edge.
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {/* Testimonial 1 */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="bg-card border border-border rounded-2xl p-6 hover:border-primary/30 hover:shadow-lg transition-all"
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white font-bold text-lg">
+                  M
+                </div>
+                <div>
+                  <div className="font-semibold text-foreground">Marcus T.</div>
+                  <div className="text-xs text-muted-foreground">Prop Trader</div>
+                </div>
+              </div>
+              <p className="text-sm text-foreground leading-relaxed mb-4">
+                "12-day streak. My win rate jumped from 42% to 58% once I started focusing on closing all 3 rings every day. The 'For You' suggestions are spot on."
+              </p>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                  <span>Edge: 72/80</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                  <span>12-day streak</span>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Testimonial 2 */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="bg-card border border-border rounded-2xl p-6 hover:border-primary/30 hover:shadow-lg transition-all"
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-white font-bold text-lg">
+                  S
+                </div>
+                <div>
+                  <div className="font-semibold text-foreground">Sarah K.</div>
+                  <div className="text-xs text-muted-foreground">Day Trader</div>
+                </div>
+              </div>
+              <p className="text-sm text-foreground leading-relaxed mb-4">
+                "The adaptive R:R rule changed my trading. My system has a 70% win rate, so I was forcing 2:1 R:R and missing winners. Health rings helped me trust my edge."
+              </p>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+                  <span>Consistency: 85/100</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                  <span>+$12k last 30d</span>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Testimonial 3 */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.3 }}
+              className="bg-card border border-border rounded-2xl p-6 hover:border-primary/30 hover:shadow-lg transition-all"
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white font-bold text-lg">
+                  J
+                </div>
+                <div>
+                  <div className="font-semibold text-foreground">Jordan L.</div>
+                  <div className="text-xs text-muted-foreground">Swing Trader</div>
+                </div>
+              </div>
+              <p className="text-sm text-foreground leading-relaxed mb-4">
+                "Drawdown tracking saved my account. I was at 28% drawdown and didn't realize it. Now Risk Control ring keeps me honest. From critical to excellent in 6 weeks."
+              </p>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                  <span>Risk: 78/80</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                  <span>4.2% drawdown</span>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
       {/* Positioning Section */}
       <section className="py-24 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">

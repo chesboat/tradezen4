@@ -168,7 +168,7 @@ export const CalendarHeatmap: React.FC<CalendarHeatmapProps> = ({
               onClick={onUpgrade}
               className="px-6 py-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors font-semibold"
             >
-              Upgrade to Premium
+              Unlock Calendar Heatmap
             </button>
           </div>
         </div>

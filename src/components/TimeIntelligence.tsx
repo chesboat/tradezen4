@@ -312,7 +312,7 @@ export const TimeIntelligence: React.FC<TimeIntelligenceProps> = ({ trades, isPr
               onClick={onUpgrade}
               className="px-6 py-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors font-semibold"
             >
-              Upgrade to Premium
+              Unlock Time Intelligence
             </button>
           </div>
         </div>

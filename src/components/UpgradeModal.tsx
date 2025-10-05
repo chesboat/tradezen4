@@ -81,8 +81,28 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, fea
   // Determine if user is a new/free user (neither trial nor basic)
   const isNewUser = !isTrial && !isBasic;
   
-  // Button text changes based on user status
-  const buttonText = isNewUser ? 'Start Free Trial' : 'Upgrade to Premium';
+  // Button text changes based on feature context and user status
+  const getButtonText = () => {
+    if (feature) {
+      // Feature-specific CTAs for Trading Health
+      if (feature.includes('Trend')) return isNewUser ? 'Start Free Trial' : 'Unlock 30/90-Day Trends';
+      if (feature.includes('Rule')) return isNewUser ? 'Start Free Trial' : 'Get Full Rule Breakdown';
+      if (feature.includes('Edge')) return isNewUser ? 'Start Free Trial' : 'Unlock Edge Analysis';
+      if (feature.includes('Risk')) return isNewUser ? 'Start Free Trial' : 'Unlock Risk Analysis';
+      if (feature.includes('For You')) return isNewUser ? 'Start Free Trial' : 'Enable For You Coaching';
+      
+      // Feature-specific CTAs for Intelligence features
+      if (feature.includes('Calendar')) return isNewUser ? 'Start Free Trial' : 'Unlock Calendar Heatmap';
+      if (feature.includes('Time Intelligence')) return isNewUser ? 'Start Free Trial' : 'Unlock Time Intelligence';
+      if (feature.includes('Setup Analytics')) return isNewUser ? 'Start Free Trial' : 'Unlock Setup Analytics';
+      if (feature.includes('Insight History')) return isNewUser ? 'Start Free Trial' : 'Unlock Insight History';
+      if (feature.includes('Experiment')) return isNewUser ? 'Start Free Trial' : 'Unlock Experiment Mode';
+    }
+    // Default CTAs
+    return isNewUser ? 'Start Free Trial' : 'Upgrade to Premium';
+  };
+  
+  const buttonText = getButtonText();
   
   // Subtext changes based on billing period and user status
   const subText = isNewUser 
