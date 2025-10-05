@@ -601,7 +601,7 @@ const YourEdgeAtAGlance: React.FC<{ trades: any[] }> = ({ trades }) => {
 // ===============================================
 
 const TradingHealthPreviewCard: React.FC<{ trades: any[] }> = ({ trades }) => {
-  const navigate = useNavigationStore(state => state.setView);
+  const { setCurrentView } = useNavigationStore();
   const { selectedAccountId, accounts } = useAccountFilterStore();
   
   // Import the same calculation logic from Trading Health
@@ -697,7 +697,7 @@ const TradingHealthPreviewCard: React.FC<{ trades: any[] }> = ({ trades }) => {
   return (
     <motion.div
       className="bg-gradient-to-br from-card via-card to-primary/5 border border-border rounded-2xl p-6 cursor-pointer hover:border-primary/50 transition-all duration-300 hover:shadow-lg"
-      onClick={() => navigate('health')}
+      onClick={() => setCurrentView('health')}
       whileHover={{ scale: 1.01 }}
       whileTap={{ scale: 0.99 }}
     >
