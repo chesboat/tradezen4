@@ -54,18 +54,134 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted, onViewPricing 
             </motion.div>
 
             {/* Main Headline */}
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-foreground mb-6 leading-tight">
-              Master Your Trading
+            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-foreground mb-4 leading-tight">
+              Your Trading Health.
               <br />
               <span className="bg-gradient-to-r from-primary via-orange-500 to-red-500 bg-clip-text text-transparent">
-                Psychology
+                At a Glance.
               </span>
             </h1>
 
-            <p className="text-xl sm:text-2xl text-muted-foreground max-w-3xl mx-auto mb-12 leading-relaxed">
-              The only journal built for traders who know that discipline, habits, and mindset 
-              are the real edge in the market.
+            <p className="text-xl sm:text-2xl text-muted-foreground max-w-3xl mx-auto mb-8 leading-relaxed">
+              Close all 3 rings. Build a consistently profitable edge.
             </p>
+
+            {/* Animated Rings Preview */}
+            <div className="flex items-center justify-center gap-8 mb-12">
+              <motion.div
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ duration: 1, delay: 0.3, type: 'spring' }}
+                className="flex flex-col items-center"
+              >
+                <div className="relative w-24 h-24 mb-2">
+                  <svg className="w-full h-full -rotate-90">
+                    <circle
+                      cx="48"
+                      cy="48"
+                      r="40"
+                      stroke="currentColor"
+                      strokeWidth="8"
+                      fill="none"
+                      className="text-muted/20"
+                    />
+                    <motion.circle
+                      cx="48"
+                      cy="48"
+                      r="40"
+                      stroke="#FF375F"
+                      strokeWidth="8"
+                      fill="none"
+                      strokeLinecap="round"
+                      strokeDasharray={`${2 * Math.PI * 40}`}
+                      initial={{ strokeDashoffset: 2 * Math.PI * 40 }}
+                      animate={{ strokeDashoffset: 2 * Math.PI * 40 * (1 - 0.75) }}
+                      transition={{ duration: 1.5, delay: 0.5, ease: 'easeOut' }}
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-2xl font-bold text-foreground">75</span>
+                  </div>
+                </div>
+                <span className="text-sm font-medium text-muted-foreground">💰 Edge</span>
+              </motion.div>
+
+              <motion.div
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ duration: 1, delay: 0.5, type: 'spring' }}
+                className="flex flex-col items-center"
+              >
+                <div className="relative w-24 h-24 mb-2">
+                  <svg className="w-full h-full -rotate-90">
+                    <circle
+                      cx="48"
+                      cy="48"
+                      r="40"
+                      stroke="currentColor"
+                      strokeWidth="8"
+                      fill="none"
+                      className="text-muted/20"
+                    />
+                    <motion.circle
+                      cx="48"
+                      cy="48"
+                      r="40"
+                      stroke="#7AFF45"
+                      strokeWidth="8"
+                      fill="none"
+                      strokeLinecap="round"
+                      strokeDasharray={`${2 * Math.PI * 40}`}
+                      initial={{ strokeDashoffset: 2 * Math.PI * 40 }}
+                      animate={{ strokeDashoffset: 2 * Math.PI * 40 * (1 - 0.85) }}
+                      transition={{ duration: 1.5, delay: 0.7, ease: 'easeOut' }}
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-2xl font-bold text-foreground">68</span>
+                  </div>
+                </div>
+                <span className="text-sm font-medium text-muted-foreground">🎯 Consistency</span>
+              </motion.div>
+
+              <motion.div
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ duration: 1, delay: 0.7, type: 'spring' }}
+                className="flex flex-col items-center"
+              >
+                <div className="relative w-24 h-24 mb-2">
+                  <svg className="w-full h-full -rotate-90">
+                    <circle
+                      cx="48"
+                      cy="48"
+                      r="40"
+                      stroke="currentColor"
+                      strokeWidth="8"
+                      fill="none"
+                      className="text-muted/20"
+                    />
+                    <motion.circle
+                      cx="48"
+                      cy="48"
+                      r="40"
+                      stroke="#0AFFFE"
+                      strokeWidth="8"
+                      fill="none"
+                      strokeLinecap="round"
+                      strokeDasharray={`${2 * Math.PI * 40}`}
+                      initial={{ strokeDashoffset: 2 * Math.PI * 40 }}
+                      animate={{ strokeDashoffset: 2 * Math.PI * 40 * (1 - 0.65) }}
+                      transition={{ duration: 1.5, delay: 0.9, ease: 'easeOut' }}
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-2xl font-bold text-foreground">52</span>
+                  </div>
+                </div>
+                <span className="text-sm font-medium text-muted-foreground">⚠️ Risk</span>
+              </motion.div>
+            </div>
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
