@@ -16,7 +16,13 @@ import {
   Target,
   FileText,
   CheckCircle2,
-  FileEdit
+  FileEdit,
+  AlertTriangle,
+  Flame,
+  Award,
+  Lightbulb,
+  BarChart3,
+  Shield
 } from 'lucide-react';
 import { useActivityLogStore } from '@/store/useActivityLogStore';
 import { ActivityLogEntry, ActivityType } from '@/types';
@@ -28,6 +34,7 @@ interface ActivityLogProps {
 }
 
 const activityIcons: Record<ActivityType, React.ComponentType<{ className?: string }>> = {
+  // Original types
   trade: TrendingUp,
   note: BookOpen,
   quest: Trophy,
@@ -39,9 +46,18 @@ const activityIcons: Record<ActivityType, React.ComponentType<{ className?: stri
   weekly_review: FileText,
   todo: CheckCircle2,
   rich_note: FileEdit,
+  // Trading Health types
+  ring_change: BarChart3,
+  streak_event: Flame,
+  rule_violation: AlertTriangle,
+  health_suggestion: Lightbulb,
+  health_warning: Shield,
+  milestone: Award,
+  daily_summary: Activity,
 };
 
 const activityColors: Record<ActivityType, string> = {
+  // Original types
   trade: 'text-primary',
   note: 'text-yellow-500',
   quest: 'text-purple-500',
@@ -53,6 +69,14 @@ const activityColors: Record<ActivityType, string> = {
   weekly_review: 'text-blue-600',
   todo: 'text-emerald-600',
   rich_note: 'text-violet-500',
+  // Trading Health types
+  ring_change: 'text-blue-500',
+  streak_event: 'text-orange-500',
+  rule_violation: 'text-yellow-500',
+  health_suggestion: 'text-purple-500',
+  health_warning: 'text-red-500',
+  milestone: 'text-yellow-400',
+  daily_summary: 'text-blue-600',
 };
 
 const sidebarVariants = {
@@ -92,6 +116,70 @@ const contentVariants = {
   },
 };
 
+// Apple-style priority helpers
+const getPriorityStyles = (priority?: string) => {
+  switch (priority) {
+    case 'critical':
+      return {
+        bg: 'bg-gradient-to-r from-red-500/10 to-red-600/5',
+        border: 'border-l-4 border-red-500',
+        glow: 'shadow-red-500/20',
+      };
+    case 'high':
+      return {
+        bg: 'bg-gradient-to-r from-orange-500/10 to-yellow-500/5',
+        border: 'border-l-4 border-orange-500',
+        glow: 'shadow-orange-500/20',
+      };
+    case 'medium':
+      return {
+        bg: 'bg-blue-500/5',
+        border: 'border-l-2 border-blue-500/30',
+        glow: '',
+      };
+    default: // routine
+      return {
+        bg: '',
+        border: 'border-l border-border/20',
+        glow: '',
+      };
+  }
+};
+
+// Smart time grouping (Apple Time Machine style)
+const getTimeGroup = (date: string | Date): 'today' | 'yesterday' | 'thisWeek' | 'older' => {
+  const activityDate = new Date(date);
+  const now = new Date();
+  const diffMs = now.getTime() - activityDate.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  
+  if (diffDays === 0) return 'today';
+  if (diffDays === 1) return 'yesterday';
+  if (diffDays <= 7) return 'thisWeek';
+  return 'older';
+};
+
+const groupLabels = {
+  today: 'Today',
+  yesterday: 'Yesterday',
+  thisWeek: 'Earlier This Week',
+  older: 'Last 30 Days',
+};
+
+// Priority-based sorting (critical > high > medium > routine, then by time)
+const sortByPriority = (a: ActivityLogEntry, b: ActivityLogEntry) => {
+  const priorityOrder = { critical: 0, high: 1, medium: 2, routine: 3 };
+  const aPriority = priorityOrder[a.priority || 'routine'];
+  const bPriority = priorityOrder[b.priority || 'routine'];
+  
+  if (aPriority !== bPriority) {
+    return aPriority - bPriority;
+  }
+  
+  // Same priority, sort by time (newest first)
+  return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+};
+
 const ActivityItem: React.FC<{ activity: ActivityLogEntry; isExpanded: boolean }> = ({ 
   activity, 
   isExpanded 
@@ -111,9 +199,11 @@ const ActivityItem: React.FC<{ activity: ActivityLogEntry; isExpanded: boolean }
     );
   }
 
+  const priorityStyles = getPriorityStyles(activity.priority);
+
   return (
     <motion.div
-      className="p-3 rounded-lg hover:bg-accent transition-colors cursor-pointer group"
+      className={`p-3 rounded-lg hover:bg-accent transition-colors cursor-pointer group ${priorityStyles.bg} ${priorityStyles.border} ${priorityStyles.glow}`}
       whileHover={{ scale: 1.01 }}
       whileTap={{ scale: 0.99 }}
       layout
@@ -140,6 +230,22 @@ const ActivityItem: React.FC<{ activity: ActivityLogEntry; isExpanded: boolean }
             <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
               {activity.description}
             </p>
+          )}
+          
+          {/* Show metadata for Trading Health items */}
+          {activity.metadata?.trend && (
+            <div className="flex items-center gap-1.5 mt-1">
+              {activity.metadata.trend === 'improving' && (
+                <span className="text-xs text-green-500 flex items-center gap-1">
+                  <TrendingUp className="w-3 h-3" /> Improving
+                </span>
+              )}
+              {activity.metadata.trend === 'declining' && (
+                <span className="text-xs text-red-500 flex items-center gap-1">
+                  <TrendingUp className="w-3 h-3 rotate-180" /> Declining
+                </span>
+              )}
+            </div>
           )}
           
           <div className="flex items-center justify-between mt-2">
@@ -204,9 +310,21 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ className }) => {
     }
   }, [activities.length, addActivity]);
 
-  const filteredActivities = activities.filter(activity => 
-    filter === 'all' || activity.type === filter
-  ).slice(0, visibleActivities);
+  // Filter and sort activities (Apple-style: priority first, then time)
+  const filteredActivities = activities
+    .filter(activity => filter === 'all' || activity.type === filter)
+    .sort(sortByPriority)
+    .slice(0, visibleActivities);
+
+  // Group activities by time (Apple Time Machine style)
+  const groupedActivities = filteredActivities.reduce((groups, activity) => {
+    const timeGroup = getTimeGroup(activity.createdAt);
+    if (!groups[timeGroup]) {
+      groups[timeGroup] = [];
+    }
+    groups[timeGroup].push(activity);
+    return groups;
+  }, {} as Record<string, ActivityLogEntry[]>);
 
   const handleScroll = () => {
     if (scrollContainerRef.current) {
@@ -326,36 +444,63 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ className }) => {
       {isExpanded && (
         <div className="flex-1 overflow-hidden">
           <ScrollableSectionWithShadows refObj={scrollContainerRef} padding="p-0">
-            <div className="p-4 space-y-2">
+            <div className="p-4 space-y-4">
               <AnimatePresence mode="popLayout">
-              {filteredActivities.map((activity) => (
-                <motion.div
-                  key={activity.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <ActivityItem activity={activity} isExpanded={isExpanded} />
-                </motion.div>
-              ))}
+                {/* Render grouped activities (Apple Time Machine style) */}
+                {(['today', 'yesterday', 'thisWeek', 'older'] as const).map((timeGroup) => {
+                  const groupActivities = groupedActivities[timeGroup];
+                  if (!groupActivities || groupActivities.length === 0) return null;
+
+                  return (
+                    <motion.div
+                      key={timeGroup}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      className="space-y-2"
+                    >
+                      {/* Group Header */}
+                      <div className="flex items-center gap-2 px-2 pt-2">
+                        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                          {groupLabels[timeGroup]}
+                        </h3>
+                        <div className="flex-1 h-px bg-border" />
+                      </div>
+
+                      {/* Group Activities */}
+                      <div className="space-y-2">
+                        {groupActivities.map((activity) => (
+                          <motion.div
+                            key={activity.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <ActivityItem activity={activity} isExpanded={isExpanded} />
+                          </motion.div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  );
+                })}
               </AnimatePresence>
 
-            {isLoadingMore && (
-              <div className="flex items-center justify-center py-4">
-                <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-              </div>
-            )}
+              {isLoadingMore && (
+                <div className="flex items-center justify-center py-4">
+                  <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                </div>
+              )}
 
-            {filteredActivities.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-8 text-center">
-                <Activity className="w-8 h-8 text-muted-foreground mb-2" />
-                <p className="text-sm text-muted-foreground">No activity yet</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Start trading to see your activity here
-                </p>
-              </div>
-            )}
+              {filteredActivities.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <Activity className="w-8 h-8 text-muted-foreground mb-2" />
+                  <p className="text-sm text-muted-foreground">No activity yet</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Start trading to see your activity here
+                  </p>
+                </div>
+              )}
             </div>
           </ScrollableSectionWithShadows>
         </div>

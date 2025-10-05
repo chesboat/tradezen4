@@ -5,7 +5,13 @@ export type TradeResult = 'win' | 'loss';
 export type MoodType = 'excellent' | 'good' | 'neutral' | 'poor' | 'terrible';
 export type QuestStatus = 'pending' | 'in_progress' | 'completed' | 'failed' | 'cancelled';
 export type WellnessActionType = 'breathwork' | 'meditation' | 'exercise' | 'gratitude' | 'break';
-export type ActivityType = 'trade' | 'note' | 'quest' | 'wellness' | 'xp' | 'reflection' | 'journal' | 'habit' | 'weekly_review' | 'todo' | 'rich_note';
+export type ActivityType = 
+  // Original types
+  'trade' | 'note' | 'quest' | 'wellness' | 'xp' | 'reflection' | 'journal' | 'habit' | 'weekly_review' | 'todo' | 'rich_note' |
+  // Trading Health types
+  'ring_change' | 'streak_event' | 'rule_violation' | 'health_suggestion' | 'health_warning' | 'milestone' | 'daily_summary';
+
+export type ActivityPriority = 'critical' | 'high' | 'medium' | 'routine';
 
 // Base interface for Firestore documents
 export interface FirestoreDocument {
@@ -107,6 +113,25 @@ export interface ActivityLogEntry extends FirestoreDocument {
   xpEarned?: number;
   relatedId?: string;
   accountId?: string; // Optional: can be journal-wide
+  priority?: ActivityPriority; // Apple-style priority system
+  metadata?: {
+    // For ring changes
+    ringType?: 'edge' | 'consistency' | 'riskControl';
+    oldValue?: number;
+    newValue?: number;
+    trend?: 'improving' | 'stable' | 'declining';
+    // For streaks
+    streakDays?: number;
+    isNewMilestone?: boolean;
+    // For rules
+    ruleId?: string;
+    ruleName?: string;
+    // For suggestions
+    suggestionType?: string;
+    actionable?: boolean;
+    // Deep link
+    deepLink?: string;
+  };
 }
 
 export interface DailyReflection extends FirestoreDocument {
