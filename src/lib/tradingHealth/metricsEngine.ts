@@ -222,33 +222,47 @@ function calculateRiskControlRing(
     return new Date(aTime).getTime() - new Date(bTime).getTime();
   });
 
-  // Find starting equity from first trade with accountBalance, or estimate from P&L
+  // Calculate equity curve from P&L (no fake starting values)
+  // If accountBalance is tracked, use it. Otherwise, start at 0 and track P&L curve.
   let equity = sortedTrades[0].accountBalance || 0;
-  if (equity === 0) {
-    // Estimate starting equity by working backwards from cumulative P&L
-    const totalPnl = sortedTrades.reduce((sum, t) => sum + (t.pnl || 0), 0);
-    // Assume a reasonable starting balance (can be adjusted)
-    equity = Math.max(10000, Math.abs(totalPnl) * 20); // 20x the total P&L movement
-  }
   let peakEquity = equity;
   let maxDrawdown = 0;
-
+  
+  // Build equity curve from actual P&L
   sortedTrades.forEach(trade => {
     equity += (trade.pnl || 0);
     if (equity > peakEquity) {
       peakEquity = equity;
     }
-    const drawdown = ((peakEquity - equity) / peakEquity) * 100;
-    maxDrawdown = Math.max(maxDrawdown, drawdown);
+    // Only calculate drawdown if we have positive equity
+    if (peakEquity > 0) {
+      const drawdown = ((peakEquity - equity) / peakEquity) * 100;
+      maxDrawdown = Math.max(maxDrawdown, drawdown);
+    }
   });
 
-  const currentDrawdown = ((peakEquity - equity) / peakEquity) * 100;
+  const currentDrawdown = peakEquity > 0 ? ((peakEquity - equity) / peakEquity) * 100 : 0;
 
-  // Calculate avg risk per trade (only for trades with complete data)
-  const tradesWithRisk = currentTrades.filter(t => t.riskAmount && t.accountBalance);
-  const avgRisk = tradesWithRisk.length > 0
-    ? tradesWithRisk.reduce((sum, t) => sum + ((t.riskAmount! / t.accountBalance!) * 100), 0) / tradesWithRisk.length
-    : 0;
+  // Calculate avg risk per trade
+  // If accountBalance is tracked, use it for accurate risk %
+  // Otherwise, calculate risk as % of peak equity
+  const tradesWithAccountBalance = currentTrades.filter(t => t.riskAmount && t.accountBalance);
+  let avgRisk = 0;
+  
+  if (tradesWithAccountBalance.length > 0) {
+    // Accurate calculation: risk % of account balance
+    avgRisk = tradesWithAccountBalance.reduce((sum, t) => 
+      sum + ((t.riskAmount! / t.accountBalance!) * 100), 0
+    ) / tradesWithAccountBalance.length;
+  } else if (peakEquity > 0) {
+    // Fallback: calculate risk as % of peak equity
+    const tradesWithRisk = currentTrades.filter(t => t.riskAmount && t.riskAmount > 0);
+    if (tradesWithRisk.length > 0) {
+      avgRisk = tradesWithRisk.reduce((sum, t) => 
+        sum + ((t.riskAmount! / peakEquity) * 100), 0
+      ) / tradesWithRisk.length;
+    }
+  }
 
   // Max consecutive losses
   let maxConsecutiveLosses = 0;
@@ -304,7 +318,7 @@ function calculateRiskControlRing(
       const bTime = b.timestamp || b.entryTime || b.createdAt;
       return new Date(aTime).getTime() - new Date(bTime).getTime();
     });
-    let prevEquity = prevSortedTrades[0].accountBalance || 10000;
+    let prevEquity = prevSortedTrades[0].accountBalance || 0;
     let prevPeakEquity = prevEquity;
     let prevMaxDrawdown = 0;
 
@@ -313,8 +327,11 @@ function calculateRiskControlRing(
       if (prevEquity > prevPeakEquity) {
         prevPeakEquity = prevEquity;
       }
-      const dd = ((prevPeakEquity - prevEquity) / prevPeakEquity) * 100;
-      prevMaxDrawdown = Math.max(prevMaxDrawdown, dd);
+      // Only calculate drawdown if we have positive equity
+      if (prevPeakEquity > 0) {
+        const dd = ((prevPeakEquity - prevEquity) / prevPeakEquity) * 100;
+        prevMaxDrawdown = Math.max(prevMaxDrawdown, dd);
+      }
     });
 
     if (prevMaxDrawdown < 5) previousScore = 95;
