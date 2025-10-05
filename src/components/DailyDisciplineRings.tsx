@@ -12,7 +12,7 @@
 
 import React, { useMemo, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BookOpen, Target, Shield, Check, Flame } from 'lucide-react';
+import { BookOpen, Target, Shield, Check, Flame, X } from 'lucide-react';
 import { useDailyReflectionStore } from '@/store/useDailyReflectionStore';
 import { useTradeStore } from '@/store/useTradeStore';
 import { useActivityLogStore } from '@/store/useActivityLogStore';
@@ -46,6 +46,8 @@ export const DailyDisciplineRings: React.FC<DailyDisciplineRingsProps> = ({
   const { trades } = useTradeStore();
   const { addActivity } = useActivityLogStore();
   const [previousCompletions, setPreviousCompletions] = useState<Set<string>>(new Set());
+  const [hoveredRing, setHoveredRing] = useState<string | null>(null);
+  const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null);
 
   // Get today's date string
   const todayStr = new Date().toISOString().split('T')[0];
@@ -260,9 +262,37 @@ export const DailyDisciplineRings: React.FC<DailyDisciplineRingsProps> = ({
           <div key={ring.id} className="flex flex-col items-center gap-2">
             {/* Ring */}
             <motion.div
-              className="relative"
+              className="relative cursor-pointer"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              onMouseEnter={(e) => {
+                setHoveredRing(ring.id);
+                const rect = e.currentTarget.getBoundingClientRect();
+                setTooltipPosition({
+                  x: rect.left + rect.width / 2,
+                  y: rect.top - 10,
+                });
+              }}
+              onMouseLeave={() => {
+                setHoveredRing(null);
+                setTooltipPosition(null);
+              }}
+              onClick={() => {
+                if (hoveredRing === ring.id) {
+                  setHoveredRing(null);
+                  setTooltipPosition(null);
+                } else {
+                  setHoveredRing(ring.id);
+                  const rect = (document.getElementById(`ring-${ring.id}`) as HTMLElement)?.getBoundingClientRect();
+                  if (rect) {
+                    setTooltipPosition({
+                      x: rect.left + rect.width / 2,
+                      y: rect.top - 10,
+                    });
+                  }
+                }
+              }}
+              id={`ring-${ring.id}`}
             >
               <svg
                 width={config.ringSize}
@@ -352,6 +382,133 @@ export const DailyDisciplineRings: React.FC<DailyDisciplineRingsProps> = ({
             <p className="text-sm font-semibold text-foreground">
               🎉 All rings closed today!
             </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Apple-style Tooltip/Popover */}
+      <AnimatePresence>
+        {hoveredRing && tooltipPosition && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 10 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            className="fixed z-[100] pointer-events-none"
+            style={{
+              left: tooltipPosition.x,
+              top: tooltipPosition.y,
+              transform: 'translate(-50%, -100%)',
+            }}
+          >
+            <div className="bg-popover/95 backdrop-blur-xl border border-border/50 rounded-2xl shadow-2xl p-4 min-w-[280px] max-w-[320px]">
+              {(() => {
+                const ring = rings.find(r => r.id === hoveredRing);
+                if (!ring) return null;
+
+                return (
+                  <>
+                    {/* Header */}
+                    <div className="flex items-center gap-3 mb-3">
+                      <div
+                        className="w-10 h-10 rounded-full flex items-center justify-center"
+                        style={{ backgroundColor: `${ring.color}22` }}
+                      >
+                        <ring.icon className="w-5 h-5" style={{ color: ring.color }} />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="text-sm font-bold text-foreground">{ring.name} Ring</h4>
+                        <p className="text-xs text-muted-foreground">{ring.description}</p>
+                      </div>
+                      {ring.completed && (
+                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">
+                          <Check className="w-4 h-4 text-white" />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Detailed Status */}
+                    <div className="space-y-2 text-xs">
+                      {ring.id === 'journal' && (
+                        <>
+                          {ring.completed ? (
+                            <div className="p-2 bg-green-500/10 rounded-lg border border-green-500/20">
+                              <p className="text-foreground font-medium">✓ Reflection complete</p>
+                              <p className="text-muted-foreground mt-1">
+                                You wrote today's reflection. Self-awareness is your edge.
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="p-2 bg-muted/30 rounded-lg border border-border">
+                              <p className="text-foreground font-medium">Write today's reflection</p>
+                              <p className="text-muted-foreground mt-1">
+                                Capture lessons, insights, and market observations.
+                              </p>
+                            </div>
+                          )}
+                        </>
+                      )}
+
+                      {ring.id === 'rules' && (
+                        <>
+                          {ring.completed ? (
+                            <div className="p-2 bg-green-500/10 rounded-lg border border-green-500/20">
+                              <p className="text-foreground font-medium">✓ Following your process</p>
+                              <p className="text-muted-foreground mt-1">
+                                80%+ rule adherence today. Consistency compounds into mastery.
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="p-2 bg-muted/30 rounded-lg border border-border">
+                              <p className="text-foreground font-medium">Follow 80%+ of your rules</p>
+                              <p className="text-muted-foreground mt-1">
+                                Stop loss, position sizing, no revenge trading, etc.
+                              </p>
+                            </div>
+                          )}
+                        </>
+                      )}
+
+                      {ring.id === 'discipline' && (
+                        <>
+                          {ring.completed ? (
+                            <div className="p-2 bg-green-500/10 rounded-lg border border-green-500/20">
+                              <p className="text-foreground font-medium">✓ Discipline maintained</p>
+                              <p className="text-muted-foreground mt-1">
+                                No critical violations today. Your risk management is intact.
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="p-2 bg-red-500/10 rounded-lg border border-red-500/20">
+                              <p className="text-foreground font-medium">⚠️ Critical violation detected</p>
+                              <p className="text-muted-foreground mt-1">
+                                Review your risk management, stop losses, or emotional control.
+                              </p>
+                            </div>
+                          )}
+                        </>
+                      )}
+
+                      {/* Streak Info */}
+                      {currentStreak > 0 && ring.completed && (
+                        <div className="flex items-center gap-2 pt-2 border-t border-border/50">
+                          <Flame className="w-4 h-4 text-orange-500" />
+                          <span className="text-muted-foreground">
+                            <span className="font-semibold text-orange-500">{currentStreak} day</span> streak
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+
+            {/* Pointer/Arrow */}
+            <div
+              className="absolute left-1/2 -translate-x-1/2 w-3 h-3 bg-popover/95 border-r border-b border-border/50 rotate-45"
+              style={{ bottom: '-6px' }}
+            />
           </motion.div>
         )}
       </AnimatePresence>
