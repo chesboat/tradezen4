@@ -603,6 +603,7 @@ const YourEdgeAtAGlance: React.FC<{ trades: any[] }> = ({ trades }) => {
 const TradingHealthPreviewCard: React.FC<{ trades: any[] }> = ({ trades }) => {
   const { setCurrentView } = useNavigationStore();
   const { selectedAccountId, accounts } = useAccountFilterStore();
+  const { isPremium } = useSubscription();
   
   // Import the same calculation logic from Trading Health
   const selectedAccount = React.useMemo(() => {
@@ -628,10 +629,13 @@ const TradingHealthPreviewCard: React.FC<{ trades: any[] }> = ({ trades }) => {
     return trades.filter(t => t.accountId === selectedAccountId);
   }, [trades, selectedAccountId, accounts]);
 
+  // Basic users get 7-day window, Premium gets 30-day
+  const timeWindow = isPremium ? '30d' : '7d';
+
   const metrics = React.useMemo(() => {
     const accountBalance = selectedAccount?.balance;
-    return calculateTradingHealth(filteredTrades, '30d', accountBalance);
-  }, [filteredTrades, selectedAccount]);
+    return calculateTradingHealth(filteredTrades, timeWindow, accountBalance);
+  }, [filteredTrades, selectedAccount, timeWindow]);
 
   const overallScore = Math.round((metrics.edge.value + metrics.consistency.value + metrics.riskControl.value) / 3);
   const overallStatus = overallScore >= 70 ? 'excellent' : overallScore >= 50 ? 'good' : overallScore >= 30 ? 'warning' : 'critical';
@@ -709,7 +713,7 @@ const TradingHealthPreviewCard: React.FC<{ trades: any[] }> = ({ trades }) => {
           </div>
           <div>
             <h2 className="text-xl font-semibold text-foreground">Trading Health</h2>
-            <p className="text-xs text-muted-foreground">30-day rolling window</p>
+            <p className="text-xs text-muted-foreground">Last {timeWindow === '7d' ? '7' : '30'} days</p>
         </div>
       </div>
 

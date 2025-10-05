@@ -27,11 +27,13 @@ import {
 import { useTradeStore } from '@/store/useTradeStore';
 import { useUserProfileStore } from '@/store/useUserProfileStore';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
+import { useSubscription } from '@/hooks/useSubscription';
 import { calculateTradingHealth } from '@/lib/tradingHealth/metricsEngine';
 import { HealthRings } from '@/components/tradingHealth/HealthRings';
 import { TradingHealthOnboarding } from '@/components/tradingHealth/TradingHealthOnboarding';
 import { TradingHealthDocs } from '@/components/tradingHealth/TradingHealthDocs';
 import { RingDetailModal } from '@/components/tradingHealth/RingDetailModal';
+import { UpgradeModal } from '@/components/UpgradeModal';
 import type { TimeWindow } from '@/lib/tradingHealth/types';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/utils';
@@ -40,10 +42,14 @@ export const TradingHealthView: React.FC = () => {
   const { trades } = useTradeStore();
   const { profile: userProfile } = useUserProfileStore();
   const { selectedAccountId, accounts } = useAccountFilterStore();
+  const { isPremium } = useSubscription();
 
-  const [timeWindow, setTimeWindow] = useState<TimeWindow>('30d');
+  // Basic users get 7-day window, Premium gets 30/90-day
+  const [timeWindow, setTimeWindow] = useState<TimeWindow>(isPremium ? '30d' : '7d');
   const [selectedRing, setSelectedRing] = useState<'edge' | 'consistency' | 'riskControl' | null>(null);
   const [showDocs, setShowDocs] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeFeature, setUpgradeFeature] = useState<string>('');
   
   // Check if user has seen onboarding
   const [showOnboarding, setShowOnboarding] = useState(() => {
@@ -228,22 +234,39 @@ export const TradingHealthView: React.FC = () => {
 
           {/* Time Window Toggle */}
           <div className="flex items-center justify-center gap-2 pt-2">
-            {(['7d', '30d', '90d'] as TimeWindow[]).map((window) => (
-              <button
-                key={window}
-                onClick={() => setTimeWindow(window)}
-                className={cn(
-                  'px-4 py-2 rounded-xl text-sm font-medium transition-all',
-                  timeWindow === window
-                    ? 'bg-primary text-primary-foreground shadow-lg'
-                    : 'bg-card hover:bg-muted text-muted-foreground'
-                )}
-              >
-                {window === '7d' && '7 Days'}
-                {window === '30d' && '30 Days'}
-                {window === '90d' && '90 Days'}
-              </button>
-            ))}
+            {(['7d', '30d', '90d'] as TimeWindow[]).map((window) => {
+              const isLocked = !isPremium && (window === '30d' || window === '90d');
+              
+              return (
+                <button
+                  key={window}
+                  onClick={() => {
+                    if (isLocked) {
+                      setUpgradeFeature(`${window === '30d' ? '30' : '90'}-Day Trends`);
+                      setShowUpgradeModal(true);
+                    } else {
+                      setTimeWindow(window);
+                    }
+                  }}
+                  className={cn(
+                    'px-4 py-2 rounded-xl text-sm font-medium transition-all relative',
+                    isLocked && 'opacity-70',
+                    timeWindow === window
+                      ? 'bg-primary text-primary-foreground shadow-lg'
+                      : 'bg-card hover:bg-muted text-muted-foreground'
+                  )}
+                >
+                  <span className="flex items-center gap-1.5">
+                    {window === '7d' && '7 Days'}
+                    {window === '30d' && '30 Days'}
+                    {window === '90d' && '90 Days'}
+                    {isLocked && (
+                      <Sparkles className="w-3 h-3" />
+                    )}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </motion.div>
 
@@ -365,7 +388,15 @@ export const TradingHealthView: React.FC = () => {
               { label: 'Win Rate', value: `${metrics.edge.winRate.toFixed(1)}%` },
               { label: 'Profit Factor', value: metrics.edge.profitFactor.toFixed(2) },
             ]}
-            onExpand={() => setSelectedRing('edge')}
+            isPremium={isPremium}
+            onExpand={() => {
+              if (isPremium) {
+                setSelectedRing('edge');
+              } else {
+                setUpgradeFeature('Detailed Edge Analysis');
+                setShowUpgradeModal(true);
+              }
+            }}
           />
 
           {/* Consistency Ring Details */}
@@ -381,7 +412,15 @@ export const TradingHealthView: React.FC = () => {
               { label: 'Current Streak', value: `${metrics.consistency.currentStreak} days` },
               { label: 'Longest Streak', value: `${metrics.consistency.longestStreak} days` },
             ]}
-            onExpand={() => setSelectedRing('consistency')}
+            isPremium={isPremium}
+            onExpand={() => {
+              if (isPremium) {
+                setSelectedRing('consistency');
+              } else {
+                setUpgradeFeature('Detailed Rule Breakdown');
+                setShowUpgradeModal(true);
+              }
+            }}
           />
 
           {/* Risk Control Ring Details */}
@@ -397,7 +436,15 @@ export const TradingHealthView: React.FC = () => {
               { label: 'Avg Risk/Trade', value: `${metrics.riskControl.avgRisk.toFixed(1)}%` },
               { label: 'Max Losing Streak', value: `${metrics.riskControl.maxConsecutiveLosses} trades` },
             ]}
-            onExpand={() => setSelectedRing('riskControl')}
+            isPremium={isPremium}
+            onExpand={() => {
+              if (isPremium) {
+                setSelectedRing('riskControl');
+              } else {
+                setUpgradeFeature('Detailed Risk Analysis');
+                setShowUpgradeModal(true);
+              }
+            }}
           />
         </div>
         )}
@@ -486,7 +533,7 @@ export const TradingHealthView: React.FC = () => {
       </div>
 
       {/* Ring Detail Modal */}
-      {selectedRing && (
+      {selectedRing && isPremium && (
         <RingDetailModal
           isOpen={!!selectedRing}
           onClose={() => setSelectedRing(null)}
@@ -495,6 +542,13 @@ export const TradingHealthView: React.FC = () => {
           timeWindow={timeWindow}
         />
       )}
+
+      {/* Upgrade Modal */}
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        feature={upgradeFeature}
+      />
     </div>
     </>
   );
@@ -512,6 +566,7 @@ interface RingDetailCardProps {
   trend: 'improving' | 'stable' | 'declining';
   color: string;
   metrics: { label: string; value: string }[];
+  isPremium: boolean;
   onExpand: () => void;
 }
 
@@ -523,6 +578,7 @@ const RingDetailCard: React.FC<RingDetailCardProps> = ({
   trend,
   color,
   metrics,
+  isPremium,
   onExpand,
 }) => {
   const percentage = Math.min((score / goal) * 100, 100);
@@ -552,7 +608,11 @@ const RingDetailCard: React.FC<RingDetailCardProps> = ({
           <h3 className="text-lg font-bold text-foreground mb-1">{title}</h3>
           <p className="text-xs text-muted-foreground">{description}</p>
         </div>
-        <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+        {isPremium ? (
+          <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+        ) : (
+          <Sparkles className="w-5 h-5 text-primary opacity-70 group-hover:opacity-100 transition-opacity" />
+        )}
       </div>
 
       {/* Score */}
