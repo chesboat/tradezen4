@@ -31,8 +31,8 @@ const FLAGSHIP_FEATURES = [
   },
   {
     icon: Sparkles,
-    title: '"For You" personalized suggestions',
-    description: 'Get specific actions to improve your edge, consistency, and risk control',
+    title: '"For You" personalized coaching',
+    description: 'Contextual suggestions based on your trading metrics and performance',
   },
   {
     icon: BarChart3,

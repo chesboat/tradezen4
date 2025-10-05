@@ -461,7 +461,7 @@ export const TradingHealthView: React.FC = () => {
             animate={{ opacity: 1, scale: 1 }}
             className="bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border border-yellow-500/20 rounded-3xl p-6 sm:p-8"
           >
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 mb-4">
               <div className="w-16 h-16 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-2xl flex items-center justify-center">
                 <Flame className="w-8 h-8 text-white" />
               </div>
@@ -473,6 +473,47 @@ export const TradingHealthView: React.FC = () => {
                   You're following your rules consistently. Keep it up!
                 </p>
               </div>
+            </div>
+            
+            {/* Milestone Progress */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Next Milestones:</span>
+                <span className="text-foreground font-medium">Longest: {metrics.consistency.longestStreak} days</span>
+              </div>
+              <div className="flex items-center gap-3">
+                {[7, 14, 30, 60, 100].map((milestone) => {
+                  const isComplete = metrics.consistency.currentStreak >= milestone;
+                  const isCurrent = metrics.consistency.currentStreak < milestone && 
+                                   (milestone === 7 || metrics.consistency.currentStreak >= [7, 14, 30, 60][
+                                     [7, 14, 30, 60, 100].indexOf(milestone) - 1
+                                   ]);
+                  
+                  return (
+                    <div key={milestone} className="flex-1 flex flex-col items-center gap-1">
+                      <div className={cn(
+                        "w-full h-2 rounded-full transition-all",
+                        isComplete ? "bg-gradient-to-r from-yellow-500 to-orange-500" : "bg-muted"
+                      )} />
+                      <span className={cn(
+                        "text-xs font-medium transition-colors",
+                        isComplete ? "text-yellow-500" : isCurrent ? "text-foreground" : "text-muted-foreground"
+                      )}>
+                        {isComplete ? "✓" : milestone}
+                        {isCurrent && " 🎯"}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-muted-foreground text-center">
+                {metrics.consistency.currentStreak < 7 && "Next: 7 days 🏆"}
+                {metrics.consistency.currentStreak >= 7 && metrics.consistency.currentStreak < 14 && "Next: 14 days 💪"}
+                {metrics.consistency.currentStreak >= 14 && metrics.consistency.currentStreak < 30 && "Next: 30 days 🔥"}
+                {metrics.consistency.currentStreak >= 30 && metrics.consistency.currentStreak < 60 && "Next: 60 days 🚀"}
+                {metrics.consistency.currentStreak >= 60 && metrics.consistency.currentStreak < 100 && "Next: 100 days 👑"}
+                {metrics.consistency.currentStreak >= 100 && "Legend Status! 🏆"}
+              </p>
             </div>
           </motion.div>
         )}
@@ -674,12 +715,27 @@ const RingDetailCard: React.FC<RingDetailCardProps> = ({
       </div>
 
       {/* Score */}
-      <div className="flex items-baseline gap-2 mb-4">
+      <div className="flex items-baseline gap-2 mb-2">
         <span className="text-3xl font-bold" style={{ color }}>
           {score}
         </span>
         <span className="text-muted-foreground">/ {goal}</span>
         {getTrendIcon(trend)}
+      </div>
+      
+      {/* Trend vs. Previous Period */}
+      <div className="flex items-center gap-1.5 mb-4">
+        <span className={cn(
+          "text-xs font-medium",
+          trend === 'improving' && "text-green-500",
+          trend === 'declining' && "text-red-500",
+          trend === 'stable' && "text-muted-foreground"
+        )}>
+          {trend === 'improving' && '↗ Improving'}
+          {trend === 'declining' && '↘ Declining'}
+          {trend === 'stable' && '→ Stable'}
+        </span>
+        <span className="text-xs text-muted-foreground">vs. previous period</span>
       </div>
 
       {/* Progress Bar */}

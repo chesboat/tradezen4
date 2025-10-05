@@ -228,7 +228,7 @@ const PremiumUpsell: React.FC<{ onUpgrade: () => void }> = ({ onUpgrade }) => {
         </div>
         <h2 className="text-3xl font-bold">Unlock Your Trading Intelligence</h2>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          Discover what makes you trade better with AI-powered habit correlation, 
+          Discover what makes you trade better with intelligent habit correlation, 
           beautiful visualizations, and scientific experimentation.
         </p>
         <button

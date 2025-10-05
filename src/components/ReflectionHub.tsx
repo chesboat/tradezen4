@@ -86,7 +86,7 @@ export const ReflectionHub: React.FC<ReflectionHubProps> = ({ date, className })
               <div className="flex items-center gap-3 text-xs text-blue-500 flex-wrap">
                 <div className="flex items-center gap-1 whitespace-nowrap">
                   <Star className="w-3 h-3" />
-                  <span>AI-powered insights</span>
+                  <span>Daily insights</span>
                 </div>
                 <div className="flex items-center gap-1 whitespace-nowrap">
                   <Layers className="w-3 h-3" />

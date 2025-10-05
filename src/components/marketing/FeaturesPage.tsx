@@ -33,7 +33,7 @@ export const FeaturesPage: React.FC<FeaturesPageProps> = ({ onGetStarted }) => {
       icon: <Sparkles className="w-12 h-12" />,
       title: 'Trading Intelligence Suite',
       badge: 'Premium',
-      description: 'AI-powered insights that discover what you can\'t see',
+      description: 'Intelligent insights that discover patterns you can\'t see',
       features: [
         'Daily Insights: One actionable insight every morning',
         'Habit Correlation: Which habits actually improve your win rate',
