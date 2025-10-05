@@ -244,7 +244,9 @@ export const TradingHealthView: React.FC = () => {
           )}
           
           <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
-            Your complete trading performance in three rings. Close all three to build a consistently profitable edge.
+            {isPremium 
+              ? '30-day performance tracker. Watch your Edge, Consistency, and Risk Control improve over time.'
+              : '7-day performance snapshot. Upgrade for 30/90-day trends and advanced insights.'}
           </p>
 
           {/* Time Window Toggle */}

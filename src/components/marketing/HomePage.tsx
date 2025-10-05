@@ -63,7 +63,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted, onViewPricing 
             </h1>
 
             <p className="text-xl sm:text-2xl text-muted-foreground max-w-3xl mx-auto mb-8 leading-relaxed">
-              Close all 3 rings. Build a consistently profitable edge.
+              Build discipline daily. Track performance over time. Win consistently.
             </p>
 
             {/* Animated Rings Preview */}

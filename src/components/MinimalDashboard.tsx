@@ -48,6 +48,8 @@ import BulletMeter from '@/components/discipline/BulletMeter';
 import BulletCounterSetupModal from '@/components/discipline/BulletCounterSetupModal';
 import { useSWRConfig } from 'swr';
 import { DailyInsightCard, DailyInsightEmptyState } from './DailyInsightCard';
+import { DailyDisciplineRings } from './DailyDisciplineRings';
+import { DailyDisciplineOnboarding } from './DailyDisciplineOnboarding';
 import { generateDailyInsight } from '@/lib/dailyInsightEngine';
 import { useTodoStore } from '@/store/useTodoStore';
 import { useInsightHistoryStore } from '@/store/useInsightHistoryStore';
@@ -737,6 +739,17 @@ export const MinimalDashboard: React.FC = () => {
   const [eodOffOpen, setEodOffOpen] = useState(false);
   const [setupModalOpen, setSetupModalOpen] = useState(false);
   
+  // Daily Discipline onboarding
+  const [showDisciplineOnboarding, setShowDisciplineOnboarding] = useState(() => {
+    const hasSeenOnboarding = localStorage.getItem('daily_discipline_onboarding_seen');
+    return !hasSeenOnboarding;
+  });
+
+  const handleOnboardingComplete = () => {
+    localStorage.setItem('daily_discipline_onboarding_seen', 'true');
+    setShowDisciplineOnboarding(false);
+  };
+  
   // Expose mutate for onSnapshot to push cache updates
   (window as any).__disc_mutate = mutate;
 
@@ -1045,6 +1058,16 @@ export const MinimalDashboard: React.FC = () => {
           </div>
         </motion.section>
 
+        {/* Daily Discipline Rings - Apple Watch style daily habits */}
+        <motion.section
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="flex justify-center"
+        >
+          <DailyDisciplineRings size="medium" showLabels showStreak />
+        </motion.section>
+
         {/* Daily Insight - Apple-style personalized coaching */}
         {!insightDismissed && (
           <motion.section
@@ -1188,6 +1211,12 @@ export const MinimalDashboard: React.FC = () => {
         isOpen={setupModalOpen} 
         onClose={() => setSetupModalOpen(false)} 
         onConfirm={handleConfirmBulletSetup}
+      />
+      
+      {/* Daily Discipline Onboarding */}
+      <DailyDisciplineOnboarding
+        isOpen={showDisciplineOnboarding}
+        onClose={handleOnboardingComplete}
       />
     </div>
   );
