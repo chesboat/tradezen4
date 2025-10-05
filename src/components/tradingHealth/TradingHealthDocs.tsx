@@ -308,11 +308,22 @@ const sections: DocSection[] = [
 
         <div className="bg-[#0AFFFE]/5 border border-[#0AFFFE]/20 rounded-xl p-4 space-y-3">
           <h4 className="font-semibold text-foreground">How It's Calculated</h4>
-          <code className="text-xs bg-muted px-3 py-2 rounded-lg block">
+          <div className="space-y-2 text-sm text-muted-foreground">
+            <p>
+              <strong className="text-foreground">Step 1:</strong> Your equity curve starts from your <strong className="text-foreground">Account Size</strong> (e.g., $50,000 for prop firms)
+            </p>
+            <p>
+              <strong className="text-foreground">Step 2:</strong> Each trade's P&L is added/subtracted to track your equity peak
+            </p>
+            <p>
+              <strong className="text-foreground">Step 3:</strong> Drawdown measures how far you've dropped from that peak
+            </p>
+          </div>
+          <code className="text-xs bg-muted px-3 py-2 rounded-lg block mt-3">
             Max Drawdown = ((Peak Equity - Current Equity) / Peak Equity) × 100
           </code>
           <p className="text-sm text-muted-foreground">
-            Example: Peak $10,000 → Current $9,500 = <strong>5% drawdown</strong>
+            Example: Account $50k → Peak $51k → Current $50.5k = <strong>0.98% drawdown</strong>
           </p>
         </div>
 
@@ -508,6 +519,11 @@ const sections: DocSection[] = [
         <FAQItem
           question="Why does my Risk Control score change even without new trades?"
           answer="The 30-day window is rolling. As old trades drop off and new ones are added, your max drawdown calculation updates. This keeps the metric current and improvable."
+        />
+        
+        <FAQItem
+          question="How do I set up prop firm accounts (eval vs funded)?"
+          answer="CRITICAL: Always enter your 'Account Size' (e.g., $50,000) - NOT your P&L! For EVAL accounts, enter the starting balance ($50k). For FUNDED accounts, enter the SAME account size ($50k) even though you withdraw profits. Why? Because you're still trading a $50k account - that's the capital at risk. This ensures your Risk Control metrics (drawdown, risk %) are accurate and comparable whether you're in eval or funded."
         />
         
         <FAQItem
