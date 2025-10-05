@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import confetti from 'canvas-confetti';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -25,6 +26,7 @@ import {
   Shield
 } from 'lucide-react';
 import { useActivityLogStore } from '@/store/useActivityLogStore';
+import { useNavigationStore } from '@/store/useNavigationStore';
 import { ActivityLogEntry, ActivityType } from '@/types';
 import { formatRelativeTime, getMoodEmoji } from '@/lib/localStorageUtils';
 import { useScrollShadows } from '@/hooks/useScrollShadows';
@@ -180,12 +182,102 @@ const sortByPriority = (a: ActivityLogEntry, b: ActivityLogEntry) => {
   return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
 };
 
+// Apple-style celebration confetti
+const triggerCelebration = (type: 'streak' | 'milestone') => {
+  const colors = type === 'milestone' 
+    ? ['#FFD700', '#FFA500', '#FF6B6B'] // Gold/Orange/Red for milestones
+    : ['#FF375F', '#FF6B35', '#FFA500']; // Red/Orange for streaks
+
+  // Burst from center
+  confetti({
+    particleCount: 100,
+    spread: 70,
+    origin: { y: 0.6 },
+    colors,
+    shapes: ['circle', 'square'],
+    scalar: 1.2,
+  });
+
+  // Side bursts (Apple-style)
+  setTimeout(() => {
+    confetti({
+      particleCount: 50,
+      angle: 60,
+      spread: 55,
+      origin: { x: 0, y: 0.6 },
+      colors,
+    });
+    confetti({
+      particleCount: 50,
+      angle: 120,
+      spread: 55,
+      origin: { x: 1, y: 0.6 },
+      colors,
+    });
+  }, 150);
+};
+
 const ActivityItem: React.FC<{ activity: ActivityLogEntry; isExpanded: boolean }> = ({ 
   activity, 
   isExpanded 
 }) => {
   const Icon = activityIcons[activity.type];
   const iconColor = activityColors[activity.type];
+  const { setCurrentView } = useNavigationStore();
+
+  // Handle activity click (deep link navigation)
+  const handleActivityClick = () => {
+    // Trigger celebration confetti for milestones and streaks
+    if (activity.type === 'milestone' && activity.metadata?.isNewMilestone) {
+      triggerCelebration('milestone');
+    } else if (activity.type === 'streak_event' && activity.metadata?.isNewMilestone) {
+      triggerCelebration('streak');
+    }
+
+    // Trading Health activities navigate to health view
+    if (['ring_change', 'streak_event', 'rule_violation', 'health_suggestion', 'health_warning', 'milestone', 'daily_summary'].includes(activity.type)) {
+      setCurrentView('health');
+      return;
+    }
+
+    // Use metadata deep link if available
+    if (activity.metadata?.deepLink) {
+      const path = activity.metadata.deepLink;
+      if (path === '/health') setCurrentView('health');
+      else if (path === '/analytics') setCurrentView('analytics');
+      else if (path === '/insights') setCurrentView('insights');
+      // Add more as needed
+      return;
+    }
+
+    // Default navigation based on type
+    switch (activity.type) {
+      case 'trade':
+        setCurrentView('journal');
+        break;
+      case 'note':
+      case 'rich_note':
+        setCurrentView('notes');
+        break;
+      case 'quest':
+        setCurrentView('quests');
+        break;
+      case 'wellness':
+        setCurrentView('wellness');
+        break;
+      case 'weekly_review':
+        setCurrentView('journal'); // Weekly reviews are part of journal
+        break;
+      case 'habit':
+        setCurrentView('habits');
+        break;
+      case 'todo':
+        setCurrentView('todos');
+        break;
+      default:
+        break;
+    }
+  };
 
   if (!isExpanded) {
     return (
@@ -206,6 +298,7 @@ const ActivityItem: React.FC<{ activity: ActivityLogEntry; isExpanded: boolean }
       className={`p-3 rounded-lg hover:bg-accent transition-colors cursor-pointer group ${priorityStyles.bg} ${priorityStyles.border} ${priorityStyles.glow}`}
       whileHover={{ scale: 1.01 }}
       whileTap={{ scale: 0.99 }}
+      onClick={handleActivityClick}
       layout
     >
       <div className="flex items-start gap-3">
