@@ -265,7 +265,7 @@ const ActivityItem: React.FC<{ activity: ActivityLogEntry; isExpanded: boolean }
 };
 
 export const ActivityLog: React.FC<ActivityLogProps> = ({ className }) => {
-  const { isExpanded, activities, toggleActivityLog, addActivity } = useActivityLogStore();
+  const { isExpanded, activities, toggleActivityLog, addActivity, clearActivities } = useActivityLogStore();
   const [filter, setFilter] = useState<ActivityType | 'all'>('all');
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -500,6 +500,19 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ className }) => {
                   {activities.length}
                 </span>
               </div>
+              {/* Demo Reset Button (for testing new design) */}
+              <motion.button
+                onClick={() => {
+                  clearActivities();
+                  window.location.reload();
+                }}
+                className="text-xs px-2 py-1 rounded-md bg-muted hover:bg-muted-foreground/20 text-muted-foreground transition-colors"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                title="Reset to demo activities to see new Trading Health design"
+              >
+                Reset Demo
+              </motion.button>
             </motion.div>
           )}
         </AnimatePresence>
