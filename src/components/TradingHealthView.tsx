@@ -4,7 +4,7 @@
  * WWDC-worthy presentation of 3-ring health score
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Zap,
@@ -29,6 +29,7 @@ import { useUserProfileStore } from '@/store/useUserProfileStore';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
 import { useSubscription } from '@/hooks/useSubscription';
 import { calculateTradingHealth } from '@/lib/tradingHealth/metricsEngine';
+import { detectTradingHealthEvents, checkDailySummarySchedule } from '@/lib/tradingHealthEventDetector';
 import { HealthRings } from '@/components/tradingHealth/HealthRings';
 import { TradingHealthOnboarding } from '@/components/tradingHealth/TradingHealthOnboarding';
 import { TradingHealthDocs } from '@/components/tradingHealth/TradingHealthDocs';
@@ -148,6 +149,20 @@ export const TradingHealthView: React.FC = () => {
 
   // Check if user has any trades (in current filter)
   const hasTrades = filteredTrades.length > 0;
+
+  // Auto-detect and log Trading Health events (Apple-style: intelligent, not noisy)
+  useEffect(() => {
+    if (!hasTrades || !userProfile?.uid) return;
+
+    // Only detect events when on 30d window (to avoid duplicate events on window changes)
+    if (timeWindow === '30d') {
+      // Detect significant changes (ring scores, streaks, warnings)
+      detectTradingHealthEvents(metrics, userProfile.uid);
+      
+      // Check if we should generate a daily summary
+      checkDailySummarySchedule(metrics, userProfile.uid);
+    }
+  }, [metrics, userProfile?.uid, timeWindow, hasTrades]);
 
   const overallScore = Math.round(
     (metrics.edge.value + metrics.consistency.value + metrics.riskControl.value) / 3
