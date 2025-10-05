@@ -358,150 +358,11 @@ const ActivityItem: React.FC<{ activity: ActivityLogEntry; isExpanded: boolean }
 };
 
 export const ActivityLog: React.FC<ActivityLogProps> = ({ className }) => {
-  const { isExpanded, activities, toggleActivityLog, addActivity, clearActivities } = useActivityLogStore();
+  const { isExpanded, activities, toggleActivityLog, addActivity } = useActivityLogStore();
   const [filter, setFilter] = useState<ActivityType | 'all' | 'health'>('all');
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [visibleActivities, setVisibleActivities] = useState(20);
-
-  // Initialize with demo activities (Apple-style showcase)
-  useEffect(() => {
-    if (activities.length === 0) {
-      const now = new Date();
-      const demoActivities = [
-        // CRITICAL PRIORITY (Red) - Today
-        {
-          type: 'health_warning' as ActivityType,
-          title: '🚨 Risk Control Declining',
-          description: '80 → 65 (-15) in last 30 trades. Current drawdown: 18.5%',
-          priority: 'critical' as const,
-          accountId: 'demo1',
-          metadata: {
-            ringType: 'riskControl' as const,
-            oldValue: 80,
-            newValue: 65,
-            trend: 'declining' as const,
-            deepLink: '/health',
-          },
-          createdAt: new Date(now.getTime() - 2 * 60 * 1000), // 2 min ago
-        },
-        // HIGH PRIORITY (Orange) - Today
-        {
-          type: 'health_suggestion' as ActivityType,
-          title: '💡 New Suggestion For You',
-          description: 'Stop Trading & Analyze - Your expectancy went negative',
-          priority: 'high' as const,
-          accountId: 'demo1',
-          metadata: {
-            suggestionType: 'stop_trading',
-            actionable: true,
-            deepLink: '/health',
-          },
-          createdAt: new Date(now.getTime() - 5 * 60 * 1000), // 5 min ago
-        },
-        {
-          type: 'ring_change' as ActivityType,
-          title: '💰 Edge Improved',
-          description: '45 → 52 (+7). Your expectancy improved to $9.50 per trade',
-          priority: 'high' as const,
-          accountId: 'demo1',
-          metadata: {
-            ringType: 'edge' as const,
-            oldValue: 45,
-            newValue: 52,
-            trend: 'improving' as const,
-            deepLink: '/health',
-          },
-          createdAt: new Date(now.getTime() - 15 * 60 * 1000), // 15 min ago
-        },
-        // HIGH PRIORITY - Yesterday
-        {
-          type: 'streak_event' as ActivityType,
-          title: '🔥 3-Day Streak Started!',
-          description: "You're following 80%+ of your rules. Next milestone: 7 days 🏆",
-          priority: 'high' as const,
-          accountId: 'demo1',
-          metadata: {
-            streakDays: 3,
-            isNewMilestone: true,
-            deepLink: '/health',
-          },
-          createdAt: new Date(now.getTime() - 20 * 60 * 60 * 1000), // Yesterday evening
-        },
-        {
-          type: 'milestone' as ActivityType,
-          title: '🏆 Milestone: 7-Day Streak!',
-          description: 'Your longest streak yet. Keep it up!',
-          priority: 'high' as const,
-          xpEarned: 100,
-          accountId: 'demo1',
-          metadata: {
-            streakDays: 7,
-            isNewMilestone: true,
-            deepLink: '/health',
-          },
-          createdAt: new Date(now.getTime() - 26 * 60 * 60 * 1000), // Yesterday morning
-        },
-        // MEDIUM PRIORITY (Blue) - Today
-        {
-          type: 'rule_violation' as ActivityType,
-          title: '⚠️ Broke Risk Management Rule',
-          description: 'Trade risked 3.5% (max: 2%)',
-          priority: 'medium' as const,
-          accountId: 'demo1',
-          metadata: {
-            ruleId: 'risk-management',
-            ruleName: 'Keep risk under 2%',
-            deepLink: '/health',
-          },
-          createdAt: new Date(now.getTime() - 45 * 60 * 1000), // 45 min ago
-        },
-        // ROUTINE (Minimal) - Today
-        {
-          type: 'trade' as ActivityType,
-          title: 'AAPL Long Position',
-          description: 'Entered long position on AAPL at $150.25',
-          priority: 'routine' as const,
-          xpEarned: 25,
-          accountId: 'demo1',
-          createdAt: new Date(now.getTime() - 30 * 60 * 1000), // 30 min ago
-        },
-        {
-          type: 'note' as ActivityType,
-          title: 'Market Observation',
-          description: 'Strong breakout above resistance, good momentum',
-          priority: 'routine' as const,
-          accountId: 'demo1',
-          createdAt: new Date(now.getTime() - 60 * 60 * 1000), // 1 hour ago
-        },
-        {
-          type: 'wellness' as ActivityType,
-          title: 'Breathing Exercise',
-          description: 'Completed 5-minute breathing exercise',
-          priority: 'routine' as const,
-          xpEarned: 10,
-          accountId: 'demo1',
-          createdAt: new Date(now.getTime() - 90 * 60 * 1000), // 1.5 hours ago
-        },
-        // DAILY SUMMARY - Yesterday morning
-        {
-          type: 'daily_summary' as ActivityType,
-          title: "📊 Yesterday's Trading Health",
-          description: 'Edge: 52/80 (↗ +3) • Consistency: 68/80 (→) • Risk: 80/80 (✓)',
-          priority: 'high' as const,
-          accountId: 'demo1',
-          metadata: {
-            deepLink: '/health',
-          },
-          createdAt: new Date(now.getTime() - 32 * 60 * 60 * 1000), // Yesterday 8 AM
-        },
-      ];
-
-      demoActivities.forEach(activity => {
-        addActivity(activity);
-      });
-    }
-  }, [activities.length, addActivity]);
 
   // Filter and sort activities (Apple-style: priority first, then time)
   const tradingHealthTypes: ActivityType[] = ['ring_change', 'streak_event', 'rule_violation', 'health_suggestion', 'health_warning', 'milestone', 'daily_summary'];
@@ -600,19 +461,6 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ className }) => {
                   {activities.length}
                 </span>
               </div>
-              {/* Demo Reset Button (for testing new design) */}
-              <motion.button
-                onClick={() => {
-                  clearActivities();
-                  window.location.reload();
-                }}
-                className="text-xs px-2 py-1 rounded-md bg-muted hover:bg-muted-foreground/20 text-muted-foreground transition-colors"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                title="Reset to demo activities to see new Trading Health design"
-              >
-                Reset Demo
-              </motion.button>
             </motion.div>
           )}
         </AnimatePresence>
