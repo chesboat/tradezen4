@@ -252,7 +252,7 @@ const screens: OnboardingScreen[] = [
   // Screen 3: Journal Ring Detail
   {
     title: 'Journal Ring',
-    subtitle: 'Capture today's lessons',
+    subtitle: 'Capture today\'s lessons',
     description: 'Write reflections, market observations, and trading insights. Self-awareness is your edge.',
     accentColor: 'from-green-400 to-emerald-500',
     visual: (
