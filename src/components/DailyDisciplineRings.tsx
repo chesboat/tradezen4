@@ -266,14 +266,18 @@ export const DailyDisciplineRings: React.FC<DailyDisciplineRingsProps> = ({
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onMouseEnter={(e) => {
+                console.log('[Ring Tooltip] Mouse enter:', ring.id);
                 setHoveredRing(ring.id);
                 const rect = e.currentTarget.getBoundingClientRect();
-                setTooltipPosition({
+                const position = {
                   x: rect.left + rect.width / 2,
                   y: rect.top - 10,
-                });
+                };
+                console.log('[Ring Tooltip] Position:', position);
+                setTooltipPosition(position);
               }}
               onMouseLeave={() => {
+                console.log('[Ring Tooltip] Mouse leave');
                 setHoveredRing(null);
                 setTooltipPosition(null);
               }}
@@ -388,7 +392,9 @@ export const DailyDisciplineRings: React.FC<DailyDisciplineRingsProps> = ({
 
       {/* Apple-style Tooltip/Popover */}
       <AnimatePresence>
-        {hoveredRing && tooltipPosition && (
+        {hoveredRing && tooltipPosition && (() => {
+          console.log('[Ring Tooltip] Rendering tooltip for:', hoveredRing, tooltipPosition);
+          return (
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -510,7 +516,8 @@ export const DailyDisciplineRings: React.FC<DailyDisciplineRingsProps> = ({
               style={{ bottom: '-6px' }}
             />
           </motion.div>
-        )}
+          );
+        })()}
       </AnimatePresence>
     </div>
   );
