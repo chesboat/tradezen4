@@ -48,8 +48,6 @@ import BulletMeter from '@/components/discipline/BulletMeter';
 import BulletCounterSetupModal from '@/components/discipline/BulletCounterSetupModal';
 import { useSWRConfig } from 'swr';
 import { DailyInsightCard, DailyInsightEmptyState } from './DailyInsightCard';
-import { DailyDisciplineRings } from './DailyDisciplineRings';
-import { DailyDisciplineOnboarding } from './DailyDisciplineOnboarding';
 import { generateDailyInsight } from '@/lib/dailyInsightEngine';
 import { useTodoStore } from '@/store/useTodoStore';
 import { useInsightHistoryStore } from '@/store/useInsightHistoryStore';
@@ -96,33 +94,25 @@ const HeroPnLCard: React.FC<{
       transition={{ duration: 0.5 }}
       whileHover={{ y: -4 }}
     >
-      {/* Top Section: P&L + Daily Rings */}
-      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 mb-6">
-        {/* Left: P&L */}
-        <div className="flex-1">
-          <p className="text-sm sm:text-base text-muted-foreground mb-2">Today's Session</p>
-          <div className={cn(
-            "text-4xl sm:text-6xl font-bold tracking-tight mb-2",
-            todayPnL > 0 ? "text-green-500" : todayPnL < 0 ? "text-red-500" : "text-muted-foreground"
-          )}>
-            {formatCurrency(todayPnL)}
+      {/* P&L Section */}
+      <div className="mb-6">
+        <p className="text-sm sm:text-base text-muted-foreground mb-2">Today's Session</p>
+        <div className={cn(
+          "text-4xl sm:text-6xl font-bold tracking-tight mb-2",
+          todayPnL > 0 ? "text-green-500" : todayPnL < 0 ? "text-red-500" : "text-muted-foreground"
+        )}>
+          {formatCurrency(todayPnL)}
+        </div>
+        {yesterdayPnL !== 0 && (
+          <div className="flex items-center gap-2">
+            <span className={cn(
+              "text-sm font-medium",
+              pnlChange > 0 ? "text-green-500" : pnlChange < 0 ? "text-red-500" : "text-muted-foreground"
+            )}>
+              {pnlChange > 0 ? '↑' : pnlChange < 0 ? '↓' : '→'} {formatCurrency(Math.abs(pnlChange))} vs yesterday
+            </span>
           </div>
-          {yesterdayPnL !== 0 && (
-            <div className="flex items-center gap-2">
-              <span className={cn(
-                "text-sm font-medium",
-                pnlChange > 0 ? "text-green-500" : pnlChange < 0 ? "text-red-500" : "text-muted-foreground"
-              )}>
-                {pnlChange > 0 ? '↑' : pnlChange < 0 ? '↓' : '→'} {formatCurrency(Math.abs(pnlChange))} vs yesterday
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Right: Daily Discipline Rings (Compact) */}
-        <div className="flex-shrink-0">
-          <DailyDisciplineRings size="small" showLabels={false} showStreak={false} />
-        </div>
+        )}
       </div>
       
       {/* Bottom: Quick Stats */}
@@ -747,17 +737,6 @@ export const MinimalDashboard: React.FC = () => {
   const [eodOffOpen, setEodOffOpen] = useState(false);
   const [setupModalOpen, setSetupModalOpen] = useState(false);
   
-  // Daily Discipline onboarding
-  const [showDisciplineOnboarding, setShowDisciplineOnboarding] = useState(() => {
-    const hasSeenOnboarding = localStorage.getItem('daily_discipline_onboarding_seen');
-    return !hasSeenOnboarding;
-  });
-
-  const handleOnboardingComplete = () => {
-    localStorage.setItem('daily_discipline_onboarding_seen', 'true');
-    setShowDisciplineOnboarding(false);
-  };
-  
   // Expose mutate for onSnapshot to push cache updates
   (window as any).__disc_mutate = mutate;
 
@@ -1209,12 +1188,6 @@ export const MinimalDashboard: React.FC = () => {
         isOpen={setupModalOpen} 
         onClose={() => setSetupModalOpen(false)} 
         onConfirm={handleConfirmBulletSetup}
-      />
-      
-      {/* Daily Discipline Onboarding */}
-      <DailyDisciplineOnboarding
-        isOpen={showDisciplineOnboarding}
-        onClose={handleOnboardingComplete}
       />
     </div>
   );
