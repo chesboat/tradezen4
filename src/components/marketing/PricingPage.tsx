@@ -37,11 +37,15 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onGetStarted }) => {
           </motion.div>
           
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-6">
-            Transform Your Trading Psychology
+            Your Trading Health.
+            <br />
+            <span className="bg-gradient-to-r from-primary via-orange-500 to-red-500 bg-clip-text text-transparent">
+              Powered by Premium.
+            </span>
           </h1>
           
           <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
-            Refine helps traders build discipline, track habits, and improve their edge through AI-powered insights and deep reflection.
+            Everyone gets the 3-ring system. Premium unlocks 30/90-day trends, detailed breakdowns, and personalized coaching.
           </p>
 
           {/* Social Proof */}
@@ -137,16 +141,59 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onGetStarted }) => {
               )}
             </div>
 
-            <ul className="space-y-3 mb-8">
-              {basicPlan.features.map((feature, i) => (
-                <li key={i} className="flex items-start gap-3">
-                  <div className="w-5 h-5 rounded-full bg-green-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <Check className="w-3 h-3 text-green-500" />
-                  </div>
-                  <span className="text-sm text-foreground">{feature}</span>
-                </li>
-              ))}
-            </ul>
+            <div className="space-y-4 mb-8">
+              {/* Trading Health Section */}
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Zap className="w-4 h-4 text-primary" />
+                  <h4 className="font-semibold text-sm">Trading Health</h4>
+                </div>
+                <ul className="space-y-2 ml-6">
+                  <li className="flex items-start gap-3">
+                    <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-foreground">7-day health view</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-foreground">See your 3 rings</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-foreground">Basic rule count (5/8)</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-foreground">Current streak tracking</span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Core Features */}
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Brain className="w-4 h-4 text-primary" />
+                  <h4 className="font-semibold text-sm">Core Features</h4>
+                </div>
+                <ul className="space-y-2 ml-6">
+                  <li className="flex items-start gap-3">
+                    <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-foreground">Unlimited trades & journal</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-foreground">Up to 3 accounts</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-foreground">Advanced analytics</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-foreground">1-year history</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
 
             <button
               onClick={() => handleGetStarted('basic')}
@@ -203,21 +250,85 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onGetStarted }) => {
               )}
             </div>
 
-            <ul className="space-y-3 mb-8">
-              {premiumPlan.features.slice(0, 12).map((feature, i) => (
-                <li key={i} className="flex items-start gap-3">
-                  <div className="w-5 h-5 rounded-full bg-green-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <Check className="w-3 h-3 text-green-500" />
-                  </div>
-                  <span className="text-sm text-foreground font-medium">{feature}</span>
-                </li>
-              ))}
-              {premiumPlan.features.length > 12 && (
-                <li className="text-sm text-muted-foreground pl-8">
-                  + {premiumPlan.features.length - 12} more features
-                </li>
-              )}
-            </ul>
+            <div className="space-y-4 mb-8">
+              {/* Trading Health Pro Section */}
+              <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Zap className="w-4 h-4 text-primary" />
+                  <h4 className="font-bold text-sm">Trading Health Pro</h4>
+                </div>
+                <ul className="space-y-2 ml-6">
+                  <li className="flex items-start gap-3">
+                    <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-foreground font-medium">30-day & 90-day trends</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-foreground font-medium">Detailed rule breakdown</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-foreground font-medium">"For You" personalized coaching</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-foreground font-medium">Full ring calculations</span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Intelligence Features */}
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Brain className="w-4 h-4 text-primary" />
+                  <h4 className="font-semibold text-sm">Intelligence</h4>
+                </div>
+                <ul className="space-y-2 ml-6">
+                  <li className="flex items-start gap-3">
+                    <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-foreground">Setup Analytics</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-foreground">Time Intelligence</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-foreground">Insight History</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-foreground">Experiment Mode</span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Power Features */}
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Target className="w-4 h-4 text-primary" />
+                  <h4 className="font-semibold text-sm">Everything Else</h4>
+                </div>
+                <ul className="space-y-2 ml-6">
+                  <li className="flex items-start gap-3">
+                    <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-foreground">Unlimited accounts & storage</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-foreground">Calendar Heatmap</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-foreground">Custom Date Ranges</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-foreground">Priority Support</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
 
             <button
               onClick={() => handleGetStarted('premium')}
