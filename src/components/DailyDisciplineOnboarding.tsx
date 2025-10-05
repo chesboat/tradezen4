@@ -513,9 +513,9 @@ const screens: OnboardingScreen[] = [
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 1.8 }}
-          className="absolute bottom-4 px-4 py-2 bg-primary/10 rounded-full border border-primary/20"
+          className="absolute bottom-2 px-4 py-2 bg-primary/20 backdrop-blur-sm rounded-full border border-primary/30 shadow-lg"
         >
-          <span className="text-sm font-semibold text-primary">30-day rolling average</span>
+          <span className="text-sm font-bold text-foreground">30-day rolling average</span>
         </motion.div>
       </div>
     ),

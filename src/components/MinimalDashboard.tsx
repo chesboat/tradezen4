@@ -96,8 +96,10 @@ const HeroPnLCard: React.FC<{
       transition={{ duration: 0.5 }}
       whileHover={{ y: -4 }}
     >
-      <div className="flex items-start justify-between mb-6">
-        <div>
+      {/* Top Section: P&L + Daily Rings */}
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 mb-6">
+        {/* Left: P&L */}
+        <div className="flex-1">
           <p className="text-sm sm:text-base text-muted-foreground mb-2">Today's Session</p>
           <div className={cn(
             "text-4xl sm:text-6xl font-bold tracking-tight mb-2",
@@ -116,8 +118,14 @@ const HeroPnLCard: React.FC<{
             </div>
           )}
         </div>
+
+        {/* Right: Daily Discipline Rings (Compact) */}
+        <div className="flex-shrink-0">
+          <DailyDisciplineRings size="small" showLabels={false} showStreak={false} />
+        </div>
       </div>
       
+      {/* Bottom: Quick Stats */}
       <div className="grid grid-cols-3 gap-4">
         <div className="text-center p-4 rounded-2xl bg-muted/20">
           <div className="text-2xl sm:text-3xl font-bold text-foreground mb-1">{todayTrades}</div>
@@ -1056,16 +1064,6 @@ export const MinimalDashboard: React.FC = () => {
               yesterdayPnL={yesterdayPnL}
             />
           </div>
-        </motion.section>
-
-        {/* Daily Discipline Rings - Apple Watch style daily habits */}
-        <motion.section
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="flex justify-center"
-        >
-          <DailyDisciplineRings size="medium" showLabels showStreak />
         </motion.section>
 
         {/* Daily Insight - Apple-style personalized coaching */}
