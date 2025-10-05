@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Check, Sparkles, Zap, TrendingUp, Clock, Calendar, Tag, History, BarChart3, Settings, FlaskConical } from 'lucide-react';
+import { X, Check, Sparkles, Zap, TrendingUp, Clock, Calendar, Tag, History, BarChart3, Settings, FlaskConical, Target, Brain } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSubscription } from '@/hooks/useSubscription';
 import { SUBSCRIPTION_PLANS } from '@/types/subscription';
@@ -17,62 +17,59 @@ interface UpgradeModalProps {
   feature?: string; // Specific feature that triggered the modal
 }
 
-const PREMIUM_FEATURES = [
+// Apple's Tiered Feature Hierarchy
+const FLAGSHIP_FEATURES = [
+  {
+    icon: Target,
+    title: '30-day & 90-day health trends',
+    description: 'See how your trading evolves over time',
+  },
+  {
+    icon: TrendingUp,
+    title: 'Detailed rule breakdown',
+    description: 'Know exactly which rules you're breaking and how to improve',
+  },
+  {
+    icon: Sparkles,
+    title: '"For You" personalized suggestions',
+    description: 'Get specific actions to improve your edge, consistency, and risk control',
+  },
+  {
+    icon: BarChart3,
+    title: 'Full ring calculations',
+    description: 'Understand the math behind your scores with detailed breakdowns',
+  },
+];
+
+const INTELLIGENCE_FEATURES = [
   {
     icon: Tag,
     title: 'Setup Analytics',
-    description: 'Track which trading setups work best for you',
-  },
-  {
-    icon: Calendar,
-    title: 'Calendar Heatmap',
-    description: 'Visualize your daily P&L at a glance',
+    description: 'Find your best trading strategies',
   },
   {
     icon: Clock,
     title: 'Time Intelligence',
-    description: 'Discover your most profitable hours and days',
-  },
-  {
-    icon: TrendingUp,
-    title: 'Custom Date Ranges',
-    description: 'Analyze any date range you want',
-  },
-  {
-    icon: Zap,
-    title: 'Unlimited History',
-    description: 'Access all your trades, forever',
-  },
-  {
-    icon: Sparkles,
-    title: 'Unlimited AI Insights',
-    description: 'Get unlimited AI-powered analysis',
+    description: 'Trade your most profitable hours',
   },
   {
     icon: History,
     title: 'Insight History',
-    description: 'Never miss a discovery - see all past insights',
-  },
-  {
-    icon: BarChart3,
-    title: 'Multiple Correlations',
-    description: 'See top 3 habit connections, not just strongest',
-  },
-  {
-    icon: BarChart3,
-    title: 'Correlation Charts',
-    description: 'Visualize habit impact with beautiful graphs',
-  },
-  {
-    icon: Settings,
-    title: 'Insight Scheduling',
-    description: 'Prioritize which insights you see first',
+    description: 'Never miss a discovery',
   },
   {
     icon: FlaskConical,
     title: 'Experiment Mode',
-    description: 'A/B test habits with structured experiments',
+    description: 'A/B test your habits',
   },
+];
+
+const POWER_FEATURES = [
+  'Calendar Heatmap',
+  'Custom Date Ranges',
+  'Unlimited History',
+  'Multiple Correlations',
+  'Correlation Charts',
 ];
 
 export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, feature }) => {
@@ -189,24 +186,68 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, fea
                 </button>
               </div>
 
-              {/* Features List */}
-              <div className="space-y-3 sm:space-y-4 mb-6 sm:mb-8">
-                <h3 className="text-lg font-semibold">Everything in Premium:</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {PREMIUM_FEATURES.map((feature, index) => {
-                    const Icon = feature.icon;
-                    return (
-                      <div key={index} className="flex items-start gap-3">
-                        <div className="p-2 bg-primary/10 rounded-lg flex-shrink-0">
-                          <Icon className="w-4 h-4 text-primary" />
+              {/* Features List - Apple Tiered Hierarchy */}
+              <div className="space-y-6 mb-6 sm:mb-8">
+                {/* Trading Health Hero */}
+                <div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center">
+                      <Zap className="w-4 h-4 text-white" />
+                    </div>
+                    <h3 className="text-lg font-bold">Trading Health Pro</h3>
+                  </div>
+                  <div className="space-y-3">
+                    {FLAGSHIP_FEATURES.map((feat, index) => {
+                      const Icon = feat.icon;
+                      return (
+                        <div key={index} className="flex items-start gap-3 p-3 bg-primary/5 rounded-lg border border-primary/10">
+                          <div className="p-1.5 bg-primary/10 rounded-lg flex-shrink-0">
+                            <Icon className="w-4 h-4 text-primary" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-semibold text-sm text-foreground">{feat.title}</div>
+                            <div className="text-xs text-muted-foreground mt-0.5">{feat.description}</div>
+                          </div>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium text-sm">{feature.title}</div>
-                          <div className="text-xs text-muted-foreground">{feature.description}</div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Intelligence Features */}
+                <div>
+                  <h3 className="text-base font-semibold mb-3 flex items-center gap-2">
+                    <Brain className="w-4 h-4 text-primary" />
+                    Intelligence
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {INTELLIGENCE_FEATURES.map((feat, index) => {
+                      const Icon = feat.icon;
+                      return (
+                        <div key={index} className="flex items-start gap-2.5">
+                          <div className="p-1.5 bg-muted rounded-lg flex-shrink-0 mt-0.5">
+                            <Icon className="w-3.5 h-3.5 text-muted-foreground" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-sm">{feat.title}</div>
+                            <div className="text-xs text-muted-foreground">{feat.description}</div>
+                          </div>
                         </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Power Features */}
+                <div>
+                  <h3 className="text-base font-semibold mb-3 text-muted-foreground">And Everything Else</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {POWER_FEATURES.map((feature, index) => (
+                      <div key={index} className="px-3 py-1.5 bg-muted/50 rounded-lg text-xs font-medium text-muted-foreground">
+                        {feature}
                       </div>
-                    );
-                  })}
+                    ))}
+                  </div>
                 </div>
               </div>
 
