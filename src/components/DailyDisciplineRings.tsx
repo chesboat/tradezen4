@@ -16,7 +16,7 @@ import { BookOpen, Target, Shield, Check, Flame } from 'lucide-react';
 import { useDailyReflectionStore } from '@/store/useDailyReflectionStore';
 import { useTradeStore } from '@/store/useTradeStore';
 import { useActivityLogStore } from '@/store/useActivityLogStore';
-import { UNIVERSAL_TRADING_RULES } from '@/lib/tradingHealth/ruleEngine';
+import { UNIVERSAL_RULES } from '@/lib/tradingHealth/ruleEngine';
 import { cn } from '@/lib/utils';
 
 interface DailyRing {
@@ -77,7 +77,7 @@ export const DailyDisciplineRings: React.FC<DailyDisciplineRingsProps> = ({
     if (todayTrades.length > 0) {
       // Check each rule for each trade
       todayTrades.forEach(trade => {
-        UNIVERSAL_TRADING_RULES.forEach(rule => {
+        UNIVERSAL_RULES.forEach(rule => {
           totalRules++;
           if (rule.check(trade, trades)) {
             rulesFollowed++;
@@ -91,14 +91,14 @@ export const DailyDisciplineRings: React.FC<DailyDisciplineRingsProps> = ({
 
     // Discipline Ring: No critical rule violations today
     const hasCriticalViolations = todayTrades.some(trade => {
-      // Check for critical violations: risk > 3%, no stop loss, revenge trading
-      const riskManagementRule = UNIVERSAL_TRADING_RULES.find(r => r.id === 'risk-management');
-      const stopLossRule = UNIVERSAL_TRADING_RULES.find(r => r.id === 'stop-loss-set');
-      const revengeRule = UNIVERSAL_TRADING_RULES.find(r => r.id === 'no-revenge-trading');
+      // Check for critical violations: risk not set, position size too large, revenge trading
+      const riskAmountRule = UNIVERSAL_RULES.find(r => r.id === 'risk-amount-set');
+      const positionSizeRule = UNIVERSAL_RULES.find(r => r.id === 'position-size-consistent');
+      const revengeRule = UNIVERSAL_RULES.find(r => r.id === 'no-revenge-trading');
 
       return (
-        (riskManagementRule && !riskManagementRule.check(trade, trades)) ||
-        (stopLossRule && !stopLossRule.check(trade, trades)) ||
+        (riskAmountRule && !riskAmountRule.check(trade, trades)) ||
+        (positionSizeRule && !positionSizeRule.check(trade, trades)) ||
         (revengeRule && !revengeRule.check(trade, trades))
       );
     });
