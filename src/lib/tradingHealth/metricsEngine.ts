@@ -223,14 +223,16 @@ function calculateRiskControlRing(
     return new Date(aTime).getTime() - new Date(bTime).getTime();
   });
 
-  // Calculate equity curve from P&L (no fake starting values)
-  // If accountBalance is tracked, use it. Otherwise, start at 0 and track P&L curve.
-  let equity = sortedTrades[0].accountBalance || 0;
+  // Calculate equity curve from account balance + P&L
+  // Start from account balance (if provided) and build P&L curve from there
+  let equity = accountBalance || sortedTrades[0].accountBalance || 0;
   let peakEquity = equity;
   let maxDrawdown = 0;
   
-  // Build equity curve from actual P&L
-  sortedTrades.forEach(trade => {
+  console.log('[Risk Control] Equity Curve Starting Balance:', equity);
+  
+  // Build equity curve by adding P&L to starting balance
+  sortedTrades.forEach((trade, idx) => {
     equity += (trade.pnl || 0);
     if (equity > peakEquity) {
       peakEquity = equity;
@@ -240,9 +242,22 @@ function calculateRiskControlRing(
       const drawdown = ((peakEquity - equity) / peakEquity) * 100;
       maxDrawdown = Math.max(maxDrawdown, drawdown);
     }
+    
+    // Log first few trades for debugging
+    if (idx < 3) {
+      console.log(`[Risk Control] Trade ${idx + 1}: PNL ${trade.pnl}, Equity ${equity.toFixed(2)}, Peak ${peakEquity.toFixed(2)}`);
+    }
   });
 
   const currentDrawdown = peakEquity > 0 ? ((peakEquity - equity) / peakEquity) * 100 : 0;
+  
+  console.log('[Risk Control] Final Equity Curve:', {
+    startingBalance: accountBalance || 0,
+    peakEquity: peakEquity.toFixed(2),
+    currentEquity: equity.toFixed(2),
+    maxDrawdown: maxDrawdown.toFixed(2) + '%',
+    currentDrawdown: currentDrawdown.toFixed(2) + '%',
+  });
 
   // Calculate avg risk per trade
   const tradesWithRisk = currentTrades.filter(t => t.riskAmount && t.riskAmount > 0);
@@ -337,7 +352,8 @@ function calculateRiskControlRing(
       const bTime = b.timestamp || b.entryTime || b.createdAt;
       return new Date(aTime).getTime() - new Date(bTime).getTime();
     });
-    let prevEquity = prevSortedTrades[0].accountBalance || 0;
+    // Use same starting balance for previous window
+    let prevEquity = accountBalance || prevSortedTrades[0].accountBalance || 0;
     let prevPeakEquity = prevEquity;
     let prevMaxDrawdown = 0;
 
