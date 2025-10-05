@@ -27,7 +27,7 @@ const FLAGSHIP_FEATURES = [
   {
     icon: TrendingUp,
     title: 'Detailed rule breakdown',
-    description: 'Know exactly which rules you're breaking and how to improve',
+    description: "Know exactly which rules you're breaking and how to improve",
   },
   {
     icon: Sparkles,
