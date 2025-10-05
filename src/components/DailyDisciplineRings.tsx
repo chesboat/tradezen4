@@ -27,6 +27,7 @@ interface DailyRing {
   glowColor: string;
   completed: boolean;
   description: string;
+  hasTradesToday?: boolean; // For rules/discipline rings to show proper tooltip
 }
 
 interface DailyDisciplineRingsProps {
@@ -71,6 +72,7 @@ export const DailyDisciplineRings: React.FC<DailyDisciplineRingsProps> = ({
       const tradeDate = new Date(t.entryTime).toISOString().split('T')[0];
       return tradeDate === todayStr;
     });
+    const hasTradesToday = todayTrades.length > 0;
 
     let rulesFollowed = 0;
     let totalRules = 0;
@@ -127,6 +129,7 @@ export const DailyDisciplineRings: React.FC<DailyDisciplineRingsProps> = ({
         description: followedRules 
           ? `${Math.round(ruleAdherenceRate)}% adherence` 
           : 'Follow your trading rules',
+        hasTradesToday,
       },
       {
         id: 'discipline',
@@ -136,6 +139,7 @@ export const DailyDisciplineRings: React.FC<DailyDisciplineRingsProps> = ({
         glowColor: 'rgba(10, 255, 254, 0.4)',
         completed: noDisciplineViolations,
         description: noDisciplineViolations ? 'No violations today' : 'Critical rule violated',
+        hasTradesToday,
       },
     ];
   }, [reflections, trades, todayStr]);
@@ -345,11 +349,18 @@ export const DailyDisciplineRings: React.FC<DailyDisciplineRingsProps> = ({
                                 80%+ rule adherence today. Consistency compounds into mastery.
                               </p>
                             </div>
+                          ) : ring.hasTradesToday ? (
+                            <div className="p-2 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
+                              <p className="text-foreground font-medium">⚠️ Rule adherence below 80%</p>
+                              <p className="text-muted-foreground mt-1">
+                                Review your trades. Follow stop loss, position sizing, and setup rules.
+                              </p>
+                            </div>
                           ) : (
                             <div className="p-2 bg-muted/30 rounded-lg border border-border">
-                              <p className="text-foreground font-medium">Follow 80%+ of your rules</p>
+                              <p className="text-foreground font-medium">No trades yet today</p>
                               <p className="text-muted-foreground mt-1">
-                                Stop loss, position sizing, no revenge trading, etc.
+                                This ring closes when you follow 80%+ of your rules on today's trades.
                               </p>
                             </div>
                           )}
@@ -365,11 +376,18 @@ export const DailyDisciplineRings: React.FC<DailyDisciplineRingsProps> = ({
                                 No critical violations today. Your risk management is intact.
                               </p>
                             </div>
-                          ) : (
+                          ) : ring.hasTradesToday ? (
                             <div className="p-2 bg-red-500/10 rounded-lg border border-red-500/20">
                               <p className="text-foreground font-medium">⚠️ Critical violation detected</p>
                               <p className="text-muted-foreground mt-1">
                                 Review your risk management, stop losses, or emotional control.
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="p-2 bg-muted/30 rounded-lg border border-border">
+                              <p className="text-foreground font-medium">No trades yet today</p>
+                              <p className="text-muted-foreground mt-1">
+                                This ring closes when you trade without critical violations (risk management, stop loss, revenge trading).
                               </p>
                             </div>
                           )}
