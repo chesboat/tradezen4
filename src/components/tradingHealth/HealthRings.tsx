@@ -117,17 +117,6 @@ export const HealthRings: React.FC<HealthRingsProps> = ({
         <svg width={svgSize} height={svgSize} className="transform -rotate-90">
           {rings.map((ring, index) => {
             const percentage = Math.min((ring.value / ring.goal) * 100, 100);
-            
-            // Debug logging
-            if (ring.key === 'riskControl') {
-              console.log('[HealthRings] Risk Control:', {
-                value: ring.value,
-                goal: ring.goal,
-                percentage: percentage.toFixed(2) + '%',
-                radius: ring.radius
-              });
-            }
-            
             const arcPath = getArcPath(ring.radius, percentage);
 
             return (
