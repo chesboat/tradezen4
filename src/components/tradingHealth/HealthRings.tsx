@@ -71,7 +71,13 @@ export const HealthRings: React.FC<HealthRingsProps> = ({
   const center = svgSize / 2;
 
   const getArcPath = (r: number, percentage: number) => {
-    const angle = (percentage / 100) * 360;
+    // Handle edge cases
+    if (percentage <= 0) return '';
+    
+    // For full circle (100%), cap at 99.9% to avoid rendering issues
+    const clampedPercentage = Math.min(percentage, 99.9);
+    
+    const angle = (clampedPercentage / 100) * 360;
     const radians = (angle - 90) * (Math.PI / 180);
     const x = center + r * Math.cos(radians);
     const y = center + r * Math.sin(radians);
@@ -111,6 +117,17 @@ export const HealthRings: React.FC<HealthRingsProps> = ({
         <svg width={svgSize} height={svgSize} className="transform -rotate-90">
           {rings.map((ring, index) => {
             const percentage = Math.min((ring.value / ring.goal) * 100, 100);
+            
+            // Debug logging
+            if (ring.key === 'riskControl') {
+              console.log('[HealthRings] Risk Control:', {
+                value: ring.value,
+                goal: ring.goal,
+                percentage: percentage.toFixed(2) + '%',
+                radius: ring.radius
+              });
+            }
+            
             const arcPath = getArcPath(ring.radius, percentage);
 
             return (
@@ -126,29 +143,31 @@ export const HealthRings: React.FC<HealthRingsProps> = ({
                   strokeLinecap="round"
                 />
                 
-                {/* Progress arc */}
-                <motion.path
-                  d={arcPath}
-                  fill="none"
-                  stroke={ring.color}
-                  strokeWidth={strokeWidth}
-                  strokeLinecap="round"
-                  initial={{ pathLength: 0 }}
-                  animate={{ pathLength: 1 }}
-                  transition={{
-                    duration: 1.5,
-                    delay: index * 0.2,
-                    ease: [0.16, 1, 0.3, 1], // Apple's ease curve
-                  }}
-                  className={cn(
-                    'cursor-pointer transition-opacity hover:opacity-80',
-                    onRingClick && 'drop-shadow-lg'
-                  )}
-                  onClick={() => onRingClick?.(ring.key as any)}
-                  style={{
-                    filter: `drop-shadow(0 0 8px ${ring.color}40)`,
-                  }}
-                />
+                {/* Progress arc - only render if path exists */}
+                {arcPath && (
+                  <motion.path
+                    d={arcPath}
+                    fill="none"
+                    stroke={ring.color}
+                    strokeWidth={strokeWidth}
+                    strokeLinecap="round"
+                    initial={{ pathLength: 0 }}
+                    animate={{ pathLength: 1 }}
+                    transition={{
+                      duration: 1.5,
+                      delay: index * 0.2,
+                      ease: [0.16, 1, 0.3, 1], // Apple's ease curve
+                    }}
+                    className={cn(
+                      'cursor-pointer transition-opacity hover:opacity-80',
+                      onRingClick && 'drop-shadow-lg'
+                    )}
+                    onClick={() => onRingClick?.(ring.key as any)}
+                    style={{
+                      filter: `drop-shadow(0 0 8px ${ring.color}40)`,
+                    }}
+                  />
+                )}
               </g>
             );
           })}
