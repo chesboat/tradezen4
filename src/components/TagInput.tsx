@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Hash, Check } from 'lucide-react';
 import { useTagStore, TAG_COLORS, TagColor } from '@/store/useTagStore';
@@ -29,8 +30,10 @@ export const TagInput: React.FC<TagInputProps> = ({
   const [input, setInput] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const { getOrCreateTag, suggestTags, getTagColor, incrementUsage } = useTagStore();
 
@@ -46,10 +49,59 @@ export const TagInput: React.FC<TagInputProps> = ({
     }
   }, [autoFocus]);
 
+  // Update dropdown position when it opens or on scroll
+  useEffect(() => {
+    const updatePosition = () => {
+      if (showSuggestions && containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        // Use actual height if available, otherwise estimate based on number of suggestions
+        const estimatedHeight = dropdownRef.current?.offsetHeight || Math.min(suggestions.length * 45 + 10, 200);
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const spaceAbove = rect.top;
+        const gap = 8;
+        
+        // Determine if dropdown should appear above or below
+        const shouldShowAbove = spaceBelow < estimatedHeight + gap && spaceAbove > spaceBelow;
+        
+        setDropdownPosition({
+          top: shouldShowAbove 
+            ? rect.top + window.scrollY - estimatedHeight - gap 
+            : rect.bottom + window.scrollY + gap,
+          left: rect.left + window.scrollX,
+          width: rect.width,
+        });
+      }
+    };
+
+    // Initial position
+    updatePosition();
+    
+    // Re-calculate after a brief delay to use actual rendered height
+    const timeoutId = setTimeout(updatePosition, 10);
+
+    // Update position on scroll and resize
+    if (showSuggestions) {
+      window.addEventListener('scroll', updatePosition, true);
+      window.addEventListener('resize', updatePosition);
+      return () => {
+        clearTimeout(timeoutId);
+        window.removeEventListener('scroll', updatePosition, true);
+        window.removeEventListener('resize', updatePosition);
+      };
+    }
+    
+    return () => clearTimeout(timeoutId);
+  }, [showSuggestions, suggestions.length]);
+
   // Close suggestions when clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current && 
+        !containerRef.current.contains(e.target as Node) &&
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
         setShowSuggestions(false);
       }
     };
@@ -182,15 +234,22 @@ export const TagInput: React.FC<TagInputProps> = ({
         />
       </div>
 
-      {/* Autocomplete Suggestions */}
-      <AnimatePresence>
-        {showSuggestions && suggestions.length > 0 && (
+      {/* Autocomplete Suggestions - Rendered as Portal to avoid clipping */}
+      {showSuggestions && suggestions.length > 0 && createPortal(
+        <AnimatePresence>
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
+            ref={dropdownRef}
+            initial={{ opacity: 0, y: -5 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
+            exit={{ opacity: 0, y: -5 }}
             transition={{ duration: 0.15 }}
-            className="absolute top-full left-0 right-0 mt-2 bg-popover border border-border rounded-lg shadow-xl z-50 overflow-hidden"
+            className="fixed bg-popover border border-border rounded-lg shadow-xl z-[9999] overflow-y-auto"
+            style={{
+              top: dropdownPosition.top,
+              left: dropdownPosition.left,
+              width: dropdownPosition.width,
+              maxHeight: '200px',
+            }}
           >
             {suggestions.map((tag, index) => {
               const colorStyles = TAG_COLORS[tag.color];
@@ -228,8 +287,9 @@ export const TagInput: React.FC<TagInputProps> = ({
               );
             })}
           </motion.div>
-        )}
-      </AnimatePresence>
+        </AnimatePresence>,
+        document.body
+      )}
 
       {/* Helper text */}
       {value.length === 0 && !showSuggestions && (
