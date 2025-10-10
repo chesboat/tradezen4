@@ -34,23 +34,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ message: 'Missing priceId or userId' });
     }
 
-    // Get user data from Firestore
-    const userRef = db.collection('users').doc(userId);
-    const userDoc = await userRef.get();
-
-    if (!userDoc.exists) {
-      return res.status(404).json({ message: 'User not found' });
+    // Get user email from Firebase Auth or Firestore
+    let userEmail: string | undefined;
+    
+    // Try to get from userProfiles first
+    const profileRef = db.collection('userProfiles').doc(userId);
+    const profileDoc = await profileRef.get();
+    
+    if (profileDoc.exists) {
+      userEmail = profileDoc.data()?.email;
+    }
+    
+    // If not found, try users collection
+    if (!userEmail) {
+      const userRef = db.collection('users').doc(userId);
+      const userDoc = await userRef.get();
+      if (userDoc.exists) {
+        userEmail = userDoc.data()?.email;
+      }
     }
 
-    const userData = userDoc.data();
-    const userEmail = userData?.email;
-
     if (!userEmail) {
-      return res.status(400).json({ message: 'User email not found' });
+      return res.status(400).json({ message: 'User email not found. Please ensure your profile is set up.' });
     }
 
     // Check if user already has a Stripe customer ID
-    let customerId = userData?.stripeCustomerId;
+    let customerId = profileDoc.exists ? profileDoc.data()?.stripeCustomerId : undefined;
 
     // If no customer ID, create a new customer
     if (!customerId) {
@@ -62,10 +71,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
       customerId = customer.id;
 
-      // Save customer ID to Firestore
-      await userRef.update({
+      // Save customer ID to Firestore (in userProfiles)
+      await profileRef.set({
         stripeCustomerId: customerId,
-      });
+      }, { merge: true });
     }
 
     const appUrl = process.env.VITE_APP_URL || 'http://localhost:5173';
