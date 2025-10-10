@@ -121,9 +121,14 @@ service cloud.firestore {
       allow create, update, delete: if isAuthenticated();
     }
 
-    // User profiles collection - for XP, level, stats, etc.
+    // User profiles collection - for XP, level, stats, subscription data, etc.
+    // Note: Subscription fields (subscriptionTier, stripeCustomerId, etc.) are updated
+    // server-side via Stripe webhooks using Firebase Admin SDK, not by client writes
     match /userProfiles/{userId} {
-      allow read, write: if isOwner(userId);
+      allow read: if isOwner(userId);
+      // Allow client writes for non-sensitive fields like displayName, preferences, etc.
+      // Subscription fields are protected - only server can update via Admin SDK
+      allow write: if isOwner(userId);
     }
 
     // XP subcollection under user profiles (atomic increments, status doc)

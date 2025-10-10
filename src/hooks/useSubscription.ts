@@ -12,19 +12,15 @@ export const useSubscription = () => {
   const { currentUser } = useAuth();
   const { profile } = useUserProfileStore();
   
-  // Get subscription tier from profile or default to trial
-  // TODO: When implementing billing, store subscriptionTier in Firestore user profile
+  // Get subscription tier from profile (updated by Stripe webhook)
   const [tier, setTier] = useState<SubscriptionTier>(() => {
     // Check if admin
     if (currentUser?.email && ADMIN_EMAILS.includes(currentUser.email)) {
       return 'premium';
     }
     
-    // Check profile (when implemented)
-    // return profile?.subscriptionTier || 'trial';
-    
-    // New users start with trial
-    return 'trial';
+    // Check profile for subscription tier
+    return profile?.subscriptionTier || 'trial';
   });
 
   // Update tier when user or profile changes
@@ -34,11 +30,15 @@ export const useSubscription = () => {
       return;
     }
     
-    // TODO: When implementing billing, check profile.subscriptionTier and subscriptionStatus
-    // For now, all users are on trial (for testing)
-    // In production, check profile.subscriptionStatus === 'trialing'
-    
-    setTier('trial');
+    // Check profile subscription status from Firestore (updated by Stripe webhook)
+    if (profile?.subscriptionTier && 
+        profile?.subscriptionStatus && 
+        ['active', 'trialing'].includes(profile.subscriptionStatus)) {
+      setTier(profile.subscriptionTier);
+    } else {
+      // Default to trial for new users
+      setTier('trial');
+    }
   }, [currentUser, profile]);
 
   const plan = SUBSCRIPTION_PLANS[tier];

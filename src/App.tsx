@@ -13,7 +13,10 @@ import { AppleHabitTracker as HabitTracker } from './components/AppleHabitTracke
 import { CalendarView } from './components/CalendarView';
 import { HomePage } from './components/marketing/HomePage';
 import { FeaturesPage } from './components/marketing/FeaturesPage';
-import { PricingPage } from './components/marketing/PricingPage';
+import { PricingPage as MarketingPricingPage } from './components/marketing/PricingPage';
+import { PricingPage } from './components/PricingPage';
+import { SubscriptionSuccess } from './components/SubscriptionSuccess';
+import { SubscriptionCanceled } from './components/SubscriptionCanceled';
 import { MarketingNav } from './components/marketing/MarketingNav';
 import { QuestsView } from './components/QuestsView';
 import { WellnessView } from './components/WellnessView';
@@ -312,6 +315,12 @@ function AppContent() {
         return <InsightHistoryView />;
       case 'experiments':
         return <HabitExperimentView />;
+      case 'pricing':
+        return <PricingPage />;
+      case 'subscription-success':
+        return <SubscriptionSuccess />;
+      case 'subscription-canceled':
+        return <SubscriptionCanceled />;
       default:
         return <MinimalDashboard />;
     }
@@ -346,7 +355,7 @@ function AppContent() {
           );
         case 'pricing':
           return (
-            <PricingPage
+            <MarketingPricingPage
               onGetStarted={() => {
                 setAuthMode('signup');
                 setShowAuthPage(true);
@@ -480,6 +489,7 @@ function App() {
       return <StreakPreview />;
     }
     
+    // Public share routes
     if (window.location.pathname.startsWith('/share/note/')) {
       return <PublicNoteView />;
     }
@@ -488,6 +498,22 @@ function App() {
     }
     if (window.location.pathname.startsWith('/share/')) {
       return <PublicSharePage />;
+    }
+    
+    // Subscription success/cancel routes (accessible without full auth)
+    if (window.location.pathname === '/subscription/success') {
+      return (
+        <AuthProvider>
+          <SubscriptionSuccess />
+        </AuthProvider>
+      );
+    }
+    if (window.location.pathname === '/subscription/canceled') {
+      return (
+        <AuthProvider>
+          <SubscriptionCanceled />
+        </AuthProvider>
+      );
     }
   }
 

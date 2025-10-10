@@ -17,10 +17,17 @@ export interface UserProfile {
   id: string;
   displayName: string;
   email?: string;
-  subscriptionTier?: 'trial' | 'basic' | 'premium'; // Subscription tier
+  // Subscription fields (updated by Stripe webhook)
+  subscriptionTier?: 'trial' | 'basic' | 'premium'; // Current subscription tier
   subscriptionStatus?: 'trialing' | 'active' | 'canceled' | 'past_due' | 'expired'; // Subscription status
-  subscriptionExpiresAt?: Date; // When subscription expires/renews (trial end or billing date)
-  trialStartedAt?: Date; // When trial started (for 7-day countdown)
+  stripeCustomerId?: string; // Stripe customer ID
+  stripeSubscriptionId?: string; // Stripe subscription ID
+  stripePriceId?: string; // Current Stripe price ID
+  trialEndsAt?: Date; // When trial ends (for 7-day countdown)
+  trialStartedAt?: Date; // When trial started
+  currentPeriodEnd?: Date; // When current billing period ends
+  canceledAt?: Date; // When subscription was canceled
+  lastPaymentDate?: Date; // Last successful payment date
   xp: {
     total: number;        // Lifetime XP (never resets)
     seasonXp: number;     // Current season XP (resets on prestige)

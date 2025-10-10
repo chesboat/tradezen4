@@ -25,6 +25,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
 import { useAccentColor, accentColorPalettes, type AccentColor } from '@/hooks/useAccentColor';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useNavigationStore } from '@/store/useNavigationStore';
 import { getTrialInfo, getTrialMessage, formatPrice, formatAnnualMonthly } from '@/lib/subscription';
 import { SUBSCRIPTION_PLANS } from '@/types/subscription';
 import toast from 'react-hot-toast';
@@ -38,6 +39,7 @@ export const SettingsPage: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
   const { accentColor, setAccentColor } = useAccentColor();
   const { tier, plan, hasAccess, isPremium } = useSubscription();
+  const { setCurrentView } = useNavigationStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [displayName, setDisplayNameLocal] = useState(profile?.displayName || '');
@@ -275,22 +277,24 @@ export const SettingsPage: React.FC = () => {
                 </div>
               </div>
               
-              {tier === 'trial' && (
-                <button
-                  onClick={() => setShowUpgradeModal(true)}
-                  className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors text-sm whitespace-nowrap"
-                >
-                  Upgrade Now
-                </button>
-              )}
-              {tier === 'basic' && (
-                <button
-                  onClick={() => setShowUpgradeModal(true)}
-                  className="px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg font-medium hover:opacity-90 transition-opacity text-sm whitespace-nowrap"
-                >
-                  Upgrade to Premium
-                </button>
-              )}
+              <div className="flex gap-2">
+                {tier === 'trial' && (
+                  <button
+                    onClick={() => setCurrentView('pricing')}
+                    className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors text-sm whitespace-nowrap"
+                  >
+                    View Plans
+                  </button>
+                )}
+                {tier === 'basic' && (
+                  <button
+                    onClick={() => setCurrentView('pricing')}
+                    className="px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg font-medium hover:opacity-90 transition-opacity text-sm whitespace-nowrap"
+                  >
+                    Upgrade to Premium
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Features Summary */}
@@ -319,20 +323,15 @@ export const SettingsPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Manage Subscription */}
-            {(tier === 'basic' || tier === 'premium') && (
-              <div className="pt-4 border-t border-border">
-                <button
-                  onClick={() => {
-                    // TODO: Open Stripe customer portal
-                    toast('Billing portal coming soon!');
-                  }}
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Manage subscription →
-                </button>
-              </div>
-            )}
+            {/* Manage Subscription / View Pricing */}
+            <div className="pt-4 border-t border-border">
+              <button
+                onClick={() => setCurrentView('pricing')}
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {tier === 'premium' ? 'View pricing plans →' : 'Manage subscription →'}
+              </button>
+            </div>
           </div>
         </motion.div>
 

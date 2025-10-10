@@ -58,16 +58,17 @@ export const TagInput: React.FC<TagInputProps> = ({
         const estimatedHeight = dropdownRef.current?.offsetHeight || Math.min(suggestions.length * 45 + 10, 200);
         const spaceBelow = window.innerHeight - rect.bottom;
         const spaceAbove = rect.top;
-        const gap = 8;
+        const gap = 4; // Smaller gap for tighter positioning
         
         // Determine if dropdown should appear above or below
         const shouldShowAbove = spaceBelow < estimatedHeight + gap && spaceAbove > spaceBelow;
         
+        // For fixed positioning, use viewport coordinates (no scrollY/scrollX needed)
         setDropdownPosition({
           top: shouldShowAbove 
-            ? rect.top + window.scrollY - estimatedHeight - gap 
-            : rect.bottom + window.scrollY + gap,
-          left: rect.left + window.scrollX,
+            ? rect.top - estimatedHeight - gap 
+            : rect.bottom + gap,
+          left: rect.left,
           width: rect.width,
         });
       }
