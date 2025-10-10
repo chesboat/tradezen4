@@ -38,11 +38,6 @@ export function getPriceId(tier: 'basic' | 'premium', billingPeriod: 'monthly' |
 // Redirect to Stripe Checkout
 export async function redirectToCheckout(priceId: string, userId: string) {
   try {
-    const stripe = await getStripe();
-    if (!stripe) {
-      throw new Error('Stripe not initialized');
-    }
-
     // Call your backend to create a checkout session
     const response = await fetch('/api/create-checkout-session', {
       method: 'POST',
@@ -60,14 +55,10 @@ export async function redirectToCheckout(priceId: string, userId: string) {
       throw new Error(error.message || 'Failed to create checkout session');
     }
 
-    const { sessionId } = await response.json();
+    const { url } = await response.json();
 
-    // Redirect to Stripe Checkout
-    const { error } = await stripe.redirectToCheckout({ sessionId });
-
-    if (error) {
-      throw error;
-    }
+    // Redirect to Stripe Checkout URL
+    window.location.href = url;
   } catch (error) {
     console.error('Error redirecting to checkout:', error);
     throw error;
