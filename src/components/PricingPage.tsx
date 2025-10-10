@@ -22,6 +22,12 @@ export const PricingPage = () => {
     setLoadingPlan(tier);
     try {
       const priceId = getPriceId(tier, billingPeriod);
+      console.log('Subscribing:', { tier, billingPeriod, priceId, userId: currentUser.uid });
+      
+      if (!priceId) {
+        throw new Error(`Missing price ID for ${tier} ${billingPeriod}. Check Vercel environment variables.`);
+      }
+      
       await redirectToCheckout(priceId, currentUser.uid);
     } catch (error: any) {
       console.error('Error starting checkout:', error);

@@ -32,7 +32,9 @@ export const STRIPE_PRICE_IDS = {
 
 // Helper to get price ID from tier and billing period
 export function getPriceId(tier: 'basic' | 'premium', billingPeriod: 'monthly' | 'annual'): string {
-  return STRIPE_PRICE_IDS[tier][billingPeriod];
+  const priceId = STRIPE_PRICE_IDS[tier][billingPeriod];
+  console.log('Getting price ID:', { tier, billingPeriod, priceId, allPriceIds: STRIPE_PRICE_IDS });
+  return priceId;
 }
 
 // Redirect to Stripe Checkout
