@@ -21,12 +21,12 @@ export const getStripe = () => {
 // Stripe Price IDs mapped to our internal tier system
 export const STRIPE_PRICE_IDS = {
   basic: {
-    monthly: import.meta.env.STRIPE_BASIC_MONTHLY_PRICE_ID,
-    annual: import.meta.env.STRIPE_BASIC_ANNUAL_PRICE_ID,
+    monthly: import.meta.env.VITE_STRIPE_BASIC_MONTHLY_PRICE_ID,
+    annual: import.meta.env.VITE_STRIPE_BASIC_ANNUAL_PRICE_ID,
   },
   premium: {
-    monthly: import.meta.env.STRIPE_PREMIUM_MONTHLY_PRICE_ID,
-    annual: import.meta.env.STRIPE_PREMIUM_ANNUAL_PRICE_ID,
+    monthly: import.meta.env.VITE_STRIPE_PREMIUM_MONTHLY_PRICE_ID,
+    annual: import.meta.env.VITE_STRIPE_PREMIUM_ANNUAL_PRICE_ID,
   },
 } as const;
 
