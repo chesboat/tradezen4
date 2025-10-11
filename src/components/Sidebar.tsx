@@ -44,6 +44,7 @@ import { Tooltip } from './ui/Tooltip';
 import { ThemeToggle } from './ThemeToggle';
 import { TagManager } from './TagManager';
 import { useScrollShadows } from '@/hooks/useScrollShadows';
+import { TrialCountdownCompact } from './TrialCountdown';
 
 interface SidebarProps {
   className?: string;
@@ -393,38 +394,44 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
         </Tooltip>
       </div>
 
-      {/* XP Progress - Subtle, Apple Fitness style */}
+      {/* Trial & XP Progress - Apple-style */}
       <AnimatePresence mode="wait">
-        {isExpanded && profile?.xp && (
+        {isExpanded && (
           <motion.div
-            className="px-4 py-3 border-b border-border/30"
+            className="px-4 py-3 border-b border-border/30 space-y-3"
             variants={contentVariants}
             initial="collapsed"
             animate="expanded"
             exit="collapsed"
           >
-            <div className="flex items-center gap-3">
-              <div className="relative w-10 h-10 flex-shrink-0">
-                <ProgressRing 
-                  progressPct={getLevelProgress(profile.xp.seasonXp)}
-                  size="sm"
-                  thickness={2}
-                />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-[11px] font-bold text-primary leading-none">
-                    {profile.xp.level}
-                  </span>
+            {/* Trial Countdown - Prominent position */}
+            <TrialCountdownCompact />
+            
+            {/* XP Progress */}
+            {profile?.xp && (
+              <div className="flex items-center gap-3">
+                <div className="relative w-10 h-10 flex-shrink-0">
+                  <ProgressRing 
+                    progressPct={getLevelProgress(profile.xp.seasonXp)}
+                    size="sm"
+                    thickness={2}
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-[11px] font-bold text-primary leading-none">
+                      {profile.xp.level}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-foreground">
+                    Level {profile.xp.level}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {(profile.xp.seasonXp || 0).toLocaleString()} XP
+                  </p>
                 </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-foreground">
-                  Level {profile.xp.level}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {(profile.xp.seasonXp || 0).toLocaleString()} XP
-                </p>
-              </div>
-            </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

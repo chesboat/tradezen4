@@ -1,120 +1,136 @@
-import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Zap, ArrowRight } from 'lucide-react';
+import { X, Sparkles, Crown, Zap } from 'lucide-react';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useNavigationStore } from '@/store/useNavigationStore';
 import { useUserProfileStore } from '@/store/useUserProfileStore';
-import { getTrialInfo, getTrialMessage, getUpgradeCTA } from '@/lib/subscription';
+import { useState } from 'react';
 
-interface TrialBannerProps {
-  onUpgradeClick: () => void;
-}
-
-export const TrialBanner: React.FC<TrialBannerProps> = ({ onUpgradeClick }) => {
+/**
+ * Apple-style trial reminder banner
+ * Shows on days 5, 6, 7 of trial with increasing urgency
+ */
+export const TrialBanner = () => {
   const { isTrial } = useSubscription();
+  const { setCurrentView } = useNavigationStore();
   const { profile } = useUserProfileStore();
   const [isDismissed, setIsDismissed] = useState(false);
-  const [trialInfo, setTrialInfo] = useState(() => getTrialInfo(profile?.trialStartedAt));
 
-  // Update trial info every minute
-  useEffect(() => {
-    if (!isTrial) return;
+  if (!isTrial || isDismissed) return null;
 
-    const interval = setInterval(() => {
-      setTrialInfo(getTrialInfo(profile?.trialStartedAt));
-    }, 60000); // Update every minute
+  const trialEnd = profile?.trialEndsAt;
+  if (!trialEnd) return null;
 
-    return () => clearInterval(interval);
-  }, [isTrial, profile?.trialStartedAt]);
+  const now = new Date();
+  const endDate = trialEnd instanceof Date ? trialEnd : new Date(trialEnd);
+  const msRemaining = endDate.getTime() - now.getTime();
+  const daysRemaining = Math.ceil(msRemaining / (1000 * 60 * 60 * 24));
+  const hoursRemaining = Math.ceil(msRemaining / (1000 * 60 * 60));
 
-  // Don't show if not on trial, dismissed, or no trial info
-  if (!isTrial || isDismissed || !trialInfo) return null;
+  // Only show on days 3 and under
+  if (daysRemaining > 3 || daysRemaining < 0) return null;
 
-  const message = getTrialMessage(trialInfo);
-  const ctaText = getUpgradeCTA(trialInfo);
-  const isUrgent = trialInfo.isExpiringSoon;
+  const isLastDay = daysRemaining <= 1;
+  const isCritical = daysRemaining <= 2;
+
+  // Different messages based on urgency
+  const getMessage = () => {
+    if (isLastDay) {
+      const hours = hoursRemaining === 1 ? '1 hour' : `${hoursRemaining} hours`;
+      return {
+        title: '⏰ Last Day of Premium Trial',
+        subtitle: `Only ${hours} left! Subscribe now to keep AI Coach, unlimited features, and all your data.`,
+        icon: Zap,
+        gradient: 'from-orange-500 to-red-500',
+        bgGradient: 'from-orange-500/10 to-red-500/10',
+        borderColor: 'border-orange-500/30',
+      };
+    }
+    if (isCritical) {
+      return {
+        title: '🔔 Your Premium Trial Ends Soon',
+        subtitle: `${daysRemaining} days left. Upgrade to keep unlimited AI insights, advanced analytics, and premium features.`,
+        icon: Crown,
+        gradient: 'from-yellow-500 to-orange-500',
+        bgGradient: 'from-yellow-500/10 to-orange-500/10',
+        borderColor: 'border-yellow-500/30',
+      };
+    }
+    return {
+      title: '✨ You\'re on a Premium Trial',
+      subtitle: `${daysRemaining} days left. Upgrade anytime to keep unlimited access to all premium features.`,
+      icon: Sparkles,
+      gradient: 'from-blue-500 to-purple-500',
+      bgGradient: 'from-blue-500/10 to-purple-500/10',
+      borderColor: 'border-blue-500/30',
+    };
+  };
+
+  const message = getMessage();
+  const Icon = message.icon;
 
   return (
     <AnimatePresence>
       <motion.div
-        initial={{ height: 0, opacity: 0 }}
-        animate={{ height: 'auto', opacity: 1 }}
-        exit={{ height: 0, opacity: 0 }}
-        transition={{ duration: 0.3 }}
-        className={`relative overflow-hidden border-b ${
-          isUrgent 
-            ? 'bg-gradient-to-r from-orange-500/10 via-red-500/10 to-orange-500/10 border-orange-500/20' 
-            : 'bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 border-primary/20'
-        }`}
+        initial={{ opacity: 0, y: -20, height: 0 }}
+        animate={{ opacity: 1, y: 0, height: 'auto' }}
+        exit={{ opacity: 0, y: -20, height: 0 }}
+        className="w-full"
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
-          <div className="flex items-center justify-between gap-4">
-            {/* Left: Trial Status */}
-            <div className="flex items-center gap-3">
-              <div className={`flex items-center justify-center w-8 h-8 rounded-full ${
-                isUrgent ? 'bg-orange-500/20' : 'bg-primary/20'
-              }`}>
-                <Zap className={`w-4 h-4 ${
-                  isUrgent ? 'text-orange-500' : 'text-primary'
-                }`} />
+        <div className={`
+          relative overflow-hidden
+          bg-gradient-to-r ${message.bgGradient}
+          border ${message.borderColor}
+          backdrop-blur-xl
+        `}>
+          {/* Apple-style background blur effect */}
+          <div className="absolute inset-0 bg-[var(--background-primary)] opacity-50" />
+          
+          <div className="relative px-4 py-3 sm:px-6 sm:py-4">
+            <div className="flex items-start gap-3 sm:gap-4">
+              {/* Icon */}
+              <div className={`
+                w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0
+                bg-gradient-to-br ${message.gradient}
+              `}>
+                <Icon className="w-5 h-5 text-white" />
               </div>
-              
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-foreground">
-                    {message}
-                  </span>
-                  {isUrgent && (
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-600 dark:text-orange-400 font-medium">
-                      Expiring Soon
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {trialInfo.isLastDay 
-                    ? 'Auto-converts to Basic ($19/mo) after trial' 
-                    : 'Enjoying Premium features? Upgrade to keep them forever'}
+
+              {/* Content */}
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm sm:text-base font-semibold text-[var(--text-primary)] mb-1">
+                  {message.title}
+                </h3>
+                <p className="text-xs sm:text-sm text-[var(--text-secondary)] mb-3">
+                  {message.subtitle}
                 </p>
+                <button
+                  onClick={() => setCurrentView('pricing')}
+                  className={`
+                    px-4 py-2 rounded-lg font-medium text-sm
+                    bg-gradient-to-r ${message.gradient}
+                    text-white shadow-sm
+                    hover:shadow-md hover:scale-[1.02]
+                    transition-all duration-200
+                    inline-flex items-center gap-2
+                  `}
+                >
+                  <Crown className="w-4 h-4" />
+                  Upgrade to Premium
+                </button>
               </div>
-            </div>
 
-            {/* Right: CTA + Dismiss */}
-            <div className="flex items-center gap-2">
-              <motion.button
-                onClick={onUpgradeClick}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all ${
-                  isUrgent
-                    ? 'bg-orange-500 hover:bg-orange-600 text-white'
-                    : 'bg-primary hover:bg-primary/90 text-primary-foreground'
-                }`}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                {ctaText}
-                <ArrowRight className="w-4 h-4" />
-              </motion.button>
-
+              {/* Dismiss button */}
               <button
                 onClick={() => setIsDismissed(true)}
-                className="p-2 rounded-lg hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground"
-                aria-label="Dismiss banner"
+                className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors p-1 -mt-1 -mr-1"
+                aria-label="Dismiss"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
           </div>
         </div>
-
-        {/* Animated progress bar for last day */}
-        {trialInfo.isLastDay && (
-          <motion.div
-            className="absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-orange-500 to-red-500"
-            initial={{ width: '100%' }}
-            animate={{ width: `${(trialInfo.hoursRemaining / 24) * 100}%` }}
-            transition={{ duration: 1 }}
-          />
-        )}
       </motion.div>
     </AnimatePresence>
   );
 };
-

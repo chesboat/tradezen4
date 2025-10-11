@@ -39,6 +39,7 @@ import { useAppSettingsStore } from '@/store/useAppSettingsStore';
 import { summarizeWinLossScratch, classifyTradeResult } from '@/lib/utils';
 import { Tooltip } from './ui/Tooltip';
 import { RuleTallyTracker } from './RuleTallyTracker';
+import { TrialBanner } from './TrialBanner';
 
 interface KPICardProps {
   title: string;
@@ -611,6 +612,9 @@ export const Dashboard: React.FC = () => {
 
   return (
     <div className="p-6 min-h-screen bg-grid">
+      {/* Trial Banner - Apple-style prominence */}
+      <TrialBanner />
+
       {/* Header */}
       <div className="mb-8">
         <motion.div

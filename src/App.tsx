@@ -65,6 +65,7 @@ import { db } from './lib/firebase';
 import { checkAndAddWeeklyReviewTodo } from './lib/weeklyReviewTodo';
 import { initializeWeeklyReviewStore } from './store/useWeeklyReviewStore';
 import { useDailyReflectionStore } from './store/useDailyReflectionStore';
+import { useSubscription } from './hooks/useSubscription';
 import './lib/testMilestones'; // Load test utilities for development
 
 function AppContent() {
@@ -79,6 +80,8 @@ function AppContent() {
   const { isExpanded: todoExpanded, railWidth } = useTodoStore();
   const { showLevelUpToast, levelUpData, closeLevelUpToast } = useXpRewards();
   const { currentMilestone, dismiss: dismissMilestone } = useStreakMilestoneStore();
+  const { tier } = useSubscription();
+  const { profile } = useUserProfileStore();
 
   // Marketing site state
   const [marketingPage, setMarketingPage] = React.useState<'home' | 'features' | 'pricing'>('home');
@@ -404,10 +407,28 @@ function AppContent() {
     );
   }
 
+  // 🍎 APPLE-STYLE TRIAL-FIRST FLOW
+  // Redirect new users to pricing page to start their free trial
+  // This creates a clear path: Sign Up → Choose Plan → Start Trial → Explore App
+  React.useEffect(() => {
+    if (currentUser && profile) {
+      // Check if user is brand new (no subscription info at all)
+      const isNewUser = !profile.subscriptionTier && !profile.trialEndsAt && !profile.trialStartedAt;
+      
+      // Also redirect if they're on a special path (subscription success/canceled)
+      const isSubscriptionPath = window.location.pathname.startsWith('/subscription/');
+      
+      if (isNewUser && !isSubscriptionPath && currentView !== 'pricing') {
+        console.log('🎯 New user detected - redirecting to pricing for trial');
+        setCurrentView('pricing');
+      }
+    }
+  }, [currentUser, profile, currentView, setCurrentView]);
+
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
       {/* Trial Banner */}
-      <TrialBanner onUpgradeClick={() => setShowUpgradeModal(true)} />
+      <TrialBanner />
       
       {/* Data Retention Warning (Basic users) */}
       <DataRetentionWarning onUpgrade={() => setShowUpgradeModal(true)} />
