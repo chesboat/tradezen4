@@ -22,12 +22,14 @@ export function SignupForm() {
     setIsLoading(true);
 
     try {
+      // Set flag BEFORE creating account to ensure it's there
+      sessionStorage.setItem('show_pricing_after_auth', 'true');
+      console.log('🎯 Set pricing flag, now creating account...');
+      
       await signUp(email, password);
       
-      // Set flag BEFORE showing toast to avoid any timing issues
-      sessionStorage.setItem('show_pricing_after_auth', 'true');
-      
       toast.success('Account created successfully!');
+      console.log('✅ Account created, flag is:', sessionStorage.getItem('show_pricing_after_auth'));
       
       // Let auth complete naturally, the flag will trigger pricing view
       // No redirect needed - just wait for App to pick up the authenticated user

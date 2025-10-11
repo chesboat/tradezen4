@@ -70,13 +70,27 @@ import { useSubscription } from './hooks/useSubscription';
 import './lib/testMilestones'; // Load test utilities for development
 
 function AppContent() {
+  const { currentUser, loading } = useAuth();
+  
+  // 🍎 APPLE-STYLE: Check for new signup FIRST, before any other hooks/logic
+  const shouldShowPricing = !loading && currentUser && sessionStorage.getItem('show_pricing_after_auth') === 'true';
+  
+  if (shouldShowPricing) {
+    sessionStorage.removeItem('show_pricing_after_auth');
+    console.log('🎯 New signup detected - showing pricing page (early return)');
+    return (
+      <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
+        <PricingPage />
+      </div>
+    );
+  }
+  
   const { isExpanded: sidebarExpanded } = useSidebarStore();
   const { isExpanded: activityLogExpanded } = useActivityLogStore();
   const { currentView, setCurrentView } = useNavigationStore();
   const { theme } = useTheme();
   useAccentColor(); // Initialize accent color system
   const tradeLoggerModal = useTradeLoggerModal();
-  const { currentUser, loading } = useAuth();
   const { initializeProfile } = useUserProfileStore();
   const { isExpanded: todoExpanded, railWidth } = useTodoStore();
   const { showLevelUpToast, levelUpData, closeLevelUpToast } = useXpRewards();
@@ -428,21 +442,7 @@ function AppContent() {
     );
   }
 
-  // 🍎 APPLE-STYLE: Check for new signup BEFORE loading dashboard
-  // This runs synchronously before any useEffect, preventing dashboard render
-  const shouldShowPricing = !loading && currentUser && sessionStorage.getItem('show_pricing_after_auth') === 'true';
-  
-  if (shouldShowPricing) {
-    // Clean up the flag
-    sessionStorage.removeItem('show_pricing_after_auth');
-    
-    // Render pricing page directly, skip all dashboard initialization
-    return (
-      <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
-        <PricingPage />
-      </div>
-    );
-  }
+  // Pricing check moved to top of AppContent for early return
 
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
