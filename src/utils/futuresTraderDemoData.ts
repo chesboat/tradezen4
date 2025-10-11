@@ -357,16 +357,16 @@ export async function loadProfessionalFuturesTraderDemo(accountId: string) {
   const { trades: existingTrades } = useTradeStore.getState();
   
   // Check if already loaded
-  if (existingTrades.length > 100) {
+  if (existingTrades.length > 50) {
     console.log('⚠️ Demo data already loaded. Clear trades first if you want to reload.');
     return;
   }
   
-  console.log('🚀 Loading professional futures trader demo data...');
+  console.log('🚀 Loading aspiring futures trader demo data...');
   
   const demoTrades = generateProfessionalFuturesTraderData(accountId, {
-    totalTrades: 2000, // ~3 years of trading (250 trading days/year * 3 trades/day)
-    yearsOfHistory: 3,
+    totalTrades: 180, // ~3 months of trading (60 trading days * 3 trades/day)
+    yearsOfHistory: 0.25, // 3 months
   });
   
   // Add trades one by one using the proper addTrade method

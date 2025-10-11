@@ -37,15 +37,15 @@ export async function loadDemoData() {
     console.log('📸 READY FOR SCREENSHOTS:');
     console.log('  → Navigate to Trading Health view');
     console.log('  → Check Analytics dashboard');
-    console.log('  → View Calendar (should show 3 years of data with red & green days)');
+    console.log('  → View Calendar (should show 3 months with red & green days)');
     console.log('');
     console.log('💡 TIP: Refresh the page to see all metrics update');
     console.log('');
-    console.log('📊 REALISTIC DATA:');
+    console.log('📊 REALISTIC DATA (3 MONTHS):');
     console.log('  • 55% win rate (aspiring trader level)');
     console.log('  • ~1.5 profit factor (profitable but realistic)');
     console.log('  • Mix of winning and losing days');
-    console.log('  • Some rough patches and win streaks');
+    console.log('  • 180 trades loaded quickly');
     
   } catch (error) {
     console.error('❌ Error loading demo data:', error);
@@ -121,7 +121,7 @@ setTimeout(() => {
   console.log('🎯 TradZen Demo Data Utilities Loaded!');
   console.log('');
   console.log('Available commands:');
-  console.log('  loadDemoData()    - Load 2000 trades (3 years, 70% win rate)');
+  console.log('  loadDemoData()    - Load 180 trades (3 months, 55% win rate)');
   console.log('  showDataStats()   - Show current data statistics');
   console.log('  clearAllTrades()  - Clear all trades (with confirmation)');
   console.log('');
