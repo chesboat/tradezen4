@@ -422,13 +422,18 @@ function AppContent() {
     );
   }
 
-  // 🍎 APPLE-STYLE: Show pricing page after signup
+  // 🍎 APPLE-STYLE: Show pricing page after signup (run once)
+  const hasCheckedPricingRedirect = React.useRef(false);
+  
   React.useEffect(() => {
+    if (hasCheckedPricingRedirect.current) return;
+    
     const shouldShowPricing = sessionStorage.getItem('show_pricing_after_auth');
     console.log('🔍 Signup check:', { loading, hasUser: !!currentUser, shouldShowPricing });
     
     if (!loading && currentUser && shouldShowPricing === 'true') {
       console.log('🎯 New signup detected - showing pricing page');
+      hasCheckedPricingRedirect.current = true;
       sessionStorage.removeItem('show_pricing_after_auth');
       setCurrentView('pricing');
     }
