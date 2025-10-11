@@ -28,6 +28,8 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { useNavigationStore } from '@/store/useNavigationStore';
 import { getTrialInfo, getTrialMessage, formatPrice, formatAnnualMonthly } from '@/lib/subscription';
 import { SUBSCRIPTION_PLANS } from '@/types/subscription';
+import { redirectToCustomerPortal } from '@/lib/stripe';
+import { Timestamp } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 import DisciplineModeToggle from '@/components/discipline/DisciplineModeToggle';
 import { setDisciplineMode } from '@/lib/discipline';
@@ -113,6 +115,59 @@ export const SettingsPage: React.FC = () => {
     } catch (error) {
       toast.error('Failed to export data');
     }
+  };
+
+  // 🍎 APPLE WAY: One-click subscription management
+  const handleManageSubscription = async () => {
+    if (!currentUser) return;
+    
+    try {
+      toast.loading('Opening subscription management...', { id: 'portal' });
+      await redirectToCustomerPortal(currentUser.uid);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to open subscription portal', { id: 'portal' });
+    }
+  };
+
+  // Format dates the Apple way
+  const formatDate = (timestamp: any) => {
+    if (!timestamp) return null;
+    try {
+      const date = timestamp instanceof Timestamp ? timestamp.toDate() : new Date(timestamp);
+      return new Intl.DateTimeFormat('en-US', { 
+        month: 'long', 
+        day: 'numeric', 
+        year: 'numeric' 
+      }).format(date);
+    } catch {
+      return null;
+    }
+  };
+
+  // Get subscription status text
+  const getSubscriptionStatusText = () => {
+    if (tier === 'trial') {
+      return trialInfo ? getTrialMessage(trialInfo) : '7-day free trial';
+    }
+    if (profile?.subscriptionStatus === 'active') {
+      return 'Active';
+    }
+    if (profile?.subscriptionStatus === 'canceled') {
+      return 'Canceled';
+    }
+    if (profile?.subscriptionStatus === 'past_due') {
+      return 'Past Due';
+    }
+    return 'Active';
+  };
+
+  // Get status color
+  const getStatusColor = () => {
+    if (tier === 'trial') return 'text-blue-500';
+    if (profile?.subscriptionStatus === 'active') return 'text-green-500';
+    if (profile?.subscriptionStatus === 'canceled') return 'text-orange-500';
+    if (profile?.subscriptionStatus === 'past_due') return 'text-red-500';
+    return 'text-green-500';
   };
 
   return (
@@ -217,7 +272,7 @@ export const SettingsPage: React.FC = () => {
           </div>
         </motion.div>
 
-        {/* Subscription Section */}
+        {/* 🍎 APPLE-STYLE Subscription Management */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -229,109 +284,201 @@ export const SettingsPage: React.FC = () => {
             Subscription
           </h2>
 
-          {/* Current Plan */}
-          <div className="space-y-4">
-            <div className="flex items-start justify-between p-4 bg-muted/30 rounded-lg border border-border">
-              <div className="flex items-start gap-3">
-                {tier === 'trial' && (
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Zap className="w-5 h-5 text-primary" />
-                  </div>
-                )}
-                {tier === 'basic' && (
-                  <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center flex-shrink-0">
-                    <Zap className="w-5 h-5 text-blue-500" />
-                  </div>
-                )}
-                {tier === 'premium' && (
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center flex-shrink-0">
-                    <Crown className="w-5 h-5 text-white" />
-                  </div>
-                )}
-                
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="font-semibold text-foreground">{plan.name}</h3>
-                    {plan.badge && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
-                        {plan.badge}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-2">{plan.description}</p>
-                  
-                  {tier === 'trial' && trialInfo && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <Calendar className="w-4 h-4 text-muted-foreground" />
-                      <span className={trialInfo.isExpiringSoon ? 'text-orange-500 font-medium' : 'text-muted-foreground'}>
-                        {getTrialMessage(trialInfo)}
-                      </span>
+          {/* Current Plan Card */}
+          <div className="space-y-6">
+            <div className="p-5 bg-gradient-to-br from-muted/30 to-muted/10 rounded-xl border border-border">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-start gap-4">
+                  {/* Plan Icon */}
+                  {tier === 'trial' && (
+                    <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                      <Sparkles className="w-6 h-6 text-blue-500" />
+                    </div>
+                  )}
+                  {tier === 'basic' && (
+                    <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                      <Zap className="w-6 h-6 text-blue-500" />
+                    </div>
+                  )}
+                  {tier === 'premium' && (
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center flex-shrink-0">
+                      <Crown className="w-6 h-6 text-white" />
                     </div>
                   )}
                   
-                  {(tier === 'basic' || tier === 'premium') && (
-                    <div className="text-sm text-muted-foreground">
-                      {formatPrice(plan.monthlyPrice)}/month
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-bold text-lg text-foreground">{plan.name}</h3>
+                      {plan.badge && (
+                        <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary font-semibold">
+                          {plan.badge}
+                        </span>
+                      )}
                     </div>
-                  )}
+                    <p className="text-sm text-muted-foreground">{plan.description}</p>
+                  </div>
                 </div>
               </div>
               
-              <div className="flex gap-2">
-                {tier === 'trial' && (
+              {/* Status and Dates */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Status</span>
+                  <span className={`font-semibold ${getStatusColor()}`}>
+                    {getSubscriptionStatusText()}
+                  </span>
+                </div>
+                
+                {tier === 'trial' && trialInfo && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Trial ends</span>
+                    <span className={`font-medium ${trialInfo.isExpiringSoon ? 'text-orange-500' : 'text-foreground'}`}>
+                      {formatDate(profile?.trialEndsAt)}
+                    </span>
+                  </div>
+                )}
+                
+                {(tier === 'basic' || tier === 'premium') && profile?.currentPeriodEnd && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      {profile?.subscriptionStatus === 'canceled' ? 'Access until' : 'Renews on'}
+                    </span>
+                    <span className="font-medium text-foreground">
+                      {formatDate(profile?.currentPeriodEnd)}
+                    </span>
+                  </div>
+                )}
+                
+                {(tier === 'basic' || tier === 'premium') && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Price</span>
+                    <span className="font-semibold text-foreground">
+                      {formatPrice(plan.monthlyPrice)}<span className="text-muted-foreground font-normal">/month</span>
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Action Buttons - Apple Style */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              {tier === 'trial' && (
+                <>
                   <button
                     onClick={() => setCurrentView('pricing')}
-                    className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors text-sm whitespace-nowrap"
+                    className="flex-1 px-5 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 transition-all shadow-sm hover:shadow-md"
+                  >
+                    Choose a Plan
+                  </button>
+                  <button
+                    onClick={() => setCurrentView('pricing')}
+                    className="px-5 py-3 bg-muted/50 text-foreground rounded-xl font-medium hover:bg-muted transition-colors"
                   >
                     View Plans
                   </button>
-                )}
-                {tier === 'basic' && (
+                </>
+              )}
+              
+              {tier === 'basic' && (
+                <>
                   <button
                     onClick={() => setCurrentView('pricing')}
-                    className="px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg font-medium hover:opacity-90 transition-opacity text-sm whitespace-nowrap"
+                    className="flex-1 px-5 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-semibold hover:opacity-90 transition-all shadow-sm hover:shadow-md flex items-center justify-center gap-2"
                   >
+                    <Crown className="w-5 h-5" />
                     Upgrade to Premium
                   </button>
-                )}
-              </div>
+                  <button
+                    onClick={handleManageSubscription}
+                    className="px-5 py-3 bg-muted/50 text-foreground rounded-xl font-medium hover:bg-muted transition-colors flex items-center justify-center gap-2"
+                  >
+                    <CreditCard className="w-4 h-4" />
+                    Manage
+                  </button>
+                </>
+              )}
+              
+              {tier === 'premium' && (
+                <button
+                  onClick={handleManageSubscription}
+                  className="w-full px-5 py-3 bg-muted/50 text-foreground rounded-xl font-semibold hover:bg-muted transition-colors flex items-center justify-center gap-2"
+                >
+                  <CreditCard className="w-5 h-5" />
+                  Manage Subscription
+                </button>
+              )}
             </div>
 
-            {/* Features Summary */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div className="p-3 bg-muted/30 rounded-lg">
-                <div className="text-xs text-muted-foreground mb-1">Accounts</div>
-                <div className="font-semibold">
-                  {plan.limits.maxAccounts === 'unlimited' ? 'Unlimited' : plan.limits.maxAccounts}
-                </div>
-              </div>
-              <div className="p-3 bg-muted/30 rounded-lg">
-                <div className="text-xs text-muted-foreground mb-1">AI Coach</div>
-                <div className="font-semibold">
-                  {plan.limits.aiCoach ? '✓ Included' : '✗ Not included'}
-                </div>
-              </div>
-              <div className="p-3 bg-muted/30 rounded-lg">
-                <div className="text-xs text-muted-foreground mb-1">Storage</div>
-                <div className="font-semibold">{plan.limits.storageGB}GB</div>
-              </div>
-              <div className="p-3 bg-muted/30 rounded-lg">
-                <div className="text-xs text-muted-foreground mb-1">AI Requests</div>
-                <div className="font-semibold">
-                  {plan.limits.aiMonthlyRequests === 'unlimited' ? 'Unlimited' : plan.limits.aiMonthlyRequests === 0 ? 'None' : `${plan.limits.aiMonthlyRequests}/mo`}
-                </div>
-              </div>
-            </div>
-
-            {/* Manage Subscription / View Pricing */}
+            {/* Features Grid */}
             <div className="pt-4 border-t border-border">
-              <button
-                onClick={() => setCurrentView('pricing')}
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {tier === 'premium' ? 'View pricing plans →' : 'Manage subscription →'}
-              </button>
+              <h4 className="text-sm font-semibold text-muted-foreground mb-3">What's Included</h4>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="p-3 bg-background rounded-lg border border-border">
+                  <div className="text-xs text-muted-foreground mb-1">Accounts</div>
+                  <div className="font-semibold text-sm">
+                    {plan.limits.maxAccounts === 'unlimited' ? 'Unlimited' : plan.limits.maxAccounts}
+                  </div>
+                </div>
+                <div className="p-3 bg-background rounded-lg border border-border">
+                  <div className="text-xs text-muted-foreground mb-1">AI Coach</div>
+                  <div className="font-semibold text-sm">
+                    {plan.limits.aiCoach ? '✓ Yes' : '✗ No'}
+                  </div>
+                </div>
+                <div className="p-3 bg-background rounded-lg border border-border">
+                  <div className="text-xs text-muted-foreground mb-1">Storage</div>
+                  <div className="font-semibold text-sm">{plan.limits.storageGB}GB</div>
+                </div>
+                <div className="p-3 bg-background rounded-lg border border-border">
+                  <div className="text-xs text-muted-foreground mb-1">AI Requests</div>
+                  <div className="font-semibold text-sm">
+                    {plan.limits.aiMonthlyRequests === 'unlimited' ? 'Unlimited' : plan.limits.aiMonthlyRequests === 0 ? 'None' : `${plan.limits.aiMonthlyRequests}/mo`}
+                  </div>
+                </div>
+              </div>
             </div>
+
+            {/* Info Box for Trial Users */}
+            {tier === 'trial' && trialInfo?.isExpiringSoon && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="p-4 bg-orange-500/10 border border-orange-500/20 rounded-xl"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-orange-500/20 flex items-center justify-center flex-shrink-0">
+                    <Calendar className="w-4 h-4 text-orange-500" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-sm mb-1">Trial ending soon</h4>
+                    <p className="text-xs text-muted-foreground">
+                      Choose a plan to continue accessing all features after your trial ends.
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Info Box for Canceled Subscriptions */}
+            {profile?.subscriptionStatus === 'canceled' && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="p-4 bg-muted/30 border border-border rounded-xl"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Calendar className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-sm mb-1">Subscription canceled</h4>
+                    <p className="text-xs text-muted-foreground">
+                      You'll have access until {formatDate(profile?.currentPeriodEnd)}. Reactivate anytime.
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
           </div>
         </motion.div>
 

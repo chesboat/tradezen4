@@ -34,20 +34,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ message: 'Missing userId' });
     }
 
-    // Get user data from Firestore
-    const userRef = db.collection('users').doc(userId);
-    const userDoc = await userRef.get();
-
-    if (!userDoc.exists) {
-      return res.status(404).json({ message: 'User not found' });
+    // Get user data from Firestore (check userProfiles first, then users)
+    let customerId: string | undefined;
+    
+    // Check userProfiles collection first
+    const userProfileRef = db.collection('userProfiles').doc(userId);
+    const userProfileDoc = await userProfileRef.get();
+    
+    if (userProfileDoc.exists) {
+      customerId = userProfileDoc.data()?.stripeCustomerId;
     }
-
-    const userData = userDoc.data();
-    const customerId = userData?.stripeCustomerId;
+    
+    // Fallback to users collection if not found
+    if (!customerId) {
+      const userRef = db.collection('users').doc(userId);
+      const userDoc = await userRef.get();
+      if (userDoc.exists) {
+        customerId = userDoc.data()?.stripeCustomerId;
+      }
+    }
 
     if (!customerId) {
       return res.status(400).json({ 
-        message: 'No subscription found. Please subscribe first.' 
+        message: 'No subscription found. Please start your free trial first.' 
       });
     }
 
@@ -56,7 +65,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Create Customer Portal Session
     const session = await stripe.billingPortal.sessions.create({
       customer: customerId,
-      return_url: `${appUrl}/settings`,
+      return_url: `${appUrl}/?view=settings`,
     });
 
     return res.status(200).json({ url: session.url });

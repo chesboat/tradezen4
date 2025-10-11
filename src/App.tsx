@@ -61,6 +61,7 @@ import { TrialBanner } from './components/TrialBanner';
 import { DataRetentionWarning } from './components/DataRetentionWarning';
 import { UpgradeModal } from './components/UpgradeModal';
 import { WelcomeToPremium } from './components/WelcomeToPremium';
+import { ExpiredSubscriptionModal } from './components/ExpiredSubscriptionModal';
 import { useTodoStore } from './store/useTodoStore';
 import { collection, getDocs, limit, query } from 'firebase/firestore';
 import { db } from './lib/firebase';
@@ -82,7 +83,7 @@ function AppContent() {
   const { isExpanded: todoExpanded, railWidth } = useTodoStore();
   const { showLevelUpToast, levelUpData, closeLevelUpToast } = useXpRewards();
   const { currentMilestone, dismiss: dismissMilestone } = useStreakMilestoneStore();
-  const { tier } = useSubscription();
+  const { tier, hasAccess, isExpired } = useSubscription();
   const { profile } = useUserProfileStore();
 
   // Marketing site state
@@ -96,6 +97,19 @@ function AppContent() {
   const remoteExpectedRef = React.useRef(false);
   const [bootReloadTick, setBootReloadTick] = React.useState(0);
   const [showUpgradeModal, setShowUpgradeModal] = React.useState(false);
+  
+  // 🍎 APPLE WAY: Show expired subscription modal
+  const [showExpiredModal, setShowExpiredModal] = React.useState(false);
+
+  // 🍎 APPLE WAY: Check for expired subscriptions
+  React.useEffect(() => {
+    if (!loading && currentUser && !hasAccess && isExpired) {
+      console.log('⛔ Subscription expired - showing paywall');
+      setShowExpiredModal(true);
+    } else if (hasAccess) {
+      setShowExpiredModal(false);
+    }
+  }, [loading, currentUser, hasAccess, isExpired]);
 
   // 🍎 APPLE WAY: Force light mode for marketing pages (logged out users)
   React.useEffect(() => {
@@ -106,10 +120,17 @@ function AppContent() {
         root.classList.remove('dark');
         root.classList.add('light');
       } else {
-        // Logged in: restore saved theme preference
-        const savedTheme = localStorage.getItem('tradzen-theme') || 'dark';
-        root.classList.remove('light', 'dark');
-        root.classList.add(savedTheme);
+        // Logged in: use saved theme or system preference
+        const savedTheme = localStorage.getItem('tradzen-theme');
+        if (savedTheme) {
+          root.classList.remove('light', 'dark');
+          root.classList.add(savedTheme);
+        } else {
+          // First-time: respect system preference
+          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          root.classList.remove('light', 'dark');
+          root.classList.add(prefersDark ? 'dark' : 'light');
+        }
       }
     }
   }, [currentUser, loading]);
@@ -520,6 +541,12 @@ function AppContent() {
       <UpgradeModal
         isOpen={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
+      />
+      
+      {/* 🍎 APPLE WAY: Expired Subscription Modal */}
+      <ExpiredSubscriptionModal
+        isOpen={showExpiredModal}
+        onClose={() => setShowExpiredModal(false)}
       />
     </div>
   );

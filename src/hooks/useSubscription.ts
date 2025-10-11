@@ -2,15 +2,75 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserProfileStore } from '@/store/useUserProfileStore';
 import { SUBSCRIPTION_PLANS, hasFeature, isLimitReached, type SubscriptionTier } from '@/types/subscription';
+import { Timestamp } from 'firebase/firestore';
 
 // Admin emails that get automatic premium access
 const ADMIN_EMAILS = [
   'chesbo@gmail.com', // Admin email for premium testing
 ];
 
+// 🍎 APPLE WAY: Check if user has active access (even if canceled, they keep access until period ends)
+function hasActiveAccess(profile: any): boolean {
+  if (!profile?.subscriptionStatus) return false;
+  
+  const status = profile.subscriptionStatus;
+  
+  // Active and trialing always have access
+  if (['active', 'trialing'].includes(status)) {
+    return true;
+  }
+  
+  // Canceled users keep access until currentPeriodEnd
+  if (status === 'canceled' && profile.currentPeriodEnd) {
+    try {
+      const periodEnd = profile.currentPeriodEnd instanceof Timestamp 
+        ? profile.currentPeriodEnd.toDate() 
+        : new Date(profile.currentPeriodEnd);
+      
+      const now = new Date();
+      const hasAccess = periodEnd > now;
+      
+      console.log('🔒 Canceled subscription access check:', {
+        periodEnd: periodEnd.toISOString(),
+        now: now.toISOString(),
+        hasAccess
+      });
+      
+      return hasAccess;
+    } catch (error) {
+      console.error('Error checking period end:', error);
+      return false;
+    }
+  }
+  
+  // Past due gets a grace period (configurable)
+  if (status === 'past_due' && profile.currentPeriodEnd) {
+    try {
+      const periodEnd = profile.currentPeriodEnd instanceof Timestamp 
+        ? profile.currentPeriodEnd.toDate() 
+        : new Date(profile.currentPeriodEnd);
+      
+      const now = new Date();
+      const gracePeriodDays = 7; // 7 day grace period for past_due
+      const graceEndDate = new Date(periodEnd.getTime() + (gracePeriodDays * 24 * 60 * 60 * 1000));
+      
+      return graceEndDate > now;
+    } catch (error) {
+      console.error('Error checking grace period:', error);
+      return false;
+    }
+  }
+  
+  // All other statuses (incomplete, incomplete_expired, unpaid) = no access
+  return false;
+}
+
 export const useSubscription = () => {
   const { currentUser } = useAuth();
   const { profile } = useUserProfileStore();
+  
+  // Track if access is revoked (for expired/canceled subscriptions)
+  const [hasAccess, setHasAccess] = useState(true);
   
   // Get subscription tier from profile (updated by Stripe webhook)
   const [tier, setTier] = useState<SubscriptionTier>(() => {
@@ -28,33 +88,44 @@ export const useSubscription = () => {
     }
   });
 
-  // Update tier when user or profile changes
+  // 🍎 APPLE WAY: Update tier AND access when user or profile changes
   useEffect(() => {
     try {
+      // Admins always have full access
       if (currentUser?.email && ADMIN_EMAILS.includes(currentUser.email)) {
         setTier('premium');
+        setHasAccess(true);
         return;
       }
       
-      // Check profile subscription status from Firestore (updated by Stripe webhook)
-      if (profile?.subscriptionTier && 
-          profile?.subscriptionStatus && 
-          ['active', 'trialing'].includes(profile.subscriptionStatus)) {
+      // Check if user has active access (handles canceled-but-not-expired)
+      const activeAccess = hasActiveAccess(profile);
+      setHasAccess(activeAccess);
+      
+      // If they have access, use their subscription tier
+      if (activeAccess && profile?.subscriptionTier) {
         setTier(profile.subscriptionTier);
       } else {
-        // Default to trial for new users
+        // No access = trial tier (will trigger paywall)
         setTier('trial');
       }
+      
+      console.log('🔐 Subscription access updated:', {
+        tier: activeAccess && profile?.subscriptionTier ? profile.subscriptionTier : 'trial',
+        hasAccess: activeAccess,
+        status: profile?.subscriptionStatus
+      });
     } catch (error) {
       console.error('Error updating subscription tier:', error);
       setTier('trial');
+      setHasAccess(true); // Fail open for new users
     }
   }, [currentUser, profile]);
 
   const plan = SUBSCRIPTION_PLANS[tier];
   
   // Check if user has access to a feature
-  const hasAccess = (feature: keyof typeof plan.limits) => {
+  const hasFeatureAccess = (feature: keyof typeof plan.limits) => {
     try {
       return hasFeature(tier, feature);
     } catch (error) {
@@ -92,12 +163,14 @@ export const useSubscription = () => {
     tier,
     plan,
     limits: plan.limits,
-    hasAccess,
+    hasAccess, // 🍎 NEW: Whether user has access to the app (even if canceled, checks period end)
+    hasFeatureAccess, // Check specific features
     checkLimit,
     getRemainingUsage,
     isPremium: tier === 'premium',
     isBasic: tier === 'basic',
     isTrial: tier === 'trial',
+    isExpired: !hasAccess && profile?.subscriptionStatus && !['active', 'trialing'].includes(profile.subscriptionStatus), // 🍎 NEW: True if subscription expired
   };
 };
 
