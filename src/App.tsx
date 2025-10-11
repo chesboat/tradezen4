@@ -453,9 +453,12 @@ function AppContent() {
   }, [loading, currentUser, profile]);
 
   // Show welcome screen for new users
+  // TEMPORARILY DISABLED TO FIX INFINITE LOOP
+  /*
   if (showWelcome) {
     return <WelcomeToPremium onSkip={() => setShowWelcome(false)} />;
   }
+  */
 
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
