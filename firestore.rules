@@ -1,24 +1,132 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    
     // Helper function to check if user is authenticated
-    function isSignedIn() {
+    function isAuthenticated() {
       return request.auth != null;
     }
     
-    // Helper function to check if user owns the document
+    // Helper function to check if the document belongs to the current user
     function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // User data structure
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+      
+      // Discipline mode day docs and nested trades
+      match /days/{date} {
+        allow read, write: if isOwner(userId);
+        match /trades/{tradeId} {
+          allow read, write: if isOwner(userId);
+        }
+      }
+      
+      // Legacy top-level trades under user (kept for backward compatibility)
+      match /trades/{tradeId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+    
+    // Quick notes collection under each user
+    match /users/{userId}/quickNotes/{noteId} {
+      allow read, write: if isOwner(userId);
+    }
+    
+    // Rich notes collection under each user
+    match /users/{userId}/richNotes/{noteId} {
+      // Allow read if owner OR if note is marked as public
+      allow read: if isOwner(userId) || resource.data.isPublic == true;
+      allow write: if isOwner(userId);
+    }
+    
+    // Allow collectionGroup queries on richNotes for public notes
+    match /{path=**}/richNotes/{noteId} {
+      allow read: if resource.data.isPublic == true;
     }
 
-    // User Profiles
+    // Journal entries collection under each user
+    match /users/{userId}/journalEntries/{entryId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // Reflections collection under each user (Insight Blocks 2.0)
+    match /users/{userId}/reflections/{reflectionId} {
+      allow read, write: if isOwner(userId);
+    }
+    
+    // Quests collection under each user
+    match /users/{userId}/quests/{questId} {
+      allow read, write: if isOwner(userId);
+    }
+    
+    // Improvement tasks collection under each user
+    match /users/{userId}/tasks/{taskId} {
+      allow read, write: if isOwner(userId);
+    }
+    
+    // Trading accounts collection under each user
+    match /users/{userId}/tradingAccounts/{accountId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) 
+        && (!('status' in request.resource.data) || request.resource.data.status in ['active', 'archived', 'deleted']);
+      allow update: if isOwner(userId)
+        && (!('status' in request.resource.data) || request.resource.data.status in ['active', 'archived', 'deleted']);
+      allow delete: if isOwner(userId);
+    }
+    
+    // Tally rules collection under each user
+    match /users/{userId}/tallyRules/{ruleId} {
+      allow read, write: if isOwner(userId);
+    }
+    
+    // Tally logs collection under each user
+    match /users/{userId}/tallyLogs/{logId} {
+      allow read, write: if isOwner(userId);
+    }
+    
+    // Weekly reviews collection under each user
+    match /users/{userId}/weeklyReviews/{reviewId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // Daily reflections (journal) - cloud-based source of truth
+    match /users/{userId}/dailyReflections/{reflectionId} {
+      allow read, write: if isOwner(userId);
+    }
+    
+    // Public share snapshots (explicitly sanitized content only)
+    match /publicShares/{shareId} {
+      // PUBLIC read for developer testing; tighten later with expiration if desired
+      allow read: if true;
+      // Only authenticated users can create/update/delete shares
+      // Enforce isPublic on create to avoid accidental private exposure via this collection
+      allow create: if isAuthenticated() && request.resource.data.isPublic == true;
+      allow update, delete: if isAuthenticated();
+    }
+    
+    // Public share images - separate collection for images to avoid 1MB limit
+    match /publicShareImages/{imageId} {
+      // PUBLIC read for public shares
+      allow read: if true;
+      // Only authenticated users can create/update/delete image collections
+      allow create, update, delete: if isAuthenticated();
+    }
+
+    // Public share blocks - full HTML content per block
+    match /publicShareBlocks/{blockId} {
+      allow read: if true;
+      allow create, update, delete: if isAuthenticated();
+    }
+
+    // User profiles collection - for XP, level, stats, subscription data, etc.
     match /userProfiles/{userId} {
-      // Users can read and write their own profile
       allow read: if isOwner(userId);
       allow create: if isOwner(userId);
       allow update: if isOwner(userId) && (
-        // Allow users to update most fields
+        // Allow users to update these fields
         request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'displayName', 
           'avatar', 
@@ -29,7 +137,7 @@ service cloud.firestore {
           'email',
           'updatedAt'
         ]) ||
-        // Subscription fields are updated by server (webhook) but we allow reading
+        // Subscription fields (updated by Stripe webhooks via Admin SDK)
         request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'subscriptionTier',
           'subscriptionStatus', 
@@ -47,103 +155,35 @@ service cloud.firestore {
       allow delete: if false; // Prevent accidental deletion
     }
 
-    // Trades
-    match /trades/{tradeId} {
-      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    // XP subcollection under user profiles (atomic increments, status doc)
+    match /userProfiles/{userId}/xp/{docId} {
+      allow read, write: if isOwner(userId);
     }
 
-    // Journal Entries
-    match /journalEntries/{entryId} {
-      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    // Premium Intelligence Features
+    // Habit Experiments - structured A/B testing
+    match /habitExperiments/{experimentId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == resource.data.userId;
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.userId;
+    }
+    
+    // Insight History - archive of daily insights
+    match /insightHistory/{insightId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == resource.data.userId;
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.userId;
+    }
+    
+    // Insight Preferences - user customization of insights
+    match /insightPreferences/{userId} {
+      allow read, write: if isOwner(userId);
     }
 
-    // Quick Notes
-    match /quickNotes/{noteId} {
-      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    // Activity Log - intelligent journal-wide milestone tracking
+    match /users/{userId}/activityLog/{activityId} {
+      allow read, write: if isOwner(userId);
     }
 
-    // Daily Reflections
-    match /dailyReflections/{reflectionId} {
-      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
-    }
-
-    // Habits
-    match /habits/{habitId} {
-      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
-    }
-
-    // Quests
-    match /quests/{questId} {
-      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
-    }
-
-    // Todos
-    match /todos/{todoId} {
-      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
-    }
-
-    // Accounts
-    match /accounts/{accountId} {
-      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
-    }
-
-    // Public shares (readable by anyone with the link)
-    match /publicShares/{shareId} {
-      allow read: if true;
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
-    }
-
-    // Weekly Reviews
-    match /weeklyReviews/{reviewId} {
-      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
-    }
-
-    // Activity Logs
-    match /activityLogs/{logId} {
-      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update: if false; // Activity logs are immutable
-      allow delete: if false; // Don't allow deletion
-    }
-
-    // Rule Tallies
-    match /ruleTallies/{tallyId} {
-      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
-    }
-
-    // Default deny all other paths
+    // Default deny all other access
     match /{document=**} {
       allow read, write: if false;
     }
