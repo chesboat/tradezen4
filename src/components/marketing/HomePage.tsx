@@ -30,9 +30,9 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted, onViewPricing 
   const { setCurrentView } = useNavigationStore();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-background via-background to-primary/5">
+      <section className="relative overflow-hidden bg-gradient-to-br from-white via-gray-50 to-blue-50">
         <div className="absolute inset-0 bg-grid-pattern opacity-5" />
         
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 pt-20 sm:pt-32 pb-24">

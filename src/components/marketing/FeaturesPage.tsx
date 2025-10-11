@@ -159,9 +159,9 @@ export const FeaturesPage: React.FC<FeaturesPageProps> = ({ onGetStarted }) => {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-background via-background to-primary/5 pt-20 pb-16">
+      <section className="relative overflow-hidden bg-gradient-to-br from-white via-gray-50 to-blue-50 pt-20 pb-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}

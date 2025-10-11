@@ -1,0 +1,16 @@
+git add -A
+
+git commit -m "Fix: Add explicit text colors to auth form inputs
+
+ISSUE: Input fields showed white text in light mode
+CAUSE: Inputs inherited text color but didn't have explicit color set
+FIX: Added text-gray-900 dark:text-white to all inputs
+
+UPDATED:
+- SignupForm.tsx: Email, Password, Confirm Password inputs
+- LoginForm.tsx: Email, Password inputs
+
+Now inputs show black text in light mode, white in dark mode."
+
+git push
+

@@ -1,0 +1,25 @@
+git add -A
+
+git commit -m "Final fix: Force light mode for marketing pages (homepage, features, pricing)
+
+THE COMPLETE APPLE SOLUTION:
+✅ Added useEffect in App.tsx to force light theme when !currentUser
+✅ Updated marketing HomePage background gradients
+✅ Updated marketing FeaturesPage background gradients  
+✅ Updated marketing PricingPage background gradients
+
+HOW IT WORKS:
+- Logged OUT: Force light mode (marketing site = Apple Store)
+- Logged IN: Respect user theme preference (app = user choice)
+- Signup flow: Force light mode (conversion = trust)
+
+RESULT:
+- Homepage is now light mode
+- All marketing pages are light mode
+- Conversion flow (signup/pricing) is light mode
+- Dashboard respects user preference
+
+This is exactly how Apple does it. 🍎"
+
+git push
+

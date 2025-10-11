@@ -1,0 +1,20 @@
+git add -A
+
+git commit -m "Fix: Force light mode on all conversion pages (remove theme wrappers)
+
+CRITICAL FIX:
+- Removed bg-background wrapper in App.tsx that was applying dark theme
+- Updated SubscriptionSuccess to force light mode
+- Updated SubscriptionCanceled to force light mode
+- Fixed branding: TradZen → Refine
+
+NOW TRULY FORCED LIGHT MODE:
+✅ WelcomeFlow - No theme wrapper
+✅ PricingPage - No theme wrapper  
+✅ SubscriptionSuccess - Light gradient bg
+✅ SubscriptionCanceled - Light gradient bg
+
+All conversion pages now ignore system theme and show Apple-style light mode."
+
+git push
+

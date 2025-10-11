@@ -59,7 +59,7 @@ export const SubscriptionSuccess = () => {
   }, [sessionId]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[var(--background-primary)] via-[var(--background-primary)] to-blue-500/5 text-[var(--text-primary)] flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-blue-50 text-gray-900 flex items-center justify-center px-4 py-12">
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}

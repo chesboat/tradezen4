@@ -97,6 +97,23 @@ function AppContent() {
   const [bootReloadTick, setBootReloadTick] = React.useState(0);
   const [showUpgradeModal, setShowUpgradeModal] = React.useState(false);
 
+  // 🍎 APPLE WAY: Force light mode for marketing pages (logged out users)
+  React.useEffect(() => {
+    if (!loading) {
+      const root = document.documentElement;
+      if (!currentUser) {
+        // Marketing pages: force light mode
+        root.classList.remove('dark');
+        root.classList.add('light');
+      } else {
+        // Logged in: restore saved theme preference
+        const savedTheme = localStorage.getItem('tradzen-theme') || 'dark';
+        root.classList.remove('light', 'dark');
+        root.classList.add(savedTheme);
+      }
+    }
+  }, [currentUser, loading]);
+
   // Periodic check for weekly review todo (every hour)
   React.useEffect(() => {
     if (!currentUser || loading) return;
@@ -539,11 +556,7 @@ function AppWithPricingCheck() {
     
     // Welcome flow complete, show pricing
     console.log('🎯 Welcome complete - showing pricing page');
-    return (
-      <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
-        <PricingPage />
-      </div>
-    );
+    return <PricingPage />;
   }
   
   // Normal app flow
