@@ -123,8 +123,18 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
           
           // Preserve existing XP from state - do NOT overwrite with profile doc's stale xp field
           // XP is managed exclusively by the xp/status subscription below
+          const safeStats = (data as any).stats ?? {
+            totalTrades: 0,
+            totalQuests: 0,
+            totalWellnessActivities: 0,
+            totalReflections: 0,
+            currentStreak: 0,
+            longestStreak: 0,
+          };
+
           const nextProfile: UserProfile = {
             ...(data as any),
+            stats: safeStats,
             joinedAt: (data as any).joinedAt ? new Date((data as any).joinedAt) : new Date(),
             xp: current?.xp || {
               total: 0,
@@ -396,12 +406,21 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
       new Date(a.createdAt).toDateString() === yesterday
     );
     
+    const baseStats = profile.stats || {
+      totalTrades: 0,
+      totalQuests: 0,
+      totalWellnessActivities: 0,
+      totalReflections: 0,
+      currentStreak: 0,
+      longestStreak: 0,
+    };
+
     let currentStreak = 0;
     if (todayActivities.length > 0) {
       currentStreak = 1;
       if (yesterdayActivities.length > 0) {
         // Could implement more sophisticated streak calculation here
-        currentStreak = Math.min(profile.stats.currentStreak + 1, 365);
+          currentStreak = Math.min(baseStats.currentStreak + 1, 365);
       }
     }
 
@@ -414,7 +433,7 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
           totalWellnessActivities: wellnessActivities.length,
           totalReflections: reflections.length,
           currentStreak,
-          longestStreak: Math.max(profile.stats.longestStreak, currentStreak),
+          longestStreak: Math.max(baseStats.longestStreak, currentStreak),
         },
       },
     });
@@ -513,8 +532,18 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
         cachedSeasonXp: cachedXp.seasonXp,
       });
       
+      const safeStats = (data as any).stats ?? {
+        totalTrades: 0,
+        totalQuests: 0,
+        totalWellnessActivities: 0,
+        totalReflections: 0,
+        currentStreak: 0,
+        longestStreak: 0,
+      };
+
       const profile: UserProfile = {
         ...data,
+        stats: safeStats,
         joinedAt: (data as any).joinedAt ? new Date((data as any).joinedAt) : new Date(),
         xp: cachedXp  // Use cached or default, will be updated by XP subscription
       } as UserProfile;
