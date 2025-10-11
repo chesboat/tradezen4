@@ -22,13 +22,14 @@ export function SignupForm() {
     setIsLoading(true);
 
     try {
+      // Mark as new sign-up BEFORE creating account
+      localStorage.setItem('just_signed_up', 'true');
+      
       await signUp(email, password);
       toast.success('Account created successfully!');
       
       // 🍎 APPLE-STYLE: Redirect to pricing to start free trial
-      setTimeout(() => {
-        window.location.href = '/?view=pricing';
-      }, 500);
+      window.location.href = '/?view=pricing';
     } catch (error) {
       toast.error('Failed to create account. Please try again.');
       console.error('Signup error:', error);
@@ -40,14 +41,15 @@ export function SignupForm() {
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
+      // Mark as new sign-up
+      localStorage.setItem('just_signed_up', 'true');
+      
       const result = await signInWithGoogle();
       const displayName = result.user.displayName || result.user.email?.split('@')[0] || 'User';
       toast.success(`Welcome, ${displayName}! Your account has been created.`);
       
       // 🍎 APPLE-STYLE: Redirect to pricing to start free trial
-      setTimeout(() => {
-        window.location.href = '/?view=pricing';
-      }, 500);
+      window.location.href = '/?view=pricing';
     } catch (error: any) {
       const message = error.message || 'Failed to sign up with Google.';
       toast.error(message);
@@ -60,14 +62,15 @@ export function SignupForm() {
   const handleAppleSignIn = async () => {
     setAppleLoading(true);
     try {
+      // Mark as new sign-up
+      localStorage.setItem('just_signed_up', 'true');
+      
       const result = await signInWithApple();
       const displayName = result.user.displayName || result.user.email?.split('@')[0] || 'User';
       toast.success(`Welcome, ${displayName}! Your account has been created.`);
       
       // 🍎 APPLE-STYLE: Redirect to pricing to start free trial
-      setTimeout(() => {
-        window.location.href = '/?view=pricing';
-      }, 500);
+      window.location.href = '/?view=pricing';
     } catch (error: any) {
       const message = error.message || 'Failed to sign up with Apple.';
       toast.error(message);

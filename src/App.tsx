@@ -422,8 +422,16 @@ function AppContent() {
     );
   }
 
-  // 🍎 WELCOME FLOW - DISABLED (causing infinite loops)
-  // TODO: Implement simpler approach without React state loops
+  // 🍎 APPLE-STYLE: Check if user just signed up and redirect to pricing
+  React.useEffect(() => {
+    if (!loading && currentUser) {
+      const justSignedUp = localStorage.getItem('just_signed_up');
+      if (justSignedUp === 'true') {
+        localStorage.removeItem('just_signed_up');
+        setCurrentView('pricing');
+      }
+    }
+  }, [loading, currentUser, setCurrentView]);
 
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
