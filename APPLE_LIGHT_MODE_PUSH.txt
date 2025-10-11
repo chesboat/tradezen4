@@ -1,0 +1,36 @@
+git add -A
+
+git commit -m "Apple-style light mode: Marketing & conversion pages
+
+🍎 THE APPLE WAY - Jon Ive & Tim Cook's recommendation:
+\"Light mode for selling. Dark mode for using.\"
+
+CONVERSION PAGES (Forced Light Mode):
+✅ WelcomeFlow - Beautiful light gradients, blue accent
+✅ PricingPage - Clean white cards, premium blue gradient
+   - FIXED: White-on-white button bug (Premium now blue gradient)
+   - Trading Health hero cards with semantic colors
+   - Tiered features with proper hierarchy
+
+DESIGN DECISIONS:
+- Background: White → Gray-50 → Gray-100 gradient (subtle depth)
+- Primary CTA: Blue-600 with hover:Blue-700 (Apple blue)
+- Cards: White with gray-200 borders + subtle shadows
+- Text: Gray-900 (headings) / Gray-600-700 (body)
+- Premium card: Blue-600 → Blue-700 gradient (stands out)
+- Accent: Blue-600 throughout (Apple's signature blue)
+
+WHY:
+- Light mode = Trust, clarity, professionalism
+- Perfect for financial decisions (pricing/checkout)
+- Matches Apple.com's entire storefront approach
+- App itself still respects system preference
+
+RESULT:
+- No more white-on-white button issues
+- Clear visual hierarchy
+- Premium conversion machine
+- Apple-quality aesthetics"
+
+git push
+

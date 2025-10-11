@@ -37,7 +37,7 @@ export const WelcomeFlow = ({ onComplete }: WelcomeFlowProps) => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-gray-100 text-gray-900 flex items-center justify-center p-4">
       <AnimatePresence mode="wait">
         <motion.div
           key={currentScreen}
@@ -57,10 +57,10 @@ export const WelcomeFlow = ({ onComplete }: WelcomeFlowProps) => {
             key={index}
             className={`h-1.5 rounded-full transition-all duration-300 ${
               index === currentScreen
-                ? 'w-8 bg-primary'
+                ? 'w-8 bg-blue-600'
                 : index < currentScreen
-                ? 'w-1.5 bg-primary/50'
-                : 'w-1.5 bg-muted'
+                ? 'w-1.5 bg-blue-400'
+                : 'w-1.5 bg-gray-300'
             }`}
           />
         ))}
@@ -79,11 +79,11 @@ const WelcomeScreen = () => {
         transition={{ delay: 0.2, duration: 0.6 }}
         className="mb-8"
       >
-        <div className="text-6xl font-bold mb-2 bg-gradient-to-r from-primary via-primary/80 to-primary bg-clip-text text-transparent">
+        <div className="text-6xl font-bold mb-2 bg-gradient-to-r from-blue-600 via-blue-500 to-blue-600 bg-clip-text text-transparent">
           Welcome to
         </div>
-        <div className="text-7xl font-bold tracking-tight">Refine</div>
-        <div className="text-lg text-muted-foreground mt-2 font-light">
+        <div className="text-7xl font-bold tracking-tight text-gray-900">Refine</div>
+        <div className="text-lg text-gray-600 mt-2 font-light">
           Your Trading Journal
         </div>
       </motion.div>
@@ -101,7 +101,7 @@ const WelcomeScreen = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1, duration: 0.8 }}
-        className="text-xl text-muted-foreground"
+        className="text-xl text-gray-600"
       >
         Close all 3 rings.
         <br />
@@ -116,8 +116,8 @@ const TradingHealthScreen = ({ onContinue }: { onContinue: () => void }) => {
   return (
     <div className="max-w-4xl mx-auto text-center">
       <div className="mb-8">
-        <h2 className="text-4xl font-bold mb-3">Your Trading Health at a Glance</h2>
-        <p className="text-lg text-muted-foreground">
+        <h2 className="text-4xl font-bold mb-3 text-gray-900">Your Trading Health at a Glance</h2>
+        <p className="text-lg text-gray-600">
           Track your performance across the 3 metrics that matter most
         </p>
       </div>
@@ -157,12 +157,12 @@ const TradingHealthScreen = ({ onContinue }: { onContinue: () => void }) => {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.6 }}
-          className="flex items-start gap-3 bg-muted/30 rounded-xl p-4"
+          className="flex items-start gap-3 bg-gray-100 rounded-xl p-4"
         >
-          <Check className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+          <Check className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
           <div className="text-left">
-            <div className="font-medium">30-Day Rolling Window</div>
-            <div className="text-sm text-muted-foreground">
+            <div className="font-medium text-gray-900">30-Day Rolling Window</div>
+            <div className="text-sm text-gray-600">
               Always improvable—every day is a fresh start
             </div>
           </div>
@@ -172,12 +172,12 @@ const TradingHealthScreen = ({ onContinue }: { onContinue: () => void }) => {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.7 }}
-          className="flex items-start gap-3 bg-muted/30 rounded-xl p-4"
+          className="flex items-start gap-3 bg-gray-100 rounded-xl p-4"
         >
-          <Check className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+          <Check className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
           <div className="text-left">
-            <div className="font-medium">Build Streaks & Unlock Badges</div>
-            <div className="text-sm text-muted-foreground">
+            <div className="font-medium text-gray-900">Build Streaks & Unlock Badges</div>
+            <div className="text-sm text-gray-600">
               Close all 3 rings daily to build your streak
             </div>
           </div>
@@ -187,12 +187,12 @@ const TradingHealthScreen = ({ onContinue }: { onContinue: () => void }) => {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.8 }}
-          className="flex items-start gap-3 bg-muted/30 rounded-xl p-4"
+          className="flex items-start gap-3 bg-gray-100 rounded-xl p-4"
         >
-          <Check className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+          <Check className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
           <div className="text-left">
-            <div className="font-medium">Automatic Tracking</div>
-            <div className="text-sm text-muted-foreground">
+            <div className="font-medium text-gray-900">Automatic Tracking</div>
+            <div className="text-sm text-gray-600">
               No manual work—just trade and journal
             </div>
           </div>
@@ -204,7 +204,7 @@ const TradingHealthScreen = ({ onContinue }: { onContinue: () => void }) => {
         animate={{ opacity: 1 }}
         transition={{ delay: 1 }}
         onClick={onContinue}
-        className="px-8 py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:opacity-90 transition-opacity inline-flex items-center gap-2"
+        className="px-8 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors inline-flex items-center gap-2 shadow-sm"
       >
         Continue
         <ArrowRight className="w-4 h-4" />
@@ -219,13 +219,13 @@ const IntelligenceScreen = ({ onContinue }: { onContinue: () => void }) => {
     <div className="max-w-4xl mx-auto text-center">
       <div className="mb-8">
         <div className="inline-flex items-center gap-2 mb-4">
-          <Sparkles className="w-6 h-6 text-primary" />
-          <span className="text-sm font-medium text-primary uppercase tracking-wide">
+          <Sparkles className="w-6 h-6 text-blue-600" />
+          <span className="text-sm font-medium text-blue-600 uppercase tracking-wide">
             Premium Feature
           </span>
         </div>
-        <h2 className="text-4xl font-bold mb-3">Refine Learns Your Edge</h2>
-        <p className="text-lg text-muted-foreground">
+        <h2 className="text-4xl font-bold mb-3 text-gray-900">Refine Learns Your Edge</h2>
+        <p className="text-lg text-gray-600">
           Discover patterns you didn't know existed
         </p>
       </div>
@@ -236,14 +236,14 @@ const IntelligenceScreen = ({ onContinue }: { onContinue: () => void }) => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl p-6 text-left border border-primary/20"
+          className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-2xl p-6 text-left border border-blue-200"
         >
           <div className="flex items-start gap-4">
             <div className="text-3xl">💰</div>
             <div>
-              <div className="font-semibold mb-1">Your Most Profitable Setup</div>
-              <div className="text-muted-foreground">
-                "You're <span className="text-foreground font-medium">34% more profitable</span> trading momentum setups before 11 AM. Consider trading more of these."
+              <div className="font-semibold mb-1 text-gray-900">Your Most Profitable Setup</div>
+              <div className="text-gray-700">
+                "You're <span className="text-gray-900 font-medium">34% more profitable</span> trading momentum setups before 11 AM. Consider trading more of these."
               </div>
             </div>
           </div>
@@ -253,14 +253,14 @@ const IntelligenceScreen = ({ onContinue }: { onContinue: () => void }) => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="bg-gradient-to-br from-amber-500/10 to-amber-500/5 rounded-2xl p-6 text-left border border-amber-500/20"
+          className="bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-2xl p-6 text-left border border-amber-200"
         >
           <div className="flex items-start gap-4">
             <div className="text-3xl">🎯</div>
             <div>
-              <div className="font-semibold mb-1">Consistency Insight</div>
-              <div className="text-muted-foreground">
-                "Your rule adherence drops to <span className="text-foreground font-medium">62% after 2 PM</span>. Take a break or stop trading earlier."
+              <div className="font-semibold mb-1 text-gray-900">Consistency Insight</div>
+              <div className="text-gray-700">
+                "Your rule adherence drops to <span className="text-gray-900 font-medium">62% after 2 PM</span>. Take a break or stop trading earlier."
               </div>
             </div>
           </div>
@@ -270,14 +270,14 @@ const IntelligenceScreen = ({ onContinue }: { onContinue: () => void }) => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
-          className="bg-gradient-to-br from-red-500/10 to-red-500/5 rounded-2xl p-6 text-left border border-red-500/20"
+          className="bg-gradient-to-br from-red-50 to-red-100/50 rounded-2xl p-6 text-left border border-red-200"
         >
           <div className="flex items-start gap-4">
             <div className="text-3xl">⚠️</div>
             <div>
-              <div className="font-semibold mb-1">Risk Control Alert</div>
-              <div className="text-muted-foreground">
-                "You take <span className="text-foreground font-medium">2.3x larger positions</span> after losing trades. Set a max position size rule."
+              <div className="font-semibold mb-1 text-gray-900">Risk Control Alert</div>
+              <div className="text-gray-700">
+                "You take <span className="text-gray-900 font-medium">2.3x larger positions</span> after losing trades. Set a max position size rule."
               </div>
             </div>
           </div>
@@ -289,10 +289,10 @@ const IntelligenceScreen = ({ onContinue }: { onContinue: () => void }) => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.8 }}
-          className="bg-muted/30 rounded-xl p-6 text-left"
+          className="bg-gray-100 rounded-xl p-6 text-left"
         >
-          <div className="font-semibold mb-2">📊 Setup Analytics</div>
-          <div className="text-sm text-muted-foreground">
+          <div className="font-semibold mb-2 text-gray-900">📊 Setup Analytics</div>
+          <div className="text-sm text-gray-600">
             Which setups are actually profitable? Get the data.
           </div>
         </motion.div>
@@ -301,10 +301,10 @@ const IntelligenceScreen = ({ onContinue }: { onContinue: () => void }) => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.9 }}
-          className="bg-muted/30 rounded-xl p-6 text-left"
+          className="bg-gray-100 rounded-xl p-6 text-left"
         >
-          <div className="font-semibold mb-2">⏰ Time Intelligence</div>
-          <div className="text-sm text-muted-foreground">
+          <div className="font-semibold mb-2 text-gray-900">⏰ Time Intelligence</div>
+          <div className="text-sm text-gray-600">
             Your best (and worst) trading hours, automatically tracked.
           </div>
         </motion.div>
@@ -315,7 +315,7 @@ const IntelligenceScreen = ({ onContinue }: { onContinue: () => void }) => {
         animate={{ opacity: 1 }}
         transition={{ delay: 1.1 }}
         onClick={onContinue}
-        className="px-8 py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:opacity-90 transition-opacity inline-flex items-center gap-2"
+        className="px-8 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors inline-flex items-center gap-2 shadow-sm"
       >
         See Plans & Pricing
         <ArrowRight className="w-4 h-4" />
@@ -441,13 +441,13 @@ const RingCard = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay }}
-      className="bg-muted/30 rounded-2xl p-6 text-center"
+      className="bg-white rounded-2xl p-6 text-center border border-gray-200 shadow-sm"
     >
       <div className="text-4xl mb-3">{emoji}</div>
-      <div className="text-xl font-bold mb-2">{title}</div>
-      <div className="text-sm text-muted-foreground mb-3">{description}</div>
-      <div className="text-xs font-medium text-primary mb-1">{metric}</div>
-      <div className="text-xs text-muted-foreground">{detail}</div>
+      <div className="text-xl font-bold mb-2 text-gray-900">{title}</div>
+      <div className="text-sm text-gray-600 mb-3">{description}</div>
+      <div className="text-xs font-medium text-blue-600 mb-1">{metric}</div>
+      <div className="text-xs text-gray-500">{detail}</div>
     </motion.div>
   );
 };

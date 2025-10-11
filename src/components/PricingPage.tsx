@@ -54,23 +54,23 @@ export const PricingPage = () => {
   const savings = billingPeriod === 'annual' ? 26 : 0;
 
   return (
-    <div className="min-h-screen bg-[var(--background-primary)] text-[var(--text-primary)] py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-gray-100 text-gray-900 py-12 px-4">
       <div className="max-w-6xl mx-auto">
         {/* Hero Section - Trading Health Focus */}
         <div className="text-center mb-16">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-2 mb-4 bg-[var(--accent-color)]/10 px-4 py-2 rounded-full"
+            className="inline-flex items-center gap-2 mb-4 bg-blue-100 px-4 py-2 rounded-full"
           >
-            <Sparkles className="w-4 h-4 text-[var(--accent-color)]" />
-            <span className="text-sm font-medium text-[var(--accent-color)]">YOUR TRADING HEALTH PLAN</span>
+            <Sparkles className="w-4 h-4 text-blue-600" />
+            <span className="text-sm font-medium text-blue-600">YOUR TRADING HEALTH PLAN</span>
           </motion.div>
           
-          <h1 className="text-5xl font-bold mb-4">
+          <h1 className="text-5xl font-bold mb-4 text-gray-900">
             Choose Your Plan
           </h1>
-          <p className="text-xl text-[var(--text-secondary)] mb-12">
+          <p className="text-xl text-gray-600 mb-12">
             Track your Edge, Consistency & Risk Control
           </p>
 
@@ -83,8 +83,8 @@ export const PricingPage = () => {
               className="bg-gradient-to-br from-orange-500/10 to-orange-500/5 rounded-2xl p-6 border border-orange-500/20"
             >
               <div className="text-4xl mb-3">💰</div>
-              <div className="font-bold text-lg mb-1">Edge</div>
-              <div className="text-sm text-[var(--text-secondary)]">Are you profitable?</div>
+              <div className="font-bold text-lg mb-1 text-gray-900">Edge</div>
+              <div className="text-sm text-gray-600">Are you profitable?</div>
             </motion.div>
 
             <motion.div
@@ -94,8 +94,8 @@ export const PricingPage = () => {
               className="bg-gradient-to-br from-green-500/10 to-green-500/5 rounded-2xl p-6 border border-green-500/20"
             >
               <div className="text-4xl mb-3">🎯</div>
-              <div className="font-bold text-lg mb-1">Consistency</div>
-              <div className="text-sm text-[var(--text-secondary)]">Following your rules?</div>
+              <div className="font-bold text-lg mb-1 text-gray-900">Consistency</div>
+              <div className="text-sm text-gray-600">Following your rules?</div>
             </motion.div>
 
             <motion.div
@@ -105,23 +105,23 @@ export const PricingPage = () => {
               className="bg-gradient-to-br from-cyan-500/10 to-cyan-500/5 rounded-2xl p-6 border border-cyan-500/20"
             >
               <div className="text-4xl mb-3">⚠️</div>
-              <div className="font-bold text-lg mb-1">Risk Control</div>
-              <div className="text-sm text-[var(--text-secondary)]">Protecting your capital?</div>
+              <div className="font-bold text-lg mb-1 text-gray-900">Risk Control</div>
+              <div className="text-sm text-gray-600">Protecting your capital?</div>
             </motion.div>
           </div>
 
-          <p className="text-base text-[var(--text-secondary)] mb-8">
+          <p className="text-base text-gray-600 mb-8">
             ✨ 7-day free trial • Cancel anytime • No credit card required for trial
           </p>
 
           {/* Billing Toggle */}
-          <div className="inline-flex items-center gap-4 bg-[var(--background-secondary)] rounded-xl p-1.5">
+          <div className="inline-flex items-center gap-4 bg-gray-100 rounded-xl p-1.5 shadow-sm">
             <button
               onClick={() => setBillingPeriod('monthly')}
               className={`px-6 py-2 rounded-lg font-medium transition-all ${
                 billingPeriod === 'monthly'
-                  ? 'bg-[var(--accent-color)] text-white'
-                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
               }`}
             >
               Monthly
@@ -130,13 +130,13 @@ export const PricingPage = () => {
               onClick={() => setBillingPeriod('annual')}
               className={`px-6 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
                 billingPeriod === 'annual'
-                  ? 'bg-[var(--accent-color)] text-white'
-                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
               }`}
             >
               Annual
               {billingPeriod === 'annual' && (
-                <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">
+                <span className="text-xs bg-white/30 px-2 py-0.5 rounded-full">
                   Save {savings}%
                 </span>
               )}
@@ -151,22 +151,22 @@ export const PricingPage = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="bg-[var(--background-secondary)] rounded-2xl p-8 border border-[var(--border-primary)]"
+            className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm"
           >
             <div className="mb-6">
-              <h3 className="text-2xl font-bold mb-2">Basic</h3>
-              <p className="text-[var(--text-secondary)]">
+              <h3 className="text-2xl font-bold mb-2 text-gray-900">Basic</h3>
+              <p className="text-gray-600">
                 For serious traders
               </p>
             </div>
 
             <div className="mb-6">
               <div className="flex items-baseline gap-2">
-                <span className="text-5xl font-bold">${getPrice('basic')}</span>
-                <span className="text-[var(--text-secondary)]">/month</span>
+                <span className="text-5xl font-bold text-gray-900">${getPrice('basic')}</span>
+                <span className="text-gray-600">/month</span>
               </div>
               {billingPeriod === 'annual' && (
-                <p className="text-sm text-[var(--text-secondary)] mt-2">
+                <p className="text-sm text-gray-600 mt-2">
                   ${getTotal('basic')} billed annually
                 </p>
               )}
@@ -175,7 +175,7 @@ export const PricingPage = () => {
             <button
               onClick={() => handleSubscribe('basic')}
               disabled={loadingPlan === 'basic'}
-              className="w-full py-3 px-6 bg-[var(--accent-color)] text-white rounded-xl font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed mb-6"
+              className="w-full py-3 px-6 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-6 shadow-sm"
             >
               {loadingPlan === 'basic' ? 'Loading...' : 'Start Free Trial'}
             </button>
@@ -185,21 +185,21 @@ export const PricingPage = () => {
               {/* Tier 1: Trading Health */}
               <div>
                 <div className="flex items-center gap-2 mb-3">
-                  <TrendingUp className="w-4 h-4 text-[var(--accent-color)]" />
-                  <span className="font-semibold text-sm">Trading Health</span>
+                  <TrendingUp className="w-4 h-4 text-blue-600" />
+                  <span className="font-semibold text-sm text-gray-900">Trading Health</span>
                 </div>
                 <div className="space-y-2 ml-6">
                   <div className="flex items-start gap-2">
-                    <Check className="w-4 h-4 text-[var(--accent-color)] flex-shrink-0 mt-0.5" />
-                    <span className="text-sm text-[var(--text-secondary)]">7-day trends</span>
+                    <Check className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-gray-700">7-day trends</span>
                   </div>
                   <div className="flex items-start gap-2">
-                    <Check className="w-4 h-4 text-[var(--accent-color)] flex-shrink-0 mt-0.5" />
-                    <span className="text-sm text-[var(--text-secondary)]">Edge, Consistency & Risk rings</span>
+                    <Check className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-gray-700">Edge, Consistency & Risk rings</span>
                   </div>
                   <div className="flex items-start gap-2">
-                    <Check className="w-4 h-4 text-[var(--accent-color)] flex-shrink-0 mt-0.5" />
-                    <span className="text-sm text-[var(--text-secondary)]">Basic insights (50/month)</span>
+                    <Check className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-gray-700">Basic insights (50/month)</span>
                   </div>
                 </div>
               </div>
@@ -207,29 +207,29 @@ export const PricingPage = () => {
               {/* Tier 2: Core Features */}
               <div>
                 <div className="flex items-center gap-2 mb-3">
-                  <BarChart3 className="w-4 h-4 text-[var(--accent-color)]" />
-                  <span className="font-semibold text-sm">Included</span>
+                  <BarChart3 className="w-4 h-4 text-blue-600" />
+                  <span className="font-semibold text-sm text-gray-900">Included</span>
                 </div>
                 <div className="space-y-2 ml-6">
                   <div className="flex items-start gap-2">
-                    <Check className="w-4 h-4 text-[var(--accent-color)] flex-shrink-0 mt-0.5" />
-                    <span className="text-sm text-[var(--text-secondary)]">Unlimited trades & notes</span>
+                    <Check className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-gray-700">Unlimited trades & notes</span>
                   </div>
                   <div className="flex items-start gap-2">
-                    <Check className="w-4 h-4 text-[var(--accent-color)] flex-shrink-0 mt-0.5" />
-                    <span className="text-sm text-[var(--text-secondary)]">Up to 3 accounts</span>
+                    <Check className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-gray-700">Up to 3 accounts</span>
                   </div>
                   <div className="flex items-start gap-2">
-                    <Check className="w-4 h-4 text-[var(--accent-color)] flex-shrink-0 mt-0.5" />
-                    <span className="text-sm text-[var(--text-secondary)]">Advanced analytics</span>
+                    <Check className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-gray-700">Advanced analytics</span>
                   </div>
                   <div className="flex items-start gap-2">
-                    <Check className="w-4 h-4 text-[var(--accent-color)] flex-shrink-0 mt-0.5" />
-                    <span className="text-sm text-[var(--text-secondary)]">Public sharing</span>
+                    <Check className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-gray-700">Public sharing</span>
                   </div>
                   <div className="flex items-start gap-2">
-                    <Check className="w-4 h-4 text-[var(--accent-color)] flex-shrink-0 mt-0.5" />
-                    <span className="text-sm text-[var(--text-secondary)]">All accent colors</span>
+                    <Check className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-gray-700">All accent colors</span>
                   </div>
                 </div>
               </div>
@@ -241,7 +241,7 @@ export const PricingPage = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
-            className="bg-[var(--accent-color)] text-white rounded-2xl p-8 relative overflow-hidden"
+            className="bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-2xl p-8 relative overflow-hidden shadow-lg"
           >
             {/* Popular Badge */}
             <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-medium">
@@ -250,7 +250,7 @@ export const PricingPage = () => {
 
             <div className="mb-6">
               <h3 className="text-2xl font-bold mb-2">Premium</h3>
-              <p className="text-white/80">
+              <p className="text-white/90">
                 For professional traders
               </p>
             </div>
@@ -258,10 +258,10 @@ export const PricingPage = () => {
             <div className="mb-6">
               <div className="flex items-baseline gap-2">
                 <span className="text-5xl font-bold">${getPrice('premium')}</span>
-                <span className="text-white/80">/month</span>
+                <span className="text-white/90">/month</span>
               </div>
               {billingPeriod === 'annual' && (
-                <p className="text-sm text-white/80 mt-2">
+                <p className="text-sm text-white/90 mt-2">
                   ${getTotal('premium')} billed annually
                 </p>
               )}
@@ -270,7 +270,7 @@ export const PricingPage = () => {
             <button
               onClick={() => handleSubscribe('premium')}
               disabled={loadingPlan === 'premium'}
-              className="w-full py-3 px-6 bg-white text-[var(--accent-color)] rounded-xl font-medium hover:bg-white/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-6 flex items-center justify-center gap-2"
+              className="w-full py-3 px-6 bg-white text-blue-600 rounded-xl font-medium hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-6 flex items-center justify-center gap-2 shadow-sm"
             >
               <Zap className="w-4 h-4" />
               {loadingPlan === 'premium' ? 'Loading...' : 'Start Free Trial'}
@@ -377,38 +377,38 @@ export const PricingPage = () => {
         >
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2 mb-3">
-              <Sparkles className="w-5 h-5 text-[var(--accent-color)]" />
-              <span className="text-sm font-medium text-[var(--accent-color)] uppercase tracking-wide">
+              <Sparkles className="w-5 h-5 text-blue-600" />
+              <span className="text-sm font-medium text-blue-600 uppercase tracking-wide">
                 Premium Example
               </span>
             </div>
-            <h3 className="text-2xl font-bold mb-2">Get Insights Like These</h3>
-            <p className="text-[var(--text-secondary)]">
+            <h3 className="text-2xl font-bold mb-2 text-gray-900">Get Insights Like These</h3>
+            <p className="text-gray-600">
               Discover your edge with personalized "For You" suggestions
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-4">
-            <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl p-4 border border-primary/20">
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl p-4 border border-blue-200 shadow-sm">
               <div className="text-2xl mb-2">💰</div>
-              <div className="text-sm font-medium mb-1">Most Profitable</div>
-              <div className="text-xs text-[var(--text-secondary)]">
+              <div className="text-sm font-medium mb-1 text-gray-900">Most Profitable</div>
+              <div className="text-xs text-gray-700">
                 "You're 34% more profitable with momentum setups before 11 AM"
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-amber-500/10 to-amber-500/5 rounded-xl p-4 border border-amber-500/20">
+            <div className="bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-xl p-4 border border-amber-200 shadow-sm">
               <div className="text-2xl mb-2">🎯</div>
-              <div className="text-sm font-medium mb-1">Consistency Alert</div>
-              <div className="text-xs text-[var(--text-secondary)]">
+              <div className="text-sm font-medium mb-1 text-gray-900">Consistency Alert</div>
+              <div className="text-xs text-gray-700">
                 "Your rule adherence drops to 62% after 2 PM"
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-red-500/10 to-red-500/5 rounded-xl p-4 border border-red-500/20">
+            <div className="bg-gradient-to-br from-red-50 to-red-100/50 rounded-xl p-4 border border-red-200 shadow-sm">
               <div className="text-2xl mb-2">⚠️</div>
-              <div className="text-sm font-medium mb-1">Risk Pattern</div>
-              <div className="text-xs text-[var(--text-secondary)]">
+              <div className="text-sm font-medium mb-1 text-gray-900">Risk Pattern</div>
+              <div className="text-xs text-gray-700">
                 "You take 2.3x larger positions after losses"
               </div>
             </div>
@@ -416,7 +416,7 @@ export const PricingPage = () => {
         </motion.div>
 
         {/* FAQ or Trust Indicators */}
-        <div className="text-center mt-16 text-sm text-[var(--text-secondary)]">
+        <div className="text-center mt-16 text-sm text-gray-600">
           <p>🔒 Secure payment powered by Stripe</p>
           <p className="mt-2">Cancel anytime • No questions asked • Full refund within 7 days</p>
         </div>
