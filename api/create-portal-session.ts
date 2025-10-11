@@ -37,12 +37,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Get user data from Firestore (check userProfiles first, then users)
     let customerId: string | undefined;
     
+    console.log('🔍 Looking up customer for userId:', userId);
+    
     // Check userProfiles collection first
     const userProfileRef = db.collection('userProfiles').doc(userId);
     const userProfileDoc = await userProfileRef.get();
     
     if (userProfileDoc.exists) {
-      customerId = userProfileDoc.data()?.stripeCustomerId;
+      const data = userProfileDoc.data();
+      customerId = data?.stripeCustomerId;
+      console.log('✅ Found userProfile:', { 
+        hasCustomerId: !!customerId, 
+        subscriptionTier: data?.subscriptionTier,
+        subscriptionStatus: data?.subscriptionStatus 
+      });
+    } else {
+      console.log('⚠️ No userProfile found');
     }
     
     // Fallback to users collection if not found
@@ -51,14 +61,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const userDoc = await userRef.get();
       if (userDoc.exists) {
         customerId = userDoc.data()?.stripeCustomerId;
+        console.log('✅ Found customer ID in users collection:', !!customerId);
+      } else {
+        console.log('⚠️ No user doc found in users collection');
       }
     }
 
     if (!customerId) {
+      console.error('❌ No Stripe customer ID found for user:', userId);
       return res.status(400).json({ 
-        message: 'No subscription found. Please start your free trial first.' 
+        message: 'No subscription found. Please choose a plan and complete checkout first.' 
       });
     }
+    
+    console.log('🎫 Creating portal session for customer:', customerId);
 
     const appUrl = process.env.VITE_APP_URL || 'http://localhost:5173';
 

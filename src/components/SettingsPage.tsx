@@ -121,11 +121,24 @@ export const SettingsPage: React.FC = () => {
   const handleManageSubscription = async () => {
     if (!currentUser) return;
     
+    // Check if user has a Stripe customer ID (has completed checkout)
+    if (!profile?.stripeCustomerId) {
+      toast.error('Please complete checkout first to manage your subscription', { id: 'portal' });
+      setCurrentView('pricing');
+      return;
+    }
+    
     try {
       toast.loading('Opening subscription management...', { id: 'portal' });
       await redirectToCustomerPortal(currentUser.uid);
     } catch (error: any) {
-      toast.error(error.message || 'Failed to open subscription portal', { id: 'portal' });
+      console.error('Portal error:', error);
+      if (error.message?.includes('No subscription found')) {
+        toast.error('Please choose a plan first', { id: 'portal' });
+        setCurrentView('pricing');
+      } else {
+        toast.error(error.message || 'Failed to open subscription portal', { id: 'portal' });
+      }
     }
   };
 

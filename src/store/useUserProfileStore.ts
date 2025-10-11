@@ -489,18 +489,39 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
         level: profile.xp?.level,
         prestige: profile.xp?.prestige,
       });
+      
       const profileDoc = doc(db, 'userProfiles', profile.id);
-      // Avoid writing legacy fields; write xp in xp/status listener path instead
-      await setDoc(profileDoc, {
+      
+      // Sanitize data before writing
+      const dataToWrite: any = {
         id: profile.id,
-        displayName: profile.displayName,
-        email: profile.email,
-        joinedAt: profile.joinedAt instanceof Date ? profile.joinedAt.toISOString() : profile.joinedAt,
-        preferences: profile.preferences,
-        stats: profile.stats,
-        // updatedAt last to avoid duplicate keys
+        displayName: profile.displayName || '',
+        email: profile.email || '',
+        stats: profile.stats || {
+          totalTrades: 0,
+          totalQuests: 0,
+          totalWellnessActivities: 0,
+          totalReflections: 0,
+          currentStreak: 0,
+          longestStreak: 0,
+        },
         updatedAt: serverTimestamp(),
-      }, { merge: true });
+      };
+      
+      // Only add joinedAt if it's valid
+      if (profile.joinedAt) {
+        dataToWrite.joinedAt = profile.joinedAt instanceof Date 
+          ? profile.joinedAt.toISOString() 
+          : profile.joinedAt;
+      }
+      
+      // Only add preferences if it exists and is an object
+      if (profile.preferences && typeof profile.preferences === 'object') {
+        dataToWrite.preferences = profile.preferences;
+      }
+      
+      // Avoid writing legacy fields; write xp in xp/status listener path instead
+      await setDoc(profileDoc, dataToWrite, { merge: true });
       console.log('Profile synced to Firestore');
     } catch (error) {
       console.error('Failed to sync profile to Firestore:', error);
