@@ -501,14 +501,14 @@ function App() {
     }
     
     // Subscription success/cancel routes (accessible without full auth)
-    if (window.location.pathname === '/subscription/success') {
+    if (window.location.pathname.startsWith('/subscription/success')) {
       return (
         <AuthProvider>
           <SubscriptionSuccess />
         </AuthProvider>
       );
     }
-    if (window.location.pathname === '/subscription/canceled') {
+    if (window.location.pathname.startsWith('/subscription/canceled')) {
       return (
         <AuthProvider>
           <SubscriptionCanceled />
