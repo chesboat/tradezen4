@@ -129,6 +129,12 @@ function AppContent() {
   React.useEffect(() => {
     const initializeData = async () => {
       if (!loading && currentUser) {
+        // 🍎 APPLE-STYLE: Skip initialization if user needs to see pricing first
+        if (sessionStorage.getItem('show_pricing_after_auth') === 'true') {
+          console.log('⏸️ Skipping initialization - user needs to see pricing page first');
+          return;
+        }
+        
         if (initializedUidRef.current === currentUser.uid && !hydratingRef.current) {
           return; // prevent duplicate init for same user
         }
