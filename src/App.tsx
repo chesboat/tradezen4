@@ -319,7 +319,21 @@ function AppContent() {
       case 'experiments':
         return <HabitExperimentView />;
       case 'pricing':
-        return <PricingPage />;
+        try {
+          return <PricingPage />;
+        } catch (error) {
+          console.error('Error rendering pricing page:', error);
+          return (
+            <div className="min-h-screen flex items-center justify-center">
+              <div className="text-center">
+                <h2 className="text-xl font-bold mb-4">Loading pricing...</h2>
+                <button onClick={() => setCurrentView('dashboard')} className="px-4 py-2 bg-primary text-white rounded">
+                  Go to Dashboard
+                </button>
+              </div>
+            </div>
+          );
+        }
       case 'subscription-success':
         return <SubscriptionSuccess />;
       case 'subscription-canceled':
@@ -411,19 +425,27 @@ function AppContent() {
   // Redirect new users to pricing page to start their free trial
   // This creates a clear path: Sign Up → Choose Plan → Start Trial → Explore App
   React.useEffect(() => {
-    if (currentUser && profile) {
-      // Check if user is brand new (no subscription info at all)
-      const isNewUser = !profile.subscriptionTier && !profile.trialEndsAt && !profile.trialStartedAt;
-      
-      // Also redirect if they're on a special path (subscription success/canceled)
-      const isSubscriptionPath = window.location.pathname.startsWith('/subscription/');
-      
-      if (isNewUser && !isSubscriptionPath && currentView !== 'pricing') {
-        console.log('🎯 New user detected - redirecting to pricing for trial');
-        setCurrentView('pricing');
+    // Wait for both user AND profile to be fully loaded
+    if (!loading && currentUser && profile) {
+      try {
+        // Check if user is brand new (no subscription info at all)
+        const isNewUser = !profile.subscriptionTier && !profile.trialEndsAt && !profile.trialStartedAt;
+        
+        // Also check if they're on a special path (subscription success/canceled)
+        const isSubscriptionPath = window.location.pathname.startsWith('/subscription/');
+        
+        if (isNewUser && !isSubscriptionPath && currentView !== 'pricing') {
+          console.log('🎯 New user detected - redirecting to pricing for trial');
+          // Small delay to ensure everything is mounted
+          setTimeout(() => {
+            setCurrentView('pricing');
+          }, 100);
+        }
+      } catch (error) {
+        console.error('Error in new user redirect:', error);
       }
     }
-  }, [currentUser, profile, currentView, setCurrentView]);
+  }, [loading, currentUser, profile, currentView, setCurrentView]);
 
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
