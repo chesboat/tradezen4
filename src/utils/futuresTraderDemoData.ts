@@ -276,6 +276,9 @@ function templateToTrade(template: TradeTemplate, accountId: string, startDate: 
     ? WIN_NOTES[Math.floor(Math.random() * WIN_NOTES.length)]
     : LOSS_NOTES[Math.floor(Math.random() * LOSS_NOTES.length)];
   
+  // Add setup to notes if present
+  const fullNotes = template.setup ? `Setup: ${template.setup}\n\n${notes}` : notes;
+  
   return {
     id: generateId(),
     symbol: template.symbol,
@@ -291,8 +294,7 @@ function templateToTrade(template: TradeTemplate, accountId: string, startDate: 
     riskRewardRatio: rr,
     mood: template.mood,
     tags: template.tags,
-    setup: template.setup,
-    notes,
+    notes: fullNotes,
     accountId,
     accountBalance: 100000, // $100k prop account (common size)
     createdAt: entryDate.toISOString(),
@@ -359,12 +361,31 @@ export async function loadProfessionalFuturesTraderDemo(accountId: string) {
     yearsOfHistory: 3,
   });
   
-  // Batch import (faster than one-by-one)
-  const { setTrades } = useTradeStore.getState();
-  setTrades([...existingTrades, ...demoTrades]);
+  // Add trades one by one using the proper addTrade method
+  const { addTrade } = useTradeStore.getState();
+  
+  console.log('📝 Adding trades to store (this may take a moment)...');
+  
+  // Add in batches to avoid overwhelming the store
+  let addedCount = 0;
+  for (const trade of demoTrades) {
+    try {
+      // Remove id, createdAt, updatedAt as addTrade will generate these
+      const { id, createdAt, updatedAt, ...tradeData } = trade;
+      await addTrade(tradeData);
+      addedCount++;
+      
+      // Log progress every 100 trades
+      if (addedCount % 100 === 0) {
+        console.log(`📊 Progress: ${addedCount}/${demoTrades.length} trades added...`);
+      }
+    } catch (error) {
+      console.warn(`⚠️ Failed to add trade:`, error);
+    }
+  }
   
   console.log('✅ Demo data loaded! Refresh your views to see the data.');
   
-  return demoTrades.length;
+  return addedCount;
 }
 

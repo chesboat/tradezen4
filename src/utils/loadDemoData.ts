@@ -58,8 +58,13 @@ export async function clearAllTrades() {
   }
   
   const { useTradeStore } = await import('@/store/useTradeStore');
-  const { setTrades } = useTradeStore.getState();
-  setTrades([]);
+  const { trades, deleteTrade } = useTradeStore.getState();
+  
+  console.log(`🗑️ Deleting ${trades.length} trades...`);
+  
+  for (const trade of trades) {
+    await deleteTrade(trade.id);
+  }
   
   console.log('✅ All trades cleared');
   console.log('💡 Refresh the page to see changes');
