@@ -1,9 +1,7 @@
 import { motion } from 'framer-motion';
 import { XCircle, ArrowLeft } from 'lucide-react';
-import { useNavigationStore } from '@/store/useNavigationStore';
 
 export const SubscriptionCanceled = () => {
-  const { setCurrentView } = useNavigationStore();
 
   return (
     <div className="min-h-screen bg-[var(--background-primary)] text-[var(--text-primary)] flex items-center justify-center px-4">
@@ -47,13 +45,13 @@ export const SubscriptionCanceled = () => {
         {/* CTA Buttons */}
         <div className="space-y-3">
           <button
-            onClick={() => setCurrentView('pricing')}
+            onClick={() => window.location.href = '/?view=pricing'}
             className="w-full py-3 px-6 bg-[var(--accent-color)] text-white rounded-xl font-medium hover:opacity-90 transition-opacity"
           >
             View Pricing Again
           </button>
           <button
-            onClick={() => setCurrentView('dashboard')}
+            onClick={() => window.location.href = '/'}
             className="w-full py-3 px-6 bg-[var(--background-secondary)] text-[var(--text-primary)] rounded-xl font-medium hover:bg-[var(--background-tertiary)] transition-colors flex items-center justify-center gap-2"
           >
             <ArrowLeft className="w-4 h-4" />

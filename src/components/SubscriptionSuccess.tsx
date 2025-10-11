@@ -2,10 +2,8 @@ import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle, ArrowRight } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { useNavigationStore } from '@/store/useNavigationStore';
 
 export const SubscriptionSuccess = () => {
-  const { setCurrentView } = useNavigationStore();
   const sessionId = typeof window !== 'undefined' 
     ? new URLSearchParams(window.location.search).get('session_id')
     : null;
@@ -76,7 +74,7 @@ export const SubscriptionSuccess = () => {
 
         {/* CTA Button */}
         <button
-          onClick={() => setCurrentView('dashboard')}
+          onClick={() => window.location.href = '/'}
           className="w-full py-3 px-6 bg-[var(--accent-color)] text-white rounded-xl font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
         >
           Go to Dashboard
@@ -85,7 +83,7 @@ export const SubscriptionSuccess = () => {
 
         {/* Manage Subscription Link */}
         <button
-          onClick={() => setCurrentView('settings')}
+          onClick={() => window.location.href = '/?view=settings'}
           className="mt-4 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
         >
           Manage subscription settings →
