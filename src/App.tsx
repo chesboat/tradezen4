@@ -426,9 +426,15 @@ function AppContent() {
   // Show beautiful welcome screen to new users (only once)
   // This creates a smooth path: Sign Up → Welcome → Start Trial → Dashboard
   const [showWelcome, setShowWelcome] = React.useState(false);
+  const hasCheckedWelcome = React.useRef(false);
 
   React.useEffect(() => {
+    // Only check once to prevent infinite loops
+    if (hasCheckedWelcome.current) return;
+    
     if (!loading && currentUser && profile) {
+      hasCheckedWelcome.current = true;
+      
       // Check if user is brand new (no subscription AND hasn't seen welcome)
       const hasSeenWelcome = (profile as any).hasSeenWelcome || false;
       const isNewUser = !profile.subscriptionTier && 
@@ -442,8 +448,6 @@ function AppContent() {
       if (isNewUser && !isSubscriptionPath) {
         console.log('🎯 New user detected - showing welcome screen');
         setShowWelcome(true);
-      } else {
-        setShowWelcome(false);
       }
     }
   }, [loading, currentUser, profile]);
