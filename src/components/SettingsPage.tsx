@@ -401,24 +401,44 @@ export const SettingsPage: React.FC = () => {
                     <Crown className="w-5 h-5" />
                     Upgrade to Premium
                   </button>
-                  <button
-                    onClick={handleManageSubscription}
-                    className="px-5 py-3 bg-muted/50 text-foreground rounded-xl font-medium hover:bg-muted transition-colors flex items-center justify-center gap-2"
-                  >
-                    <CreditCard className="w-4 h-4" />
-                    Manage
-                  </button>
+                  {profile?.stripeCustomerId ? (
+                    <button
+                      onClick={handleManageSubscription}
+                      className="px-5 py-3 bg-muted/50 text-foreground rounded-xl font-medium hover:bg-muted transition-colors flex items-center justify-center gap-2"
+                    >
+                      <CreditCard className="w-4 h-4" />
+                      Manage
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setCurrentView('pricing')}
+                      className="px-5 py-3 bg-muted/50 text-foreground rounded-xl font-medium hover:bg-muted transition-colors"
+                    >
+                      View Plans
+                    </button>
+                  )}
                 </>
               )}
               
               {tier === 'premium' && (
-                <button
-                  onClick={handleManageSubscription}
-                  className="w-full px-5 py-3 bg-muted/50 text-foreground rounded-xl font-semibold hover:bg-muted transition-colors flex items-center justify-center gap-2"
-                >
-                  <CreditCard className="w-5 h-5" />
-                  Manage Subscription
-                </button>
+                <>
+                  {profile?.stripeCustomerId ? (
+                    <button
+                      onClick={handleManageSubscription}
+                      className="w-full px-5 py-3 bg-muted/50 text-foreground rounded-xl font-semibold hover:bg-muted transition-colors flex items-center justify-center gap-2"
+                    >
+                      <CreditCard className="w-5 h-5" />
+                      Manage Subscription
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setCurrentView('pricing')}
+                      className="w-full px-5 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 transition-all shadow-sm hover:shadow-md"
+                    >
+                      Complete Checkout
+                    </button>
+                  )}
+                </>
               )}
             </div>
 

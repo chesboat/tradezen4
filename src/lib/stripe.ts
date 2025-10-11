@@ -81,6 +81,11 @@ export async function redirectToCustomerPortal(userId: string) {
 
     if (!response.ok) {
       const error = await response.json();
+      console.error('❌ Portal API error:', {
+        status: response.status,
+        error,
+        userId
+      });
       throw new Error(error.message || 'Failed to create portal session');
     }
 
