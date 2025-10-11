@@ -422,42 +422,8 @@ function AppContent() {
     );
   }
 
-  // 🍎 APPLE-STYLE WELCOME FLOW (Fixed with localStorage)
-  // Show pricing page BEFORE dashboard access for new users
-  const [showWelcome, setShowWelcome] = React.useState(() => {
-    // Check localStorage immediately (doesn't cause re-renders)
-    if (!currentUser) return false;
-    const hasSeenWelcome = localStorage.getItem(`hasSeenWelcome_${currentUser.uid}`);
-    return !hasSeenWelcome;
-  });
-
-  // Check if user needs to see welcome screen (only runs once)
-  React.useEffect(() => {
-    if (!loading && currentUser && profile && showWelcome) {
-      // If user already has a subscription, don't show welcome
-      const hasSubscription = profile.subscriptionTier || profile.trialEndsAt || profile.trialStartedAt;
-      const isSubscriptionPath = window.location.pathname.startsWith('/subscription/');
-      
-      if (hasSubscription || isSubscriptionPath) {
-        // Mark as seen and hide welcome
-        localStorage.setItem(`hasSeenWelcome_${currentUser.uid}`, 'true');
-        setShowWelcome(false);
-      }
-    }
-  }, [loading, currentUser, profile, showWelcome]);
-
-  // Handle welcome skip
-  const handleWelcomeSkip = React.useCallback(() => {
-    if (currentUser) {
-      localStorage.setItem(`hasSeenWelcome_${currentUser.uid}`, 'true');
-      setShowWelcome(false);
-    }
-  }, [currentUser]);
-
-  // Show welcome screen for new users (blocks dashboard access)
-  if (showWelcome && currentUser && !loading) {
-    return <WelcomeToPremium onSkip={handleWelcomeSkip} />;
-  }
+  // 🍎 WELCOME FLOW - DISABLED (causing infinite loops)
+  // TODO: Implement simpler approach without React state loops
 
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
