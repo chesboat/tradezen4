@@ -15,13 +15,33 @@ export const TrialBanner = () => {
   const { profile } = useUserProfileStore();
   const [isDismissed, setIsDismissed] = useState(false);
 
-  if (!isTrial || isDismissed) return null;
+  // Early return if no trial, dismissed, or no profile data
+  if (!isTrial || isDismissed || !profile?.trialEndsAt) return null;
 
-  const trialEnd = profile?.trialEndsAt;
-  if (!trialEnd) return null;
+  const trialEnd = profile.trialEndsAt;
+  
+  // Handle Firestore Timestamp objects safely
+  let endDate: Date;
+  try {
+    if (trialEnd instanceof Date) {
+      endDate = trialEnd;
+    } else if (typeof trialEnd === 'object' && 'toDate' in trialEnd) {
+      // Firestore Timestamp
+      endDate = (trialEnd as any).toDate();
+    } else {
+      endDate = new Date(trialEnd);
+    }
+    
+    // Validate the date
+    if (isNaN(endDate.getTime())) {
+      return null;
+    }
+  } catch (error) {
+    console.error('Error parsing trial end date:', error);
+    return null;
+  }
 
   const now = new Date();
-  const endDate = trialEnd instanceof Date ? trialEnd : new Date(trialEnd);
   const msRemaining = endDate.getTime() - now.getTime();
   const daysRemaining = Math.ceil(msRemaining / (1000 * 60 * 60 * 24));
   const hoursRemaining = Math.ceil(msRemaining / (1000 * 60 * 60));

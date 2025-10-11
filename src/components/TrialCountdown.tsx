@@ -9,11 +9,32 @@ export const TrialCountdown = () => {
   const { setCurrentView } = useNavigationStore();
   const { profile } = useUserProfileStore();
 
-  if (!isTrial) return null;
+  // Early return if no trial or no profile data
+  if (!isTrial || !profile?.trialEndsAt) return null;
 
   // Calculate days remaining
-  const trialEnd = profile?.trialEndsAt;
-  if (!trialEnd) return null;
+  const trialEnd = profile.trialEndsAt;
+  
+  // Handle Firestore Timestamp objects
+  let endDate: Date;
+  try {
+    if (trialEnd instanceof Date) {
+      endDate = trialEnd;
+    } else if (typeof trialEnd === 'object' && 'toDate' in trialEnd) {
+      // Firestore Timestamp
+      endDate = (trialEnd as any).toDate();
+    } else {
+      endDate = new Date(trialEnd);
+    }
+    
+    // Validate the date
+    if (isNaN(endDate.getTime())) {
+      return null;
+    }
+  } catch (error) {
+    console.error('Error parsing trial end date:', error);
+    return null;
+  }
 
   const now = new Date();
   const endDate = trialEnd instanceof Date ? trialEnd : new Date(trialEnd);
@@ -104,13 +125,33 @@ export const TrialCountdownCompact = () => {
   const { setCurrentView } = useNavigationStore();
   const { profile } = useUserProfileStore();
 
-  if (!isTrial) return null;
+  // Early return if no trial or no profile data
+  if (!isTrial || !profile?.trialEndsAt) return null;
 
-  const trialEnd = profile?.trialEndsAt;
-  if (!trialEnd) return null;
+  const trialEnd = profile.trialEndsAt;
+  
+  // Handle Firestore Timestamp objects
+  let endDate: Date;
+  try {
+    if (trialEnd instanceof Date) {
+      endDate = trialEnd;
+    } else if (typeof trialEnd === 'object' && 'toDate' in trialEnd) {
+      // Firestore Timestamp
+      endDate = (trialEnd as any).toDate();
+    } else {
+      endDate = new Date(trialEnd);
+    }
+    
+    // Validate the date
+    if (isNaN(endDate.getTime())) {
+      return null;
+    }
+  } catch (error) {
+    console.error('Error parsing trial end date:', error);
+    return null;
+  }
 
   const now = new Date();
-  const endDate = trialEnd instanceof Date ? trialEnd : new Date(trialEnd);
   const msRemaining = endDate.getTime() - now.getTime();
   const daysRemaining = Math.ceil(msRemaining / (1000 * 60 * 60 * 24));
 
