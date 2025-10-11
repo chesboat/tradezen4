@@ -77,9 +77,12 @@ export const WelcomeToPremium: React.FC<WelcomeToPremiumProps> = ({ onSkip }) =>
       
       // Mark that user has seen welcome screen
       if (profile) {
-        await updateProfile(currentUser.uid, {
+        updateProfile({
           hasSeenWelcome: true,
         });
+        // Sync to Firestore
+        const { syncToFirestore } = useUserProfileStore.getState();
+        await syncToFirestore();
       }
       
       await redirectToCheckout(priceId, currentUser.uid);
@@ -93,9 +96,12 @@ export const WelcomeToPremium: React.FC<WelcomeToPremiumProps> = ({ onSkip }) =>
   const handleSkip = async () => {
     if (currentUser && profile) {
       // Mark that user has seen welcome screen
-      await updateProfile(currentUser.uid, {
+      updateProfile({
         hasSeenWelcome: true,
       });
+      // Sync to Firestore
+      const { syncToFirestore } = useUserProfileStore.getState();
+      await syncToFirestore();
     }
     onSkip?.();
   };
