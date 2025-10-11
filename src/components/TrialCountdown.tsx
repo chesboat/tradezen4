@@ -37,7 +37,6 @@ export const TrialCountdown = () => {
   }
 
   const now = new Date();
-  const endDate = trialEnd instanceof Date ? trialEnd : new Date(trialEnd);
   const msRemaining = endDate.getTime() - now.getTime();
   const daysRemaining = Math.ceil(msRemaining / (1000 * 60 * 60 * 24));
   const hoursRemaining = Math.ceil(msRemaining / (1000 * 60 * 60));
