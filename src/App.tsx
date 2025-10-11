@@ -422,22 +422,21 @@ function AppContent() {
     );
   }
 
-  // 🍎 APPLE-STYLE: Show pricing page after signup (run once)
-  const hasCheckedPricingRedirect = React.useRef(false);
+  // 🍎 APPLE-STYLE: Check for new signup BEFORE loading dashboard
+  // This runs synchronously before any useEffect, preventing dashboard render
+  const shouldShowPricing = !loading && currentUser && sessionStorage.getItem('show_pricing_after_auth') === 'true';
   
-  React.useEffect(() => {
-    if (hasCheckedPricingRedirect.current) return;
+  if (shouldShowPricing) {
+    // Clean up the flag
+    sessionStorage.removeItem('show_pricing_after_auth');
     
-    const shouldShowPricing = sessionStorage.getItem('show_pricing_after_auth');
-    console.log('🔍 Signup check:', { loading, hasUser: !!currentUser, shouldShowPricing });
-    
-    if (!loading && currentUser && shouldShowPricing === 'true') {
-      console.log('🎯 New signup detected - showing pricing page');
-      hasCheckedPricingRedirect.current = true;
-      sessionStorage.removeItem('show_pricing_after_auth');
-      setCurrentView('pricing');
-    }
-  }, [loading, currentUser, setCurrentView]);
+    // Render pricing page directly, skip all dashboard initialization
+    return (
+      <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
+        <PricingPage />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
