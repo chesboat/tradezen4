@@ -422,27 +422,23 @@ function AppContent() {
     );
   }
 
-  // 🍎 APPLE-STYLE WELCOME FLOW
-  // Show beautiful welcome screen to new users (only once)
-  // This creates a smooth path: Sign Up → Welcome → Start Trial → Dashboard
+  // 🍎 APPLE-STYLE WELCOME FLOW - COMPLETELY DISABLED
+  /*
   const [showWelcome, setShowWelcome] = React.useState(false);
   const hasCheckedWelcome = React.useRef(false);
 
   React.useEffect(() => {
-    // Only check once to prevent infinite loops
     if (hasCheckedWelcome.current) return;
     
     if (!loading && currentUser && profile) {
       hasCheckedWelcome.current = true;
       
-      // Check if user is brand new (no subscription AND hasn't seen welcome)
       const hasSeenWelcome = (profile as any).hasSeenWelcome || false;
       const isNewUser = !profile.subscriptionTier && 
                         !profile.trialEndsAt && 
                         !profile.trialStartedAt &&
                         !hasSeenWelcome;
       
-      // Don't show on subscription success/canceled pages
       const isSubscriptionPath = window.location.pathname.startsWith('/subscription/');
       
       if (isNewUser && !isSubscriptionPath) {
@@ -451,6 +447,7 @@ function AppContent() {
       }
     }
   }, [loading, currentUser, profile]);
+  */
 
   // Show welcome screen for new users
   // TEMPORARILY DISABLED TO FIX INFINITE LOOP
