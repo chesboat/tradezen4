@@ -1,7 +1,7 @@
 /**
- * Professional Futures Trader Demo Data Generator
+ * Aspiring Futures Trader Demo Data Generator
  * Creates realistic multi-year trading history for NQ, ES, YM
- * 70% win rate, consistent performance, realistic patterns
+ * 55% win rate, 1.5 profit factor, realistic ups and downs
  */
 
 import { Trade, TradeDirection, TradeResult, MoodType } from '@/types';
@@ -112,11 +112,11 @@ interface TradeTemplate {
 
 /**
  * Generate realistic futures trade templates
- * 70% win rate, realistic position sizing and P&L
+ * 55% win rate, 1.5 profit factor, realistic position sizing and P&L
  */
 function generateTradeTemplates(totalTrades: number = 2000): TradeTemplate[] {
   const trades: TradeTemplate[] = [];
-  const winRate = 0.70;
+  const winRate = 0.55; // More realistic for aspiring trader
   const wins = Math.floor(totalTrades * winRate);
   
   // Distribute symbols (NQ is most popular)
@@ -146,8 +146,8 @@ function generateTradeTemplates(totalTrades: number = 2000): TradeTemplate[] {
     const direction: TradeDirection = Math.random() < 0.55 ? 'long' : 'short';
     
     if (isWin) {
-      // Winning trade: 1.5:1 to 3:1 R:R typically
-      const rMultiple = 1.5 + Math.random() * 1.5; // 1.5 to 3.0
+      // Winning trade: 1.2:1 to 2.5:1 R:R typically (smaller wins)
+      const rMultiple = 1.2 + Math.random() * 1.3; // 1.2 to 2.5
       const riskPoints = 4 + Math.random() * 8; // risk 4-12 points typically
       const points = riskPoints * rMultiple;
       
@@ -187,6 +187,7 @@ function generateTradeTemplates(totalTrades: number = 2000): TradeTemplate[] {
 
 /**
  * Shuffle trades but maintain realistic win/loss streaks
+ * More losing days, some bad weeks, realistic struggle
  */
 function shuffleWithStreaks(trades: TradeTemplate[]): TradeTemplate[] {
   const result: TradeTemplate[] = [];
@@ -197,13 +198,13 @@ function shuffleWithStreaks(trades: TradeTemplate[]): TradeTemplate[] {
   let lossIdx = 0;
   
   while (winIdx < wins.length || lossIdx < losses.length) {
-    // 70% chance of win
-    if (Math.random() < 0.70 && winIdx < wins.length) {
+    // 55% chance of win (more losses)
+    if (Math.random() < 0.55 && winIdx < wins.length) {
       result.push(wins[winIdx++]);
       
-      // Occasional win streak (2-5 wins)
-      if (Math.random() < 0.3) {
-        const streakLength = Math.min(Math.floor(Math.random() * 4) + 2, wins.length - winIdx);
+      // Occasional win streak (2-4 wins)
+      if (Math.random() < 0.25) {
+        const streakLength = Math.min(Math.floor(Math.random() * 3) + 2, wins.length - winIdx);
         for (let i = 0; i < streakLength && winIdx < wins.length; i++) {
           result.push(wins[winIdx++]);
         }
@@ -211,9 +212,9 @@ function shuffleWithStreaks(trades: TradeTemplate[]): TradeTemplate[] {
     } else if (lossIdx < losses.length) {
       result.push(losses[lossIdx++]);
       
-      // Occasional loss streak (2-3 losses)
-      if (Math.random() < 0.15) {
-        const streakLength = Math.min(Math.floor(Math.random() * 2) + 2, losses.length - lossIdx);
+      // More frequent loss streaks (2-4 losses) - rough patches
+      if (Math.random() < 0.35) {
+        const streakLength = Math.min(Math.floor(Math.random() * 3) + 2, losses.length - lossIdx);
         for (let i = 0; i < streakLength && lossIdx < losses.length; i++) {
           result.push(losses[lossIdx++]);
         }
@@ -314,8 +315,9 @@ export function generateProfessionalFuturesTraderData(
 ): Trade[] {
   const { totalTrades = 2000, yearsOfHistory = 2 } = options;
   
-  console.log(`🎯 Generating ${totalTrades} trades for professional futures trader...`);
-  console.log(`📊 Win Rate: 70%`);
+  console.log(`🎯 Generating ${totalTrades} trades for aspiring futures trader...`);
+  console.log(`📊 Win Rate: 55% (realistic)`);
+  console.log(`💰 Profit Factor: ~1.5 (profitable but not perfect)`);
   console.log(`📈 Contracts: NQ (50%), ES (35%), YM (15%)`);
   console.log(`📅 History: ${yearsOfHistory} years`);
   
@@ -331,12 +333,18 @@ export function generateProfessionalFuturesTraderData(
   const avgWin = trades.filter(t => t.result === 'win').reduce((sum, t) => sum + (t.pnl || 0), 0) / wins;
   const avgLoss = Math.abs(trades.filter(t => t.result === 'loss').reduce((sum, t) => sum + (t.pnl || 0), 0) / (totalTrades - wins));
   
+  const profitFactor = (avgWin * wins / (avgLoss * (totalTrades - wins)));
+  
   console.log(`✅ Generated ${trades.length} trades`);
   console.log(`💰 Total P&L: $${totalPnL.toFixed(2)}`);
   console.log(`📊 Actual Win Rate: ${((wins / totalTrades) * 100).toFixed(1)}%`);
   console.log(`💵 Avg Win: $${avgWin.toFixed(2)}`);
   console.log(`💸 Avg Loss: $${avgLoss.toFixed(2)}`);
-  console.log(`📈 Profit Factor: ${(avgWin * wins / (avgLoss * (totalTrades - wins))).toFixed(2)}`);
+  console.log(`📈 Profit Factor: ${profitFactor.toFixed(2)}`);
+  
+  if (profitFactor < 1.3 || profitFactor > 1.8) {
+    console.log(`⚠️ Note: Profit factor is ${profitFactor.toFixed(2)} - target is ~1.5 for realism`);
+  }
   
   return trades;
 }

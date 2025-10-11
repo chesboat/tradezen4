@@ -37,9 +37,15 @@ export async function loadDemoData() {
     console.log('📸 READY FOR SCREENSHOTS:');
     console.log('  → Navigate to Trading Health view');
     console.log('  → Check Analytics dashboard');
-    console.log('  → View Calendar (should show 3 years of data)');
+    console.log('  → View Calendar (should show 3 years of data with red & green days)');
     console.log('');
     console.log('💡 TIP: Refresh the page to see all metrics update');
+    console.log('');
+    console.log('📊 REALISTIC DATA:');
+    console.log('  • 55% win rate (aspiring trader level)');
+    console.log('  • ~1.5 profit factor (profitable but realistic)');
+    console.log('  • Mix of winning and losing days');
+    console.log('  • Some rough patches and win streaks');
     
   } catch (error) {
     console.error('❌ Error loading demo data:', error);
