@@ -42,6 +42,9 @@ export const SubscriptionSuccess = () => {
   const [selectedFeature, setSelectedFeature] = useState(0);
 
   useEffect(() => {
+    // Clear post-signup pricing flag on success page
+    try { sessionStorage.removeItem('show_pricing_after_auth'); } catch {}
+
     // Trigger confetti celebration
     confetti({
       particleCount: 100,

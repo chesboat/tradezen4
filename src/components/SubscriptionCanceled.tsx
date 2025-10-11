@@ -1,7 +1,12 @@
 import { motion } from 'framer-motion';
 import { XCircle, ArrowLeft } from 'lucide-react';
+import { useEffect } from 'react';
 
 export const SubscriptionCanceled = () => {
+  useEffect(() => {
+    // Clear post-signup pricing flag on cancel page
+    try { sessionStorage.removeItem('show_pricing_after_auth'); } catch {}
+  }, []);
 
   return (
     <div className="min-h-screen bg-[var(--background-primary)] text-[var(--text-primary)] flex items-center justify-center px-4">

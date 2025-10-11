@@ -513,7 +513,8 @@ function AppWithPricingCheck() {
   
   // 🍎 APPLE-STYLE: Check for new signup BEFORE AppContent loads
   if (!loading && currentUser && sessionStorage.getItem('show_pricing_after_auth') === 'true') {
-    sessionStorage.removeItem('show_pricing_after_auth');
+    // Do NOT clear the flag here; StrictMode double-invokes renders.
+    // The flag is cleared on success/cancel pages.
     console.log('🎯 New signup - rendering standalone pricing page');
     return (
       <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
