@@ -404,8 +404,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
             animate="expanded"
             exit="collapsed"
           >
-            {/* Trial Countdown - Prominent position */}
-            <TrialCountdownCompact />
+            {/* Trial Countdown - TEMPORARILY DISABLED */}
+            {/* <TrialCountdownCompact /> */}
             
             {/* XP Progress */}
             {profile?.xp && (
