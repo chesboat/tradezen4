@@ -422,40 +422,42 @@ function AppContent() {
     );
   }
 
-  // 🍎 APPLE-STYLE WELCOME FLOW - COMPLETELY DISABLED
-  /*
-  const [showWelcome, setShowWelcome] = React.useState(false);
-  const hasCheckedWelcome = React.useRef(false);
+  // 🍎 APPLE-STYLE WELCOME FLOW (Fixed with localStorage)
+  // Show pricing page BEFORE dashboard access for new users
+  const [showWelcome, setShowWelcome] = React.useState(() => {
+    // Check localStorage immediately (doesn't cause re-renders)
+    if (!currentUser) return false;
+    const hasSeenWelcome = localStorage.getItem(`hasSeenWelcome_${currentUser.uid}`);
+    return !hasSeenWelcome;
+  });
 
+  // Check if user needs to see welcome screen (only runs once)
   React.useEffect(() => {
-    if (hasCheckedWelcome.current) return;
-    
-    if (!loading && currentUser && profile) {
-      hasCheckedWelcome.current = true;
-      
-      const hasSeenWelcome = (profile as any).hasSeenWelcome || false;
-      const isNewUser = !profile.subscriptionTier && 
-                        !profile.trialEndsAt && 
-                        !profile.trialStartedAt &&
-                        !hasSeenWelcome;
-      
+    if (!loading && currentUser && profile && showWelcome) {
+      // If user already has a subscription, don't show welcome
+      const hasSubscription = profile.subscriptionTier || profile.trialEndsAt || profile.trialStartedAt;
       const isSubscriptionPath = window.location.pathname.startsWith('/subscription/');
       
-      if (isNewUser && !isSubscriptionPath) {
-        console.log('🎯 New user detected - showing welcome screen');
-        setShowWelcome(true);
+      if (hasSubscription || isSubscriptionPath) {
+        // Mark as seen and hide welcome
+        localStorage.setItem(`hasSeenWelcome_${currentUser.uid}`, 'true');
+        setShowWelcome(false);
       }
     }
-  }, [loading, currentUser, profile]);
-  */
+  }, [loading, currentUser, profile, showWelcome]);
 
-  // Show welcome screen for new users
-  // TEMPORARILY DISABLED TO FIX INFINITE LOOP
-  /*
-  if (showWelcome) {
-    return <WelcomeToPremium onSkip={() => setShowWelcome(false)} />;
+  // Handle welcome skip
+  const handleWelcomeSkip = React.useCallback(() => {
+    if (currentUser) {
+      localStorage.setItem(`hasSeenWelcome_${currentUser.uid}`, 'true');
+      setShowWelcome(false);
+    }
+  }, [currentUser]);
+
+  // Show welcome screen for new users (blocks dashboard access)
+  if (showWelcome && currentUser && !loading) {
+    return <WelcomeToPremium onSkip={handleWelcomeSkip} />;
   }
-  */
 
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
@@ -577,4 +579,5 @@ function App() {
   );
 }
 
+export default App; 
 export default App; 

@@ -75,15 +75,8 @@ export const WelcomeToPremium: React.FC<WelcomeToPremiumProps> = ({ onSkip }) =>
         throw new Error(`Missing price ID. Please contact support.`);
       }
       
-      // Mark that user has seen welcome screen
-      if (profile) {
-        updateProfile({
-          hasSeenWelcome: true,
-        });
-        // Sync to Firestore
-        const { syncToFirestore } = useUserProfileStore.getState();
-        await syncToFirestore();
-      }
+      // Mark in localStorage (instant, no Firestore updates)
+      localStorage.setItem(`hasSeenWelcome_${currentUser.uid}`, 'true');
       
       await redirectToCheckout(priceId, currentUser.uid);
     } catch (error: any) {
@@ -93,15 +86,10 @@ export const WelcomeToPremium: React.FC<WelcomeToPremiumProps> = ({ onSkip }) =>
     }
   };
 
-  const handleSkip = async () => {
-    if (currentUser && profile) {
-      // Mark that user has seen welcome screen
-      updateProfile({
-        hasSeenWelcome: true,
-      });
-      // Sync to Firestore
-      const { syncToFirestore } = useUserProfileStore.getState();
-      await syncToFirestore();
+  const handleSkip = () => {
+    // Mark in localStorage
+    if (currentUser) {
+      localStorage.setItem(`hasSeenWelcome_${currentUser.uid}`, 'true');
     }
     onSkip?.();
   };
