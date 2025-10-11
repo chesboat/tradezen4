@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Check, Sparkles, Zap, TrendingUp, Clock, Calendar, Tag, History, BarChart3, Settings, FlaskConical, Target, Brain } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useNavigationStore } from '@/store/useNavigationStore';
 import { SUBSCRIPTION_PLANS } from '@/types/subscription';
 import { formatPrice, getAnnualSavings } from '@/lib/subscription';
 
@@ -74,6 +75,7 @@ const POWER_FEATURES = [
 
 export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, feature }) => {
   const { isTrial, isBasic } = useSubscription();
+  const { setCurrentView } = useNavigationStore();
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>('annual');
   
   const premiumPlan = SUBSCRIPTION_PLANS.premium;
@@ -294,8 +296,8 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, fea
             <div className="p-4 sm:p-6 border-t border-border bg-muted/20 flex-shrink-0">
               <button
                 onClick={() => {
-                  // TODO: Open Stripe checkout
-                  console.log('Open Stripe checkout');
+                  onClose();
+                  setCurrentView('pricing');
                 }}
                 className="w-full py-3 sm:py-3.5 bg-gradient-to-r from-primary to-purple-600 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
               >

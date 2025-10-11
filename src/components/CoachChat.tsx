@@ -125,12 +125,10 @@ export const CoachChat: React.FC<CoachChatProps> = ({ date }) => {
             feature="AI Trading Coach"
             tier="premium"
             onUpgrade={() => {
-              // TODO: Navigate to settings or upgrade modal
               setShowUpgradePrompt(false);
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-              // For now, just show a toast
-              import('react-hot-toast').then(({ default: toast }) => {
-                toast('Opening upgrade options...', { icon: '🚀' });
+              // Navigate to pricing page
+              import('@/store/useNavigationStore').then(({ useNavigationStore }) => {
+                useNavigationStore.getState().setCurrentView('pricing');
               });
             }}
             onDismiss={() => setShowUpgradePrompt(false)}
