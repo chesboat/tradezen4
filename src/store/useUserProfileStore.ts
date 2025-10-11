@@ -28,6 +28,7 @@ export interface UserProfile {
   currentPeriodEnd?: Date; // When current billing period ends
   canceledAt?: Date; // When subscription was canceled
   lastPaymentDate?: Date; // Last successful payment date
+  hasSeenWelcome?: boolean; // Has user seen the welcome screen (Apple-style onboarding)
   xp: {
     total: number;        // Lifetime XP (never resets)
     seasonXp: number;     // Current season XP (resets on prestige)

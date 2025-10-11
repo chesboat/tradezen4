@@ -59,6 +59,7 @@ import { MobileTodoPage } from './components/MobileTodoPage';
 import { TrialBanner } from './components/TrialBanner';
 import { DataRetentionWarning } from './components/DataRetentionWarning';
 import { UpgradeModal } from './components/UpgradeModal';
+import { WelcomeToPremium } from './components/WelcomeToPremium';
 import { useTodoStore } from './store/useTodoStore';
 import { collection, getDocs, limit, query } from 'firebase/firestore';
 import { db } from './lib/firebase';
@@ -421,34 +422,36 @@ function AppContent() {
     );
   }
 
-  // 🍎 APPLE-STYLE TRIAL-FIRST FLOW
-  // Redirect new users to pricing page to start their free trial
-  // This creates a clear path: Sign Up → Choose Plan → Start Trial → Explore App
-  // TEMPORARILY DISABLED FOR DEBUGGING
-  /*
+  // 🍎 APPLE-STYLE WELCOME FLOW
+  // Show beautiful welcome screen to new users (only once)
+  // This creates a smooth path: Sign Up → Welcome → Start Trial → Dashboard
+  const [showWelcome, setShowWelcome] = React.useState(false);
+
   React.useEffect(() => {
-    // Wait for both user AND profile to be fully loaded
     if (!loading && currentUser && profile) {
-      try {
-        // Check if user is brand new (no subscription info at all)
-        const isNewUser = !profile.subscriptionTier && !profile.trialEndsAt && !profile.trialStartedAt;
-        
-        // Also check if they're on a special path (subscription success/canceled)
-        const isSubscriptionPath = window.location.pathname.startsWith('/subscription/');
-        
-        if (isNewUser && !isSubscriptionPath && currentView !== 'pricing') {
-          console.log('🎯 New user detected - redirecting to pricing for trial');
-          // Small delay to ensure everything is mounted
-          setTimeout(() => {
-            setCurrentView('pricing');
-          }, 100);
-        }
-      } catch (error) {
-        console.error('Error in new user redirect:', error);
+      // Check if user is brand new (no subscription AND hasn't seen welcome)
+      const hasSeenWelcome = (profile as any).hasSeenWelcome || false;
+      const isNewUser = !profile.subscriptionTier && 
+                        !profile.trialEndsAt && 
+                        !profile.trialStartedAt &&
+                        !hasSeenWelcome;
+      
+      // Don't show on subscription success/canceled pages
+      const isSubscriptionPath = window.location.pathname.startsWith('/subscription/');
+      
+      if (isNewUser && !isSubscriptionPath) {
+        console.log('🎯 New user detected - showing welcome screen');
+        setShowWelcome(true);
+      } else {
+        setShowWelcome(false);
       }
     }
-  }, [loading, currentUser, profile, currentView, setCurrentView]);
-  */
+  }, [loading, currentUser, profile]);
+
+  // Show welcome screen for new users
+  if (showWelcome) {
+    return <WelcomeToPremium onSkip={() => setShowWelcome(false)} />;
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
