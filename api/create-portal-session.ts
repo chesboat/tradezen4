@@ -79,17 +79,39 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const appUrl = process.env.VITE_APP_URL || 'http://localhost:5173';
 
     // Create Customer Portal Session
-    const session = await stripe.billingPortal.sessions.create({
-      customer: customerId,
-      return_url: `${appUrl}/?view=settings`,
-    });
+    try {
+      const session = await stripe.billingPortal.sessions.create({
+        customer: customerId,
+        return_url: `${appUrl}/?view=settings`,
+      });
 
-    return res.status(200).json({ url: session.url });
+      console.log('✅ Portal session created successfully');
+      return res.status(200).json({ url: session.url });
+    } catch (stripeError: any) {
+      console.error('❌ Stripe API error:', stripeError);
+      
+      // Handle specific Stripe errors
+      if (stripeError.type === 'StripeInvalidRequestError') {
+        if (stripeError.message?.includes('No such customer')) {
+          return res.status(400).json({ 
+            message: 'Customer not found in Stripe. Please contact support or create a new subscription.' 
+          });
+        }
+        if (stripeError.message?.includes('does not have a subscription')) {
+          return res.status(400).json({ 
+            message: 'No active subscription found. Please choose a plan first.' 
+          });
+        }
+      }
+      
+      throw stripeError; // Re-throw to be caught by outer catch
+    }
   } catch (error: any) {
-    console.error('Error creating portal session:', error);
+    console.error('❌ Error creating portal session:', error);
     return res.status(500).json({ 
-      message: 'Internal server error',
-      error: error.message 
+      message: 'Failed to open subscription portal',
+      error: error.message,
+      details: error.type || 'Unknown error'
     });
   }
 }
