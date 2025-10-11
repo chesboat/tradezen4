@@ -12,6 +12,9 @@ import { SubscriptionSuccess } from './components/SubscriptionSuccess';
 import { SubscriptionCanceled } from './components/SubscriptionCanceled';
 import { WelcomeFlow } from './components/WelcomeFlow';
 
+// Load demo data utilities (accessible via console)
+import './utils/loadDemoData';
+
 // CRITICAL: Validate and sanitize localStorage before app initialization
 // This prevents corrupted data from breaking the entire app
 try {
