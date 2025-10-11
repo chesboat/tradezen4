@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Stripe from 'stripe';
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 
 // Initialize Firebase Admin
@@ -34,7 +35,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ message: 'Missing priceId or userId' });
     }
 
-    // Get user email from Firebase Auth or Firestore
+    // Get user email from Firestore or Firebase Auth (fallback)
     let userEmail: string | undefined;
     
     // Try to get from userProfiles first
@@ -51,6 +52,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const userDoc = await userRef.get();
       if (userDoc.exists) {
         userEmail = userDoc.data()?.email;
+      }
+    }
+
+    // FINAL FALLBACK: Admin Auth lookup
+    if (!userEmail) {
+      try {
+        const auth = getAuth();
+        const userRecord = await auth.getUser(userId);
+        userEmail = userRecord.email || undefined;
+      } catch (e) {
+        console.warn('Admin auth lookup failed for userId:', userId, e);
       }
     }
 
@@ -71,10 +83,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
       customerId = customer.id;
 
-      // Save customer ID to Firestore (in userProfiles)
-      await profileRef.set({
-        stripeCustomerId: customerId,
-      }, { merge: true });
+      // Save customer ID and ensure email is persisted to userProfiles
+      const toMerge: Record<string, any> = { stripeCustomerId: customerId };
+      if (userEmail) toMerge.email = userEmail;
+      await profileRef.set(toMerge, { merge: true });
     }
 
     const appUrl = process.env.VITE_APP_URL || 'http://localhost:5173';
