@@ -25,8 +25,11 @@ const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
 // Helper to determine tier from price ID
 function getTierFromPriceId(priceId: string): 'basic' | 'premium' {
-  const basicMonthly = process.env.STRIPE_BASIC_MONTHLY_PRICE_ID;
-  const basicAnnual = process.env.STRIPE_BASIC_ANNUAL_PRICE_ID;
+  // Use VITE_ prefixed vars since that's what we set in Vercel
+  const basicMonthly = process.env.VITE_STRIPE_BASIC_MONTHLY_PRICE_ID;
+  const basicAnnual = process.env.VITE_STRIPE_BASIC_ANNUAL_PRICE_ID;
+  
+  console.log('Checking tier for priceId:', priceId, { basicMonthly, basicAnnual });
   
   if (priceId === basicMonthly || priceId === basicAnnual) {
     return 'basic';
