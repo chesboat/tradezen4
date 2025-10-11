@@ -62,6 +62,12 @@ export const SettingsPage: React.FC = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select a valid image file');
+      return;
+    }
+
     if (file.size > 5 * 1024 * 1024) { // 5MB limit
       toast.error('Image must be smaller than 5MB');
       return;
@@ -71,17 +77,35 @@ export const SettingsPage: React.FC = () => {
     try {
       // Convert to base64 for now (you can implement Firebase Storage later)
       const reader = new FileReader();
+      
       reader.onload = (e) => {
-        const base64 = e.target?.result as string;
-        updateProfile({ avatar: base64 });
-        toast.success('Profile picture updated!');
+        try {
+          const base64 = e.target?.result as string;
+          updateProfile({ avatar: base64 });
+          toast.success('Profile picture updated!');
+        } catch (error) {
+          console.error('Error updating profile:', error);
+          toast.error('Failed to update profile picture');
+        } finally {
+          setIsUploading(false);
+        }
+      };
+      
+      reader.onerror = () => {
+        console.error('FileReader error:', reader.error);
+        toast.error('Failed to read image file');
         setIsUploading(false);
       };
+      
       reader.readAsDataURL(file);
     } catch (error) {
+      console.error('Error uploading image:', error);
       toast.error('Failed to upload image');
       setIsUploading(false);
     }
+    
+    // Reset the input value so the same file can be selected again
+    event.target.value = '';
   };
 
   const handleSyncData = async () => {
@@ -221,7 +245,8 @@ export const SettingsPage: React.FC = () => {
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isUploading}
-                  className="absolute -bottom-1 -right-1 w-8 h-8 bg-primary rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors"
+                  className="absolute -bottom-1 -right-1 w-8 h-8 bg-primary rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed z-10"
+                  aria-label="Change profile picture"
                 >
                   {isUploading ? (
                     <RefreshCw className="w-4 h-4 text-primary-foreground animate-spin" />
