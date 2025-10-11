@@ -140,19 +140,22 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const priceId = subscription.items.data[0].price.id;
   const tier = getTierFromPriceId(priceId);
 
-  // Update user document in Firestore
-  await db.collection('users').doc(userId).update({
+  // Update user document in Firestore (userProfiles collection)
+  const updateData: any = {
     stripeCustomerId: customerId,
     stripeSubscriptionId: subscriptionId,
     stripePriceId: priceId,
     subscriptionTier: tier,
     subscriptionStatus: subscription.status,
-    trialEndsAt: subscription.trial_end 
-      ? Timestamp.fromMillis(subscription.trial_end * 1000)
-      : null,
-    currentPeriodEnd: Timestamp.fromMillis(subscription.current_period_end * 1000),
+    currentPeriodEnd: Timestamp.fromDate(new Date(subscription.current_period_end * 1000)),
     updatedAt: Timestamp.now(),
-  });
+  };
+  
+  if (subscription.trial_end) {
+    updateData.trialEndsAt = Timestamp.fromDate(new Date(subscription.trial_end * 1000));
+  }
+  
+  await db.collection('userProfiles').doc(userId).set(updateData, { merge: true });
 
   console.log(`✅ Checkout completed for user ${userId}: ${tier} tier`);
 }
@@ -168,17 +171,20 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
   const priceId = subscription.items.data[0].price.id;
   const tier = getTierFromPriceId(priceId);
 
-  await db.collection('users').doc(userId).update({
+  const updateData: any = {
     stripeSubscriptionId: subscription.id,
     stripePriceId: priceId,
     subscriptionTier: tier,
     subscriptionStatus: subscription.status,
-    trialEndsAt: subscription.trial_end 
-      ? Timestamp.fromMillis(subscription.trial_end * 1000)
-      : null,
-    currentPeriodEnd: Timestamp.fromMillis(subscription.current_period_end * 1000),
+    currentPeriodEnd: Timestamp.fromDate(new Date(subscription.current_period_end * 1000)),
     updatedAt: Timestamp.now(),
-  });
+  };
+  
+  if (subscription.trial_end) {
+    updateData.trialEndsAt = Timestamp.fromDate(new Date(subscription.trial_end * 1000));
+  }
+  
+  await db.collection('userProfiles').doc(userId).set(updateData, { merge: true });
 
   console.log(`✅ Subscription updated for user ${userId}: ${tier} tier, status: ${subscription.status}`);
 }
@@ -192,12 +198,12 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   }
 
   // Keep the tier until the end of the period, but mark as canceled
-  await db.collection('users').doc(userId).update({
+  await db.collection('userProfiles').doc(userId).set({
     subscriptionStatus: 'canceled',
     canceledAt: Timestamp.now(),
-    currentPeriodEnd: Timestamp.fromMillis(subscription.current_period_end * 1000),
+    currentPeriodEnd: Timestamp.fromDate(new Date(subscription.current_period_end * 1000)),
     updatedAt: Timestamp.now(),
-  });
+  }, { merge: true });
 
   console.log(`✅ Subscription canceled for user ${userId}`);
 }
@@ -228,12 +234,12 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
   }
 
   // Update payment status
-  await db.collection('users').doc(userId).update({
+  await db.collection('userProfiles').doc(userId).set({
     subscriptionStatus: 'active',
     lastPaymentDate: Timestamp.now(),
-    currentPeriodEnd: Timestamp.fromMillis(subscription.current_period_end * 1000),
+    currentPeriodEnd: Timestamp.fromDate(new Date(subscription.current_period_end * 1000)),
     updatedAt: Timestamp.now(),
-  });
+  }, { merge: true });
 
   console.log(`✅ Payment succeeded for user ${userId}`);
 }
@@ -252,10 +258,10 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
   }
 
   // Update payment status
-  await db.collection('users').doc(userId).update({
+  await db.collection('userProfiles').doc(userId).set({
     subscriptionStatus: 'past_due',
     updatedAt: Timestamp.now(),
-  });
+  }, { merge: true });
 
   // TODO: Send email notification about failed payment
   console.log(`❌ Payment failed for user ${userId}`);
