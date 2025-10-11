@@ -422,7 +422,17 @@ function AppContent() {
     );
   }
 
-  // Signup redirect is handled directly in SignupForm.tsx with window.location
+  // 🍎 APPLE-STYLE: Show pricing page after signup
+  React.useEffect(() => {
+    const shouldShowPricing = sessionStorage.getItem('show_pricing_after_auth');
+    console.log('🔍 Signup check:', { loading, hasUser: !!currentUser, shouldShowPricing });
+    
+    if (!loading && currentUser && shouldShowPricing === 'true') {
+      console.log('🎯 New signup detected - showing pricing page');
+      sessionStorage.removeItem('show_pricing_after_auth');
+      setCurrentView('pricing');
+    }
+  }, [loading, currentUser, setCurrentView]);
 
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300">

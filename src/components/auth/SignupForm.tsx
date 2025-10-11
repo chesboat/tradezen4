@@ -24,13 +24,13 @@ export function SignupForm() {
     try {
       await signUp(email, password);
       
-      // 🍎 APPLE-STYLE: Wait a moment for Firebase auth, then redirect
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Set flag BEFORE showing toast to avoid any timing issues
+      sessionStorage.setItem('show_pricing_after_auth', 'true');
       
       toast.success('Account created successfully!');
       
-      // Force full page reload to pricing page
-      window.location.href = '/?view=pricing';
+      // Let auth complete naturally, the flag will trigger pricing view
+      // No redirect needed - just wait for App to pick up the authenticated user
     } catch (error) {
       toast.error('Failed to create account. Please try again.');
       console.error('Signup error:', error);
@@ -42,16 +42,13 @@ export function SignupForm() {
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
+      sessionStorage.setItem('show_pricing_after_auth', 'true');
+      
       const result = await signInWithGoogle();
       const displayName = result.user.displayName || result.user.email?.split('@')[0] || 'User';
-      
-      // 🍎 APPLE-STYLE: Wait a moment for Firebase auth, then redirect
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
       toast.success(`Welcome, ${displayName}! Your account has been created.`);
       
-      // Force full page reload to pricing page
-      window.location.href = '/?view=pricing';
+      // Let auth complete naturally, flag will trigger pricing view
     } catch (error: any) {
       const message = error.message || 'Failed to sign up with Google.';
       toast.error(message);
@@ -64,16 +61,13 @@ export function SignupForm() {
   const handleAppleSignIn = async () => {
     setAppleLoading(true);
     try {
+      sessionStorage.setItem('show_pricing_after_auth', 'true');
+      
       const result = await signInWithApple();
       const displayName = result.user.displayName || result.user.email?.split('@')[0] || 'User';
-      
-      // 🍎 APPLE-STYLE: Wait a moment for Firebase auth, then redirect
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
       toast.success(`Welcome, ${displayName}! Your account has been created.`);
       
-      // Force full page reload to pricing page
-      window.location.href = '/?view=pricing';
+      // Let auth complete naturally, flag will trigger pricing view
     } catch (error: any) {
       const message = error.message || 'Failed to sign up with Apple.';
       toast.error(message);
