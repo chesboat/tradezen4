@@ -14,29 +14,39 @@ export const useSubscription = () => {
   
   // Get subscription tier from profile (updated by Stripe webhook)
   const [tier, setTier] = useState<SubscriptionTier>(() => {
-    // Check if admin
-    if (currentUser?.email && ADMIN_EMAILS.includes(currentUser.email)) {
-      return 'premium';
+    try {
+      // Check if admin
+      if (currentUser?.email && ADMIN_EMAILS.includes(currentUser.email)) {
+        return 'premium';
+      }
+      
+      // Check profile for subscription tier
+      return profile?.subscriptionTier || 'trial';
+    } catch (error) {
+      console.error('Error initializing subscription tier:', error);
+      return 'trial';
     }
-    
-    // Check profile for subscription tier
-    return profile?.subscriptionTier || 'trial';
   });
 
   // Update tier when user or profile changes
   useEffect(() => {
-    if (currentUser?.email && ADMIN_EMAILS.includes(currentUser.email)) {
-      setTier('premium');
-      return;
-    }
-    
-    // Check profile subscription status from Firestore (updated by Stripe webhook)
-    if (profile?.subscriptionTier && 
-        profile?.subscriptionStatus && 
-        ['active', 'trialing'].includes(profile.subscriptionStatus)) {
-      setTier(profile.subscriptionTier);
-    } else {
-      // Default to trial for new users
+    try {
+      if (currentUser?.email && ADMIN_EMAILS.includes(currentUser.email)) {
+        setTier('premium');
+        return;
+      }
+      
+      // Check profile subscription status from Firestore (updated by Stripe webhook)
+      if (profile?.subscriptionTier && 
+          profile?.subscriptionStatus && 
+          ['active', 'trialing'].includes(profile.subscriptionStatus)) {
+        setTier(profile.subscriptionTier);
+      } else {
+        // Default to trial for new users
+        setTier('trial');
+      }
+    } catch (error) {
+      console.error('Error updating subscription tier:', error);
       setTier('trial');
     }
   }, [currentUser, profile]);
@@ -45,22 +55,37 @@ export const useSubscription = () => {
   
   // Check if user has access to a feature
   const hasAccess = (feature: keyof typeof plan.limits) => {
-    return hasFeature(tier, feature);
+    try {
+      return hasFeature(tier, feature);
+    } catch (error) {
+      console.error('Error checking feature access:', error);
+      return false;
+    }
   };
   
   // Check if limit is reached for a feature
   const checkLimit = (feature: keyof typeof plan.limits, currentUsage: number) => {
-    return isLimitReached(tier, feature, currentUsage);
+    try {
+      return isLimitReached(tier, feature, currentUsage);
+    } catch (error) {
+      console.error('Error checking limit:', error);
+      return false;
+    }
   };
   
   // Get remaining usage for a limit
   const getRemainingUsage = (feature: keyof typeof plan.limits, currentUsage: number) => {
-    const limit = plan.limits[feature];
-    if (limit === 'unlimited') return 'unlimited';
-    if (typeof limit === 'number') {
-      return Math.max(0, limit - currentUsage);
+    try {
+      const limit = plan.limits[feature];
+      if (limit === 'unlimited') return 'unlimited';
+      if (typeof limit === 'number') {
+        return Math.max(0, limit - currentUsage);
+      }
+      return 0;
+    } catch (error) {
+      console.error('Error getting remaining usage:', error);
+      return 0;
     }
-    return 0;
   };
 
   return {
