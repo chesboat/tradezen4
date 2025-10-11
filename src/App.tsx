@@ -424,6 +424,8 @@ function AppContent() {
   // 🍎 APPLE-STYLE TRIAL-FIRST FLOW
   // Redirect new users to pricing page to start their free trial
   // This creates a clear path: Sign Up → Choose Plan → Start Trial → Explore App
+  // TEMPORARILY DISABLED FOR DEBUGGING
+  /*
   React.useEffect(() => {
     // Wait for both user AND profile to be fully loaded
     if (!loading && currentUser && profile) {
@@ -446,6 +448,7 @@ function AppContent() {
       }
     }
   }, [loading, currentUser, profile, currentView, setCurrentView]);
+  */
 
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
