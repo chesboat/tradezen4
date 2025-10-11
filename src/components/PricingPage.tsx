@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Check, Zap, TrendingUp, Target, Shield, Sparkles, Calendar, Clock, BarChart3 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSubscription } from '@/hooks/useSubscription';
 import { redirectToCheckout, getPriceId } from '@/lib/stripe';
 import { SUBSCRIPTION_PLANS } from '@/types/subscription';
 import toast from 'react-hot-toast';
@@ -10,6 +11,7 @@ type BillingPeriod = 'monthly' | 'annual';
 
 export const PricingPage = () => {
   const { currentUser } = useAuth();
+  const { tier, isTrial, isBasic } = useSubscription();
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('annual');
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
 
@@ -52,6 +54,32 @@ export const PricingPage = () => {
   };
 
   const savings = billingPeriod === 'annual' ? 26 : 0;
+
+  // 🍎 APPLE WAY: Button text based on current subscription status
+  const getButtonText = (planTier: 'basic' | 'premium') => {
+    // Trial users get "Start Free Trial"
+    if (isTrial || tier === 'trial') {
+      return 'Start Free Trial';
+    }
+    
+    // Basic users upgrading to Premium = "Upgrade to Premium"
+    if (isBasic && planTier === 'premium') {
+      return 'Upgrade to Premium';
+    }
+    
+    // Basic users on Basic plan (shouldn't see this, but just in case)
+    if (isBasic && planTier === 'basic') {
+      return 'Current Plan';
+    }
+    
+    // Premium users (shouldn't see upgrade options)
+    if (tier === 'premium') {
+      return planTier === 'premium' ? 'Current Plan' : 'Downgrade';
+    }
+    
+    // Default for new/logged-out users
+    return 'Start Free Trial';
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-gray-100 text-gray-900 py-12 px-4">
@@ -174,10 +202,10 @@ export const PricingPage = () => {
 
             <button
               onClick={() => handleSubscribe('basic')}
-              disabled={loadingPlan === 'basic'}
+              disabled={loadingPlan === 'basic' || (isBasic && tier === 'basic')}
               className="w-full py-3 px-6 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-6 shadow-sm"
             >
-              {loadingPlan === 'basic' ? 'Loading...' : 'Start Free Trial'}
+              {loadingPlan === 'basic' ? 'Loading...' : getButtonText('basic')}
             </button>
 
             {/* Tiered Features - Apple Style */}
@@ -269,11 +297,11 @@ export const PricingPage = () => {
 
             <button
               onClick={() => handleSubscribe('premium')}
-              disabled={loadingPlan === 'premium'}
+              disabled={loadingPlan === 'premium' || tier === 'premium'}
               className="w-full py-3 px-6 bg-white text-blue-600 rounded-xl font-medium hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-6 flex items-center justify-center gap-2 shadow-sm"
             >
               <Zap className="w-4 h-4" />
-              {loadingPlan === 'premium' ? 'Loading...' : 'Start Free Trial'}
+              {loadingPlan === 'premium' ? 'Loading...' : getButtonText('premium')}
             </button>
 
             {/* Tiered Features - Apple Style for Premium */}
