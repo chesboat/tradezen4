@@ -15,6 +15,7 @@ import { HomePage } from './components/marketing/HomePage';
 import { FeaturesPage } from './components/marketing/FeaturesPage';
 import { PricingPage as MarketingPricingPage } from './components/marketing/PricingPage';
 import { PricingPage } from './components/PricingPage';
+import { WelcomeFlow } from './components/WelcomeFlow';
 import { SubscriptionSuccess } from './components/SubscriptionSuccess';
 import { SubscriptionCanceled } from './components/SubscriptionCanceled';
 import { MarketingNav } from './components/marketing/MarketingNav';
@@ -510,12 +511,34 @@ function AppContent() {
 // Wrapper to check for new signup before loading AppContent
 function AppWithPricingCheck() {
   const { currentUser, loading } = useAuth();
+  const [showWelcome, setShowWelcome] = React.useState(false);
   
-  // 🍎 APPLE-STYLE: Check for new signup BEFORE AppContent loads
+  // Check if user is in signup flow
+  React.useEffect(() => {
+    if (!loading && currentUser && sessionStorage.getItem('show_pricing_after_auth') === 'true') {
+      const hasSeenWelcome = sessionStorage.getItem('has_seen_welcome_flow') === 'true';
+      setShowWelcome(!hasSeenWelcome);
+    }
+  }, [loading, currentUser]);
+  
+  // 🍎 APPLE-STYLE: Show Welcome Flow first for new signups
   if (!loading && currentUser && sessionStorage.getItem('show_pricing_after_auth') === 'true') {
-    // Do NOT clear the flag here; StrictMode double-invokes renders.
-    // The flag is cleared on success/cancel pages.
-    console.log('🎯 New signup - rendering standalone pricing page');
+    const hasSeenWelcome = sessionStorage.getItem('has_seen_welcome_flow') === 'true';
+    
+    if (!hasSeenWelcome) {
+      console.log('🍎 New signup - showing Welcome Flow');
+      return (
+        <WelcomeFlow 
+          onComplete={() => {
+            sessionStorage.setItem('has_seen_welcome_flow', 'true');
+            setShowWelcome(false);
+          }} 
+        />
+      );
+    }
+    
+    // Welcome flow complete, show pricing
+    console.log('🎯 Welcome complete - showing pricing page');
     return (
       <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
         <PricingPage />
