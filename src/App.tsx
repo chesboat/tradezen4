@@ -71,20 +71,6 @@ import './lib/testMilestones'; // Load test utilities for development
 
 function AppContent() {
   const { currentUser, loading } = useAuth();
-  
-  // 🍎 APPLE-STYLE: Check for new signup FIRST, before any other hooks/logic
-  const shouldShowPricing = !loading && currentUser && sessionStorage.getItem('show_pricing_after_auth') === 'true';
-  
-  if (shouldShowPricing) {
-    sessionStorage.removeItem('show_pricing_after_auth');
-    console.log('🎯 New signup detected - showing pricing page (early return)');
-    return (
-      <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
-        <PricingPage />
-      </div>
-    );
-  }
-  
   const { isExpanded: sidebarExpanded } = useSidebarStore();
   const { isExpanded: activityLogExpanded } = useActivityLogStore();
   const { currentView, setCurrentView } = useNavigationStore();
@@ -521,6 +507,25 @@ function AppContent() {
   );
 }
 
+// Wrapper to check for new signup before loading AppContent
+function AppWithPricingCheck() {
+  const { currentUser, loading } = useAuth();
+  
+  // 🍎 APPLE-STYLE: Check for new signup BEFORE AppContent loads
+  if (!loading && currentUser && sessionStorage.getItem('show_pricing_after_auth') === 'true') {
+    sessionStorage.removeItem('show_pricing_after_auth');
+    console.log('🎯 New signup - rendering standalone pricing page');
+    return (
+      <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
+        <PricingPage />
+      </div>
+    );
+  }
+  
+  // Normal app flow
+  return <AppContent />;
+}
+
 function App() {
   // Check for public share routes BEFORE rendering any app components/hooks
   if (typeof window !== 'undefined') {
@@ -559,7 +564,7 @@ function App() {
 
   return (
     <AuthProvider>
-      <AppContent />
+      <AppWithPricingCheck />
     </AuthProvider>
   );
 }
