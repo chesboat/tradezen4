@@ -10,6 +10,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { PricingPage } from './components/PricingPage';
 import { SubscriptionSuccess } from './components/SubscriptionSuccess';
 import { SubscriptionCanceled } from './components/SubscriptionCanceled';
+import { WelcomeFlow } from './components/WelcomeFlow';
 
 // CRITICAL: Validate and sanitize localStorage before app initialization
 // This prevents corrupted data from breaking the entire app
@@ -57,14 +58,33 @@ else if (typeof window !== 'undefined' && path.startsWith('/subscription/cancele
     </AuthProvider>
   ));
 }
-// Post-signup: hard-gate to pricing page BEFORE the app mounts
+// Post-signup: Show welcome flow THEN pricing page BEFORE the app mounts
 else if (typeof window !== 'undefined' && sessionStorage.getItem('show_pricing_after_auth') === 'true') {
-  console.log('🔒 Bootstrap gate: rendering PricingPage at root before App');
-  mount(rootEl, (
-    <AuthProvider>
-      <PricingPage />
-    </AuthProvider>
-  ));
+  console.log('🔒 Bootstrap gate: rendering WelcomeFlow → PricingPage at root before App');
+  
+  // Check if user has seen the welcome flow
+  const hasSeenWelcome = sessionStorage.getItem('has_seen_welcome_flow') === 'true';
+  
+  if (!hasSeenWelcome) {
+    // Show welcome flow first
+    mount(rootEl, (
+      <AuthProvider>
+        <WelcomeFlow 
+          onComplete={() => {
+            sessionStorage.setItem('has_seen_welcome_flow', 'true');
+            window.location.reload(); // Reload to show pricing page
+          }} 
+        />
+      </AuthProvider>
+    ));
+  } else {
+    // Show pricing page (welcome flow already seen)
+    mount(rootEl, (
+      <AuthProvider>
+        <PricingPage />
+      </AuthProvider>
+    ));
+  }
 }
 // Normal app
 else {

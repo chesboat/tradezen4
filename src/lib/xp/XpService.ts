@@ -90,15 +90,37 @@ export class XpService {
     const { profile } = useUserProfileStore.getState();
     if (!profile) return () => {};
     const xpDocRef = doc(db, 'userProfiles', profile.id, 'xp', 'status');
-    return onSnapshot(xpDocRef, (snap) => {
-      const data = snap.data() as any;
-      if (!data) return;
-      onChange({
-        total: Number(data.total || 0),
-        seasonXp: Number(data.seasonXp || 0),
-        level: Number(data.level || 1),
-        prestige: Number(data.prestige || 0),
-      });
+    let triedBootstrap = false;
+    return onSnapshot(xpDocRef, async (snap) => {
+      try {
+        const data = snap.data() as any;
+        if (!data) {
+          // Bootstrap the XP status doc quietly on first missing snapshot
+          if (!triedBootstrap) {
+            triedBootstrap = true;
+            try {
+              await setDoc(xpDocRef, {
+                total: 0,
+                seasonXp: 0,
+                level: 1,
+                prestige: 0,
+                updatedAt: serverTimestamp(),
+              }, { merge: true });
+            } catch (e) {
+              console.debug('XP bootstrap (create status doc) skipped/failed:', e);
+            }
+          }
+          return;
+        }
+        onChange({
+          total: Number(data.total || 0),
+          seasonXp: Number(data.seasonXp || 0),
+          level: Number(data.level || 1),
+          prestige: Number(data.prestige || 0),
+        });
+      } catch (e) {
+        console.debug('XP subscribe snapshot handler suppressed error:', e);
+      }
     });
   }
 
