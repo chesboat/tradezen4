@@ -422,21 +422,7 @@ function AppContent() {
     );
   }
 
-  // 🍎 APPLE-STYLE: Check if user just signed up and redirect to pricing
-  const hasCheckedSignup = React.useRef(false);
-  
-  React.useEffect(() => {
-    if (hasCheckedSignup.current) return; // Only check once
-    
-    if (!loading && currentUser) {
-      const justSignedUp = localStorage.getItem('just_signed_up');
-      if (justSignedUp === 'true') {
-        hasCheckedSignup.current = true;
-        localStorage.removeItem('just_signed_up');
-        setCurrentView('pricing');
-      }
-    }
-  }, [loading, currentUser, setCurrentView]);
+  // Signup redirect is handled directly in SignupForm.tsx with window.location
 
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300">

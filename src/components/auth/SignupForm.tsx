@@ -22,13 +22,14 @@ export function SignupForm() {
     setIsLoading(true);
 
     try {
-      // Mark as new sign-up BEFORE creating account
-      localStorage.setItem('just_signed_up', 'true');
-      
       await signUp(email, password);
+      
+      // 🍎 APPLE-STYLE: Wait a moment for Firebase auth, then redirect
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       toast.success('Account created successfully!');
       
-      // 🍎 APPLE-STYLE: Redirect to pricing to start free trial
+      // Force full page reload to pricing page
       window.location.href = '/?view=pricing';
     } catch (error) {
       toast.error('Failed to create account. Please try again.');
@@ -41,14 +42,15 @@ export function SignupForm() {
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
-      // Mark as new sign-up
-      localStorage.setItem('just_signed_up', 'true');
-      
       const result = await signInWithGoogle();
       const displayName = result.user.displayName || result.user.email?.split('@')[0] || 'User';
+      
+      // 🍎 APPLE-STYLE: Wait a moment for Firebase auth, then redirect
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       toast.success(`Welcome, ${displayName}! Your account has been created.`);
       
-      // 🍎 APPLE-STYLE: Redirect to pricing to start free trial
+      // Force full page reload to pricing page
       window.location.href = '/?view=pricing';
     } catch (error: any) {
       const message = error.message || 'Failed to sign up with Google.';
@@ -62,14 +64,15 @@ export function SignupForm() {
   const handleAppleSignIn = async () => {
     setAppleLoading(true);
     try {
-      // Mark as new sign-up
-      localStorage.setItem('just_signed_up', 'true');
-      
       const result = await signInWithApple();
       const displayName = result.user.displayName || result.user.email?.split('@')[0] || 'User';
+      
+      // 🍎 APPLE-STYLE: Wait a moment for Firebase auth, then redirect
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       toast.success(`Welcome, ${displayName}! Your account has been created.`);
       
-      // 🍎 APPLE-STYLE: Redirect to pricing to start free trial
+      // Force full page reload to pricing page
       window.location.href = '/?view=pricing';
     } catch (error: any) {
       const message = error.message || 'Failed to sign up with Apple.';
