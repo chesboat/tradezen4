@@ -3,7 +3,8 @@ import { motion } from 'framer-motion';
 import { Check, Zap, TrendingUp, Target, Shield, Sparkles, Calendar, Clock, BarChart3 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
-import { redirectToCheckout, getPriceId } from '@/lib/stripe';
+import { useUserProfileStore } from '@/store/useUserProfileStore';
+import { redirectToCheckout, upgradeSubscription, getPriceId } from '@/lib/stripe';
 import { SUBSCRIPTION_PLANS } from '@/types/subscription';
 import toast from 'react-hot-toast';
 
@@ -12,28 +13,58 @@ type BillingPeriod = 'monthly' | 'annual';
 export const PricingPage = () => {
   const { currentUser } = useAuth();
   const { tier, isTrial, isBasic } = useSubscription();
+  const { profile } = useUserProfileStore();
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('annual');
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
 
-  const handleSubscribe = async (tier: 'basic' | 'premium') => {
+  // 🍎 APPLE WAY: Detect if this is an upgrade (existing subscription) vs new signup
+  const handleSubscribe = async (targetTier: 'basic' | 'premium') => {
     if (!currentUser) {
       toast.error('Please sign in to subscribe');
       return;
     }
 
-    setLoadingPlan(tier);
+    setLoadingPlan(targetTier);
     try {
-      const priceId = getPriceId(tier, billingPeriod);
-      console.log('Subscribing:', { tier, billingPeriod, priceId, userId: currentUser.uid });
+      const priceId = getPriceId(targetTier, billingPeriod);
+      console.log('📋 Subscription request:', { 
+        targetTier, 
+        currentTier: tier,
+        billingPeriod, 
+        priceId, 
+        userId: currentUser.uid,
+        hasActiveSubscription: !!profile?.stripeSubscriptionId
+      });
       
       if (!priceId) {
-        throw new Error(`Missing price ID for ${tier} ${billingPeriod}. Check Vercel environment variables.`);
+        throw new Error(`Missing price ID for ${targetTier} ${billingPeriod}. Check Vercel environment variables.`);
       }
+
+      // Check if user has an active subscription (upgrading)
+      const hasActiveSubscription = profile?.stripeSubscriptionId && 
+                                    profile?.subscriptionStatus === 'active';
       
-      await redirectToCheckout(priceId, currentUser.uid);
+      if (hasActiveSubscription && isBasic && targetTier === 'premium') {
+        // 🍎 UPGRADING: Use instant upgrade with proration
+        console.log('⬆️ Upgrading Basic → Premium with proration');
+        toast.loading('Upgrading your subscription...', { id: 'upgrade' });
+        
+        await upgradeSubscription(currentUser.uid, priceId);
+        
+        toast.success('🎉 Upgraded to Premium! Enjoy your new features.', { id: 'upgrade' });
+        
+        // Give webhook a moment to update Firestore, then reload
+        setTimeout(() => {
+          window.location.href = '/?view=dashboard';
+        }, 2000);
+      } else {
+        // 🆕 NEW SUBSCRIPTION: Use normal checkout flow
+        console.log('🆕 Starting new subscription checkout');
+        await redirectToCheckout(priceId, currentUser.uid);
+      }
     } catch (error: any) {
-      console.error('Error starting checkout:', error);
-      toast.error(error.message || 'Failed to start checkout');
+      console.error('❌ Error with subscription:', error);
+      toast.error(error.message || 'Failed to process subscription', { id: 'upgrade' });
       setLoadingPlan(null);
     }
   };

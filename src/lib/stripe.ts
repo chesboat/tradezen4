@@ -67,6 +67,44 @@ export async function redirectToCheckout(priceId: string, userId: string) {
   }
 }
 
+// 🍎 APPLE WAY: Upgrade existing subscription with proration
+export async function upgradeSubscription(userId: string, newPriceId: string) {
+  try {
+    console.log('⬆️ Upgrading subscription:', { userId, newPriceId });
+
+    // Call backend to upgrade subscription
+    const response = await fetch('/api/upgrade-subscription', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId,
+        newPriceId,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      console.error('❌ Upgrade API error:', {
+        status: response.status,
+        error,
+        userId,
+        newPriceId
+      });
+      throw new Error(error.message || 'Failed to upgrade subscription');
+    }
+
+    const result = await response.json();
+    console.log('✅ Upgrade successful:', result);
+    
+    return result;
+  } catch (error) {
+    console.error('Error upgrading subscription:', error);
+    throw error;
+  }
+}
+
 // Redirect to Stripe Customer Portal
 export async function redirectToCustomerPortal(userId: string) {
   try {

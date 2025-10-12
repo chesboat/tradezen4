@@ -174,6 +174,11 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
   const priceId = subscription.items.data[0].price.id;
   const tier = getTierFromPriceId(priceId);
 
+  // Check if this is an upgrade by comparing with current tier
+  const userProfile = await db.collection('userProfiles').doc(userId).get();
+  const currentTier = userProfile.data()?.subscriptionTier;
+  const isUpgrade = currentTier && currentTier !== tier;
+
   const updateData: any = {
     stripeSubscriptionId: subscription.id,
     stripePriceId: priceId,
@@ -189,7 +194,11 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
   
   await db.collection('userProfiles').doc(userId).set(updateData, { merge: true });
 
-  console.log(`✅ Subscription updated for user ${userId}: ${tier} tier, status: ${subscription.status}`);
+  if (isUpgrade) {
+    console.log(`⬆️ Subscription UPGRADED for user ${userId}: ${currentTier} → ${tier}, status: ${subscription.status}`);
+  } else {
+    console.log(`✅ Subscription updated for user ${userId}: ${tier} tier, status: ${subscription.status}`);
+  }
 }
 
 // Handle subscription cancellation
