@@ -492,7 +492,8 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
       
       const profileDoc = doc(db, 'userProfiles', profile.id);
       
-      // Sanitize data before writing
+      // 🚨 CRITICAL: Sanitize ALL data before writing to Firestore
+      // Firestore will throw "r.indexOf" error if ANY field is undefined
       const dataToWrite: any = {
         id: profile.id,
         displayName: profile.displayName || '',
@@ -508,19 +509,59 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
         updatedAt: serverTimestamp(),
       };
       
-      // Only add joinedAt if it's valid
+      // Only add optional fields if they're valid (not undefined, not null)
       if (profile.joinedAt) {
         dataToWrite.joinedAt = profile.joinedAt instanceof Date 
           ? profile.joinedAt.toISOString() 
           : profile.joinedAt;
       }
       
-      // Only add preferences if it exists and is an object
       if (profile.preferences && typeof profile.preferences === 'object') {
         dataToWrite.preferences = profile.preferences;
       }
       
-      // Avoid writing legacy fields; write xp in xp/status listener path instead
+      // Add subscription fields only if they exist
+      if (profile.subscriptionTier) {
+        dataToWrite.subscriptionTier = profile.subscriptionTier;
+      }
+      
+      if (profile.subscriptionStatus) {
+        dataToWrite.subscriptionStatus = profile.subscriptionStatus;
+      }
+      
+      if (profile.stripeCustomerId) {
+        dataToWrite.stripeCustomerId = profile.stripeCustomerId;
+      }
+      
+      if (profile.stripeSubscriptionId) {
+        dataToWrite.stripeSubscriptionId = profile.stripeSubscriptionId;
+      }
+      
+      if (profile.stripePriceId) {
+        dataToWrite.stripePriceId = profile.stripePriceId;
+      }
+      
+      if (profile.trialEndsAt) {
+        dataToWrite.trialEndsAt = profile.trialEndsAt;
+      }
+      
+      if (profile.trialStartedAt) {
+        dataToWrite.trialStartedAt = profile.trialStartedAt;
+      }
+      
+      if (profile.currentPeriodEnd) {
+        dataToWrite.currentPeriodEnd = profile.currentPeriodEnd;
+      }
+      
+      if (profile.canceledAt) {
+        dataToWrite.canceledAt = profile.canceledAt;
+      }
+      
+      if (profile.lastPaymentDate) {
+        dataToWrite.lastPaymentDate = profile.lastPaymentDate;
+      }
+      
+      // Avoid writing legacy xp fields; write xp in xp/status listener path instead
       await setDoc(profileDoc, dataToWrite, { merge: true });
       console.log('Profile synced to Firestore');
     } catch (error) {
