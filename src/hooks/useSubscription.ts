@@ -98,6 +98,15 @@ export const useSubscription = () => {
         return;
       }
       
+      // 🚨 SECURITY: New users without a subscription have NO access
+      // They must complete checkout to get access
+      if (!profile?.subscriptionStatus && !profile?.stripeSubscriptionId) {
+        console.log('⛔ No subscription found - redirecting to pricing');
+        setTier('trial');
+        setHasAccess(false); // No access until they subscribe!
+        return;
+      }
+      
       // Check if user has active access (handles canceled-but-not-expired)
       const activeAccess = hasActiveAccess(profile);
       setHasAccess(activeAccess);
@@ -113,12 +122,13 @@ export const useSubscription = () => {
       console.log('🔐 Subscription access updated:', {
         tier: activeAccess && profile?.subscriptionTier ? profile.subscriptionTier : 'trial',
         hasAccess: activeAccess,
-        status: profile?.subscriptionStatus
+        status: profile?.subscriptionStatus,
+        hasSubscription: !!profile?.stripeSubscriptionId
       });
     } catch (error) {
       console.error('Error updating subscription tier:', error);
       setTier('trial');
-      setHasAccess(true); // Fail open for new users
+      setHasAccess(false); // 🚨 SECURITY FIX: Fail closed for errors
     }
   }, [currentUser, profile]);
 
