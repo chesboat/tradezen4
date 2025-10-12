@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle, ArrowRight, Sparkles, Brain, TrendingUp, Calendar, Target, MessageCircle } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { useUserProfileStore } from '@/store/useUserProfileStore';
 
 // Feature cards for onboarding
 const features = [
@@ -40,6 +41,11 @@ export const SubscriptionSuccess = () => {
     ? new URLSearchParams(window.location.search).get('session_id')
     : null;
   const [selectedFeature, setSelectedFeature] = useState(0);
+  const { profile } = useUserProfileStore();
+
+  // 🍎 APPLE WAY: Detect if this is Basic (no trial) or Premium (trial)
+  const isBasic = profile?.subscriptionTier === 'basic';
+  const isPremiumTrial = profile?.subscriptionStatus === 'trialing';
 
   useEffect(() => {
     // Clear post-signup pricing flag on success page
@@ -84,19 +90,24 @@ export const SubscriptionSuccess = () => {
             transition={{ delay: 0.3 }}
             className="text-4xl sm:text-5xl font-bold mb-4"
           >
-            You're All Set! 🎉
+            {isBasic ? "Welcome to Basic! 🎉" : "You're All Set! 🎉"}
           </motion.h1>
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="text-lg sm:text-xl text-[var(--text-secondary)]"
+            className="text-lg sm:text-xl text-gray-600"
           >
-            Your <span className="font-semibold text-[var(--accent-color)]">7-day free trial</span> starts now
+            {isBasic 
+              ? "Your subscription is active. Start building your trading edge today."
+              : isPremiumTrial
+                ? <>Your <span className="font-semibold text-blue-600">7-day free trial</span> starts now</>
+                : "Your Premium subscription is active"
+            }
           </motion.p>
         </div>
 
-        {/* Trial Benefits Banner */}
+        {/* Benefits Banner */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -106,32 +117,58 @@ export const SubscriptionSuccess = () => {
           <div className="flex items-start gap-3 mb-4">
             <Sparkles className="w-6 h-6 text-blue-500 flex-shrink-0 mt-0.5" />
             <div>
-              <h3 className="font-semibold text-[var(--text-primary)] mb-2">
-                What's Included in Your Trial
+              <h3 className="font-semibold text-gray-900 mb-2">
+                {isBasic ? "What's Included in Basic" : "What's Included in Your Trial"}
               </h3>
-              <ul className="space-y-2 text-sm text-[var(--text-secondary)]">
-                <li className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                  <span>Unlimited AI Coach conversations & insights</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                  <span>Advanced analytics & performance tracking</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                  <span>Unlimited trade logs & journal entries</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                  <span>All premium features unlocked for 7 days</span>
-                </li>
+              <ul className="space-y-2 text-sm text-gray-600">
+                {isBasic ? (
+                  <>
+                    <li className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                      <span>Up to 3 trading accounts</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                      <span>Unlimited trades & journal entries</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                      <span>AI insights (50/month)</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                      <span>Advanced analytics & public sharing</span>
+                    </li>
+                  </>
+                ) : (
+                  <>
+                    <li className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                      <span>Unlimited AI Coach conversations & insights</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                      <span>Advanced analytics & performance tracking</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                      <span>Unlimited trade logs & journal entries</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                      <span>All premium features unlocked for 7 days</span>
+                    </li>
+                  </>
+                )}
               </ul>
             </div>
           </div>
-          <div className="pt-4 border-t border-white/10">
-            <p className="text-xs text-[var(--text-tertiary)]">
-              💳 You won't be charged until your trial ends. Cancel anytime before then at no cost.
+          <div className="pt-4 border-t border-gray-200">
+            <p className="text-xs text-gray-500">
+              {isBasic 
+                ? "✅ Your subscription is active. Cancel anytime from settings."
+                : "💳 You won't be charged until your trial ends. Cancel anytime before then at no cost."
+              }
             </p>
           </div>
         </motion.div>
