@@ -63,14 +63,14 @@ export interface SubscriptionPlan {
 export const SUBSCRIPTION_PLANS: Record<SubscriptionTier, SubscriptionPlan> = {
   trial: {
     tier: 'trial',
-    name: '7-Day Trial',
-    description: '7 days of Premium access',
+    name: 'Premium Trial',
+    description: '7 days of Premium - free',
     monthlyPrice: 0,
     annualPrice: 0,
     annualMonthlyPrice: 0,
-    badge: '🎁 Trial Active',
+    badge: '🎁 Premium Trial',
     limits: {
-      // Trial gets full Premium access to get them hooked
+      // 🍎 APPLE WAY: Trial = Full Premium access (only Premium offers trial)
       maxAccounts: 'unlimited',
       storageGB: 10,
       maxImages: 1000,
@@ -98,11 +98,11 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionTier, SubscriptionPlan> = {
       prioritySupport: false,
     },
     features: [
-      '7 days of Premium access',
+      '7 days of full Premium access',
       'All Premium features included',
-      'Auto-converts to Basic ($19/mo)',
-      'Upgrade to Premium anytime',
-      'Cancel anytime',
+      'Auto-converts to Premium ($29/mo)',
+      'Cancel anytime before trial ends',
+      'No charge until trial ends',
     ]
   },
   

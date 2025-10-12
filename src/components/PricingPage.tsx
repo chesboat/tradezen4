@@ -86,30 +86,29 @@ export const PricingPage = () => {
 
   const savings = billingPeriod === 'annual' ? 26 : 0;
 
-  // 🍎 APPLE WAY: Button text based on current subscription status
+  // 🍎 APPLE WAY: Only Premium gets trial, Basic pays upfront
   const getButtonText = (planTier: 'basic' | 'premium') => {
-    // Trial users get "Start Free Trial"
-    if (isTrial || tier === 'trial') {
-      return 'Start Free Trial';
+    // If user is on this plan already
+    if (tier === planTier) {
+      return 'Current Plan';
     }
     
-    // Basic users upgrading to Premium = "Upgrade to Premium"
+    // Basic users upgrading to Premium
     if (isBasic && planTier === 'premium') {
       return 'Upgrade to Premium';
     }
     
-    // Basic users on Basic plan (shouldn't see this, but just in case)
-    if (isBasic && planTier === 'basic') {
-      return 'Current Plan';
+    // Premium users (shouldn't downgrade, but just in case)
+    if (tier === 'premium' && planTier === 'basic') {
+      return 'Downgrade';
     }
     
-    // Premium users (shouldn't see upgrade options)
-    if (tier === 'premium') {
-      return planTier === 'premium' ? 'Current Plan' : 'Downgrade';
+    // New users / trial users
+    if (planTier === 'premium') {
+      return 'Start 7-Day Free Trial'; // Premium gets trial
+    } else {
+      return 'Subscribe Now'; // Basic pays upfront
     }
-    
-    // Default for new/logged-out users
-    return 'Start Free Trial';
   };
 
   return (
@@ -170,7 +169,7 @@ export const PricingPage = () => {
           </div>
 
           <p className="text-base text-muted-foreground mb-8">
-            ✨ 7-day free trial • Cancel anytime • No credit card required for trial
+            ✨ Premium: 7-day free trial • Basic: Pay as you go • Cancel anytime
           </p>
 
           {/* Billing Toggle */}

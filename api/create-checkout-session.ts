@@ -91,8 +91,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const appUrl = process.env.VITE_APP_URL || 'http://localhost:5173';
 
+    // 🍎 APPLE WAY: Only Premium gets a trial, Basic pays upfront
+    const premiumPriceIds = [
+      process.env.VITE_STRIPE_PREMIUM_MONTHLY_PRICE_ID,
+      process.env.VITE_STRIPE_PREMIUM_ANNUAL_PRICE_ID,
+    ];
+    const isPremium = premiumPriceIds.includes(priceId);
+
     // Create Checkout Session
-    const session = await stripe.checkout.sessions.create({
+    const sessionParams: any = {
       customer: customerId,
       line_items: [
         {
@@ -103,18 +110,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       mode: 'subscription',
       success_url: `${appUrl}/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl}/subscription/canceled`,
-      subscription_data: {
-        trial_period_days: 7, // 7-day free trial
-        metadata: {
-          firebaseUID: userId,
-        },
-      },
       metadata: {
         firebaseUID: userId,
       },
       allow_promotion_codes: true, // Allow discount codes
       billing_address_collection: 'auto',
-    });
+    };
+
+    // Only add trial for Premium subscriptions
+    if (isPremium) {
+      sessionParams.subscription_data = {
+        trial_period_days: 7, // 7-day free trial (Premium only)
+        metadata: {
+          firebaseUID: userId,
+        },
+      };
+    } else {
+      // Basic: immediate payment, no trial
+      sessionParams.subscription_data = {
+        metadata: {
+          firebaseUID: userId,
+        },
+      };
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
 
     return res.status(200).json({ url: session.url });
   } catch (error: any) {
