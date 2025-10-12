@@ -111,6 +111,16 @@ function AppContent() {
     }
   }, [loading, currentUser, hasAccess, isExpired]);
 
+  // 🚧 HARD GUARD: If logged-in user has no access, force PricingPage
+  if (!loading && currentUser && hasAccess === false) {
+    console.log('🔒 Access blocked - forcing pricing page');
+    return (
+      <div className="min-h-screen">
+        <PricingPage />
+      </div>
+    );
+  }
+
   // 🍎 APPLE WAY: Force light mode for marketing pages (logged out users)
   React.useEffect(() => {
     if (!loading) {
