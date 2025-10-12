@@ -482,6 +482,13 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
   syncToFirestore: async () => {
     const { profile } = get();
     if (!profile) return;
+    
+    // 🚨 CRITICAL: Guard against missing profile.id
+    const uid = profile.id;
+    if (!uid || typeof uid !== 'string') {
+      console.debug('syncToFirestore skipped: missing profile.id');
+      return;
+    }
 
     try {
       console.log('🔐 syncToFirestore writing XP:', {
@@ -491,7 +498,7 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
         prestige: profile.xp?.prestige,
       });
       
-      const profileDoc = doc(db, 'userProfiles', profile.id);
+      const profileDoc = doc(db, 'userProfiles', uid);
       
       // 🚨 CRITICAL: Sanitize ALL data before writing to Firestore
       // Firestore will throw "r.indexOf" error if ANY field is undefined
