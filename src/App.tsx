@@ -111,15 +111,7 @@ function AppContent() {
     }
   }, [loading, currentUser, hasAccess, isExpired]);
 
-  // 🚧 HARD GUARD: If logged-in user has no access, force PricingPage
-  if (!loading && currentUser && hasAccess === false) {
-    console.log('🔒 Access blocked - forcing pricing page');
-    return (
-      <div className="min-h-screen">
-        <PricingPage />
-      </div>
-    );
-  }
+  // Note: hard guard moved to AppWithPricingCheck to avoid render timing issues
 
   // 🍎 APPLE WAY: Force light mode for marketing pages (logged out users)
   React.useEffect(() => {
@@ -565,6 +557,7 @@ function AppContent() {
 // Wrapper to check for new signup before loading AppContent
 function AppWithPricingCheck() {
   const { currentUser, loading } = useAuth();
+  const { hasAccess } = useSubscription();
   const [showWelcome, setShowWelcome] = React.useState(false);
   
   // Check if user is in signup flow
@@ -575,6 +568,12 @@ function AppWithPricingCheck() {
     }
   }, [loading, currentUser]);
   
+  // 🚧 HARD GUARD: Block app when user is logged in but has no access
+  if (!loading && currentUser && hasAccess === false) {
+    console.log('🔒 Access blocked - forcing pricing page (root wrapper)');
+    return <PricingPage />;
+  }
+
   // 🍎 APPLE-STYLE: Show Welcome Flow first for new signups
   if (!loading && currentUser && sessionStorage.getItem('show_pricing_after_auth') === 'true') {
     const hasSeenWelcome = sessionStorage.getItem('has_seen_welcome_flow') === 'true';
