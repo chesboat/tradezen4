@@ -80,38 +80,41 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, fea
   
   const premiumPlan = SUBSCRIPTION_PLANS.premium;
   
-  // Determine if user is a new/free user (neither trial nor basic)
-  const isNewUser = !isTrial && !isBasic;
+  // 🍎 APPLE WAY: Trial users see "Start Free Trial", existing customers see "Upgrade"
+  const isExistingCustomer = isBasic; // Basic users are existing paying customers
   
   // Button text changes based on feature context and user status
   const getButtonText = () => {
-    if (feature) {
-      // Feature-specific CTAs for Trading Health
-      if (feature.includes('Trend')) return isNewUser ? 'Start Free Trial' : 'Unlock 30/90-Day Trends';
-      if (feature.includes('Rule')) return isNewUser ? 'Start Free Trial' : 'Get Full Rule Breakdown';
-      if (feature.includes('Edge')) return isNewUser ? 'Start Free Trial' : 'Unlock Edge Analysis';
-      if (feature.includes('Risk')) return isNewUser ? 'Start Free Trial' : 'Unlock Risk Analysis';
-      if (feature.includes('For You')) return isNewUser ? 'Start Free Trial' : 'Enable For You Coaching';
-      
-      // Feature-specific CTAs for Intelligence features
-      if (feature.includes('Calendar')) return isNewUser ? 'Start Free Trial' : 'Unlock Calendar Heatmap';
-      if (feature.includes('Time Intelligence')) return isNewUser ? 'Start Free Trial' : 'Unlock Time Intelligence';
-      if (feature.includes('Setup Analytics')) return isNewUser ? 'Start Free Trial' : 'Unlock Setup Analytics';
-      if (feature.includes('Insight History')) return isNewUser ? 'Start Free Trial' : 'Unlock Insight History';
-      if (feature.includes('Experiment')) return isNewUser ? 'Start Free Trial' : 'Unlock Experiment Mode';
+    // Existing customers (Basic plan) should NEVER see "Start Free Trial"
+    if (isExistingCustomer) {
+      if (feature) {
+        // Feature-specific CTAs for existing customers
+        if (feature.includes('Trend')) return 'Unlock 30/90-Day Trends';
+        if (feature.includes('Rule')) return 'Get Full Rule Breakdown';
+        if (feature.includes('Edge')) return 'Unlock Edge Analysis';
+        if (feature.includes('Risk')) return 'Unlock Risk Analysis';
+        if (feature.includes('For You')) return 'Enable For You Coaching';
+        if (feature.includes('Calendar')) return 'Unlock Calendar Heatmap';
+        if (feature.includes('Time Intelligence')) return 'Unlock Time Intelligence';
+        if (feature.includes('Setup Analytics')) return 'Unlock Setup Analytics';
+        if (feature.includes('Insight History')) return 'Unlock Insight History';
+        if (feature.includes('Experiment')) return 'Unlock Experiment Mode';
+      }
+      return 'Upgrade to Premium';
     }
-    // Default CTAs
-    return isNewUser ? 'Start Free Trial' : 'Upgrade to Premium';
+    
+    // Trial/new users get "Start Free Trial"
+    return 'Start Free Trial';
   };
   
   const buttonText = getButtonText();
   
   // Subtext changes based on billing period and user status
-  const subText = isNewUser 
-    ? '7-Day Free Trial • Cancel Anytime'
-    : billingPeriod === 'monthly'
-    ? `Billed at ${formatPrice(premiumPlan.monthlyPrice)}/month • Cancel Anytime`
-    : `Billed at ${formatPrice(premiumPlan.annualPrice)}/year • Cancel Anytime`;
+  const subText = isExistingCustomer
+    ? billingPeriod === 'monthly'
+      ? `Billed at ${formatPrice(premiumPlan.monthlyPrice)}/month • Cancel Anytime`
+      : `Billed at ${formatPrice(premiumPlan.annualPrice)}/year • Cancel Anytime`
+    : '7-Day Free Trial • Cancel Anytime';
   
   // Calculate savings
   const annualSavings = getAnnualSavings(premiumPlan.monthlyPrice, premiumPlan.annualPrice);
