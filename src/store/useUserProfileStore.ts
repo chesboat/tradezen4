@@ -133,6 +133,7 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
           };
 
           const nextProfile: UserProfile = {
+            id: userId, // ensure id is always present for downstream writes
             ...(data as any),
             stats: safeStats,
             joinedAt: (data as any).joinedAt ? new Date((data as any).joinedAt) : new Date(),
