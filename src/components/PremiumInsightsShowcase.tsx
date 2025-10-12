@@ -107,7 +107,7 @@ const PremiumInsightsShowcase: React.FC = () => {
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-7xl mx-auto px-6 py-6">
           {!isPremium ? (
-            <PremiumUpsell onUpgrade={() => setShowUpgradeModal(true)} />
+            <PremiumUpsell onUpgrade={() => setShowUpgradeModal(true)} isBasic={isBasic} />
           ) : hasCorrelations ? (
             <>
               {activeSection === 'correlations' && (
@@ -190,7 +190,7 @@ const SectionTab: React.FC<{
 };
 
 // Premium Upsell Component
-const PremiumUpsell: React.FC<{ onUpgrade: () => void }> = ({ onUpgrade }) => {
+const PremiumUpsell: React.FC<{ onUpgrade: () => void; isBasic: boolean }> = ({ onUpgrade, isBasic }) => {
   const features = [
     {
       icon: History,
