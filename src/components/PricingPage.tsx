@@ -40,9 +40,9 @@ export const PricingPage = () => {
         throw new Error(`Missing price ID for ${targetTier} ${billingPeriod}. Check Vercel environment variables.`);
       }
 
-      // Check if user has an active subscription (upgrading)
-      const hasActiveSubscription = profile?.stripeSubscriptionId && 
-                                    profile?.subscriptionStatus === 'active';
+      // Check if user has an existing subscription (active OR trialing)
+      const hasActiveSubscription = !!(profile?.stripeSubscriptionId &&
+        (profile?.subscriptionStatus === 'active' || profile?.subscriptionStatus === 'trialing'));
       
       if (hasActiveSubscription && isBasic && targetTier === 'premium') {
         // 🍎 UPGRADING: Use instant upgrade with proration
