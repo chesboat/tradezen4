@@ -82,23 +82,23 @@ export const PricingPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-gray-100 text-gray-900 py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-muted/50 text-foreground py-12 px-4">
       <div className="max-w-6xl mx-auto">
         {/* Hero Section - Trading Health Focus */}
         <div className="text-center mb-16">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-2 mb-4 bg-blue-100 px-4 py-2 rounded-full"
+            className="inline-flex items-center gap-2 mb-4 bg-primary/10 px-4 py-2 rounded-full"
           >
-            <Sparkles className="w-4 h-4 text-blue-600" />
-            <span className="text-sm font-medium text-blue-600">YOUR TRADING HEALTH PLAN</span>
+            <Sparkles className="w-4 h-4 text-primary" />
+            <span className="text-sm font-medium text-primary">YOUR TRADING HEALTH PLAN</span>
           </motion.div>
           
-          <h1 className="text-5xl font-bold mb-4 text-gray-900">
+          <h1 className="text-5xl font-bold mb-4 text-foreground">
             Choose Your Plan
           </h1>
-          <p className="text-xl text-gray-600 mb-12">
+          <p className="text-xl text-muted-foreground mb-12">
             Track your Edge, Consistency & Risk Control
           </p>
 
@@ -111,8 +111,8 @@ export const PricingPage = () => {
               className="bg-gradient-to-br from-orange-500/10 to-orange-500/5 rounded-2xl p-6 border border-orange-500/20"
             >
               <div className="text-4xl mb-3">💰</div>
-              <div className="font-bold text-lg mb-1 text-gray-900">Edge</div>
-              <div className="text-sm text-gray-600">Are you profitable?</div>
+              <div className="font-bold text-lg mb-1 text-foreground">Edge</div>
+              <div className="text-sm text-muted-foreground">Are you profitable?</div>
             </motion.div>
 
             <motion.div
@@ -122,8 +122,8 @@ export const PricingPage = () => {
               className="bg-gradient-to-br from-green-500/10 to-green-500/5 rounded-2xl p-6 border border-green-500/20"
             >
               <div className="text-4xl mb-3">🎯</div>
-              <div className="font-bold text-lg mb-1 text-gray-900">Consistency</div>
-              <div className="text-sm text-gray-600">Following your rules?</div>
+              <div className="font-bold text-lg mb-1 text-foreground">Consistency</div>
+              <div className="text-sm text-muted-foreground">Following your rules?</div>
             </motion.div>
 
             <motion.div
@@ -133,23 +133,23 @@ export const PricingPage = () => {
               className="bg-gradient-to-br from-cyan-500/10 to-cyan-500/5 rounded-2xl p-6 border border-cyan-500/20"
             >
               <div className="text-4xl mb-3">⚠️</div>
-              <div className="font-bold text-lg mb-1 text-gray-900">Risk Control</div>
-              <div className="text-sm text-gray-600">Protecting your capital?</div>
+              <div className="font-bold text-lg mb-1 text-foreground">Risk Control</div>
+              <div className="text-sm text-muted-foreground">Protecting your capital?</div>
             </motion.div>
           </div>
 
-          <p className="text-base text-gray-600 mb-8">
+          <p className="text-base text-muted-foreground mb-8">
             ✨ 7-day free trial • Cancel anytime • No credit card required for trial
           </p>
 
           {/* Billing Toggle */}
-          <div className="inline-flex items-center gap-4 bg-gray-100 rounded-xl p-1.5 shadow-sm">
+          <div className="inline-flex items-center gap-4 bg-muted/50 rounded-xl p-1.5 shadow-sm">
             <button
               onClick={() => setBillingPeriod('monthly')}
               className={`px-6 py-2 rounded-lg font-medium transition-all ${
                 billingPeriod === 'monthly'
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               Monthly
@@ -158,13 +158,13 @@ export const PricingPage = () => {
               onClick={() => setBillingPeriod('annual')}
               className={`px-6 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
                 billingPeriod === 'annual'
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               Annual
               {billingPeriod === 'annual' && (
-                <span className="text-xs bg-white/30 px-2 py-0.5 rounded-full">
+                <span className="text-xs bg-primary-foreground/30 px-2 py-0.5 rounded-full">
                   Save {savings}%
                 </span>
               )}
@@ -179,11 +179,11 @@ export const PricingPage = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm"
+            className="bg-card rounded-2xl p-8 border border-border shadow-sm"
           >
             <div className="mb-6">
-              <h3 className="text-2xl font-bold mb-2 text-gray-900">Basic</h3>
-              <p className="text-gray-600">
+              <h3 className="text-2xl font-bold mb-2 text-foreground">Basic</h3>
+              <p className="text-muted-foreground">
                 For serious traders
               </p>
             </div>
@@ -203,7 +203,7 @@ export const PricingPage = () => {
             <button
               onClick={() => handleSubscribe('basic')}
               disabled={loadingPlan === 'basic' || (isBasic && tier === 'basic')}
-              className="w-full py-3 px-6 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-6 shadow-sm"
+              className="w-full py-3 px-6 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-6 shadow-sm"
             >
               {loadingPlan === 'basic' ? 'Loading...' : getButtonText('basic')}
             </button>
@@ -269,16 +269,16 @@ export const PricingPage = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
-            className="bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-2xl p-8 relative overflow-hidden shadow-lg"
+            className="bg-gradient-to-br from-primary to-primary/90 text-primary-foreground rounded-2xl p-8 relative overflow-hidden shadow-lg"
           >
             {/* Popular Badge */}
-            <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-medium">
+            <div className="absolute top-4 right-4 bg-primary-foreground/20 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-medium">
               🔥 Most Popular
             </div>
 
             <div className="mb-6">
               <h3 className="text-2xl font-bold mb-2">Premium</h3>
-              <p className="text-white/90">
+              <p className="text-primary-foreground/90">
                 For professional traders
               </p>
             </div>
@@ -298,7 +298,7 @@ export const PricingPage = () => {
             <button
               onClick={() => handleSubscribe('premium')}
               disabled={loadingPlan === 'premium' || tier === 'premium'}
-              className="w-full py-3 px-6 bg-white text-blue-600 rounded-xl font-medium hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-6 flex items-center justify-center gap-2 shadow-sm"
+              className="w-full py-3 px-6 bg-card text-primary rounded-xl font-medium hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-6 flex items-center justify-center gap-2 shadow-sm"
             >
               <Zap className="w-4 h-4" />
               {loadingPlan === 'premium' ? 'Loading...' : getButtonText('premium')}

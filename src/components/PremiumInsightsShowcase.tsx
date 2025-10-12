@@ -19,7 +19,7 @@ import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
 const PremiumInsightsShowcase: React.FC = () => {
-  const { isPremium } = useSubscription();
+  const { isPremium, isBasic } = useSubscription();
   const { trades } = useTradeStore();
   const { rules, logs } = useRuleTallyStore();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -280,10 +280,10 @@ const PremiumUpsell: React.FC<{ onUpgrade: () => void }> = ({ onUpgrade }) => {
           className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-primary to-purple-600 text-white text-lg rounded-xl font-semibold hover:opacity-90 transition-opacity"
         >
           <Crown className="w-6 h-6" />
-          Start Free Trial - 7 Days Free
+          {isBasic ? 'Upgrade to Premium' : 'Start Free Trial - 7 Days Free'}
         </button>
         <p className="text-sm text-muted-foreground mt-3">
-          7-Day Free Trial • Cancel Anytime
+          {isBasic ? 'Cancel Anytime' : '7-Day Free Trial • Cancel Anytime'}
         </p>
       </div>
     </div>
