@@ -517,7 +517,16 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
       }
       
       if (profile.preferences && typeof profile.preferences === 'object') {
-        dataToWrite.preferences = profile.preferences;
+        // Deep-sanitize preferences - strip undefineds and coerce types
+        const prefs: any = {
+          theme: profile.preferences.theme || 'system',
+          notifications: Boolean(profile.preferences.notifications),
+          autoBackup: Boolean(profile.preferences.autoBackup),
+        };
+        if (profile.preferences.accentColor) {
+          prefs.accentColor = profile.preferences.accentColor;
+        }
+        dataToWrite.preferences = prefs;
       }
       
       // Add subscription fields only if they exist
