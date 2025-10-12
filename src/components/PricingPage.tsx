@@ -113,7 +113,7 @@ export const PricingPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-muted/50 text-foreground py-12 px-4">
+    <div className="min-h-screen bg-white dark:bg-background text-foreground py-12 px-4">
       <div className="max-w-6xl mx-auto">
         {/* Hero Section - Trading Health Focus */}
         <div className="text-center mb-16">
