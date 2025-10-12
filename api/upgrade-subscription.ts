@@ -74,20 +74,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log('⬆️ Upgrading subscription...');
 
-    // 🍎 APPLE WAY: Update subscription with proration
-    const updatedSubscription = await stripe.subscriptions.update(subscriptionId, {
+    // 🍎 APPLE WAY: Update subscription with correct anchor depending on status
+    // When switching from trialing → active, Stripe requires billing_cycle_anchor='now'
+    // Otherwise (active → active) we can keep the anchor unchanged
+    const isTrialing = subscription.status === 'trialing';
+
+    const updateParams: Stripe.SubscriptionUpdateParams = {
       items: [
         {
           id: subscriptionItemId,
           price: newPriceId,
         },
       ],
-      // Proration settings
-      proration_behavior: 'always_invoice', // Create invoice immediately
-      billing_cycle_anchor: 'unchanged', // Keep same billing date
-      // Remove trial if they had one (they already used it)
-      trial_end: 'now',
-    });
+      proration_behavior: 'always_invoice', // Create invoice immediately (shows proration/credit)
+      cancel_at_period_end: false,
+    };
+
+    if (isTrialing) {
+      // End trial immediately and start new billing cycle now
+      updateParams.trial_end = 'now';
+      updateParams.billing_cycle_anchor = 'now';
+    } else {
+      // Keep existing billing anniversary
+      updateParams.billing_cycle_anchor = 'unchanged';
+    }
+
+    const updatedSubscription = await stripe.subscriptions.update(subscriptionId, updateParams);
 
     console.log('✅ Subscription upgraded:', {
       subscriptionId: updatedSubscription.id,
