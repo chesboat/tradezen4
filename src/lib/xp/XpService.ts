@@ -15,7 +15,12 @@ export class XpService {
   static async addXp(delta: number, meta?: any): Promise<void> {
     const { profile } = useUserProfileStore.getState();
     if (!profile || !Number.isFinite(delta) || delta <= 0) return;
-    const xpDocRef = doc(db, 'userProfiles', profile.id, 'xp', 'status');
+    const uid = (profile as any).id;
+    if (!uid || typeof uid !== 'string') {
+      console.debug('XP add skipped: missing profile.id');
+      return;
+    }
+    const xpDocRef = doc(db, 'userProfiles', uid, 'xp', 'status');
     const now = new Date();
 
     try {
@@ -89,7 +94,12 @@ export class XpService {
   static subscribe(onChange: (xp: { total: number; seasonXp: number; level: number; prestige: number }) => void) {
     const { profile } = useUserProfileStore.getState();
     if (!profile) return () => {};
-    const xpDocRef = doc(db, 'userProfiles', profile.id, 'xp', 'status');
+    const uid = (profile as any).id;
+    if (!uid || typeof uid !== 'string') {
+      console.debug('XP subscribe skipped: missing profile.id');
+      return () => {};
+    }
+    const xpDocRef = doc(db, 'userProfiles', uid, 'xp', 'status');
     let triedBootstrap = false;
     return onSnapshot(xpDocRef, async (snap) => {
       try {
