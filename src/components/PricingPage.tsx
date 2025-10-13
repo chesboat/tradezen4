@@ -51,12 +51,32 @@ export const PricingPage = () => {
         
         await upgradeSubscription(currentUser.uid, priceId);
         
-        toast.success('🎉 Upgraded to Premium! Enjoy your new features.', { id: 'upgrade' });
+        toast.success('🎉 Upgraded to Premium! Loading your new features...', { id: 'upgrade' });
         
-        // Give webhook a moment to update Firestore, then reload
-        setTimeout(() => {
-          window.location.href = '/?view=dashboard';
-        }, 2000);
+        // Wait for Stripe webhook to update Firestore (polling approach)
+        let attempts = 0;
+        const maxAttempts = 15; // 15 seconds max
+        const checkInterval = setInterval(async () => {
+          attempts++;
+          
+          // Reload profile from Firestore
+          const { loadFromFirestore } = useUserProfileStore.getState();
+          const updatedProfile = await loadFromFirestore(currentUser.uid);
+          
+          if (updatedProfile?.subscriptionTier === 'premium') {
+            clearInterval(checkInterval);
+            toast.success('🎉 Welcome to Premium!', { id: 'upgrade' });
+            setTimeout(() => {
+              window.location.href = '/?view=dashboard';
+            }, 500);
+          } else if (attempts >= maxAttempts) {
+            clearInterval(checkInterval);
+            toast.success('Upgrade complete! Refresh if you don\'t see changes.', { id: 'upgrade' });
+            setTimeout(() => {
+              window.location.href = '/?view=dashboard';
+            }, 1000);
+          }
+        }, 1000); // Check every second
       } else {
         // 🆕 NEW SUBSCRIPTION: Use normal checkout flow
         console.log('🆕 Starting new subscription checkout');
