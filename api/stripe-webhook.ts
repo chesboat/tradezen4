@@ -150,11 +150,15 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     stripePriceId: priceId,
     subscriptionTier: tier,
     subscriptionStatus: subscription.status,
-    currentPeriodEnd: Timestamp.fromDate(new Date(subscription.current_period_end * 1000)),
     updatedAt: Timestamp.now(),
   };
   
-  if (subscription.trial_end) {
+  // Only add timestamps if they're valid numbers
+  if (subscription.current_period_end && typeof subscription.current_period_end === 'number') {
+    updateData.currentPeriodEnd = Timestamp.fromDate(new Date(subscription.current_period_end * 1000));
+  }
+  
+  if (subscription.trial_end && typeof subscription.trial_end === 'number') {
     updateData.trialEndsAt = Timestamp.fromDate(new Date(subscription.trial_end * 1000));
   }
   
@@ -184,11 +188,15 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
     stripePriceId: priceId,
     subscriptionTier: tier,
     subscriptionStatus: subscription.status,
-    currentPeriodEnd: Timestamp.fromDate(new Date(subscription.current_period_end * 1000)),
     updatedAt: Timestamp.now(),
   };
   
-  if (subscription.trial_end) {
+  // Only add timestamps if they're valid numbers
+  if (subscription.current_period_end && typeof subscription.current_period_end === 'number') {
+    updateData.currentPeriodEnd = Timestamp.fromDate(new Date(subscription.current_period_end * 1000));
+  }
+  
+  if (subscription.trial_end && typeof subscription.trial_end === 'number') {
     updateData.trialEndsAt = Timestamp.fromDate(new Date(subscription.trial_end * 1000));
   }
   
@@ -210,12 +218,18 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   }
 
   // Keep the tier until the end of the period, but mark as canceled
-  await db.collection('userProfiles').doc(userId).set({
+  const updateData: any = {
     subscriptionStatus: 'canceled',
     canceledAt: Timestamp.now(),
-    currentPeriodEnd: Timestamp.fromDate(new Date(subscription.current_period_end * 1000)),
     updatedAt: Timestamp.now(),
-  }, { merge: true });
+  };
+  
+  // Only add currentPeriodEnd if it's a valid number
+  if (subscription.current_period_end && typeof subscription.current_period_end === 'number') {
+    updateData.currentPeriodEnd = Timestamp.fromDate(new Date(subscription.current_period_end * 1000));
+  }
+  
+  await db.collection('userProfiles').doc(userId).set(updateData, { merge: true });
 
   console.log(`✅ Subscription canceled for user ${userId}`);
 }
