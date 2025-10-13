@@ -41,14 +41,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const profileDoc = await profileRef.get();
 
     if (!profileDoc.exists) {
+      console.error('❌ User profile not found:', userId);
       return res.status(404).json({ message: 'User profile not found' });
     }
 
     const profileData = profileDoc.data();
     const subscriptionId = profileData?.stripeSubscriptionId;
     const currentPriceId = profileData?.stripePriceId;
+    const stripeCustomerId = profileData?.stripeCustomerId;
+    const currentTier = profileData?.subscriptionTier;
+
+    console.log('👤 User profile found:', {
+      userId,
+      email: profileData?.email,
+      currentTier,
+      subscriptionId,
+      currentPriceId,
+      stripeCustomerId,
+    });
 
     if (!subscriptionId) {
+      console.error('❌ No subscription ID in profile');
       return res.status(400).json({ 
         message: 'No active subscription found. Please start a new subscription instead.' 
       });
