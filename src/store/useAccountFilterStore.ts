@@ -143,8 +143,28 @@ export const initializeDefaultAccounts = async () => {
 
     const state = useAccountFilterStore.getState();
     if (state.accounts.length === 0) {
-      // Do not auto-create demo accounts in SSOT mode
-      console.log('No accounts found for user. Leaving empty (SSOT).');
+      // 🍎 APPLE WAY: Auto-create "Live Account" for first-time users
+      console.log('🍎 No accounts found - creating default "Live Account"');
+      
+      try {
+        const { addAccount } = useAccountFilterStore.getState();
+        const defaultAccount = await addAccount({
+          name: 'Live Account',
+          type: 'live',
+          balance: 0,
+          currency: 'USD',
+          broker: '',
+          status: 'active',
+        });
+        
+        // Pre-select the new account
+        if (defaultAccount?.id) {
+          setSelectedAccount(defaultAccount.id);
+          console.log('✅ Default "Live Account" created and selected');
+        }
+      } catch (error) {
+        console.error('❌ Failed to create default account:', error);
+      }
     } else if (!state.selectedAccountId) {
       const activeAccounts = state.accounts.filter(a => getAccountStatus(a) === 'active');
       const leader = activeAccounts.find(a => (a as any).linkedAccountIds && (a as any).linkedAccountIds.length > 0);
