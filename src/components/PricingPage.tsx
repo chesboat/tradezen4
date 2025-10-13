@@ -6,6 +6,7 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { useUserProfileStore } from '@/store/useUserProfileStore';
 import { redirectToCheckout, upgradeSubscription, getPriceId } from '@/lib/stripe';
 import { SUBSCRIPTION_PLANS } from '@/types/subscription';
+import { WelcomeToPremiumModal } from '@/components/WelcomeToPremiumModal';
 import toast from 'react-hot-toast';
 
 type BillingPeriod = 'monthly' | 'annual';
@@ -16,6 +17,12 @@ export const PricingPage = () => {
   const { profile } = useUserProfileStore();
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('annual');
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+  const [upgradeDetails, setUpgradeDetails] = useState<{
+    proratedAmount?: number;
+    nextBillingAmount?: number;
+    nextBillingDate?: string;
+  }>({});
 
   // 🍎 APPLE WAY: Detect if this is an upgrade (existing subscription) vs new signup
   const handleSubscribe = async (targetTier: 'basic' | 'premium') => {
@@ -51,7 +58,7 @@ export const PricingPage = () => {
         
         await upgradeSubscription(currentUser.uid, priceId);
         
-        toast.success('🎉 Upgraded to Premium! Loading your new features...', { id: 'upgrade' });
+        toast.loading('Confirming upgrade...', { id: 'upgrade' });
         
         // Wait for Stripe webhook to update Firestore (polling approach)
         let attempts = 0;
@@ -65,13 +72,26 @@ export const PricingPage = () => {
           
           if (updatedProfile?.subscriptionTier === 'premium') {
             clearInterval(checkInterval);
-            toast.success('🎉 Welcome to Premium!', { id: 'upgrade' });
-            setTimeout(() => {
-              window.location.href = '/?view=dashboard';
-            }, 500);
+            toast.dismiss('upgrade');
+            setLoadingPlan(null);
+            
+            // 🍎 APPLE WAY: Calculate billing details for transparency
+            const basicPrice = billingPeriod === 'annual' ? basicPlan.annualPrice : basicPlan.monthlyPrice;
+            const premiumPrice = billingPeriod === 'annual' ? premiumPlan.annualPrice : premiumPlan.monthlyPrice;
+            const proratedAmount = premiumPrice - basicPrice; // Simplified - Stripe calculates actual proration
+            
+            setUpgradeDetails({
+              proratedAmount,
+              nextBillingAmount: premiumPrice,
+              nextBillingDate: updatedProfile.currentPeriodEnd 
+                ? new Date(updatedProfile.currentPeriodEnd.toDate()).toISOString()
+                : undefined,
+            });
+            setShowWelcomeModal(true);
           } else if (attempts >= maxAttempts) {
             clearInterval(checkInterval);
             toast.success('Upgrade complete! Refresh if you don\'t see changes.', { id: 'upgrade' });
+            setLoadingPlan(null);
             setTimeout(() => {
               window.location.href = '/?view=dashboard';
             }, 1000);
@@ -499,6 +519,21 @@ export const PricingPage = () => {
           <p className="mt-2">Cancel anytime • No questions asked • Full refund within 7 days</p>
         </div>
       </div>
+
+      {/* 🍎 APPLE WAY: Welcome to Premium Modal */}
+      <WelcomeToPremiumModal
+        isOpen={showWelcomeModal}
+        onClose={() => {
+          setShowWelcomeModal(false);
+          setTimeout(() => {
+            window.location.href = '/?view=dashboard';
+          }, 300);
+        }}
+        proratedAmount={upgradeDetails.proratedAmount}
+        nextBillingAmount={upgradeDetails.nextBillingAmount}
+        nextBillingDate={upgradeDetails.nextBillingDate}
+        billingPeriod={billingPeriod}
+      />
     </div>
   );
 };
