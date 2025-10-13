@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Check, Zap, TrendingUp, Target, Shield, Sparkles, Calendar, Clock, BarChart3 } from 'lucide-react';
+import { Timestamp } from 'firebase/firestore';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useUserProfileStore } from '@/store/useUserProfileStore';
@@ -80,12 +81,23 @@ export const PricingPage = () => {
             const premiumPrice = billingPeriod === 'annual' ? premiumPlan.annualPrice : premiumPlan.monthlyPrice;
             const proratedAmount = premiumPrice - basicPrice; // Simplified - Stripe calculates actual proration
             
+            // Calculate next billing date from Firestore timestamp
+            let nextBillingDate: string | undefined = undefined;
+            if (updatedProfile.currentPeriodEnd) {
+              try {
+                const periodEnd = updatedProfile.currentPeriodEnd instanceof Timestamp
+                  ? updatedProfile.currentPeriodEnd.toDate()
+                  : new Date(updatedProfile.currentPeriodEnd);
+                nextBillingDate = periodEnd.toISOString();
+              } catch (error) {
+                console.error('Error parsing currentPeriodEnd:', error);
+              }
+            }
+            
             setUpgradeDetails({
               proratedAmount,
               nextBillingAmount: premiumPrice,
-              nextBillingDate: updatedProfile.currentPeriodEnd 
-                ? new Date(updatedProfile.currentPeriodEnd.toDate()).toISOString()
-                : undefined,
+              nextBillingDate,
             });
             setShowWelcomeModal(true);
           } else if (attempts >= maxAttempts) {

@@ -98,12 +98,38 @@ export const useSubscription = () => {
         return;
       }
       
+      // 🍎 APPLE WAY: Check if user just completed checkout (grace period while webhook processes)
+      let justCompletedCheckout = false;
+      try {
+        const checkoutTimestamp = sessionStorage.getItem('just_completed_checkout');
+        if (checkoutTimestamp) {
+          const elapsed = Date.now() - parseInt(checkoutTimestamp);
+          const graceWindow = 60000; // 60 seconds
+          
+          if (elapsed < graceWindow) {
+            justCompletedCheckout = true;
+            console.log('⏳ Grace period active - allowing dashboard access while webhook processes');
+          } else {
+            // Grace period expired, clear flag
+            sessionStorage.removeItem('just_completed_checkout');
+          }
+        }
+      } catch {}
+      
       // 🚨 SECURITY: New users without a subscription have NO access
-      // They must complete checkout to get access
-      if (!profile?.subscriptionStatus && !profile?.stripeSubscriptionId) {
+      // UNLESS they just completed checkout (grace period)
+      if (!profile?.subscriptionStatus && !profile?.stripeSubscriptionId && !justCompletedCheckout) {
         console.log('⛔ No subscription found - redirecting to pricing');
         setTier('trial');
         setHasAccess(false); // No access until they subscribe!
+        return;
+      }
+      
+      // If in grace period but no subscription data yet, allow temporary access
+      if (justCompletedCheckout && !profile?.subscriptionStatus) {
+        console.log('✅ Grace period: Allowing dashboard access');
+        setTier('basic'); // Default to basic during grace period
+        setHasAccess(true);
         return;
       }
       
@@ -114,6 +140,11 @@ export const useSubscription = () => {
       // If they have access, use their subscription tier
       if (activeAccess && profile?.subscriptionTier) {
         setTier(profile.subscriptionTier);
+        
+        // Clear grace period flag once we have real subscription data
+        try {
+          sessionStorage.removeItem('just_completed_checkout');
+        } catch {}
       } else {
         // No access = trial tier (will trigger paywall)
         setTier('trial');

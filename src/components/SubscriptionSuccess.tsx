@@ -50,6 +50,12 @@ export const SubscriptionSuccess = () => {
   useEffect(() => {
     // Clear post-signup pricing flag on success page
     try { sessionStorage.removeItem('show_pricing_after_auth'); } catch {}
+    
+    // 🍎 APPLE WAY: Set a temporary grace flag to allow dashboard access
+    // while webhook processes subscription. Expires after 60 seconds.
+    try {
+      sessionStorage.setItem('just_completed_checkout', Date.now().toString());
+    } catch {}
 
     // Trigger confetti celebration
     confetti({
