@@ -178,6 +178,13 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
   const priceId = subscription.items.data[0].price.id;
   const tier = getTierFromPriceId(priceId);
 
+  console.log(`📝 Processing subscription update for user ${userId}:`, {
+    subscriptionId: subscription.id,
+    priceId,
+    detectedTier: tier,
+    status: subscription.status,
+  });
+
   // Check if this is an upgrade by comparing with current tier
   const userProfile = await db.collection('userProfiles').doc(userId).get();
   const currentTier = userProfile.data()?.subscriptionTier;
@@ -199,6 +206,13 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
   if (subscription.trial_end && typeof subscription.trial_end === 'number') {
     updateData.trialEndsAt = Timestamp.fromDate(new Date(subscription.trial_end * 1000));
   }
+  
+  console.log(`💾 Writing to Firestore userProfiles/${userId}:`, {
+    ...updateData,
+    // Convert Timestamps to readable format for logging
+    currentPeriodEnd: updateData.currentPeriodEnd ? new Date(subscription.current_period_end! * 1000).toISOString() : 'N/A',
+    updatedAt: 'now',
+  });
   
   await db.collection('userProfiles').doc(userId).set(updateData, { merge: true });
 
