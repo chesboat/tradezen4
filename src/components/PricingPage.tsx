@@ -114,6 +114,12 @@ export const PricingPage = () => {
       } else {
         // 🆕 NEW SUBSCRIPTION: Use normal checkout flow
         console.log('🆕 Starting new subscription checkout');
+        
+        // 🍎 APPLE WAY: Store which plan they're purchasing so success page knows
+        try {
+          localStorage.setItem('purchased_plan_tier', targetTier);
+        } catch {}
+        
         await redirectToCheckout(priceId, currentUser.uid);
       }
     } catch (error: any) {

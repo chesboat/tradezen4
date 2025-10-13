@@ -42,9 +42,13 @@ export const SubscriptionSuccess = () => {
     : null;
   const [selectedFeature, setSelectedFeature] = useState(0);
   const { profile } = useUserProfileStore();
+  
+  // 🍎 APPLE WAY: Check if user just signed up for Basic (from sessionStorage)
+  const [justSignedUpForBasic, setJustSignedUpForBasic] = useState(false);
 
   // 🍎 APPLE WAY: Detect if this is Basic (no trial) or Premium (trial)
-  const isBasic = profile?.subscriptionTier === 'basic';
+  // Check both profile data AND sessionStorage for immediate detection
+  const isBasic = profile?.subscriptionTier === 'basic' || justSignedUpForBasic;
   const isPremiumTrial = profile?.subscriptionStatus === 'trialing';
 
   useEffect(() => {
@@ -55,6 +59,16 @@ export const SubscriptionSuccess = () => {
     // while webhook processes subscription. Expires after 60 seconds.
     try {
       sessionStorage.setItem('just_completed_checkout', Date.now().toString());
+    } catch {}
+    
+    // 🍎 APPLE WAY: Detect which plan was purchased by checking localStorage
+    // This is set in PricingPage before checkout
+    try {
+      const purchasedPlan = localStorage.getItem('purchased_plan_tier');
+      if (purchasedPlan === 'basic') {
+        setJustSignedUpForBasic(true);
+        localStorage.removeItem('purchased_plan_tier'); // Clear after reading
+      }
     } catch {}
 
     // Trigger confetti celebration
