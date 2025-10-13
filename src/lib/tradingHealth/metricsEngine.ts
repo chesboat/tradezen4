@@ -203,10 +203,11 @@ function calculateRiskControlRing(
   accountBalance?: number
 ): TradingHealthMetrics['riskControl'] {
   if (currentTrades.length === 0) {
+    // 🍎 APPLE WAY: Show 0 with "No trades yet" - honest, not misleading
     return {
-      value: 80, // No trades = no drawdown = perfect score (capped at goal)
+      value: 0, // No data = no score (not a perfect score)
       goal: 80,
-      status: 'excellent',
+      status: 'critical', // Consistent with Edge ring
       trend: 'stable',
       weekOverWeekChange: 0,
       currentDrawdown: 0,
