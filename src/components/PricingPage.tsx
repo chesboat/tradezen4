@@ -77,9 +77,11 @@ export const PricingPage = () => {
             setLoadingPlan(null);
             
             // 🍎 APPLE WAY: Calculate billing details for transparency
+            // Note: SUBSCRIPTION_PLANS stores prices in dollars, but modal expects cents
             const basicPrice = billingPeriod === 'annual' ? basicPlan.annualPrice : basicPlan.monthlyPrice;
             const premiumPrice = billingPeriod === 'annual' ? premiumPlan.annualPrice : premiumPlan.monthlyPrice;
-            const proratedAmount = premiumPrice - basicPrice; // Simplified - Stripe calculates actual proration
+            const proratedAmount = (premiumPrice - basicPrice) * 100; // Convert to cents
+            const nextBillingAmount = premiumPrice * 100; // Convert to cents
             
             // Calculate next billing date from Firestore timestamp
             let nextBillingDate: string | undefined = undefined;
@@ -96,7 +98,7 @@ export const PricingPage = () => {
             
             setUpgradeDetails({
               proratedAmount,
-              nextBillingAmount: premiumPrice,
+              nextBillingAmount,
               nextBillingDate,
             });
             setShowWelcomeModal(true);
