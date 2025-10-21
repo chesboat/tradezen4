@@ -122,7 +122,13 @@ export const InlineNoteEditor: React.FC<InlineNoteEditorProps> = ({ noteId, onCl
   // TipTap editor
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        paragraph: {
+          HTMLAttributes: {
+            class: 'my-1', // Reduced spacing between paragraphs
+          },
+        },
+      }),
       Underline,
       Link.configure({ openOnClick: false }),
       TiptapImage.configure({
@@ -171,11 +177,12 @@ export const InlineNoteEditor: React.FC<InlineNoteEditorProps> = ({ noteId, onCl
         }
         return false;
       },
-      // Handle paste
+      // Handle paste (Apple Notes style)
       handlePaste: (view, event, slice) => {
         const items = event.clipboardData?.items;
         if (!items) return false;
 
+        // Check for images first
         for (const item of Array.from(items)) {
           if (item.type.startsWith('image/')) {
             event.preventDefault();
@@ -191,7 +198,51 @@ export const InlineNoteEditor: React.FC<InlineNoteEditorProps> = ({ noteId, onCl
             return true;
           }
         }
-        return false;
+
+        // Handle HTML paste from ChatGPT and other sources (Apple Notes style)
+        const htmlContent = event.clipboardData?.getData('text/html');
+        const plainText = event.clipboardData?.getData('text/plain');
+        
+        if (htmlContent && htmlContent.trim()) {
+          event.preventDefault();
+          
+          // Create a temporary div to parse HTML
+          const tempDiv = document.createElement('div');
+          tempDiv.innerHTML = htmlContent;
+          
+          // Remove excessive line breaks and normalize spacing
+          // Replace multiple consecutive <br> tags with single paragraph breaks
+          let cleanedHtml = tempDiv.innerHTML;
+          
+          // Remove <br> tags that appear multiple times in a row
+          cleanedHtml = cleanedHtml.replace(/(<br\s*\/?>[\s\n]*){2,}/gi, '</p><p>');
+          
+          // Remove empty paragraphs
+          cleanedHtml = cleanedHtml.replace(/<p[^>]*>[\s\n]*<\/p>/gi, '');
+          
+          // Normalize whitespace in paragraphs
+          cleanedHtml = cleanedHtml.replace(/<p([^>]*)>\s+/gi, '<p$1>');
+          cleanedHtml = cleanedHtml.replace(/\s+<\/p>/gi, '</p>');
+          
+          // Remove <br> at the end of paragraphs (redundant)
+          cleanedHtml = cleanedHtml.replace(/<br\s*\/?>\s*<\/p>/gi, '</p>');
+          
+          // If the content doesn't have <p> tags, wrap it
+          if (!cleanedHtml.includes('<p>') && !cleanedHtml.includes('<h1>') && !cleanedHtml.includes('<h2>')) {
+            // Split by double line breaks and wrap each in <p>
+            const lines = plainText?.split(/\n\n+/) || [cleanedHtml];
+            cleanedHtml = lines
+              .filter(line => line.trim())
+              .map(line => `<p>${line.replace(/\n/g, '<br>')}</p>`)
+              .join('');
+          }
+          
+          // Insert the cleaned content
+          editor?.commands.insertContent(cleanedHtml);
+          return true;
+        }
+        
+        return false; // Allow default behavior for plain text
       },
     },
   });

@@ -6,6 +6,11 @@ export const SubscriptionCanceled = () => {
   useEffect(() => {
     // Clear post-signup pricing flag on cancel page
     try { sessionStorage.removeItem('show_pricing_after_auth'); } catch {}
+    
+    // 🍎 APPLE WAY: Force light mode for cancel page (marketing/conversion)
+    const root = document.documentElement;
+    root.classList.remove('dark');
+    root.classList.add('light');
   }, []);
 
   return (

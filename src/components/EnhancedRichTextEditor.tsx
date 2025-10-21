@@ -52,7 +52,12 @@ export const EnhancedRichTextEditor: React.FC<EnhancedRichTextEditorProps> = ({
     extensions: [
       StarterKit.configure({ 
         codeBlock: false,
-        heading: false // We'll configure this separately
+        heading: false, // We'll configure this separately
+        paragraph: {
+          HTMLAttributes: {
+            class: 'my-1', // Reduced spacing between paragraphs
+          },
+        },
       }),
       CodeBlock,
       Underline,
@@ -100,8 +105,54 @@ export const EnhancedRichTextEditor: React.FC<EnhancedRichTextEditorProps> = ({
           return true; // Prevent default paste behavior
         }
         
-        console.log('🔧 EnhancedRichTextEditor: No image in paste, allowing default behavior');
-        return false; // Allow default paste behavior for non-images
+        // Handle HTML paste from ChatGPT and other sources (Apple Notes style)
+        const htmlContent = event.clipboardData?.getData('text/html');
+        const plainText = event.clipboardData?.getData('text/plain');
+        
+        if (htmlContent && htmlContent.trim()) {
+          console.log('🔧 EnhancedRichTextEditor: HTML content detected, cleaning...');
+          event.preventDefault();
+          
+          // Create a temporary div to parse HTML
+          const tempDiv = document.createElement('div');
+          tempDiv.innerHTML = htmlContent;
+          
+          // Remove excessive line breaks and normalize spacing
+          // Replace multiple consecutive <br> tags with single paragraph breaks
+          let cleanedHtml = tempDiv.innerHTML;
+          
+          // Remove <br> tags that appear multiple times in a row
+          cleanedHtml = cleanedHtml.replace(/(<br\s*\/?>[\s\n]*){2,}/gi, '</p><p>');
+          
+          // Remove empty paragraphs
+          cleanedHtml = cleanedHtml.replace(/<p[^>]*>[\s\n]*<\/p>/gi, '');
+          
+          // Normalize whitespace in paragraphs
+          cleanedHtml = cleanedHtml.replace(/<p([^>]*)>\s+/gi, '<p$1>');
+          cleanedHtml = cleanedHtml.replace(/\s+<\/p>/gi, '</p>');
+          
+          // Remove <br> at the end of paragraphs (redundant)
+          cleanedHtml = cleanedHtml.replace(/<br\s*\/?>\s*<\/p>/gi, '</p>');
+          
+          // If the content doesn't have <p> tags, wrap it
+          if (!cleanedHtml.includes('<p>') && !cleanedHtml.includes('<h1>') && !cleanedHtml.includes('<h2>')) {
+            // Split by double line breaks and wrap each in <p>
+            const lines = plainText?.split(/\n\n+/) || [cleanedHtml];
+            cleanedHtml = lines
+              .filter(line => line.trim())
+              .map(line => `<p>${line.replace(/\n/g, '<br>')}</p>`)
+              .join('');
+          }
+          
+          console.log('🔧 EnhancedRichTextEditor: Cleaned HTML content');
+          
+          // Insert the cleaned content
+          editor?.commands.insertContent(cleanedHtml);
+          return true;
+        }
+        
+        console.log('🔧 EnhancedRichTextEditor: Plain text paste, allowing default behavior');
+        return false; // Allow default paste behavior for plain text
       },
     },
     onFocus: () => setShowToolbar(true),

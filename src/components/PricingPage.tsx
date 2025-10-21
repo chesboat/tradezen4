@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Check, Zap, TrendingUp, Target, Shield, Sparkles, Calendar, Clock, BarChart3 } from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
@@ -16,6 +16,22 @@ export const PricingPage = () => {
   const { currentUser } = useAuth();
   const { tier, isTrial, isBasic } = useSubscription();
   const { profile } = useUserProfileStore();
+
+  // 🍎 APPLE WAY: Force light mode for pricing page (marketing/conversion optimization)
+  useEffect(() => {
+    const root = document.documentElement;
+    const previousTheme = root.classList.contains('dark') ? 'dark' : 'light';
+    
+    // Force light mode
+    root.classList.remove('dark');
+    root.classList.add('light');
+    
+    // Restore theme when component unmounts
+    return () => {
+      root.classList.remove('light', 'dark');
+      root.classList.add(previousTheme);
+    };
+  }, []);
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('annual');
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);

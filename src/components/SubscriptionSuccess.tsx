@@ -55,6 +55,11 @@ export const SubscriptionSuccess = () => {
     // Clear post-signup pricing flag on success page
     try { sessionStorage.removeItem('show_pricing_after_auth'); } catch {}
     
+    // 🍎 APPLE WAY: Force light mode for success page (marketing/conversion)
+    const root = document.documentElement;
+    root.classList.remove('dark');
+    root.classList.add('light');
+    
     // 🍎 APPLE WAY: Set a temporary grace flag to allow dashboard access
     // while webhook processes subscription. Expires after 60 seconds.
     try {

@@ -33,7 +33,14 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
   const { addTask } = useTodoStore();
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({ codeBlock: false }),
+      StarterKit.configure({ 
+        codeBlock: false,
+        paragraph: {
+          HTMLAttributes: {
+            class: 'my-1', // Reduced spacing between paragraphs
+          },
+        },
+      }),
       CodeBlock,
       Underline,
       Link.configure({ openOnClick: true }),
@@ -60,6 +67,50 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
     editorProps: {
       attributes: {
         class: 'prose prose-invert max-w-none focus:outline-none',
+      },
+      // Handle HTML paste from ChatGPT and other sources (Apple Notes style)
+      handlePaste: (view, event, slice) => {
+        const htmlContent = event.clipboardData?.getData('text/html');
+        const plainText = event.clipboardData?.getData('text/plain');
+        
+        if (htmlContent && htmlContent.trim()) {
+          event.preventDefault();
+          
+          // Create a temporary div to parse HTML
+          const tempDiv = document.createElement('div');
+          tempDiv.innerHTML = htmlContent;
+          
+          // Remove excessive line breaks and normalize spacing
+          let cleanedHtml = tempDiv.innerHTML;
+          
+          // Remove <br> tags that appear multiple times in a row
+          cleanedHtml = cleanedHtml.replace(/(<br\s*\/?>[\s\n]*){2,}/gi, '</p><p>');
+          
+          // Remove empty paragraphs
+          cleanedHtml = cleanedHtml.replace(/<p[^>]*>[\s\n]*<\/p>/gi, '');
+          
+          // Normalize whitespace in paragraphs
+          cleanedHtml = cleanedHtml.replace(/<p([^>]*)>\s+/gi, '<p$1>');
+          cleanedHtml = cleanedHtml.replace(/\s+<\/p>/gi, '</p>');
+          
+          // Remove <br> at the end of paragraphs (redundant)
+          cleanedHtml = cleanedHtml.replace(/<br\s*\/?>\s*<\/p>/gi, '</p>');
+          
+          // If the content doesn't have <p> tags, wrap it
+          if (!cleanedHtml.includes('<p>') && !cleanedHtml.includes('<h1>') && !cleanedHtml.includes('<h2>')) {
+            const lines = plainText?.split(/\n\n+/) || [cleanedHtml];
+            cleanedHtml = lines
+              .filter(line => line.trim())
+              .map(line => `<p>${line.replace(/\n/g, '<br>')}</p>`)
+              .join('');
+          }
+          
+          // Insert the cleaned content
+          editor?.commands.insertContent(cleanedHtml);
+          return true;
+        }
+        
+        return false; // Allow default behavior for plain text
       },
     },
   });

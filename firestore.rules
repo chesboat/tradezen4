@@ -128,10 +128,12 @@ service cloud.firestore {
       allow update: if isOwner(userId) && (
         // Allow users to update these fields
         request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'id',
           'displayName', 
           'avatar', 
           'preferences', 
           'xp',
+          'stats',
           'hasSeenWelcome',
           'joinedAt',
           'email',

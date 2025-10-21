@@ -14,6 +14,13 @@ export const WelcomeFlow = ({ onComplete }: WelcomeFlowProps) => {
   const [currentScreen, setCurrentScreen] = useState(0);
   const [hasAutoAdvanced, setHasAutoAdvanced] = useState(false);
 
+  // 🍎 APPLE WAY: Force light mode for welcome flow (marketing/conversion)
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.remove('dark');
+    root.classList.add('light');
+  }, []);
+
   // Auto-advance from welcome screen after 2.5 seconds
   useEffect(() => {
     if (currentScreen === 0 && !hasAutoAdvanced) {
