@@ -568,6 +568,8 @@ const AppleHabitCard: React.FC<AppleHabitCardProps> = ({
   const singleDayCount = selectedEntry ? selectedEntry.count : (isToday ? tallyCount : 0);
   const isChecked = singleDayCount > 0;
   const totalPeriodCount = data?.reduce((sum, d) => sum + d.count, 0) || 0;
+  // For habits, we typically log once per day, so maxCount should be at least 1
+  // This ensures bars are visible when logged
   const maxCount = Math.max(...(data?.map(d => d.count) || []), 1);
   
   const completedDays = data?.filter(d => d.count > 0).length || 0;
@@ -815,11 +817,13 @@ const AppleHabitCard: React.FC<AppleHabitCardProps> = ({
                       !isFuture && "group-hover:opacity-100 group-hover:scale-y-110"
                     )}
                     style={{ 
-                      height: d.count > 0 ? `${(d.count / maxCount) * 100}%` : '2px'
+                      // For habits, if logged at all, show at least 60% height for visibility
+                      // Scale up to 100% if there are multiple logs
+                      height: d.count > 0 ? `${Math.max(60, (d.count / maxCount) * 100)}%` : '2px'
                     }}
                     initial={prefersReducedMotion ? {} : { height: 0 }}
                     animate={{ 
-                      height: d.count > 0 ? `${(d.count / maxCount) * 100}%` : '2px'
+                      height: d.count > 0 ? `${Math.max(60, (d.count / maxCount) * 100)}%` : '2px'
                     }}
                     transition={prefersReducedMotion ? {} : { delay: index * 0.03, duration: 0.3 }}
                   />
