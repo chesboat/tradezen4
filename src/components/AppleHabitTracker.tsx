@@ -9,7 +9,8 @@ import {
   Check,
   Edit3,
   Trash2,
-  ChevronDown
+  ChevronDown,
+  Calendar
 } from 'lucide-react';
 import { useRuleTallyStore } from '@/store/useRuleTallyStore';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
@@ -489,6 +490,9 @@ const AppleHabitCard: React.FC<AppleHabitCardProps> = ({
   monthlyData = []
 }) => {
   const [showMenu, setShowMenu] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
   const todayStr = formatLocalDate(new Date());
   const [selectedDate, setSelectedDate] = useState<string>(todayStr);
   const isToday = selectedDate === todayStr;
@@ -515,7 +519,31 @@ const AppleHabitCard: React.FC<AppleHabitCardProps> = ({
 
   const handleCheck = (event: React.MouseEvent) => {
     onTally(event, selectedDate);
+    // Show toast feedback
+    if (!isToday) {
+      const dateObj = parseLocalDateString(selectedDate);
+      const formatted = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      displayToast(`✓ Logged for ${formatted}`);
+    }
   };
+
+  const displayToast = (message: string) => {
+    setToastMessage(message);
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 2000);
+  };
+
+  // Check if yesterday was missed
+  const yesterdayStr = formatLocalDate(new Date(Date.now() - 86400000));
+  const yesterdayData = data?.find(d => d.date === yesterdayStr);
+  const missedYesterday = !yesterdayData || yesterdayData.count === 0;
+
+  // Generate last 30 days for date picker
+  const last30Days = Array.from({ length: 30 }, (_, i) => {
+    const date = new Date();
+    date.setDate(date.getDate() - i);
+    return formatLocalDate(date);
+  });
 
   return (
     <motion.div
@@ -523,6 +551,28 @@ const AppleHabitCard: React.FC<AppleHabitCardProps> = ({
       whileHover={{ y: -1 }}
       layout
     >
+      {/* Date Context Banner - Phase 3 */}
+      <AnimatePresence>
+        {!isToday && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mb-3 p-2 bg-primary/10 rounded-lg flex items-center justify-between"
+          >
+            <span className="text-xs text-primary font-medium">
+              📅 Logging for: {parseLocalDateString(selectedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+            </span>
+            <button 
+              onClick={() => setSelectedDate(todayStr)}
+              className="text-xs text-primary hover:underline font-medium"
+            >
+              Back to Today
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3 flex-1">
@@ -553,17 +603,31 @@ const AppleHabitCard: React.FC<AppleHabitCardProps> = ({
           </div>
         </div>
 
-        {/* Edit Menu */}
-        <div className="relative">
+        {/* Calendar & Edit Menu - Phase 3 */}
+        <div className="flex items-center gap-1">
+          {/* Calendar button */}
           <button
             onClick={(e) => {
               e.stopPropagation();
-              setShowMenu(!showMenu);
+              setShowDatePicker(!showDatePicker);
             }}
             className="p-1.5 rounded-lg hover:bg-muted/30 transition-colors text-muted-foreground"
+            title="Log for a different date"
           >
-            <Edit3 className="w-4 h-4" />
+            <Calendar className="w-4 h-4" />
           </button>
+
+          {/* Edit Menu */}
+          <div className="relative">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowMenu(!showMenu);
+              }}
+              className="p-1.5 rounded-lg hover:bg-muted/30 transition-colors text-muted-foreground"
+            >
+              <Edit3 className="w-4 h-4" />
+            </button>
           
           <AnimatePresence>
             {showMenu && (
@@ -598,6 +662,55 @@ const AppleHabitCard: React.FC<AppleHabitCardProps> = ({
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* Date Picker Dropdown - Phase 3 */}
+          <AnimatePresence>
+            {showDatePicker && (
+              <motion.div
+                className="absolute right-0 top-full mt-1 bg-background rounded-lg border border-border shadow-lg z-50 w-48 max-h-64 overflow-y-auto"
+                initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                transition={{ duration: 0.15 }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="p-2">
+                  <div className="text-xs font-semibold text-muted-foreground px-2 py-1 mb-1">
+                    Select Date
+                  </div>
+                  {last30Days.map((date) => {
+                    const dateObj = parseLocalDateString(date);
+                    const isSelected = date === selectedDate;
+                    const isCurrentDay = date === todayStr;
+                    const dayData = data?.find(d => d.date === date);
+                    const isLogged = dayData && dayData.count > 0;
+                    
+                    let label = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', weekday: 'short' });
+                    if (isCurrentDay) label = 'Today';
+                    else if (date === yesterdayStr) label = 'Yesterday';
+                    
+                    return (
+                      <button
+                        key={date}
+                        onClick={() => {
+                          setSelectedDate(date);
+                          setShowDatePicker(false);
+                        }}
+                        className={cn(
+                          "w-full flex items-center justify-between px-2 py-1.5 text-sm rounded transition-colors",
+                          isSelected ? "bg-primary text-primary-foreground" : "hover:bg-muted/50 text-foreground"
+                        )}
+                      >
+                        <span>{label}</span>
+                        {isLogged && <Check className="w-3 h-3 text-green-500" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
         </div>
       </div>
 
@@ -606,7 +719,7 @@ const AppleHabitCard: React.FC<AppleHabitCardProps> = ({
         <ProgressDots completed={completedDays} total={totalDays} />
       </div>
 
-      {/* Bar Chart */}
+      {/* Bar Chart - Phase 1: Enhanced Interaction */}
       {data && data.length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -615,29 +728,43 @@ const AppleHabitCard: React.FC<AppleHabitCardProps> = ({
           </div>
           
           <div className="flex items-end gap-0.5 h-12">
-            {data.map((d, index) => (
-              <motion.div
-                key={index}
-                className={cn(
-                  "flex-1 bg-primary rounded-sm min-h-[2px]",
-                  d.count === 0 && "opacity-10"
-                )}
-                style={{ 
-                  height: d.count > 0 ? `${(d.count / maxCount) * 100}%` : '2px'
-                }}
-                initial={{ height: 0 }}
-                animate={{ 
-                  height: d.count > 0 ? `${(d.count / maxCount) * 100}%` : '2px'
-                }}
-                transition={{ delay: index * 0.03, duration: 0.3 }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  const todayISO = todayStr;
-                  if (parseLocalDateString(d.date) > parseLocalDateString(todayISO)) return;
-                  setSelectedDate(d.date);
-                }}
-              />
-            ))}
+            {data.map((d, index) => {
+              const isFuture = parseLocalDateString(d.date) > parseLocalDateString(todayStr);
+              const isSelectedBar = d.date === selectedDate;
+              
+              return (
+                <motion.div
+                  key={index}
+                  className={cn(
+                    "flex-1 bg-primary rounded-sm min-h-[2px] transition-all",
+                    d.count === 0 && "opacity-10",
+                    !isFuture && "cursor-pointer",
+                    isSelectedBar && "ring-2 ring-primary ring-offset-1 ring-offset-background"
+                  )}
+                  style={{ 
+                    height: d.count > 0 ? `${(d.count / maxCount) * 100}%` : '2px'
+                  }}
+                  initial={{ height: 0 }}
+                  animate={{ 
+                    height: d.count > 0 ? `${(d.count / maxCount) * 100}%` : '2px'
+                  }}
+                  transition={{ delay: index * 0.03, duration: 0.3 }}
+                  whileHover={!isFuture ? { scale: 1.1, opacity: 1 } : {}}
+                  whileTap={!isFuture ? { scale: 0.95 } : {}}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (isFuture) return;
+                    setSelectedDate(d.date);
+                    if (d.date !== todayStr) {
+                      const dateObj = parseLocalDateString(d.date);
+                      const formatted = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                      displayToast(`Selected ${formatted}`);
+                    }
+                  }}
+                  title={!isFuture ? parseLocalDateString(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : undefined}
+                />
+              );
+            })}
           </div>
 
           {/* Weekday labels */}
@@ -649,8 +776,54 @@ const AppleHabitCard: React.FC<AppleHabitCardProps> = ({
               return <div key={idx}>{label}</div>;
             })}
           </div>
+
+          {/* Hint text - Phase 1 */}
+          <p className="text-[10px] text-muted-foreground text-center mt-1">
+            Tap any day to log
+          </p>
         </div>
       )}
+
+      {/* Yesterday Quick Action - Phase 2 */}
+      <AnimatePresence>
+        {missedYesterday && isToday && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mt-3 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs text-amber-700 dark:text-amber-300 font-medium">
+                Missed yesterday?
+              </span>
+              <button
+                onClick={(e) => {
+                  onTally(e, yesterdayStr);
+                  displayToast('✓ Logged for yesterday');
+                }}
+                className="px-3 py-1 bg-amber-500 text-white rounded-lg text-xs font-medium hover:bg-amber-600 transition-colors whitespace-nowrap"
+              >
+                ✓ Log it now
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {showToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-foreground text-background px-4 py-2 rounded-lg shadow-lg text-sm font-medium z-50"
+          >
+            {toastMessage}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };
