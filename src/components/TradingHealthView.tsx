@@ -30,6 +30,7 @@ import { useAccountFilterStore } from '@/store/useAccountFilterStore';
 import { useSubscription } from '@/hooks/useSubscription';
 import { calculateTradingHealth } from '@/lib/tradingHealth/metricsEngine';
 import { detectTradingHealthEvents, checkDailySummarySchedule } from '@/lib/tradingHealthEventDetector';
+import { calculateStatisticalConfidence } from '@/lib/tradingHealth/statisticalConfidence';
 import { HealthRings } from '@/components/tradingHealth/HealthRings';
 import { TradingHealthOnboarding } from '@/components/tradingHealth/TradingHealthOnboarding';
 import { TradingHealthDocs } from '@/components/tradingHealth/TradingHealthDocs';
@@ -155,7 +156,6 @@ export const TradingHealthView: React.FC = () => {
 
   // Calculate statistical confidence
   const statisticalConfidence = useMemo(() => {
-    const { calculateStatisticalConfidence } = require('@/lib/tradingHealth/statisticalConfidence');
     return calculateStatisticalConfidence(filteredTrades.length);
   }, [filteredTrades.length]);
 
