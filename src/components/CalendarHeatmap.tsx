@@ -118,18 +118,31 @@ export const CalendarHeatmap: React.FC<CalendarHeatmapProps> = ({
     };
   }, [trades]);
 
-  // Generate calendar grid (last N months)
+  // Generate calendar grid (last N months, fewer on mobile)
   const calendarGrid = useMemo(() => {
     const weeks: Array<Array<{ date: string; dayData: DayData | null }>> = [];
     const today = new Date();
     const startDate = new Date(today);
-    startDate.setMonth(startDate.getMonth() - monthsToShow);
-    startDate.setDate(1); // Start from first of month
-
-    // Find the Monday of the week containing startDate
-    const dayOfWeek = startDate.getDay();
-    const diff = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Adjust to Monday
-    startDate.setDate(startDate.getDate() - diff);
+    
+    // On mobile, show fewer weeks to avoid scrolling
+    // Mobile: ~8 weeks fits in 390px (8 weeks × 24px + 24px label + gaps = ~216px)
+    // Desktop: show full months
+    const weeksToShow = isMobile ? 8 : null; // null = show all based on monthsToShow
+    
+    if (weeksToShow) {
+      // Mobile: show last N weeks
+      startDate.setDate(startDate.getDate() - (weeksToShow * 7));
+      const dayOfWeek = startDate.getDay();
+      const diff = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      startDate.setDate(startDate.getDate() - diff);
+    } else {
+      // Desktop: show last N months
+      startDate.setMonth(startDate.getMonth() - monthsToShow);
+      startDate.setDate(1);
+      const dayOfWeek = startDate.getDay();
+      const diff = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      startDate.setDate(startDate.getDate() - diff);
+    }
 
     let currentWeek: Array<{ date: string; dayData: DayData | null }> = [];
     const currentDate = new Date(startDate);
@@ -153,7 +166,7 @@ export const CalendarHeatmap: React.FC<CalendarHeatmapProps> = ({
     }
 
     return weeks;
-  }, [heatmapData, monthsToShow]);
+  }, [heatmapData, monthsToShow, isMobile]);
 
   // Show locked state for non-premium users
   if (!isPremium) {
@@ -238,7 +251,7 @@ export const CalendarHeatmap: React.FC<CalendarHeatmapProps> = ({
             Performance Heatmap
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Last {monthsToShow} months • {stats.totalDays} trading days
+            {isMobile ? 'Last 8 weeks' : `Last ${monthsToShow} months`} • {stats.totalDays} trading days
           </p>
         </div>
         {/* Apple-style: No badges for features you have access to */}
@@ -358,8 +371,8 @@ export const CalendarHeatmap: React.FC<CalendarHeatmapProps> = ({
         </div>
       </div>
 
-      {/* Mobile scroll hint - Apple style */}
-      {isMobile && calendarGrid.length > 10 && (
+      {/* Mobile scroll hint - only if still wide */}
+      {isMobile && calendarGrid.length > 8 && (
         <div className="flex items-center justify-center gap-1 text-[10px] text-muted-foreground mt-2">
           <span>←</span>
           <span>Swipe to see more</span>
