@@ -14,9 +14,20 @@ import { localStorage as storage, STORAGE_KEYS } from '@/lib/localStorageUtils';
 interface StoredHealthSnapshot {
   timestamp: string;
   metrics: {
-    edge: { value: number; expectancy: number };
-    consistency: { value: number; currentStreak: number };
-    riskControl: { value: number; currentDrawdown: number };
+    edge: { 
+      value: number; 
+      expectancy: number;
+      wins: number;
+      losses: number;
+    };
+    consistency: { 
+      value: number; 
+      currentStreak: number;
+    };
+    riskControl: { 
+      value: number; 
+      currentDrawdown: number;
+    };
   };
   userId: string;
 }
@@ -41,7 +52,9 @@ const storeSnapshot = (metrics: TradingHealthMetrics, userId: string) => {
     metrics: {
       edge: { 
         value: metrics.edge.value, 
-        expectancy: metrics.edge.expectancy 
+        expectancy: metrics.edge.expectancy,
+        wins: metrics.edge.wins,
+        losses: metrics.edge.losses,
       },
       consistency: { 
         value: metrics.consistency.value, 
@@ -194,8 +207,8 @@ export const detectTradingHealthEvents = (
   }
 
   // 4. DETECT POSITIVE BREAKTHROUGHS
-  // Import statistical confidence
-  const { calculateStatisticalConfidence, MIN_TRADES_FOR } = await import('./statisticalConfidence');
+  // Import statistical confidence (sync import)
+  const { calculateStatisticalConfidence, MIN_TRADES_FOR } = require('./tradingHealth/statisticalConfidence');
   
   // Calculate total trades in current window (approximate based on wins + losses)
   const totalTrades = curr.edge.wins + curr.edge.losses;
