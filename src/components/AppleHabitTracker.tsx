@@ -784,7 +784,7 @@ const AppleHabitCard: React.FC<AppleHabitCardProps> = ({
               const isSelectedBar = d.date === selectedDate;
               
               return (
-                <div key={index} className="flex-1 relative group">
+                <div key={index} className="flex-1 relative group h-full flex items-end">
                   {/* Clickable overlay - Apple's solution for small targets */}
                   <button
                     onClick={(e) => {
@@ -810,7 +810,7 @@ const AppleHabitCard: React.FC<AppleHabitCardProps> = ({
                   {/* Visual bar */}
                   <motion.div
                     className={cn(
-                      "relative bg-primary rounded-sm min-h-[2px] transition-all pointer-events-none",
+                      "w-full bg-primary rounded-sm min-h-[2px] transition-all pointer-events-none",
                       d.count === 0 && "opacity-10",
                       isSelectedBar && "ring-2 ring-primary ring-offset-1 ring-offset-background",
                       // Hover effect on parent group
