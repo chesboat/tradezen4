@@ -84,6 +84,18 @@ export const detectTradingHealthEvents = (
   // 1. DETECT RING CHANGES (only if significant: 5+ points)
   // Edge Ring
   if (Math.abs(curr.edge.value - prev.edge.value) >= 5) {
+    console.log('[Trading Health Events] Edge ring changed:', {
+      oldValue: prev.edge.value,
+      newValue: curr.edge.value,
+      change: curr.edge.value - prev.edge.value,
+      oldExpectancy: prev.edge.expectancy,
+      newExpectancy: curr.edge.expectancy,
+      oldWins: prev.edge.wins,
+      newWins: curr.edge.wins,
+      oldLosses: prev.edge.losses,
+      newLosses: curr.edge.losses,
+    });
+    
     logTradingHealthActivity.ringChange({
       ringType: 'edge',
       oldValue: prev.edge.value,

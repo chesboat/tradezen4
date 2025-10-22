@@ -114,7 +114,10 @@ function calculateEdgeRing(
   
   const expectancy = (winRate / 100) * avgWin - (1 - winRate / 100) * avgLoss;
   
-  const profitFactor = losingTrades.length > 0 ? (totalWinningPnl / totalLosingPnl) : 0;
+  // Fix: When there are no losses, profit factor should be very high (not 0)
+  const profitFactor = losingTrades.length > 0 
+    ? (totalWinningPnl / totalLosingPnl) 
+    : (winningTrades.length > 0 ? 999 : 0);
 
   // Score: Normalize expectancy to 0-100 scale
   // Positive expectancy is good, higher is better
@@ -126,6 +129,16 @@ function calculateEdgeRing(
   else if (expectancy > 0) score = 45;
   else if (expectancy > -10) score = 30;
   else score = 15;
+  
+  console.log('[Edge Ring] Score calculation:', {
+    wins: winningTrades.length,
+    losses: losingTrades.length,
+    avgWin: avgWin.toFixed(2),
+    avgLoss: avgLoss.toFixed(2),
+    expectancy: expectancy.toFixed(2),
+    profitFactor: profitFactor.toFixed(2),
+    score
+  });
 
   // Calculate previous window for trend
   let previousScore = 0;

@@ -24,6 +24,15 @@ export const logTradingHealthActivity = {
     const change = newValue - oldValue;
     const trend = change > 0 ? 'improving' : change < 0 ? 'declining' : 'stable';
     
+    console.log('[Activity Logger] Logging ring change:', {
+      ringType,
+      oldValue,
+      newValue,
+      change,
+      trend,
+      expectancy
+    });
+    
     // Determine priority based on severity
     let priority: ActivityPriority = 'medium';
     if (Math.abs(change) >= 15) priority = 'high';

@@ -39,6 +39,11 @@ import type { TimeWindow } from '@/lib/tradingHealth/types';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/utils';
 
+// Load debug utilities in development
+if (import.meta.env.DEV) {
+  import('@/lib/tradingHealth/debugUtils');
+}
+
 export const TradingHealthView: React.FC = () => {
   const { trades } = useTradeStore();
   const { profile: userProfile } = useUserProfileStore();
