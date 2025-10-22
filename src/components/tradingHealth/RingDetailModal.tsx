@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import type { TradingHealthMetrics } from '@/lib/tradingHealth/types';
 import { formatCurrency, cn } from '@/lib/utils';
+import { calculateStatisticalConfidence, getConfidenceBadgeStyle } from '@/lib/tradingHealth/statisticalConfidence';
 
 interface RingDetailModalProps {
   isOpen: boolean;
@@ -68,6 +69,16 @@ export const RingDetailModal: React.FC<RingDetailModalProps> = ({
 
   const ringData = getRingData();
   const percentage = Math.min((ringData.score / ringData.goal) * 100, 100);
+  
+  // Calculate statistical confidence based on trade count
+  const tradeCount = ringType === 'edge' 
+    ? (metrics.edge.wins + metrics.edge.losses)
+    : ringType === 'consistency'
+    ? (metrics.consistency.rulesFollowed + (metrics.consistency.totalRules - metrics.consistency.rulesFollowed))
+    : metrics.edge.wins + metrics.edge.losses; // Use edge trades for risk control too
+  
+  const confidence = calculateStatisticalConfidence(tradeCount);
+  const confidenceBadge = getConfidenceBadgeStyle(confidence.level);
 
   const getTrendIcon = (t: 'improving' | 'stable' | 'declining') => {
     switch (t) {
@@ -143,7 +154,7 @@ export const RingDetailModal: React.FC<RingDetailModalProps> = ({
             <div className="bg-card w-full max-w-2xl max-h-[90vh] md:max-h-[85vh] rounded-t-3xl md:rounded-3xl border border-border overflow-hidden flex flex-col">
               {/* Header */}
               <div className="flex-shrink-0 px-6 py-4 border-b border-border">
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between mb-3">
                   <h2 className="text-2xl font-bold text-foreground">{ringData.title}</h2>
                   <button
                     onClick={onClose}
@@ -152,7 +163,20 @@ export const RingDetailModal: React.FC<RingDetailModalProps> = ({
                     <X className="w-5 h-5 text-muted-foreground" />
                   </button>
                 </div>
-                <p className="text-sm text-muted-foreground">{ringData.subtitle}</p>
+                <p className="text-sm text-muted-foreground mb-3">{ringData.subtitle}</p>
+                
+                {/* Statistical Confidence Indicator */}
+                {confidence.level !== 'high' && (
+                  <div className={cn('flex items-center gap-2 px-3 py-2 rounded-lg text-xs', confidenceBadge.bg)}>
+                    <Info className={cn('w-3.5 h-3.5', confidenceBadge.color)} />
+                    <span className={confidenceBadge.color}>
+                      {confidence.message} • {tradeCount} trades
+                    </span>
+                    <span className="text-muted-foreground">
+                      ({Math.round(confidence.percentage)}% confidence)
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Content */}

@@ -34,6 +34,7 @@ import { HealthRings } from '@/components/tradingHealth/HealthRings';
 import { TradingHealthOnboarding } from '@/components/tradingHealth/TradingHealthOnboarding';
 import { TradingHealthDocs } from '@/components/tradingHealth/TradingHealthDocs';
 import { RingDetailModal } from '@/components/tradingHealth/RingDetailModal';
+import { StatisticalConfidenceBanner } from '@/components/tradingHealth/StatisticalConfidenceBanner';
 import { UpgradeModal } from '@/components/UpgradeModal';
 import type { TimeWindow } from '@/lib/tradingHealth/types';
 import { cn } from '@/lib/utils';
@@ -150,7 +151,13 @@ export const TradingHealthView: React.FC = () => {
       maxConsecutiveLosses: result.riskControl.maxConsecutiveLosses
     });
     return result;
-  }, [filteredTrades, timeWindow]);
+  }, [filteredTrades, timeWindow, selectedAccount]);
+
+  // Calculate statistical confidence
+  const statisticalConfidence = useMemo(() => {
+    const { calculateStatisticalConfidence } = require('@/lib/tradingHealth/statisticalConfidence');
+    return calculateStatisticalConfidence(filteredTrades.length);
+  }, [filteredTrades.length]);
 
   // Check if user has any trades (in current filter)
   const hasTrades = filteredTrades.length > 0;
@@ -343,20 +350,24 @@ export const TradingHealthView: React.FC = () => {
             </div>
           </motion.div>
         ) : (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2 }}
-            className="bg-card/50 backdrop-blur-sm border border-border rounded-3xl p-6 sm:p-8"
-          >
-            <div className="flex flex-col items-center gap-6">
-              {/* Pure Rings */}
-              <HealthRings
-                metrics={metrics}
-                size="large"
-                showLabels={true}
-                onRingClick={(ring) => setSelectedRing(ring)}
-              />
+          <div className="space-y-4">
+            {/* Statistical Confidence Banner */}
+            <StatisticalConfidenceBanner confidence={statisticalConfidence} />
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2 }}
+              className="bg-card/50 backdrop-blur-sm border border-border rounded-3xl p-6 sm:p-8"
+            >
+              <div className="flex flex-col items-center gap-6">
+                {/* Pure Rings */}
+                <HealthRings
+                  metrics={metrics}
+                  size="large"
+                  showLabels={true}
+                  onRingClick={(ring) => setSelectedRing(ring)}
+                />
 
               {/* Overall Score - Below Rings */}
               <motion.div
@@ -390,8 +401,9 @@ export const TradingHealthView: React.FC = () => {
                 </div>
               )}
             </motion.div>
-            </div>
-          </motion.div>
+              </div>
+            </motion.div>
+          </div>
         )}
 
         {/* Detailed Breakdown - Only show if has trades */}

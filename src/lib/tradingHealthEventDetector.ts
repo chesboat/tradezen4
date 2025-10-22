@@ -194,27 +194,42 @@ export const detectTradingHealthEvents = (
   }
 
   // 4. DETECT POSITIVE BREAKTHROUGHS
-  // Edge exceeds goal (80)
-  if (prev.edge.value < 80 && curr.edge.value >= 80) {
-    logTradingHealthActivity.milestone({
-      title: 'Edge Mastery Achieved',
-      description: 'Your edge score hit 80/80. You have a consistently profitable system!',
-      xpEarned: 200,
-    });
-  }
+  // Import statistical confidence
+  const { calculateStatisticalConfidence, MIN_TRADES_FOR } = await import('./statisticalConfidence');
+  
+  // Calculate total trades in current window (approximate based on wins + losses)
+  const totalTrades = curr.edge.wins + curr.edge.losses;
+  const confidence = calculateStatisticalConfidence(totalTrades);
+  
+  // Only award achievements if user has minimum trades (Apple: honest, not misleading)
+  if (confidence.canShowAchievements) {
+    // Edge exceeds goal (80)
+    if (prev.edge.value < 80 && curr.edge.value >= 80) {
+      logTradingHealthActivity.milestone({
+        title: 'Edge Mastery Achieved',
+        description: `Your edge score hit 80/80 with ${totalTrades} trades. You have a consistently profitable system!`,
+        xpEarned: 200,
+      });
+    }
 
-  // All rings closed (all at goal)
-  if (
-    curr.edge.value >= 80 &&
-    curr.consistency.value >= 80 &&
-    curr.riskControl.value >= 80 &&
-    (prev.edge.value < 80 || prev.consistency.value < 80 || prev.riskControl.value < 80)
-  ) {
-    logTradingHealthActivity.milestone({
-      title: 'All Rings Closed! 🎯',
-      description: 'Perfect Trading Health. You\'re operating at peak performance.',
-      xpEarned: 500,
-    });
+    // All rings closed (all at goal)
+    if (
+      curr.edge.value >= 80 &&
+      curr.consistency.value >= 80 &&
+      curr.riskControl.value >= 80 &&
+      (prev.edge.value < 80 || prev.consistency.value < 80 || prev.riskControl.value < 80)
+    ) {
+      logTradingHealthActivity.milestone({
+        title: 'All Rings Closed! 🎯',
+        description: `Perfect Trading Health with ${totalTrades} trades. You're operating at peak performance.`,
+        xpEarned: 500,
+      });
+    }
+  } else {
+    // Log progress instead of achievement
+    if (prev.edge.value < 80 && curr.edge.value >= 80) {
+      console.log(`[Trading Health] Edge hit 80, but need ${MIN_TRADES_FOR.ACHIEVEMENTS - totalTrades} more trades for statistical significance (${totalTrades}/${MIN_TRADES_FOR.ACHIEVEMENTS})`);
+    }
   }
 
   // Store updated snapshot
