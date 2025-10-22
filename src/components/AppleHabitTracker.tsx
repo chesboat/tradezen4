@@ -497,6 +497,13 @@ const AppleHabitCard: React.FC<AppleHabitCardProps> = ({
   const [selectedDate, setSelectedDate] = useState<string>(todayStr);
   const isToday = selectedDate === todayStr;
 
+  // Generate last 30 days for date picker (needed early for keyboard shortcuts)
+  const last30Days = Array.from({ length: 30 }, (_, i) => {
+    const date = new Date();
+    date.setDate(date.getDate() - i);
+    return formatLocalDate(date);
+  });
+
   // Close menus when clicking outside
   useEffect(() => {
     const handleClickOutside = () => {
@@ -586,13 +593,6 @@ const AppleHabitCard: React.FC<AppleHabitCardProps> = ({
   const yesterdayStr = formatLocalDate(new Date(Date.now() - 86400000));
   const yesterdayData = data?.find(d => d.date === yesterdayStr);
   const missedYesterday = !yesterdayData || yesterdayData.count === 0;
-
-  // Generate last 30 days for date picker
-  const last30Days = Array.from({ length: 30 }, (_, i) => {
-    const date = new Date();
-    date.setDate(date.getDate() - i);
-    return formatLocalDate(date);
-  });
 
   return (
     <motion.div
