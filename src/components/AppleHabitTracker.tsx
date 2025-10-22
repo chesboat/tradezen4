@@ -497,14 +497,63 @@ const AppleHabitCard: React.FC<AppleHabitCardProps> = ({
   const [selectedDate, setSelectedDate] = useState<string>(todayStr);
   const isToday = selectedDate === todayStr;
 
-  // Close menu when clicking outside
+  // Close menus when clicking outside
   useEffect(() => {
-    const handleClickOutside = () => setShowMenu(false);
-    if (showMenu) {
+    const handleClickOutside = () => {
+      setShowMenu(false);
+      setShowDatePicker(false);
+    };
+    if (showMenu || showDatePicker) {
       document.addEventListener('click', handleClickOutside);
       return () => document.removeEventListener('click', handleClickOutside);
     }
-  }, [showMenu]);
+  }, [showMenu, showDatePicker]);
+
+  // Keyboard shortcuts - Extra Polish
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Ignore if user is typing in an input
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+
+      // 'c' for calendar picker
+      if (e.key === 'c' && !e.metaKey && !e.ctrlKey) {
+        setShowDatePicker(prev => !prev);
+      }
+      // Escape to close pickers
+      if (e.key === 'Escape') {
+        setShowDatePicker(false);
+        if (!isToday) setSelectedDate(todayStr);
+      }
+      // Arrow keys to navigate days
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        const date = new Date(parseLocalDateString(selectedDate));
+        date.setDate(date.getDate() - 1);
+        const newDate = formatLocalDate(date);
+        // Don't go beyond 30 days
+        if (last30Days.includes(newDate)) {
+          setSelectedDate(newDate);
+        }
+      }
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        const date = new Date(parseLocalDateString(selectedDate));
+        date.setDate(date.getDate() + 1);
+        const newDate = formatLocalDate(date);
+        // Don't go into future
+        if (parseLocalDateString(newDate) <= parseLocalDateString(todayStr)) {
+          setSelectedDate(newDate);
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyPress);
+    return () => document.removeEventListener('keydown', handleKeyPress);
+  }, [selectedDate, todayStr, isToday, last30Days]);
+
+  // Reduced motion support - Extra Polish
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const data = viewMode === 'week' ? weeklyData : monthlyData;
   const selectedEntry = data?.find(d => d.date === selectedDate);
@@ -727,42 +776,59 @@ const AppleHabitCard: React.FC<AppleHabitCardProps> = ({
             <span>{completedDays}/{totalDays} days</span>
           </div>
           
-          <div className="flex items-end gap-0.5 h-12">
+          <div className="flex items-end gap-0.5 h-12 relative">
             {data.map((d, index) => {
               const isFuture = parseLocalDateString(d.date) > parseLocalDateString(todayStr);
               const isSelectedBar = d.date === selectedDate;
               
               return (
-                <motion.div
-                  key={index}
-                  className={cn(
-                    "flex-1 bg-primary rounded-sm min-h-[2px] transition-all",
-                    d.count === 0 && "opacity-10",
-                    !isFuture && "cursor-pointer",
-                    isSelectedBar && "ring-2 ring-primary ring-offset-1 ring-offset-background"
+                <div key={index} className="flex-1 relative group">
+                  {/* Clickable overlay - Apple's solution for small targets */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (isFuture) return;
+                      setSelectedDate(d.date);
+                      if (d.date !== todayStr) {
+                        const dateObj = parseLocalDateString(d.date);
+                        const formatted = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                        displayToast(`Selected ${formatted}`);
+                      }
+                    }}
+                    disabled={isFuture}
+                    className={cn(
+                      "absolute inset-0 -inset-y-2 z-10",
+                      !isFuture && "cursor-pointer",
+                      isFuture && "cursor-not-allowed"
+                    )}
+                    title={!isFuture ? parseLocalDateString(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : undefined}
+                    aria-label={`Log habit for ${parseLocalDateString(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
+                  />
+                  
+                  {/* Visual bar */}
+                  <motion.div
+                    className={cn(
+                      "relative bg-primary rounded-sm min-h-[2px] transition-all pointer-events-none",
+                      d.count === 0 && "opacity-10",
+                      isSelectedBar && "ring-2 ring-primary ring-offset-1 ring-offset-background",
+                      // Hover effect on parent group
+                      !isFuture && "group-hover:opacity-100 group-hover:scale-y-110"
+                    )}
+                    style={{ 
+                      height: d.count > 0 ? `${(d.count / maxCount) * 100}%` : '2px'
+                    }}
+                    initial={prefersReducedMotion ? {} : { height: 0 }}
+                    animate={{ 
+                      height: d.count > 0 ? `${(d.count / maxCount) * 100}%` : '2px'
+                    }}
+                    transition={prefersReducedMotion ? {} : { delay: index * 0.03, duration: 0.3 }}
+                  />
+                  
+                  {/* Hover indicator - shows full height on hover for empty bars */}
+                  {d.count === 0 && !isFuture && (
+                    <div className="absolute inset-x-0 bottom-0 h-full bg-primary/20 rounded-sm opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
                   )}
-                  style={{ 
-                    height: d.count > 0 ? `${(d.count / maxCount) * 100}%` : '2px'
-                  }}
-                  initial={{ height: 0 }}
-                  animate={{ 
-                    height: d.count > 0 ? `${(d.count / maxCount) * 100}%` : '2px'
-                  }}
-                  transition={{ delay: index * 0.03, duration: 0.3 }}
-                  whileHover={!isFuture ? { scale: 1.1, opacity: 1 } : {}}
-                  whileTap={!isFuture ? { scale: 0.95 } : {}}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (isFuture) return;
-                    setSelectedDate(d.date);
-                    if (d.date !== todayStr) {
-                      const dateObj = parseLocalDateString(d.date);
-                      const formatted = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                      displayToast(`Selected ${formatted}`);
-                    }
-                  }}
-                  title={!isFuture ? parseLocalDateString(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : undefined}
-                />
+                </div>
               );
             })}
           </div>
@@ -777,10 +843,16 @@ const AppleHabitCard: React.FC<AppleHabitCardProps> = ({
             })}
           </div>
 
-          {/* Hint text - Phase 1 */}
-          <p className="text-[10px] text-muted-foreground text-center mt-1">
-            Tap any day to log
-          </p>
+          {/* Hint text with keyboard shortcut - Phase 1 + Extra Polish */}
+          <div className="flex items-center justify-center gap-2 mt-1">
+            <p className="text-[10px] text-muted-foreground text-center">
+              Tap any day to log
+            </p>
+            <span className="text-[10px] text-muted-foreground">•</span>
+            <p className="text-[10px] text-muted-foreground">
+              Press <kbd className="px-1 py-0.5 bg-muted rounded text-[9px] font-mono">C</kbd> for calendar
+            </p>
+          </div>
         </div>
       )}
 
@@ -811,16 +883,19 @@ const AppleHabitCard: React.FC<AppleHabitCardProps> = ({
         )}
       </AnimatePresence>
 
-      {/* Toast Notification */}
+      {/* Toast Notification - Extra Polish with sound effect */}
       <AnimatePresence>
         {showToast && (
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-foreground text-background px-4 py-2 rounded-lg shadow-lg text-sm font-medium z-50"
+            exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 10 }}
+            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+            className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-foreground text-background px-4 py-2 rounded-lg shadow-lg text-sm font-medium z-50 flex items-center gap-2"
+            role="status"
+            aria-live="polite"
           >
-            {toastMessage}
+            <span>{toastMessage}</span>
           </motion.div>
         )}
       </AnimatePresence>
