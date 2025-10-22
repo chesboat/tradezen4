@@ -127,6 +127,34 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
     }
   }, [isAddingNew, newText, newNotes, newUrl, newTags, newCategory, newFlagged]);
 
+  // Helper function to normalize tags (case-insensitive) - MUST be declared before use
+  const normalizeTag = React.useCallback((tag: string): string => {
+    const cleaned = tag.trim();
+    const withHash = cleaned.startsWith('#') ? cleaned : `#${cleaned}`;
+    return withHash.toLowerCase();
+  }, []);
+
+  // Get all unique tags from tasks (normalized)
+  const allTags = React.useMemo(() => {
+    const tagSet = new Set<string>();
+    tasks.forEach(task => {
+      if (task.tags && task.tags.length > 0) {
+        task.tags.forEach(tag => tagSet.add(normalizeTag(tag)));
+      }
+    });
+    return Array.from(tagSet).sort();
+  }, [tasks, normalizeTag]);
+
+  // Get filtered tag suggestions based on input
+  const getTagSuggestions = React.useCallback((input: string, existingTags: string[] = []): string[] => {
+    if (!input || input === '#') return allTags.filter(tag => !existingTags.map(normalizeTag).includes(tag));
+    const normalized = normalizeTag(input);
+    return allTags.filter(tag => 
+      tag.includes(normalized.replace('#', '')) && 
+      !existingTags.map(normalizeTag).includes(tag)
+    );
+  }, [allTags, normalizeTag]);
+
   const filtered = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -161,35 +189,7 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
       .filter((t) => categoryFilter === 'all' ? true : t.category === categoryFilter)
       .filter((t) => selectedTagFilter ? (t.tags && t.tags.some(tag => normalizeTag(tag) === normalizeTag(selectedTagFilter))) : true)
       .filter((t) => !query.trim() || t.text.toLowerCase().includes(query.toLowerCase()));
-  }, [tasks, filter, query, categoryFilter, selectedTagFilter]);
-
-  // Helper function to normalize tags (case-insensitive)
-  const normalizeTag = (tag: string): string => {
-    const cleaned = tag.trim();
-    const withHash = cleaned.startsWith('#') ? cleaned : `#${cleaned}`;
-    return withHash.toLowerCase();
-  };
-
-  // Get all unique tags from tasks (normalized)
-  const allTags = React.useMemo(() => {
-    const tagSet = new Set<string>();
-    tasks.forEach(task => {
-      if (task.tags && task.tags.length > 0) {
-        task.tags.forEach(tag => tagSet.add(normalizeTag(tag)));
-      }
-    });
-    return Array.from(tagSet).sort();
-  }, [tasks]);
-
-  // Get filtered tag suggestions based on input
-  const getTagSuggestions = (input: string, existingTags: string[] = []): string[] => {
-    if (!input || input === '#') return allTags.filter(tag => !existingTags.map(normalizeTag).includes(tag));
-    const normalized = normalizeTag(input);
-    return allTags.filter(tag => 
-      tag.includes(normalized.replace('#', '')) && 
-      !existingTags.map(normalizeTag).includes(tag)
-    );
-  };
+  }, [tasks, filter, query, categoryFilter, selectedTagFilter, normalizeTag]);
 
   const handleDeleteTag = async (tagToDelete: string, taskId?: string) => {
     const normalizedTagToDelete = normalizeTag(tagToDelete);
