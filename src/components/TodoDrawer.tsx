@@ -58,6 +58,8 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
   const [editingTagsTaskId, setEditingTagsTaskId] = useState<string | null>(null);
   const [newTagForTask, setNewTagForTask] = useState('');
+  const [showTagSuggestions, setShowTagSuggestions] = useState(false);
+  const [showNewTaskTagSuggestions, setShowNewTaskTagSuggestions] = useState(false);
 
   // Initialize on mount only (Apple-style: blank canvas, not pre-filled)
   useEffect(() => {
@@ -157,37 +159,55 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
         return t.status === filter;
       })
       .filter((t) => categoryFilter === 'all' ? true : t.category === categoryFilter)
-      .filter((t) => selectedTagFilter ? (t.tags && t.tags.includes(selectedTagFilter)) : true)
+      .filter((t) => selectedTagFilter ? (t.tags && t.tags.some(tag => normalizeTag(tag) === normalizeTag(selectedTagFilter))) : true)
       .filter((t) => !query.trim() || t.text.toLowerCase().includes(query.toLowerCase()));
   }, [tasks, filter, query, categoryFilter, selectedTagFilter]);
 
-  // Get all unique tags from tasks
+  // Helper function to normalize tags (case-insensitive)
+  const normalizeTag = (tag: string): string => {
+    const cleaned = tag.trim();
+    const withHash = cleaned.startsWith('#') ? cleaned : `#${cleaned}`;
+    return withHash.toLowerCase();
+  };
+
+  // Get all unique tags from tasks (normalized)
   const allTags = React.useMemo(() => {
     const tagSet = new Set<string>();
     tasks.forEach(task => {
       if (task.tags && task.tags.length > 0) {
-        task.tags.forEach(tag => tagSet.add(tag));
+        task.tags.forEach(tag => tagSet.add(normalizeTag(tag)));
       }
     });
     return Array.from(tagSet).sort();
   }, [tasks]);
 
+  // Get filtered tag suggestions based on input
+  const getTagSuggestions = (input: string, existingTags: string[] = []): string[] => {
+    if (!input || input === '#') return allTags.filter(tag => !existingTags.map(normalizeTag).includes(tag));
+    const normalized = normalizeTag(input);
+    return allTags.filter(tag => 
+      tag.includes(normalized.replace('#', '')) && 
+      !existingTags.map(normalizeTag).includes(tag)
+    );
+  };
+
   const handleDeleteTag = async (tagToDelete: string, taskId?: string) => {
+    const normalizedTagToDelete = normalizeTag(tagToDelete);
     if (taskId) {
       // Remove tag from specific task only
       const task = tasks.find(t => t.id === taskId);
       if (task && task.tags) {
-        const updatedTags = task.tags.filter(t => t !== tagToDelete);
+        const updatedTags = task.tags.filter(t => normalizeTag(t) !== normalizedTagToDelete);
         await updateTask(task.id, { tags: updatedTags.length > 0 ? updatedTags : [] });
       }
     } else {
       // Remove tag from all tasks that have it (global tag management)
-      const tasksWithTag = tasks.filter(t => t.tags && t.tags.includes(tagToDelete));
+      const tasksWithTag = tasks.filter(t => t.tags && t.tags.some(tag => normalizeTag(tag) === normalizedTagToDelete));
       for (const task of tasksWithTag) {
-        const updatedTags = task.tags!.filter(t => t !== tagToDelete);
+        const updatedTags = task.tags!.filter(t => normalizeTag(t) !== normalizedTagToDelete);
         await updateTask(task.id, { tags: updatedTags.length > 0 ? updatedTags : [] });
       }
-      if (selectedTagFilter === tagToDelete) {
+      if (selectedTagFilter && normalizeTag(selectedTagFilter) === normalizedTagToDelete) {
         setSelectedTagFilter(null);
       }
     }
@@ -195,20 +215,22 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
   };
 
   const handleRenameTag = async (oldTag: string, newTag: string) => {
-    if (!newTag || newTag === oldTag) return;
+    if (!newTag) return;
     
-    // Add hashtag if not present
-    const formattedTag = newTag.startsWith('#') ? newTag : `#${newTag}`;
+    const normalizedOldTag = normalizeTag(oldTag);
+    const normalizedNewTag = normalizeTag(newTag);
     
-    // Update tag in all tasks that have it
-    const tasksWithTag = tasks.filter(t => t.tags && t.tags.includes(oldTag));
+    if (normalizedOldTag === normalizedNewTag) return;
+    
+    // Update tag in all tasks that have it (case-insensitive match)
+    const tasksWithTag = tasks.filter(t => t.tags && t.tags.some(tag => normalizeTag(tag) === normalizedOldTag));
     for (const task of tasksWithTag) {
-      const updatedTags = task.tags!.map(t => t === oldTag ? formattedTag : t);
+      const updatedTags = task.tags!.map(t => normalizeTag(t) === normalizedOldTag ? normalizedNewTag : t);
       await updateTask(task.id, { tags: updatedTags });
     }
     setTagContextMenu(null);
-    if (selectedTagFilter === oldTag) {
-      setSelectedTagFilter(formattedTag);
+    if (selectedTagFilter && normalizeTag(selectedTagFilter) === normalizedOldTag) {
+      setSelectedTagFilter(normalizedNewTag);
     }
   };
 
@@ -220,7 +242,7 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
     if (newCategory) extras.category = newCategory;
     if (newUrl.trim()) extras.url = newUrl.trim();
     if (newNotes.trim()) extras.notes = newNotes.trim();
-    if (newTags.length > 0) extras.tags = newTags;
+    if (newTags.length > 0) extras.tags = newTags.map(normalizeTag); // Normalize tags
     if (newFlagged) extras.pinned = true;
     
     // Set order to current timestamp for natural insertion order at bottom
@@ -238,6 +260,7 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
     setShowTagInput(false);
     setTagInput('');
     setNewFlagged(false);
+    setShowNewTaskTagSuggestions(false);
     // Keep form open and refocus
     setTimeout(() => newTaskInputRef.current?.focus(), 50);
   };
@@ -794,7 +817,7 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                     </div>
                           )}
                           {editingTagsTaskId === task.id && (
-                            <div className="flex gap-1.5">
+                            <div className="relative flex gap-1.5">
                               <input
                                 type="text"
                                 placeholder="Add tag (press Enter)"
@@ -805,38 +828,75 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
                                     value = '#' + value;
                                   }
                                   setNewTagForTask(value);
+                                  setShowTagSuggestions(value.length > 0);
                                 }}
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter' && newTagForTask.trim()) {
-                                    const formattedTag = newTagForTask.trim().startsWith('#') 
-                                      ? newTagForTask.trim() 
-                                      : `#${newTagForTask.trim()}`;
+                                    e.preventDefault();
+                                    const normalizedTag = normalizeTag(newTagForTask.trim());
                                     const currentTags = task.tags || [];
-                                    if (!currentTags.includes(formattedTag)) {
-                                      updateTask(task.id, { tags: [...currentTags, formattedTag] });
+                                    const currentNormalized = currentTags.map(normalizeTag);
+                                    if (!currentNormalized.includes(normalizedTag)) {
+                                      updateTask(task.id, { tags: [...currentTags, normalizedTag] });
                                     }
                                     setNewTagForTask('');
+                                    setShowTagSuggestions(false);
                                   } else if (e.key === 'Escape') {
                                     setEditingTagsTaskId(null);
                                     setNewTagForTask('');
+                                    setShowTagSuggestions(false);
                                   }
                                 }}
-                                onBlur={() => {
-                                  if (newTagForTask.trim()) {
-                                    const formattedTag = newTagForTask.trim().startsWith('#') 
-                                      ? newTagForTask.trim() 
-                                      : `#${newTagForTask.trim()}`;
-                                    const currentTags = task.tags || [];
-                                    if (!currentTags.includes(formattedTag)) {
-                                      updateTask(task.id, { tags: [...currentTags, formattedTag] });
+                                onFocus={() => setShowTagSuggestions(newTagForTask.length > 0)}
+                                onBlur={(e) => {
+                                  // Delay to allow clicking on suggestions
+                                  setTimeout(() => {
+                                    if (newTagForTask.trim()) {
+                                      const normalizedTag = normalizeTag(newTagForTask.trim());
+                                      const currentTags = task.tags || [];
+                                      const currentNormalized = currentTags.map(normalizeTag);
+                                      if (!currentNormalized.includes(normalizedTag)) {
+                                        updateTask(task.id, { tags: [...currentTags, normalizedTag] });
+                                      }
                                     }
-                                  }
-                                  setNewTagForTask('');
-                                  setEditingTagsTaskId(null);
+                                    setNewTagForTask('');
+                                    setEditingTagsTaskId(null);
+                                    setShowTagSuggestions(false);
+                                  }, 200);
                                 }}
                                 className="flex-1 px-2 py-1 text-xs bg-transparent text-muted-foreground placeholder:text-muted-foreground/50 outline-none"
                                 autoFocus
                               />
+                              
+                              {/* Tag Autocomplete Suggestions */}
+                              {showTagSuggestions && newTagForTask && (
+                                <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-md shadow-lg max-h-32 overflow-y-auto z-10">
+                                  {getTagSuggestions(newTagForTask, task.tags || []).map((suggestion) => (
+                                    <button
+                                      key={suggestion}
+                                      type="button"
+                                      onMouseDown={(e) => {
+                                        e.preventDefault();
+                                        const currentTags = task.tags || [];
+                                        const currentNormalized = currentTags.map(normalizeTag);
+                                        if (!currentNormalized.includes(suggestion)) {
+                                          updateTask(task.id, { tags: [...currentTags, suggestion] });
+                                        }
+                                        setNewTagForTask('');
+                                        setShowTagSuggestions(false);
+                                      }}
+                                      className="w-full px-3 py-1.5 text-left text-xs hover:bg-accent transition-colors text-purple-600 dark:text-purple-400"
+                                    >
+                                      {suggestion}
+                                    </button>
+                                  ))}
+                                  {getTagSuggestions(newTagForTask, task.tags || []).length === 0 && (
+                                    <div className="px-3 py-1.5 text-xs text-muted-foreground">
+                                      No matching tags
+                                    </div>
+                                  )}
+                                </div>
+                              )}
                   </div>
                           )}
                 </div>
@@ -984,29 +1044,76 @@ export const TodoDrawer: React.FC<TodoDrawerProps> = ({ className, forcedWidth }
 
                         {/* Tag input - appears when tag icon clicked */}
                         {showTagInput && (
-                          <input
-                            type="text"
-                            placeholder="Add Tag"
-                            value={tagInput}
-                            onChange={(e) => setTagInput(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' && tagInput.trim()) {
-                                e.preventDefault();
-                                // Add hashtag if not present
-                                const tag = tagInput.trim().startsWith('#') 
-                                  ? tagInput.trim() 
-                                  : `#${tagInput.trim()}`;
-                                setNewTags([...newTags, tag]);
-                                setTagInput('');
-                                setShowTagInput(false);
-                              } else if (e.key === 'Escape') {
-                                setTagInput('');
-                                setShowTagInput(false);
-                              }
-                            }}
-                            className="w-full px-0 py-1 text-xs bg-transparent text-purple-600 dark:text-purple-400 placeholder:text-muted-foreground/50 outline-none"
-                            autoFocus
-                          />
+                          <div className="relative">
+                            <input
+                              type="text"
+                              placeholder="Add Tag"
+                              value={tagInput}
+                              onChange={(e) => {
+                                let value = e.target.value;
+                                if (value && !value.startsWith('#')) {
+                                  value = '#' + value;
+                                }
+                                setTagInput(value);
+                                setShowNewTaskTagSuggestions(value.length > 0);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && tagInput.trim()) {
+                                  e.preventDefault();
+                                  const normalizedTag = normalizeTag(tagInput.trim());
+                                  const normalizedNewTags = newTags.map(normalizeTag);
+                                  if (!normalizedNewTags.includes(normalizedTag)) {
+                                    setNewTags([...newTags, normalizedTag]);
+                                  }
+                                  setTagInput('');
+                                  setShowTagInput(false);
+                                  setShowNewTaskTagSuggestions(false);
+                                } else if (e.key === 'Escape') {
+                                  setTagInput('');
+                                  setShowTagInput(false);
+                                  setShowNewTaskTagSuggestions(false);
+                                }
+                              }}
+                              onFocus={() => setShowNewTaskTagSuggestions(tagInput.length > 0)}
+                              onBlur={() => {
+                                setTimeout(() => {
+                                  setShowNewTaskTagSuggestions(false);
+                                }, 200);
+                              }}
+                              className="w-full px-0 py-1 text-xs bg-transparent text-purple-600 dark:text-purple-400 placeholder:text-muted-foreground/50 outline-none"
+                              autoFocus
+                            />
+                            
+                            {/* Tag Autocomplete Suggestions for New Task */}
+                            {showNewTaskTagSuggestions && tagInput && (
+                              <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-md shadow-lg max-h-32 overflow-y-auto z-10">
+                                {getTagSuggestions(tagInput, newTags).map((suggestion) => (
+                                  <button
+                                    key={suggestion}
+                                    type="button"
+                                    onMouseDown={(e) => {
+                                      e.preventDefault();
+                                      const normalizedNewTags = newTags.map(normalizeTag);
+                                      if (!normalizedNewTags.includes(suggestion)) {
+                                        setNewTags([...newTags, suggestion]);
+                                      }
+                                      setTagInput('');
+                                      setShowTagInput(false);
+                                      setShowNewTaskTagSuggestions(false);
+                                    }}
+                                    className="w-full px-3 py-1.5 text-left text-xs hover:bg-accent transition-colors text-purple-600 dark:text-purple-400"
+                                  >
+                                    {suggestion}
+                                  </button>
+                                ))}
+                                {getTagSuggestions(tagInput, newTags).length === 0 && (
+                                  <div className="px-3 py-1.5 text-xs text-muted-foreground">
+                                    No matching tags
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         )}
 
                         {/* Tags display */}
