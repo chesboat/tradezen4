@@ -23,6 +23,7 @@ import {
   ChevronRight,
   Sparkles,
   HelpCircle,
+  Share2,
 } from 'lucide-react';
 import { useTradeStore } from '@/store/useTradeStore';
 import { useUserProfileStore } from '@/store/useUserProfileStore';
@@ -36,6 +37,7 @@ import { TradingHealthOnboarding } from '@/components/tradingHealth/TradingHealt
 import { TradingHealthDocs } from '@/components/tradingHealth/TradingHealthDocs';
 import { RingDetailModal } from '@/components/tradingHealth/RingDetailModal';
 import { StatisticalConfidenceBanner } from '@/components/tradingHealth/StatisticalConfidenceBanner';
+import { ShareableHealthCard } from '@/components/tradingHealth/ShareableHealthCard';
 import { UpgradeModal } from '@/components/UpgradeModal';
 import type { TimeWindow } from '@/lib/tradingHealth/types';
 import { cn } from '@/lib/utils';
@@ -58,6 +60,7 @@ export const TradingHealthView: React.FC = () => {
   const [showDocs, setShowDocs] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [upgradeFeature, setUpgradeFeature] = useState<string>('');
+  const [showShareCard, setShowShareCard] = useState(false);
   
   // Check if user has seen onboarding
   const [showOnboarding, setShowOnboarding] = useState(() => {
@@ -229,13 +232,23 @@ export const TradingHealthView: React.FC = () => {
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground">
               Trading Health
             </h1>
-            <button
-              onClick={() => setShowDocs(true)}
-              className="ml-2 p-2 rounded-full hover:bg-muted transition-colors text-muted-foreground hover:text-primary"
-              aria-label="Open help documentation"
-            >
-              <HelpCircle className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-1 ml-2">
+              <button
+                onClick={() => setShowShareCard(true)}
+                className="p-2 rounded-full hover:bg-muted transition-colors text-muted-foreground hover:text-primary"
+                aria-label="Share your progress"
+                title="Share your progress"
+              >
+                <Share2 className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setShowDocs(true)}
+                className="p-2 rounded-full hover:bg-muted transition-colors text-muted-foreground hover:text-primary"
+                aria-label="Open help documentation"
+              >
+                <HelpCircle className="w-5 h-5" />
+              </button>
+            </div>
           </div>
           
           {/* Account context indicator */}
@@ -681,6 +694,24 @@ export const TradingHealthView: React.FC = () => {
         isOpen={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
         feature={upgradeFeature}
+      />
+
+      {/* Shareable Health Card */}
+      <ShareableHealthCard
+        isOpen={showShareCard}
+        onClose={() => setShowShareCard(false)}
+        metrics={{
+          edge: { value: metrics.edge.value, label: metrics.edge.label },
+          consistency: { value: metrics.consistency.value, label: metrics.consistency.label },
+          riskControl: { value: metrics.riskControl.value, label: metrics.riskControl.label },
+          overallScore: metrics.overallScore,
+        }}
+        timeWindow={timeWindow}
+        stats={{
+          totalTrades: filteredTrades.length,
+          winRate: metrics.edge.winRate,
+          profitFactor: metrics.edge.profitFactor,
+        }}
       />
     </div>
     </>
