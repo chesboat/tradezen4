@@ -55,6 +55,15 @@ export const CalendarHeatmap: React.FC<CalendarHeatmapProps> = ({
 }) => {
   const [hoveredDay, setHoveredDay] = useState<DayData | null>(null);
   const [hoverPosition, setHoverPosition] = useState<{ x: number; y: number } | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile viewport
+  React.useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Process trades into daily P&L
   const { heatmapData, maxAbsPnL, stats } = useMemo(() => {
@@ -260,36 +269,45 @@ export const CalendarHeatmap: React.FC<CalendarHeatmapProps> = ({
         </div>
       </div>
 
-      {/* Heatmap Grid */}
-      <div className="overflow-x-auto">
+      {/* Heatmap Grid - Apple-style responsive */}
+      <div className={cn(
+        "overflow-x-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent",
+        isMobile && "pb-2" // Extra padding for scroll indicator on mobile
+      )}>
         <div className="inline-flex flex-col gap-1 min-w-full">
           {/* Day labels */}
           <div className="flex gap-1">
-            <div className="w-8" /> {/* Spacer for day labels */}
+            <div className={cn(isMobile ? "w-6" : "w-8")} /> {/* Spacer for day labels */}
             {calendarGrid[0]?.map((_, weekIndex) => {
               // Show month labels for first week of each month
               if (weekIndex % 4 === 0) {
                 const date = new Date(calendarGrid[0][weekIndex].date);
                 const monthName = date.toLocaleDateString('en-US', { month: 'short' });
                 return (
-                  <div key={weekIndex} className="text-[10px] text-muted-foreground w-8 text-center">
+                  <div key={weekIndex} className={cn(
+                    "text-[10px] text-muted-foreground text-center",
+                    isMobile ? "w-6" : "w-8"
+                  )}>
                     {monthName}
                   </div>
                 );
               }
-              return <div key={weekIndex} className="w-8" />;
+              return <div key={weekIndex} className={cn(isMobile ? "w-6" : "w-8")} />;
             })}
           </div>
 
           {/* Heatmap rows */}
           {dayLabels.map((label, dayIndex) => (
             <div key={label} className="flex gap-1 items-center">
-              <div className="w-8 text-[10px] text-muted-foreground text-right pr-1">
-                {label}
+              <div className={cn(
+                "text-[10px] text-muted-foreground text-right pr-1",
+                isMobile ? "w-6" : "w-8"
+              )}>
+                {isMobile ? label.charAt(0) : label}
               </div>
               {calendarGrid.map((week, weekIndex) => {
                 const day = week[dayIndex];
-                if (!day) return <div key={`${weekIndex}-empty`} className="w-8 h-8" />;
+                if (!day) return <div key={`${weekIndex}-empty`} className={cn(isMobile ? "w-6 h-6" : "w-8 h-8")} />;
 
                 const isToday = day.date === new Date().toISOString().split('T')[0];
                 const isFuture = new Date(day.date) > new Date();
@@ -301,25 +319,35 @@ export const CalendarHeatmap: React.FC<CalendarHeatmapProps> = ({
                     animate={{ scale: 1 }}
                     transition={{ delay: (weekIndex * 7 + dayIndex) * 0.002 }}
                     className={cn(
-                      "w-8 h-8 rounded-sm transition-all cursor-pointer",
+                      "rounded-sm transition-all cursor-pointer",
+                      isMobile ? "w-6 h-6" : "w-8 h-8",
                       day.dayData ? getPnLColor(day.dayData.pnl, maxAbsPnL) : "bg-muted/20",
-                      isToday && "ring-2 ring-primary ring-offset-2 ring-offset-background",
+                      isToday && "ring-2 ring-primary ring-offset-1 ring-offset-background",
                       isFuture && "opacity-30 cursor-not-allowed",
-                      day.dayData && "hover:ring-2 hover:ring-primary/50 hover:scale-110"
+                      day.dayData && "hover:ring-2 hover:ring-primary/50 hover:scale-110",
+                      isMobile && day.dayData && "active:scale-95" // Touch feedback on mobile
                     )}
                     onMouseEnter={(e) => {
-                      if (day.dayData && !isFuture) {
+                      if (day.dayData && !isFuture && !isMobile) {
                         setHoveredDay(day.dayData);
                         setHoverPosition({ x: e.clientX, y: e.clientY });
                       }
                     }}
                     onMouseLeave={() => {
-                      setHoveredDay(null);
-                      setHoverPosition(null);
+                      if (!isMobile) {
+                        setHoveredDay(null);
+                        setHoverPosition(null);
+                      }
                     }}
                     onMouseMove={(e) => {
-                      if (day.dayData && !isFuture) {
+                      if (day.dayData && !isFuture && !isMobile) {
                         setHoverPosition({ x: e.clientX, y: e.clientY });
+                      }
+                    }}
+                    onClick={() => {
+                      // On mobile, tap to show tooltip
+                      if (isMobile && day.dayData && !isFuture) {
+                        setHoveredDay(hoveredDay?.date === day.dayData.date ? null : day.dayData);
                       }
                     }}
                   />
@@ -329,6 +357,15 @@ export const CalendarHeatmap: React.FC<CalendarHeatmapProps> = ({
           ))}
         </div>
       </div>
+
+      {/* Mobile scroll hint - Apple style */}
+      {isMobile && calendarGrid.length > 10 && (
+        <div className="flex items-center justify-center gap-1 text-[10px] text-muted-foreground mt-2">
+          <span>←</span>
+          <span>Swipe to see more</span>
+          <span>→</span>
+        </div>
+      )}
 
       {/* Legend */}
       <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground pt-2 border-t border-border">
@@ -343,19 +380,22 @@ export const CalendarHeatmap: React.FC<CalendarHeatmapProps> = ({
         <span>More</span>
       </div>
 
-      {/* Hover Tooltip */}
+      {/* Hover Tooltip - Desktop: follows cursor, Mobile: shows below card */}
       <AnimatePresence>
-        {hoveredDay && hoverPosition && (
+        {hoveredDay && (isMobile || hoverPosition) && (
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
             transition={{ duration: 0.15 }}
-            className="fixed z-50 pointer-events-none"
-            style={{
+            className={cn(
+              "z-50",
+              isMobile ? "relative mt-4 mx-auto max-w-[280px]" : "fixed pointer-events-none"
+            )}
+            style={!isMobile && hoverPosition ? {
               left: hoverPosition.x + 10,
               top: hoverPosition.y - 80,
-            }}
+            } : undefined}
           >
             <div className="bg-popover border border-border rounded-lg shadow-xl p-3 min-w-[180px]">
               <div className="text-xs text-muted-foreground mb-1">
