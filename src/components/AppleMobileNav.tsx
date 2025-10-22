@@ -174,7 +174,13 @@ export const AppleMobileNav: React.FC<AppleMobileNavProps> = ({ onAddTrade }) =>
             return (
               <button
                 key={item.id}
-                onClick={() => setCurrentView(item.id as any)}
+                onClick={() => {
+                  setCurrentView(item.id as any);
+                  // Apple-style: scroll to top when opening More menu
+                  if (item.id === 'more') {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }
+                }}
                 className="flex flex-col items-center gap-1 px-4 py-2 min-w-[60px] transition-colors"
               >
                 <Icon className={cn(
