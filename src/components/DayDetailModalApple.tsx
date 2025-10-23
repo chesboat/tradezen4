@@ -26,7 +26,7 @@ import { ImageUpload } from './ImageUpload';
 import { NoteContent } from './NoteContent';
 import { useTradeStore } from '@/store/useTradeStore';
 import { useQuickNoteStore } from '@/store/useQuickNoteStore';
-import { useAccountFilterStore } from '@/store/useAccountFilterStore';
+import { useAccountFilterStore, getAccountIdsForSelection } from '@/store/useAccountFilterStore';
 import { useDailyReflectionStore } from '@/store/useDailyReflectionStore';
 import { cn } from '@/lib/utils';
 import { createTradeInsightShare } from '@/lib/publicShare';
@@ -58,24 +58,28 @@ export const DayDetailModalApple: React.FC<DayDetailModalAppleProps> = ({
   const [allTradesExpanded, setAllTradesExpanded] = useState(false);
   const [viewMode, setViewMode] = useState<'workflow' | 'story'>('workflow');
 
-  // Filter trades and notes for this day
+  // Filter trades and notes for this day (with proper grouped account support)
   const dayTrades = useMemo(() => {
     if (!dateString) return [];
+    const accountIds = getAccountIdsForSelection(selectedAccountId);
     return trades.filter(t => {
       const tradeDate = new Date(t.entryTime).toISOString().split('T')[0];
       const matchesDate = tradeDate === dateString;
-      const matchesAccount = !selectedAccountId || selectedAccountId === 'all' || t.accountId === selectedAccountId;
+      const matchesAccount = accountIds.includes(t.accountId);
       return matchesDate && matchesAccount;
     });
   }, [trades, dateString, selectedAccountId]);
 
   const dayNotes = useMemo(() => {
     if (!dateString) return [];
+    const accountIds = getAccountIdsForSelection(selectedAccountId);
     return notes.filter(n => {
       const noteDate = new Date(n.createdAt).toISOString().split('T')[0];
-      return noteDate === dateString;
+      const matchesDate = noteDate === dateString;
+      const matchesAccount = accountIds.includes(n.accountId);
+      return matchesDate && matchesAccount;
     });
-  }, [notes, dateString]);
+  }, [notes, dateString, selectedAccountId]);
 
   // Calculate metrics
   const dayPnL = useMemo(() => {
