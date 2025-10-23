@@ -700,12 +700,7 @@ export const TradingHealthView: React.FC = () => {
       <ShareableHealthCard
         isOpen={showShareCard}
         onClose={() => setShowShareCard(false)}
-        metrics={{
-          edge: { value: metrics.edge.value, label: metrics.edge.label },
-          consistency: { value: metrics.consistency.value, label: metrics.consistency.label },
-          riskControl: { value: metrics.riskControl.value, label: metrics.riskControl.label },
-          overallScore: metrics.overallScore,
-        }}
+        metrics={metrics}
         timeWindow={timeWindow}
         stats={{
           totalTrades: filteredTrades.length,

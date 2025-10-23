@@ -11,16 +11,12 @@ import { HealthRings } from './HealthRings';
 import { cn } from '@/lib/utils';
 import html2canvas from 'html2canvas';
 import toast from 'react-hot-toast';
+import type { TradingHealthMetrics } from '@/lib/tradingHealth/types';
 
 interface ShareableHealthCardProps {
   isOpen: boolean;
   onClose: () => void;
-  metrics: {
-    edge: { value: number; label: string };
-    consistency: { value: number; label: string };
-    riskControl: { value: number; label: string };
-    overallScore: number;
-  };
+  metrics: TradingHealthMetrics;
   timeWindow: string;
   stats?: {
     totalTrades?: number;
@@ -54,11 +50,9 @@ export const ShareableHealthCard: React.FC<ShareableHealthCardProps> = ({
     setIsGenerating(true);
     try {
       const canvas = await html2canvas(cardRef.current, {
-        backgroundColor: null,
-        scale: 2, // High DPI for crisp images
         logging: false,
         useCORS: true,
-      });
+      } as any);
 
       const blob = await new Promise<Blob>((resolve) => {
         canvas.toBlob((blob) => resolve(blob!), 'image/png');
@@ -134,7 +128,7 @@ Track your edge with @refine_trading 👇`;
 
     const file = new File([blob], 'trading-health.png', { type: 'image/png' });
     
-    if (navigator.share && navigator.canShare({ files: [file] })) {
+    if (navigator.share && typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
       try {
         await navigator.share({
           files: [file],
@@ -232,10 +226,9 @@ Track your edge with @refine_trading 👇`;
                       <div className="flex justify-center py-4">
                         <div className="scale-90">
                           <HealthRings
-                            edge={metrics.edge.value}
-                            consistency={metrics.consistency.value}
-                            riskControl={metrics.riskControl.value}
-                            size="lg"
+                            metrics={metrics}
+                            size="large"
+                            showLabels={false}
                           />
                         </div>
                       </div>
@@ -314,7 +307,7 @@ Track your edge with @refine_trading 👇`;
                     </button>
 
                     {/* Native Share (Mobile) */}
-                    {navigator.share && (
+                    {typeof navigator !== 'undefined' && typeof navigator.share === 'function' && (
                       <button
                         onClick={handleNativeShare}
                         disabled={isGenerating}
@@ -330,7 +323,7 @@ Track your edge with @refine_trading 👇`;
                       onClick={handleCopyText}
                       className={cn(
                         "flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-colors",
-                        navigator.share ? "col-span-2" : "",
+                        (typeof navigator !== 'undefined' && typeof navigator.share === 'function') ? "col-span-2" : "",
                         showCopied 
                           ? "bg-green-500/20 text-green-600 dark:text-green-400" 
                           : "bg-accent text-foreground hover:bg-accent/70"
