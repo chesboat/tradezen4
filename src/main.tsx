@@ -14,6 +14,7 @@ import { WelcomeFlow } from './components/WelcomeFlow';
 
 // Load demo data utilities (accessible via console)
 import './utils/loadDemoData';
+import './utils/clearActivityLog';
 
 // CRITICAL: Validate and sanitize localStorage before app initialization
 // This prevents corrupted data from breaking the entire app
