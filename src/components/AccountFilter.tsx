@@ -24,7 +24,29 @@ export const AccountFilter: React.FC<AccountFilterProps> = ({ className }) => {
     setSelectedAccount
   } = useAccountFilterStore();
 
-  const selectedAccount = accounts.find(acc => acc.id === selectedAccountId);
+  // Handle both individual accounts and groups
+  const selectedAccount = useMemo(() => {
+    if (!selectedAccountId) return null;
+    
+    // Check if it's a group selection
+    if (selectedAccountId.startsWith('group:')) {
+      const leaderId = selectedAccountId.replace('group:', '');
+      const leader = accounts.find(acc => acc.id === leaderId);
+      if (leader) {
+        // Return a virtual "account" object for the group
+        return {
+          ...leader,
+          id: selectedAccountId,
+          name: `${leader.name} (Group)`,
+          isGroup: true,
+        };
+      }
+      return null;
+    }
+    
+    // Regular account selection
+    return accounts.find(acc => acc.id === selectedAccountId) || null;
+  }, [selectedAccountId, accounts]);
 
   // Calculate active and archived account counts
   const activeAccounts = useMemo(() => accounts.filter(isAccountActive), [accounts]);
