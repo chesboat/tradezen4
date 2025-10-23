@@ -559,6 +559,19 @@ function AppWithPricingCheck() {
   const { currentUser, loading } = useAuth();
   const { hasAccess } = useSubscription();
   const [showWelcome, setShowWelcome] = React.useState(false);
+  const clearedRef = React.useRef(false);
+  
+  // Clear transient pricing flags once we confirm access to avoid sticky redirects
+  React.useEffect(() => {
+    if (!loading && currentUser && hasAccess && !clearedRef.current) {
+      try {
+        sessionStorage.removeItem('show_pricing_after_auth');
+        // Optionally also clear welcome flag if pricing shouldn't show again
+        // sessionStorage.removeItem('has_seen_welcome_flow');
+        clearedRef.current = true;
+      } catch {}
+    }
+  }, [loading, currentUser, hasAccess]);
   
   // Check if user is in signup flow
   React.useEffect(() => {

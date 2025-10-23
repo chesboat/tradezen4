@@ -12,6 +12,7 @@ import {
 import { auth } from '../lib/firebase';
 import { useRef } from 'react';
 import { useReflectionTemplateStore } from '@/store/useReflectionTemplateStore';
+import { invalidateCacheImmediate } from '@/lib/cacheInvalidation';
 
 import { UserCredential } from 'firebase/auth';
 
@@ -56,6 +57,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const subscribeRemote = useReflectionTemplateStore.getState().subscribeRemote;
           if (subscribeRemote) {
             reflectionsUnsubRef.current = subscribeRemote();
+          }
+
+          // Post-login cache invalidation to prevent stale state (e.g., pricing gate)
+          try {
+            console.log('🔄 Post-login cache invalidation');
+            void invalidateCacheImmediate('all');
+          } catch (e) {
+            console.warn('Cache invalidation after login failed:', e);
           }
         }
       } catch (e) {
