@@ -6,7 +6,7 @@ import {
   Target, Zap, MinusCircle, Lightbulb, Clock, Trash2, Lock, Sparkles, Info
 } from 'lucide-react';
 import { useTradeStore } from '@/store/useTradeStore';
-import { useAccountFilterStore } from '@/store/useAccountFilterStore';
+import { useAccountFilterStore, getAccountIdsForSelection } from '@/store/useAccountFilterStore';
 import { useAnalyticsFilterStore } from '@/store/useAnalyticsFilterStore';
 import { computeEdgeScore } from '@/lib/edgeScore';
 import { formatCurrency } from '@/lib/localStorageUtils';
@@ -1798,9 +1798,9 @@ export const AppleAnalyticsDashboard: React.FC = () => {
 
   // Filter trades by account and period
   const filteredTrades = React.useMemo(() => {
-    let filtered = selectedAccountId
-      ? tierFilteredTrades.filter(t => t.accountId === selectedAccountId)
-      : tierFilteredTrades;
+    // Filter by account (handles grouped accounts correctly)
+    const accountIds = getAccountIdsForSelection(selectedAccountId);
+    let filtered = tierFilteredTrades.filter(t => accountIds.includes(t.accountId));
 
     // Filter by symbol if selected
     if (symbolFilter) {

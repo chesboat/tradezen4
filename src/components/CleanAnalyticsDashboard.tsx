@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { DollarSign, Target, TrendingUp, TrendingDown, Activity, Award, BarChart3, Calendar, Settings2, HelpCircle, Clock, Minus, Zap, Trophy, Info, X, MinusCircle } from 'lucide-react';
 import { useTradeStore } from '@/store/useTradeStore';
-import { useAccountFilterStore } from '@/store/useAccountFilterStore';
+import { useAccountFilterStore, getAccountIdsForSelection } from '@/store/useAccountFilterStore';
 import { computeEdgeScore } from '@/lib/edgeScore';
 import { summarizeWinLossScratch } from '@/lib/utils';
 import { formatCurrency } from '@/lib/localStorageUtils';
@@ -1140,7 +1140,9 @@ export const CleanAnalyticsDashboard: React.FC = () => {
   ];
   
   const filteredTrades = React.useMemo(() => {
-    let filtered = trades.filter(t => !selectedAccountId || t.accountId === selectedAccountId);
+    // Filter by account (handles grouped accounts correctly)
+    const accountIds = getAccountIdsForSelection(selectedAccountId);
+    let filtered = trades.filter(t => accountIds.includes(t.accountId));
     
     // Apply time period filter
     if (selectedPeriod !== 'all') {

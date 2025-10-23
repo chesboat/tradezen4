@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 import { useTradeStore } from '@/store/useTradeStore';
 import { useUserProfileStore } from '@/store/useUserProfileStore';
-import { useAccountFilterStore } from '@/store/useAccountFilterStore';
+import { useAccountFilterStore, getAccountIdsForSelection } from '@/store/useAccountFilterStore';
 import { useSubscription } from '@/hooks/useSubscription';
 import { calculateTradingHealth } from '@/lib/tradingHealth/metricsEngine';
 import { detectTradingHealthEvents, checkDailySummarySchedule } from '@/lib/tradingHealthEventDetector';
@@ -80,26 +80,11 @@ export const TradingHealthView: React.FC = () => {
   }, [selectedAccountId, accounts]);
 
   // Filter trades based on account selection
-  // Apple-style: Smart filtering based on account type
+  // Apple-style: Smart filtering using getAccountIdsForSelection (handles groups, single, all)
   const filteredTrades = useMemo(() => {
-    // If "All Accounts" or no selection, show all trades
-    if (!selectedAccountId) {
-      return trades;
-    }
-
-    // Check if selected account is a group
-    const isGroup = selectedAccount?.isGroup;
-
-    if (isGroup) {
-      // For groups: include all accounts in the group
-      const groupAccounts = accounts.filter(a => a.groupId === selectedAccountId);
-      const groupAccountIds = new Set(groupAccounts.map(a => a.id));
-      return trades.filter(t => groupAccountIds.has(t.accountId));
-    } else {
-      // For individual accounts: filter by accountId
-      return trades.filter(t => t.accountId === selectedAccountId);
-    }
-  }, [trades, selectedAccountId, selectedAccount, accounts]);
+    const accountIds = getAccountIdsForSelection(selectedAccountId);
+    return trades.filter(t => accountIds.includes(t.accountId));
+  }, [trades, selectedAccountId]);
 
   // Debug: Log trades data
   React.useEffect(() => {
