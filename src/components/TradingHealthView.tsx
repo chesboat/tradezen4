@@ -165,21 +165,47 @@ export const TradingHealthView: React.FC = () => {
   // Check if user has any trades (in current filter)
   const hasTrades = filteredTrades.length > 0;
 
-  // Auto-detect and log Trading Health events (Apple-style: intelligent, not noisy)
-  // TEMPORARILY DISABLED - causing duplicate/contradictory events on every refresh
-  // TODO: Refactor to only detect on actual trade changes, not metrics recalculation
-  // useEffect(() => {
-  //   if (!hasTrades || !userProfile?.id) return;
+  // Track trade count to detect when trades actually change (not just metrics recalc)
+  const tradeCount = filteredTrades.length;
+  const prevTradeCountRef = React.useRef<number | null>(null);
+  const isInitialLoadRef = React.useRef<boolean>(true);
 
-  //   // Only detect events when on 30d window (to avoid duplicate events on window changes)
-  //   if (timeWindow === '30d') {
-  //     // Detect significant changes (ring scores, streaks, warnings)
-  //     detectTradingHealthEvents(metrics, userProfile.id);
+  // Auto-detect and log Trading Health events (Apple-style: intelligent, not noisy)
+  // Only runs when trades actually change, not on every metrics recalculation
+  useEffect(() => {
+    if (!hasTrades || !userProfile?.id) return;
+
+    // Only detect events when on 30d window (to avoid duplicate events on window changes)
+    if (timeWindow !== '30d') return;
+
+    // Skip initial load - just set the baseline
+    if (isInitialLoadRef.current) {
+      prevTradeCountRef.current = tradeCount;
+      isInitialLoadRef.current = false;
+      console.log('[Trading Health Events] Initial load, baseline set:', tradeCount);
+      return;
+    }
+
+    // Check if trade count actually changed (new trade added/deleted)
+    const tradeCountChanged = prevTradeCountRef.current !== null && prevTradeCountRef.current !== tradeCount;
+    
+    if (tradeCountChanged) {
+      console.log('[Trading Health Events] Trade count changed:', {
+        previous: prevTradeCountRef.current,
+        current: tradeCount,
+        change: tradeCount - (prevTradeCountRef.current || 0),
+      });
+
+      // Detect significant changes (ring scores, streaks, warnings)
+      detectTradingHealthEvents(metrics, userProfile.id);
       
-  //     // Check if we should generate a daily summary
-  //     checkDailySummarySchedule(metrics, userProfile.id);
-  //   }
-  // }, [metrics, userProfile?.id, timeWindow, hasTrades]);
+      // Check if we should generate a daily summary
+      checkDailySummarySchedule(metrics, userProfile.id);
+
+      // Update ref for next comparison
+      prevTradeCountRef.current = tradeCount;
+    }
+  }, [tradeCount, metrics, userProfile?.id, timeWindow, hasTrades]);
 
   const overallScore = Math.round(
     (metrics.edge.value + metrics.consistency.value + metrics.riskControl.value) / 3
