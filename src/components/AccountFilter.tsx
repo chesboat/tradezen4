@@ -9,9 +9,10 @@ import { CopyTradingManager } from './CopyTradingManager';
 
 interface AccountFilterProps {
   className?: string;
+  isMobileSheet?: boolean; // When true, renders as a full list without dropdown wrapper
 }
 
-export const AccountFilter: React.FC<AccountFilterProps> = ({ className }) => {
+export const AccountFilter: React.FC<AccountFilterProps> = ({ className, isMobileSheet = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState<TradingAccount | null>(null);
@@ -205,66 +206,9 @@ export const AccountFilter: React.FC<AccountFilterProps> = ({ className }) => {
     }
   };
 
-  return (
-    <div className={`relative ${className}`} ref={dropdownRef}>
-      <div className="mb-2">
-        <label className="block text-xs font-medium text-muted-foreground mb-1">
-          Account
-        </label>
-      </div>
-      
-      <motion.button
-        className={`w-full flex items-center justify-between px-3 py-2.5 bg-muted rounded-xl border transition-all duration-200 ${
-          isOpen 
-            ? 'border-primary shadow-glow-sm' 
-            : 'border-border hover:border-primary/50'
-        }`}
-        onClick={() => setIsOpen(!isOpen)}
-        whileHover={{ scale: 1.01 }}
-        whileTap={{ scale: 0.99 }}
-      >
-        {selectedAccount ? (
-          <div className="flex items-center gap-2 flex-1">
-            <span className="text-sm">{getAccountIcon(selectedAccount)}</span>
-            <div className="flex-1 text-left">
-              <div className="text-sm font-medium text-foreground flex items-center">
-                {selectedAccount.name}
-                {renderLinkBadge(selectedAccount)}
-              </div>
-              <div className="text-xs text-muted-foreground">
-                {getAccountTypeLabel(selectedAccount.type)} • {selectedAccount.currency}
-                {selectedAccount.type === 'prop' ? 
-                  (selectedAccount.propFirm && ` • ${selectedAccount.propFirm}`) :
-                  (selectedAccount.broker && ` • ${selectedAccount.broker}`)
-                }
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2 flex-1">
-            <CreditCard className="w-4 h-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">Select Account</span>
-          </div>
-        )}
-        
-        <motion.div
-          animate={{ rotate: isOpen ? 180 : 0 }}
-          transition={{ duration: 0.2 }}
-        >
-          <ChevronDown className="w-4 h-4 text-muted-foreground" />
-        </motion.div>
-      </motion.button>
-
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            className="absolute top-full left-0 right-0 mt-2 bg-popover rounded-xl border border-border shadow-xl z-50"
-            variants={dropdownVariants}
-            initial="hidden"
-            animate="visible"
-            exit="hidden"
-          >
-            <div className="py-2 max-h-64 overflow-y-auto">
+  // Render account list content (shared between dropdown and mobile sheet)
+  const renderAccountList = () => (
+    <>
               {/* All Active Accounts option */}
               {accounts.length > 1 && activeAccounts.length > 0 && (
                 <motion.button
@@ -496,6 +440,90 @@ export const AccountFilter: React.FC<AccountFilterProps> = ({ className }) => {
                   <span className="text-sm font-medium">Manage Copy Trading</span>
                 </motion.button>
               </div>
+    </>
+  );
+
+  // Mobile sheet mode: render just the account list without dropdown wrapper
+  if (isMobileSheet) {
+    return (
+      <div className={className}>
+        <div className="overflow-y-auto" style={{ maxHeight: 'calc(85vh - 220px)' }}>
+          {renderAccountList()}
+        </div>
+
+        {/* Account Management Modal */}
+        <AccountManagementModal
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          editingAccount={editingAccount}
+        />
+        <CopyTradingManager isOpen={isCopyManagerOpen} onClose={() => setIsCopyManagerOpen(false)} />
+      </div>
+    );
+  }
+
+  // Desktop mode: render with dropdown button
+  return (
+    <div className={`relative ${className}`} ref={dropdownRef}>
+      <div className="mb-2">
+        <label className="block text-xs font-medium text-muted-foreground mb-1">
+          Account
+        </label>
+      </div>
+      
+      <motion.button
+        className={`w-full flex items-center justify-between px-3 py-2.5 bg-muted rounded-xl border transition-all duration-200 ${
+          isOpen 
+            ? 'border-primary shadow-glow-sm' 
+            : 'border-border hover:border-primary/50'
+        }`}
+        onClick={() => setIsOpen(!isOpen)}
+        whileHover={{ scale: 1.01 }}
+        whileTap={{ scale: 0.99 }}
+      >
+        {selectedAccount ? (
+          <div className="flex items-center gap-2 flex-1">
+            <span className="text-sm">{getAccountIcon(selectedAccount)}</span>
+            <div className="flex-1 text-left">
+              <div className="text-sm font-medium text-foreground flex items-center">
+                {selectedAccount.name}
+                {renderLinkBadge(selectedAccount)}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {getAccountTypeLabel(selectedAccount.type)} • {selectedAccount.currency}
+                {selectedAccount.type === 'prop' ? 
+                  (selectedAccount.propFirm && ` • ${selectedAccount.propFirm}`) :
+                  (selectedAccount.broker && ` • ${selectedAccount.broker}`)
+                }
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 flex-1">
+            <CreditCard className="w-4 h-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Select Account</span>
+          </div>
+        )}
+        
+        <motion.div
+          animate={{ rotate: isOpen ? 180 : 0 }}
+          transition={{ duration: 0.2 }}
+        >
+          <ChevronDown className="w-4 h-4 text-muted-foreground" />
+        </motion.div>
+      </motion.button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            className="absolute top-full left-0 right-0 mt-2 bg-popover rounded-xl border border-border shadow-xl z-50"
+            variants={dropdownVariants}
+            initial="hidden"
+            animate="visible"
+            exit="hidden"
+          >
+            <div className="py-2 max-h-64 overflow-y-auto">
+              {renderAccountList()}
             </div>
           </motion.div>
         )}
