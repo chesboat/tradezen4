@@ -79,8 +79,8 @@ export async function clearAllTrades() {
 /**
  * Show stats about current data
  */
-export function showDataStats() {
-  const { useTradeStore } = require('@/store/useTradeStore');
+export async function showDataStats() {
+  const { useTradeStore } = await import('@/store/useTradeStore');
   const { trades } = useTradeStore.getState();
   
   if (trades.length === 0) {

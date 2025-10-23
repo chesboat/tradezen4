@@ -85,10 +85,12 @@ export const WellnessView: React.FC = () => {
   useEffect(() => {
     if (tiltDetection && tiltDetection.level === 'high') {
       // Soft nudge when high tilt detected
-      try {
-        const { useNudgeStore } = require('@/store/useNudgeStore');
-        useNudgeStore.getState().show('High tilt detected. Short break + breathing can prevent costly mistakes.', 'warning');
-      } catch {}
+      (async () => {
+        try {
+          const { useNudgeStore } = await import('@/store/useNudgeStore');
+          useNudgeStore.getState().show('High tilt detected. Short break + breathing can prevent costly mistakes.', 'warning');
+        } catch {}
+      })();
     }
   }, [tiltDetection]);
 

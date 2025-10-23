@@ -10,6 +10,7 @@
 import type { TradingHealthMetrics } from '@/lib/tradingHealth/types';
 import { logTradingHealthActivity } from '@/lib/activityLogger';
 import { localStorage as storage, STORAGE_KEYS } from '@/lib/localStorageUtils';
+import { calculateStatisticalConfidence, MIN_TRADES_FOR } from './tradingHealth/statisticalConfidence';
 
 interface StoredHealthSnapshot {
   timestamp: string;
@@ -207,9 +208,6 @@ export const detectTradingHealthEvents = (
   }
 
   // 4. DETECT POSITIVE BREAKTHROUGHS
-  // Import statistical confidence (sync import)
-  const { calculateStatisticalConfidence, MIN_TRADES_FOR } = require('./tradingHealth/statisticalConfidence');
-  
   // Calculate total trades in current window (approximate based on wins + losses)
   const totalTrades = curr.edge.wins + curr.edge.losses;
   const confidence = calculateStatisticalConfidence(totalTrades);
