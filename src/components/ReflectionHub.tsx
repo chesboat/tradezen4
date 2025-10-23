@@ -12,7 +12,7 @@ import { ReflectionTemplateManager } from './ReflectionTemplateManager';
 import { CustomTemplateEditor } from './CustomTemplateEditor';
 import { CustomTemplate } from '@/types';
 import { useReflectionTemplateStore } from '@/store/useReflectionTemplateStore';
-import { useAccountFilterStore } from '@/store/useAccountFilterStore';
+import { useAccountFilterStore, getAccountIdsForSelection } from '@/store/useAccountFilterStore';
 import { useDailyReflectionStore } from '@/store/useDailyReflectionStore';
 import { cn } from '@/lib/utils';
 import TipTapEditor from './TipTapEditor';
@@ -33,17 +33,32 @@ export const ReflectionHub: React.FC<ReflectionHubProps> = ({ date, className })
   const [isSavingThoughts, setIsSavingThoughts] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   
-  // Check if user has any reflection data for this date
+  // Get all account IDs for the current selection (handles grouped accounts)
+  const accountIds = React.useMemo(() => {
+    return getAccountIdsForSelection(selectedAccountId);
+  }, [selectedAccountId]);
+  
+  // Check if user has any reflection data for this date (check all accounts in group)
   const hasReflectionData = reflectionData.some(
-    r => r.date === date && r.accountId === selectedAccountId && r.insightBlocks.length > 0
+    r => r.date === date && accountIds.includes(r.accountId) && r.insightBlocks.length > 0
   );
 
-  // Load existing general thoughts
+  // Load existing general thoughts (from first account in group that has data)
   React.useEffect(() => {
-    if (!selectedAccountId) return;
-    const existing = getReflectionByDate(date, selectedAccountId);
-    setGeneralThoughts(existing?.reflection || '');
-  }, [date, selectedAccountId, getReflectionByDate]);
+    if (accountIds.length === 0) return;
+    
+    // Try to find reflection from any account in the group
+    let foundReflection: any = null;
+    for (const accountId of accountIds) {
+      const existing = getReflectionByDate(date, accountId);
+      if (existing?.reflection) {
+        foundReflection = existing;
+        break;
+      }
+    }
+    
+    setGeneralThoughts(foundReflection?.reflection || '');
+  }, [date, accountIds, getReflectionByDate]);
 
   // Debounced save for general thoughts (persist both plain text and rich JSON placeholder when added)
   const saveThoughts = React.useRef<ReturnType<typeof setTimeout> | null>(null);

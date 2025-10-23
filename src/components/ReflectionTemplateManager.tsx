@@ -21,7 +21,7 @@ import {
   Camera,
 } from 'lucide-react';
 import { useReflectionTemplateStore } from '@/store/useReflectionTemplateStore';
-import { useAccountFilterStore } from '@/store/useAccountFilterStore';
+import { useAccountFilterStore, getAccountIdsForSelection } from '@/store/useAccountFilterStore';
 import { useTradeStore } from '@/store/useTradeStore';
 import { useQuickNoteStore } from '@/store/useQuickNoteStore';
 import { useDailyReflectionStore } from '@/store/useDailyReflectionStore';
@@ -166,6 +166,13 @@ export const ReflectionTemplateManager: React.FC<ReflectionTemplateManagerProps>
   const { notes } = useQuickNoteStore();
   const { addActivity } = useActivityLogStore();
   
+  // For grouped accounts, use the first account in the group for storing reflections
+  // This ensures reflections are written to a real account, not "group:leaderId"
+  const effectiveAccountId = React.useMemo(() => {
+    const accountIds = getAccountIdsForSelection(selectedAccountId);
+    return accountIds.length > 0 ? accountIds[0] : (selectedAccountId || null);
+  }, [selectedAccountId]);
+  
   const {
     builtInTemplates,
     customTemplates,
@@ -226,17 +233,17 @@ export const ReflectionTemplateManager: React.FC<ReflectionTemplateManagerProps>
 
   // Initialize reflection data
   useEffect(() => {
-    if (!selectedAccountId) {
+    if (!effectiveAccountId) {
       setCurrentReflection(null);
       setIsInitializing(false);
       return;
     }
 
     // Check for existing reflection first
-    const existing = getReflectionByDate(date, selectedAccountId);
+    const existing = getReflectionByDate(date, effectiveAccountId);
     if (existing) {
       // Ensure weekend/weekday filtering is applied even for existing reflections
-      const filtered = autoPopulateFavorites(date, selectedAccountId);
+      const filtered = autoPopulateFavorites(date, effectiveAccountId);
       setCurrentReflection(filtered);
       setIsInitializing(false);
       return;
@@ -244,23 +251,23 @@ export const ReflectionTemplateManager: React.FC<ReflectionTemplateManagerProps>
 
     // For new days, show loading briefly then auto-populate with favorites
     const timer = setTimeout(() => {
-      const newReflection = autoPopulateFavorites(date, selectedAccountId);
+      const newReflection = autoPopulateFavorites(date, effectiveAccountId);
       setCurrentReflection(newReflection);
       setIsInitializing(false);
     }, 150); // Slightly longer delay for smoother transition
 
     return () => clearTimeout(timer);
-  }, [date, selectedAccountId, getReflectionByDate, autoPopulateFavorites]);
+  }, [date, effectiveAccountId, getReflectionByDate, autoPopulateFavorites]);
 
   // Update currentReflection when store data changes
   useEffect(() => {
-    if (selectedAccountId && !isInitializing) {
-      const updated = getReflectionByDate(date, selectedAccountId);
+    if (effectiveAccountId && !isInitializing) {
+      const updated = getReflectionByDate(date, effectiveAccountId);
       if (updated) {
         setCurrentReflection(updated);
       }
     }
-  }, [reflectionData, date, selectedAccountId, getReflectionByDate, isInitializing]);
+  }, [reflectionData, date, effectiveAccountId, getReflectionByDate, isInitializing]);
 
   const allTemplates = [...builtInTemplates, ...customTemplates];
 
@@ -318,11 +325,11 @@ export const ReflectionTemplateManager: React.FC<ReflectionTemplateManagerProps>
   };
 
   const handleAddInsightBlock = (template?: CustomTemplate, blockTemplate?: TemplateBlock) => {
-    if (!selectedAccountId) return;
+    if (!selectedAccountId || !effectiveAccountId) return;
     
     let reflection = currentReflection;
     if (!reflection) {
-      reflection = createOrUpdateReflection(date, selectedAccountId);
+      reflection = createOrUpdateReflection(date, effectiveAccountId);
     }
 
     const isFavorite = template && blockTemplate && selectedAccountId
@@ -562,14 +569,14 @@ export const ReflectionTemplateManager: React.FC<ReflectionTemplateManagerProps>
   const handleCompleteReflection = async () => {
     const { completionThreshold, requireContentToComplete } = useAppSettingsStore.getState().reflection;
     const threshold = typeof completionThreshold === 'number' ? completionThreshold : 70;
-    if (!currentReflection || !selectedAccountId) return;
+    if (!currentReflection || !selectedAccountId || !effectiveAccountId) return;
     if (requireContentToComplete && completionScore < threshold) return;
     const totalXP = calculateTotalXP(currentReflection.insightBlocks);
     const bonusXP = completionScore >= 90 ? 25 : completionScore >= 80 ? 15 : 10;
 
     try {
       // Persist reflection completion state first
-      createOrUpdateReflection(date, selectedAccountId, {
+      createOrUpdateReflection(date, effectiveAccountId, {
         completionScore,
         totalXP: totalXP + bonusXP,
       });
