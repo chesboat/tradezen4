@@ -166,18 +166,20 @@ export const TradingHealthView: React.FC = () => {
   const hasTrades = filteredTrades.length > 0;
 
   // Auto-detect and log Trading Health events (Apple-style: intelligent, not noisy)
-  useEffect(() => {
-    if (!hasTrades || !userProfile?.id) return;
+  // TEMPORARILY DISABLED - causing duplicate/contradictory events on every refresh
+  // TODO: Refactor to only detect on actual trade changes, not metrics recalculation
+  // useEffect(() => {
+  //   if (!hasTrades || !userProfile?.id) return;
 
-    // Only detect events when on 30d window (to avoid duplicate events on window changes)
-    if (timeWindow === '30d') {
-      // Detect significant changes (ring scores, streaks, warnings)
-      detectTradingHealthEvents(metrics, userProfile.id);
+  //   // Only detect events when on 30d window (to avoid duplicate events on window changes)
+  //   if (timeWindow === '30d') {
+  //     // Detect significant changes (ring scores, streaks, warnings)
+  //     detectTradingHealthEvents(metrics, userProfile.id);
       
-      // Check if we should generate a daily summary
-      checkDailySummarySchedule(metrics, userProfile.id);
-    }
-  }, [metrics, userProfile?.id, timeWindow, hasTrades]);
+  //     // Check if we should generate a daily summary
+  //     checkDailySummarySchedule(metrics, userProfile.id);
+  //   }
+  // }, [metrics, userProfile?.id, timeWindow, hasTrades]);
 
   const overallScore = Math.round(
     (metrics.edge.value + metrics.consistency.value + metrics.riskControl.value) / 3

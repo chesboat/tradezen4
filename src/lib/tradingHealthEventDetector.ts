@@ -34,6 +34,7 @@ interface StoredHealthSnapshot {
 }
 
 const HEALTH_SNAPSHOT_KEY = 'trading-health-snapshot';
+const LOGGED_EVENTS_KEY = 'trading-health-logged-events';
 
 /**
  * Get the last stored health snapshot
@@ -42,6 +43,36 @@ const getLastSnapshot = (userId: string): StoredHealthSnapshot | null => {
   const snapshot = storage.getItem<StoredHealthSnapshot | null>(HEALTH_SNAPSHOT_KEY, null);
   if (!snapshot || snapshot.userId !== userId) return null;
   return snapshot;
+};
+
+/**
+ * Check if an event has already been logged (deduplication)
+ */
+const hasEventBeenLogged = (eventHash: string, userId: string): boolean => {
+  const loggedEvents = storage.getItem<{[key: string]: string[]}>( LOGGED_EVENTS_KEY, {});
+  const userEvents = loggedEvents[userId] || [];
+  return userEvents.includes(eventHash);
+};
+
+/**
+ * Mark an event as logged
+ */
+const markEventAsLogged = (eventHash: string, userId: string) => {
+  const loggedEvents = storage.getItem<{[key: string]: string[]}>( LOGGED_EVENTS_KEY, {});
+  const userEvents = loggedEvents[userId] || [];
+  
+  // Keep only last 100 events per user to avoid bloat
+  const updatedEvents = [...userEvents, eventHash].slice(-100);
+  loggedEvents[userId] = updatedEvents;
+  
+  storage.setItem(LOGGED_EVENTS_KEY, loggedEvents);
+};
+
+/**
+ * Generate a unique hash for an event
+ */
+const generateEventHash = (type: string, data: any): string => {
+  return `${type}-${JSON.stringify(data)}`;
 };
 
 /**
@@ -98,42 +129,69 @@ export const detectTradingHealthEvents = (
   // 1. DETECT RING CHANGES (only if significant: 5+ points)
   // Edge Ring
   if (Math.abs(curr.edge.value - prev.edge.value) >= 5) {
-    console.log('[Trading Health Events] Edge ring changed:', {
-      oldValue: prev.edge.value,
-      newValue: curr.edge.value,
-      change: curr.edge.value - prev.edge.value,
-      oldExpectancy: prev.edge.expectancy,
-      newExpectancy: curr.edge.expectancy,
-      oldWins: prev.edge.wins,
-      newWins: curr.edge.wins,
-      oldLosses: prev.edge.losses,
-      newLosses: curr.edge.losses,
+    const eventHash = generateEventHash('edge-change', {
+      old: prev.edge.value,
+      new: curr.edge.value,
     });
     
-    logTradingHealthActivity.ringChange({
-      ringType: 'edge',
-      oldValue: prev.edge.value,
-      newValue: curr.edge.value,
-      expectancy: curr.edge.expectancy,
-    });
+    if (!hasEventBeenLogged(eventHash, userId)) {
+      console.log('[Trading Health Events] Edge ring changed:', {
+        oldValue: prev.edge.value,
+        newValue: curr.edge.value,
+        change: curr.edge.value - prev.edge.value,
+        oldExpectancy: prev.edge.expectancy,
+        newExpectancy: curr.edge.expectancy,
+        oldWins: prev.edge.wins,
+        newWins: curr.edge.wins,
+        oldLosses: prev.edge.losses,
+        newLosses: curr.edge.losses,
+      });
+      
+      logTradingHealthActivity.ringChange({
+        ringType: 'edge',
+        oldValue: prev.edge.value,
+        newValue: curr.edge.value,
+        expectancy: curr.edge.expectancy,
+      });
+      
+      markEventAsLogged(eventHash, userId);
+    }
   }
 
   // Consistency Ring
   if (Math.abs(curr.consistency.value - prev.consistency.value) >= 5) {
-    logTradingHealthActivity.ringChange({
-      ringType: 'consistency',
-      oldValue: prev.consistency.value,
-      newValue: curr.consistency.value,
+    const eventHash = generateEventHash('consistency-change', {
+      old: prev.consistency.value,
+      new: curr.consistency.value,
     });
+    
+    if (!hasEventBeenLogged(eventHash, userId)) {
+      logTradingHealthActivity.ringChange({
+        ringType: 'consistency',
+        oldValue: prev.consistency.value,
+        newValue: curr.consistency.value,
+      });
+      
+      markEventAsLogged(eventHash, userId);
+    }
   }
 
   // Risk Control Ring
   if (Math.abs(curr.riskControl.value - prev.riskControl.value) >= 5) {
-    logTradingHealthActivity.ringChange({
-      ringType: 'riskControl',
-      oldValue: prev.riskControl.value,
-      newValue: curr.riskControl.value,
+    const eventHash = generateEventHash('risk-change', {
+      old: prev.riskControl.value,
+      new: curr.riskControl.value,
     });
+    
+    if (!hasEventBeenLogged(eventHash, userId)) {
+      logTradingHealthActivity.ringChange({
+        ringType: 'riskControl',
+        oldValue: prev.riskControl.value,
+        newValue: curr.riskControl.value,
+      });
+      
+      markEventAsLogged(eventHash, userId);
+    }
   }
 
   // 2. DETECT STREAK MILESTONES
