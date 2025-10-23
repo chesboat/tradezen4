@@ -65,10 +65,10 @@ export async function invalidateCache(scope: InvalidationScope): Promise<void> {
 
       case 'account':
         // Account affects: accounts, trades (filter), all account-specific data
-        const initTradesForAccount = useTradeStore.getState().initializeTrades;
-        if (initTradesForAccount) {
-          promises.push(initTradesForAccount());
-        }
+                const initTradesForAccount = useTradeStore.getState().initializeTrades;
+                if (initTradesForAccount) {
+                  promises.push(initTradesForAccount());
+                }
         
         // Reload rule data for new account
         const accountId = useAccountFilterStore.getState().selectedAccountId;
@@ -80,6 +80,12 @@ export async function invalidateCache(scope: InvalidationScope): Promise<void> {
         if (accountId && loadLogs) {
           promises.push(loadLogs(accountId));
         }
+
+                // Also re-run account initialization to ensure a single source of truth
+                try {
+                  const { initializeDefaultAccounts } = await import('@/store/useAccountFilterStore');
+                  promises.push(Promise.resolve(initializeDefaultAccounts()));
+                } catch {}
         break;
 
       case 'reflection':

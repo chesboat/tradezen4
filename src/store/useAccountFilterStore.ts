@@ -21,8 +21,7 @@ export const useAccountFilterStore = create<AccountFilterState>((set, get) => ({
         createdAt: now,
         updatedAt: now,
       });
-      const currentAccounts = get().accounts;
-      set({ accounts: [...currentAccounts, newAccount] });
+      // Do not mutate local state optimistically; rely on realtime listener to avoid duplicates
       return newAccount;
     } catch (error) {
       console.error('Failed to add account:', error);
@@ -57,10 +56,12 @@ export const useAccountFilterStore = create<AccountFilterState>((set, get) => ({
 
       await accountService.update(id, updates);
       const currentAccounts = get().accounts;
-      const updatedAccounts = currentAccounts.map(acc => 
+      const updatedAccounts = currentAccounts.map(acc =>
         acc.id === id ? { ...acc, ...updates } : acc
       );
-      set({ accounts: updatedAccounts });
+      // Deduplicate by id in case of race with realtime listener
+      const unique = Array.from(new Map(updatedAccounts.map(a => [a.id, a])).values());
+      set({ accounts: unique });
     } catch (error) {
       console.error('Failed to update account:', error);
       throw error;
@@ -71,7 +72,8 @@ export const useAccountFilterStore = create<AccountFilterState>((set, get) => ({
     try {
       await accountService.delete(id);
       const currentAccounts = get().accounts;
-      set({ accounts: currentAccounts.filter(acc => acc.id !== id) });
+      const filtered = currentAccounts.filter(acc => acc.id !== id);
+      set({ accounts: filtered });
     } catch (error) {
       console.error('Failed to remove account:', error);
       throw error;
@@ -138,7 +140,9 @@ export const initializeDefaultAccounts = async () => {
       if (an !== 0) return an;
       return String(a?.id || '').localeCompare(String(b?.id || ''));
     });
-    useAccountFilterStore.setState({ accounts: sorted });
+    // Ensure uniqueness by id
+    const uniqueSorted = Array.from(new Map(sorted.map(a => [a.id, a])).values());
+    useAccountFilterStore.setState({ accounts: uniqueSorted });
     console.log('Loaded accounts:', fetched);
 
     const state = useAccountFilterStore.getState();
@@ -183,7 +187,9 @@ export const initializeDefaultAccounts = async () => {
           if (an !== 0) return an;
           return String(a?.id || '').localeCompare(String(b?.id || ''));
         });
-        useAccountFilterStore.setState({ accounts: sorted });
+        // Ensure uniqueness by id
+        const uniqueSorted = Array.from(new Map(sorted.map(a => [a.id, a])).values());
+        useAccountFilterStore.setState({ accounts: uniqueSorted });
         try { (window as any).__accountsReady = true; } catch {}
         const st = useAccountFilterStore.getState();
         if (!st.selectedAccountId && st.accounts.length > 0) {
