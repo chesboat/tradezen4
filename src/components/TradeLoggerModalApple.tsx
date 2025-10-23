@@ -19,6 +19,7 @@ import { Trade, TradeDirection, TradeResult } from '@/types';
 import { formatCurrency, getRecentSymbols, addRecentSymbol } from '@/lib/localStorageUtils';
 import { cn } from '@/lib/utils';
 import { TagInput } from './TagInput';
+import { invalidateCacheImmediate } from '@/lib/cacheInvalidation';
 
 interface TradeLoggerModalAppleProps {
   isOpen: boolean;
@@ -162,21 +163,35 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
         accountId: selectedAccountId,
       };
 
+      let tradeId: string | undefined;
+      
       if (editingTrade) {
         await updateTrade(editingTrade.id, tradeData);
+        tradeId = editingTrade.id;
       } else {
-        await addTrade(tradeData);
+        const newTrade = await addTrade(tradeData);
+        tradeId = newTrade.id;
         addRecentSymbol(symbol.toUpperCase());
       }
 
-      // Add activity
-      addActivity({
-        type: 'trade',
-        title: `${symbol.toUpperCase()} ${direction.toUpperCase()} - ${result.toUpperCase()}`,
-        description: `${result === 'win' ? 'Won' : result === 'loss' ? 'Lost' : 'Broke even on'} ${formatCurrency(Math.abs(pnlValue))}`,
-        relatedId: editingTrade?.id,
-        accountId: selectedAccountId,
-      });
+      // Add activity (await to ensure it's saved before closing modal)
+      try {
+        await addActivity({
+          type: 'trade',
+          title: `${symbol.toUpperCase()} ${direction.toUpperCase()} - ${result.toUpperCase()}`,
+          description: `${result === 'win' ? 'Won' : result === 'loss' ? 'Lost' : 'Broke even on'} ${formatCurrency(Math.abs(pnlValue))}`,
+          relatedId: tradeId,
+          accountId: selectedAccountId,
+        });
+        console.log('✅ Activity log entry created for trade:', tradeId);
+      } catch (activityError) {
+        console.error('❌ Failed to create activity log entry:', activityError);
+        // Don't block trade creation if activity log fails
+      }
+
+      // Invalidate cache to ensure all UI reflects new trade
+      await invalidateCacheImmediate('trade');
+      console.log('✅ Cache invalidated after trade action');
 
       // Success - close modal
       onClose();

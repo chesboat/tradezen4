@@ -19,6 +19,7 @@ import { TradingAccount } from '@/types';
 import { formatCurrency } from '@/lib/localStorageUtils';
 import { cn } from '@/lib/utils';
 import { getTemplate, PROP_FIRM_TEMPLATES } from '@/lib/propFirmTemplates';
+import { invalidateCacheImmediate } from '@/lib/cacheInvalidation';
 
 interface AccountManagementModalProps {
   isOpen: boolean;
@@ -312,6 +313,10 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
         }
       }
 
+      // Invalidate cache to ensure all UI reflects account changes
+      await invalidateCacheImmediate('account');
+      console.log('✅ Cache invalidated after account action');
+
       onClose();
     } catch (error) {
       console.error('Failed to save account:', error);
@@ -320,10 +325,15 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
     }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!editingAccount) return;
     
     removeAccount(editingAccount.id);
+    
+    // Invalidate cache after account deletion
+    await invalidateCacheImmediate('account');
+    console.log('✅ Cache invalidated after account deletion');
+    
     onClose();
   };
 
@@ -335,6 +345,11 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
       if (duplicated) {
         setSelectedAccount(duplicated.id);
       }
+      
+      // Invalidate cache after account duplication
+      await invalidateCacheImmediate('account');
+      console.log('✅ Cache invalidated after account duplication');
+      
       onClose();
     } catch (error) {
       console.error('Failed to duplicate account:', error);
