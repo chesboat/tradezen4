@@ -18,7 +18,8 @@ import {
   CheckSquare,
   LogOut,
   Zap,
-  Plus
+  Plus,
+  Users
 } from 'lucide-react';
 import { useNavigationStore } from '@/store/useNavigationStore';
 import { useUserProfileStore, getUserDisplayName } from '@/store/useUserProfileStore';
@@ -27,6 +28,8 @@ import { useDisciplineUser, useTodayDay } from '@/lib/disciplineHooks';
 import { todayInTZ } from '@/lib/time';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from './ThemeToggle';
+import { AccountFilter } from './AccountFilter';
+import { useAccountFilterStore } from '@/store/useAccountFilterStore';
 import toast from 'react-hot-toast';
 
 interface AppleMobileNavProps {
@@ -64,6 +67,8 @@ export const AppleMobileNav: React.FC<AppleMobileNavProps> = ({ onAddTrade }) =>
   const { profile } = useUserProfileStore();
   const { logout, currentUser } = useAuth();
   const [isProfileSheetOpen, setIsProfileSheetOpen] = useState(false);
+  const [isAccountSheetOpen, setIsAccountSheetOpen] = useState(false);
+  const { selectedAccountId, accounts } = useAccountFilterStore();
 
   const handleSignOut = async () => {
     try {
@@ -89,12 +94,75 @@ export const AppleMobileNav: React.FC<AppleMobileNavProps> = ({ onAddTrade }) =>
     return { left, isMax: left === 0 };
   }, [disciplineEnabled, todayDay]);
 
+  // Get current account display info
+  const currentAccountDisplay = useMemo(() => {
+    if (!selectedAccountId) {
+      const activeAccounts = accounts.filter(a => a.status !== 'archived');
+      return {
+        icon: <Users className="w-3.5 h-3.5" />,
+        label: `All (${activeAccounts.length})`,
+        color: 'bg-primary/10 border-primary/30 text-primary'
+      };
+    }
+
+    if (selectedAccountId === 'all-with-archived') {
+      return {
+        icon: <Users className="w-3.5 h-3.5" />,
+        label: `All (${accounts.length})`,
+        color: 'bg-primary/10 border-primary/30 text-primary'
+      };
+    }
+
+    if (selectedAccountId.startsWith('group:')) {
+      const leaderId = selectedAccountId.replace('group:', '');
+      const leader = accounts.find(acc => acc.id === leaderId);
+      const followerCount = leader?.linkedAccountIds?.length || 0;
+      return {
+        icon: <Users className="w-3.5 h-3.5" />,
+        label: `Group (${1 + followerCount})`,
+        color: 'bg-primary/10 border-primary/30 text-primary'
+      };
+    }
+
+    const account = accounts.find(acc => acc.id === selectedAccountId);
+    if (!account) return null;
+
+    const getAccountIcon = () => {
+      switch (account.type) {
+        case 'live': return '🟢';
+        case 'demo': return '🔵';
+        case 'paper': return '🟡';
+        case 'prop': return '🏢';
+        default: return '⚪';
+      }
+    };
+
+    const getAccountColor = () => {
+      switch (account.type) {
+        case 'live': return 'bg-green-500/15 border-green-500/30 text-green-600 dark:text-green-400';
+        case 'demo': return 'bg-blue-500/15 border-blue-500/30 text-blue-600 dark:text-blue-400';
+        case 'paper': return 'bg-yellow-500/15 border-yellow-500/30 text-yellow-600 dark:text-yellow-400';
+        case 'prop': return 'bg-purple-500/15 border-purple-500/30 text-purple-600 dark:text-purple-400';
+        default: return 'bg-gray-500/15 border-gray-500/30 text-gray-600 dark:text-gray-400';
+      }
+    };
+
+    // Truncate long names
+    const truncatedName = account.name.length > 8 ? account.name.slice(0, 8) + '…' : account.name;
+
+    return {
+      icon: <span className="text-xs leading-none">{getAccountIcon()}</span>,
+      label: truncatedName,
+      color: getAccountColor()
+    };
+  }, [selectedAccountId, accounts]);
+
   return (
     <>
       {/* Top Bar - Apple minimal style */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="flex items-center justify-between px-4 py-3">
-          {/* Logo + Trades Badge */}
+          {/* Logo + Badges */}
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 bg-gradient-to-br from-primary-400 to-primary-600 rounded-lg flex items-center justify-center">
               <Zap className="w-5 h-5 text-white" />
@@ -118,17 +186,35 @@ export const AppleMobileNav: React.FC<AppleMobileNavProps> = ({ onAddTrade }) =>
             )}
           </div>
 
-          {/* Profile Avatar - opens bottom sheet */}
-          <button
-            onClick={() => setIsProfileSheetOpen(true)}
-            className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center overflow-hidden"
-          >
-            {profile?.avatar ? (
-              <img src={profile.avatar} alt="Profile" className="w-full h-full object-cover" />
-            ) : (
-              <User className="w-4 h-4 text-white" />
+          {/* Account Badge + Profile */}
+          <div className="flex items-center gap-2.5">
+            {/* Account Badge - Tappable */}
+            {currentAccountDisplay && (
+              <motion.button
+                onClick={() => setIsAccountSheetOpen(true)}
+                className={cn(
+                  "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-all",
+                  currentAccountDisplay.color
+                )}
+                whileTap={{ scale: 0.95 }}
+              >
+                {currentAccountDisplay.icon}
+                <span className="leading-none">{currentAccountDisplay.label}</span>
+              </motion.button>
             )}
-          </button>
+
+            {/* Profile Avatar - opens bottom sheet */}
+            <button
+              onClick={() => setIsProfileSheetOpen(true)}
+              className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center overflow-hidden"
+            >
+              {profile?.avatar ? (
+                <img src={profile.avatar} alt="Profile" className="w-full h-full object-cover" />
+              ) : (
+                <User className="w-4 h-4 text-white" />
+              )}
+            </button>
+          </div>
         </div>
       </header>
 
@@ -295,6 +381,59 @@ export const AppleMobileNav: React.FC<AppleMobileNavProps> = ({ onAddTrade }) =>
                 >
                   <LogOut className="w-5 h-5 text-red-500" />
                   <span className="text-base text-red-500">Log Out</span>
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Account Selector Bottom Sheet - iOS style */}
+      <AnimatePresence>
+        {isAccountSheetOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              className="fixed inset-0 bg-black/50 z-[60]"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsAccountSheetOpen(false)}
+            />
+
+            {/* Sheet */}
+            <motion.div
+              className="fixed bottom-0 left-0 right-0 bg-background rounded-t-3xl z-[70] max-h-[85vh] overflow-y-auto"
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+            >
+              {/* Handle */}
+              <div className="flex justify-center pt-3 pb-2">
+                <div className="w-10 h-1 bg-muted rounded-full" />
+              </div>
+
+              {/* Header */}
+              <div className="px-6 py-4 border-b border-border">
+                <h2 className="text-xl font-bold text-foreground">Select Account</h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Switch between your trading accounts
+                </p>
+              </div>
+
+              {/* Account Filter Component */}
+              <div className="p-4">
+                <AccountFilter />
+              </div>
+
+              {/* Close Button */}
+              <div className="p-4 border-t border-border">
+                <button
+                  onClick={() => setIsAccountSheetOpen(false)}
+                  className="w-full py-3 px-4 bg-accent hover:bg-accent/80 text-accent-foreground rounded-xl font-medium transition-colors active:scale-[0.98]"
+                >
+                  Done
                 </button>
               </div>
             </motion.div>
