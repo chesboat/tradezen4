@@ -87,9 +87,9 @@ export const ShareableHealthCard: React.FC<ShareableHealthCardProps> = ({
   const handleCopyText = () => {
     const text = `Just checked my Trading Health on @refine_trading 📊
 
-Edge: ${metrics.edge.value}%
-Consistency: ${metrics.consistency.value}%
-Risk Control: ${metrics.riskControl.value}%
+Edge: ${metrics.edge.value}/${metrics.edge.goal}
+Consistency: ${metrics.consistency.value}/${metrics.consistency.goal}
+Risk Control: ${metrics.riskControl.value}/${metrics.riskControl.goal}
 
 Track your edge. Try Refine → refine.trading`;
 
@@ -103,9 +103,9 @@ Track your edge. Try Refine → refine.trading`;
   const handleShareTwitter = async () => {
     const text = `Just checked my Trading Health 📊
 
-Edge: ${metrics.edge.value}%
-Consistency: ${metrics.consistency.value}%
-Risk Control: ${metrics.riskControl.value}%
+Edge: ${metrics.edge.value}/${metrics.edge.goal}
+Consistency: ${metrics.consistency.value}/${metrics.consistency.goal}
+Risk Control: ${metrics.riskControl.value}/${metrics.riskControl.goal}
 
 Track your edge with @refine_trading 👇`;
     
@@ -222,14 +222,47 @@ Track your edge with @refine_trading 👇`;
                         <p className="text-sm text-muted-foreground">{timeWindowLabel}</p>
                       </div>
 
-                      {/* Rings */}
-                      <div className="flex justify-center py-4">
-                        <div className="scale-90">
-                          <HealthRings
-                            metrics={metrics}
-                            size="large"
-                            showLabels={false}
-                          />
+                      {/* Rings with Scores */}
+                      <div className="space-y-4">
+                        {/* Ring Visualization */}
+                        <div className="flex justify-center">
+                          <div className="scale-90">
+                            <HealthRings
+                              metrics={metrics}
+                              size="large"
+                              showLabels={false}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Ring Scores - Clean, scannable */}
+                        <div className="grid grid-cols-3 gap-3 px-4">
+                          {/* Edge */}
+                          <div className="text-center">
+                            <div className="text-xs text-muted-foreground mb-1">Edge</div>
+                            <div className="text-2xl font-bold" style={{ color: '#FF375F' }}>
+                              {metrics.edge.value}
+                            </div>
+                            <div className="text-xs text-muted-foreground">/ {metrics.edge.goal}</div>
+                          </div>
+
+                          {/* Consistency */}
+                          <div className="text-center">
+                            <div className="text-xs text-muted-foreground mb-1">Consistency</div>
+                            <div className="text-2xl font-bold" style={{ color: '#7AFF45' }}>
+                              {metrics.consistency.value}
+                            </div>
+                            <div className="text-xs text-muted-foreground">/ {metrics.consistency.goal}</div>
+                          </div>
+
+                          {/* Risk Control */}
+                          <div className="text-center">
+                            <div className="text-xs text-muted-foreground mb-1">Risk</div>
+                            <div className="text-2xl font-bold" style={{ color: '#0AFFFE' }}>
+                              {metrics.riskControl.value}
+                            </div>
+                            <div className="text-xs text-muted-foreground">/ {metrics.riskControl.goal}</div>
+                          </div>
                         </div>
                       </div>
 
