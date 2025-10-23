@@ -726,11 +726,11 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
     const abs = Math.abs(pnl);
     const sign = pnl > 0 ? '+' : pnl < 0 ? '' : '';
     
-    if (abs >= 1000000) return `${sign}${(pnl / 1000000).toFixed(1)}M`; // $1.2M
-    if (abs >= 100000) return `${sign}${Math.round(pnl / 1000)}k`;      // $123k
-    if (abs >= 10000) return `${sign}${(pnl / 1000).toFixed(1)}k`;      // $12.3k
-    if (abs >= 1000) return `${sign}${(pnl / 1000).toFixed(1)}k`;       // $1.2k
-    return `${sign}${Math.round(pnl)}`;                                  // $543
+    if (abs >= 1000000) return `${sign}$${(pnl / 1000000).toFixed(1)}M`; // +$1.2M
+    if (abs >= 100000) return `${sign}$${Math.round(pnl / 1000)}k`;      // +$123k
+    if (abs >= 10000) return `${sign}$${(pnl / 1000).toFixed(1)}k`;      // +$12.3k
+    if (abs >= 1000) return `${sign}$${(pnl / 1000).toFixed(1)}k`;       // +$1.2k
+    return `${sign}$${Math.round(pnl)}`;                                  // +$543
   };
 
   const formatPnL = (pnl: number, isCompact: boolean = false) => {
