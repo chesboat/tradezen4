@@ -17,7 +17,7 @@ import {
   Info
 } from 'lucide-react';
 import { useTradeStore } from '@/store/useTradeStore';
-import { useAccountFilterStore } from '@/store/useAccountFilterStore';
+import { useAccountFilterStore, getAccountIdsForSelection } from '@/store/useAccountFilterStore';
 import type { Trade } from '@/types';
 import { useRuleTallyStore } from '@/store/useRuleTallyStore';
 import { useUserProfileStore } from '@/store/useUserProfileStore';
@@ -180,13 +180,18 @@ const DailyIntentCard: React.FC = () => {
   const { getReflectionByDate, upsertReflectionForSelection } = useDailyReflectionStore();
   const { selectedAccountId } = useAccountFilterStore();
   const today = formatLocalDate(new Date());
-  const todayReflection = getReflectionByDate(today, selectedAccountId || undefined);
+  // Map grouped selection to first account for read/write
+  const effectiveAccountId = React.useMemo(() => {
+    const ids = getAccountIdsForSelection(selectedAccountId || null);
+    return ids[0];
+  }, [selectedAccountId]);
+  const todayReflection = getReflectionByDate(today, effectiveAccountId || undefined);
   const [isEditing, setIsEditing] = React.useState(false);
   const [focusText, setFocusText] = React.useState('');
 
   const handleSave = async () => {
     if (focusText.trim()) {
-      await upsertReflectionForSelection(today, { keyFocus: focusText.trim() }, selectedAccountId || 'default');
+      await upsertReflectionForSelection(today, { keyFocus: focusText.trim() }, effectiveAccountId || 'default');
       setIsEditing(false);
       setFocusText('');
     }
@@ -280,9 +285,10 @@ const HabitsCard: React.FC = () => {
   
   const today = formatLocalDate(new Date());
   // Include journal-wide habits (no accountId) and account-specific habits
-  const accountRules = rules.filter(r => 
-    (!r.accountId || r.accountId === selectedAccountId) && r.isActive !== false
-  );
+  const accountRules = rules.filter(r => {
+    const ids = getAccountIdsForSelection(selectedAccountId || null);
+    return (!r.accountId || ids.includes(r.accountId)) && r.isActive !== false;
+  });
   
   const completedHabits = accountRules.filter(rule => getTallyCountForRule(rule.id, today) > 0).length;
   const activeStreaks = accountRules.filter(rule => {
@@ -370,7 +376,10 @@ const RecentActivity: React.FC = () => {
   
   // Get recent trades for the selected account
   const recentTrades = getRecentTrades()
-    .filter(trade => !selectedAccountId || trade.accountId === selectedAccountId)
+    .filter(trade => {
+      const ids = getAccountIdsForSelection(selectedAccountId || null);
+      return ids.includes(trade.accountId);
+    })
     .slice(0, 5);
 
   return (
@@ -458,7 +467,11 @@ const GrowthCorner: React.FC = () => {
   const progressPct = getLevelProgress(seasonXp);
   
   // Get reflection streak for the selected account
-  const reflectionStreak = selectedAccountId ? getReflectionStreak(selectedAccountId) : 0;
+  const reflectionStreak = React.useMemo(() => {
+    const ids = getAccountIdsForSelection(selectedAccountId || null);
+    const primary = ids[0];
+    return primary ? getReflectionStreak(primary) : 0;
+  }, [selectedAccountId, getReflectionStreak]);
 
   return (
     <motion.div 
@@ -525,7 +538,8 @@ const AIInsights: React.FC = () => {
     }> = [];
     
     // Filter data by account
-    const accountTrades = selectedAccountId ? trades.filter(t => t.accountId === selectedAccountId) : trades;
+    const ids = getAccountIdsForSelection(selectedAccountId || null);
+    const accountTrades = trades.filter(t => ids.includes(t.accountId));
     // Include journal-wide habits (no accountId) and account-specific habits
     const accountRules = rules.filter(r => 
       (!r.accountId || r.accountId === selectedAccountId) && r.isActive !== false
@@ -762,7 +776,8 @@ export const MinimalDashboard: React.FC = () => {
 
   // Filter trades by selected account and time period
   const filteredTrades = useMemo(() => {
-    let filtered = selectedAccountId ? trades.filter(t => t.accountId === selectedAccountId) : trades;
+    const ids = getAccountIdsForSelection(selectedAccountId || null);
+    let filtered = trades.filter(t => ids.includes(t.accountId));
     
     if (selectedPeriod !== 'lifetime') {
       const now = new Date();
