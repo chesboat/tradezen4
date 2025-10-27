@@ -76,6 +76,7 @@ export const useTradeStore = create<TradeState>((set, get) => ({
           const colRef = collection(db as any, `users/${userId}/trades`);
           const q = query(colRef, orderBy('createdAt', 'desc'));
           const unsub = onSnapshot(q, async (snap) => {
+            console.log('📊 Trades realtime update received:', snap.docs.length, 'trades');
             const docs = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as Trade[];
             const formatted = docs.map(trade => ({
               ...trade,
@@ -96,8 +97,18 @@ export const useTradeStore = create<TradeState>((set, get) => ({
                     .map(a => a.id)
                 );
                 filteredRealtime = formatted.filter(t => validIds.has((t as any).accountId));
+                console.log('📊 Filtered trades:', filteredRealtime.length, 'of', formatted.length, 'valid accounts:', validIds.size);
+                
+                // Safety check: if we have trades but filtering removed them all, keep the unfiltered trades
+                // This prevents the "no trades" bug when accounts haven't loaded yet
+                if (formatted.length > 0 && filteredRealtime.length === 0 && validIds.size === 0) {
+                  console.warn('⚠️ Account filter would remove all trades but no valid accounts found - keeping unfiltered');
+                  filteredRealtime = formatted;
+                }
               }
-            } catch {}
+            } catch (e) {
+              console.warn('Account filtering failed in realtime listener:', e);
+            }
             set({ trades: filteredRealtime });
             try { (window as any).__tradesReady = true; } catch {}
           }, (error) => {
