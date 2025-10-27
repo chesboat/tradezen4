@@ -135,9 +135,9 @@ export const useTradeStore = create<TradeState>((set, get) => ({
         exitTime: newTrade.exitTime ? new Date(newTrade.exitTime) : undefined,
       };
 
-      const currentTrades = get().trades;
-      const updatedTrades = [formattedTrade, ...currentTrades];
-      set({ trades: updatedTrades });
+      // Don't manually add to state - let the realtime listener handle it
+      // This prevents duplicates when the listener picks up the new trade
+      // The listener will update the state automatically
 
       // Replicate to linked accounts if the source account has links
       try {
@@ -148,7 +148,7 @@ export const useTradeStore = create<TradeState>((set, get) => ({
           console.log('Replicating trade to linked accounts:', linkedIds);
           await Promise.all(
             linkedIds.map(async (accountId) => {
-              const replicated = await tradeService.create({
+              await tradeService.create({
                 ...trade,
                 accountId,
                 createdAt: new Date().toISOString(),
@@ -156,15 +156,8 @@ export const useTradeStore = create<TradeState>((set, get) => ({
                 entryTime: trade.entryTime instanceof Date ? trade.entryTime.toISOString() : trade.entryTime,
                 exitTime: trade.exitTime instanceof Date ? trade.exitTime.toISOString() : trade.exitTime,
               } as unknown as Trade);
-
-              const formattedReplicated = {
-                ...replicated,
-                createdAt: new Date(replicated.createdAt),
-                updatedAt: new Date(replicated.updatedAt),
-                entryTime: new Date(replicated.entryTime),
-                exitTime: replicated.exitTime ? new Date(replicated.exitTime) : undefined,
-              };
-              set({ trades: [formattedReplicated, ...get().trades] });
+              // Don't manually add replicated trades to state either
+              // The realtime listener will pick them up automatically
             })
           );
         }

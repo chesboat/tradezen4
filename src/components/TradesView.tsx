@@ -1414,10 +1414,10 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                       <AnimatePresence>
                         {openMenuId === trade.id && (
                           <motion.div
-                            initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                            className="absolute right-0 top-12 z-50 w-48 bg-popover border border-border rounded-lg shadow-lg overflow-hidden"
+                            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                            className="absolute right-0 bottom-12 z-50 w-48 bg-popover border border-border rounded-lg shadow-lg overflow-hidden"
                             onMouseLeave={() => setOpenMenuId(null)}
                           >
                             <button
