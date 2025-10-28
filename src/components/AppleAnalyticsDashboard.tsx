@@ -612,22 +612,14 @@ const TradingHealthPreviewCard: React.FC<{ trades: any[] }> = ({ trades }) => {
   }, [selectedAccountId, accounts]);
 
   const filteredTrades = React.useMemo(() => {
-    if (!selectedAccountId || selectedAccountId === 'all') {
-      return trades;
-    }
-    
-    const account = accounts.find(acc => acc.id === selectedAccountId);
-    
-    if (account?.isGroup && account.groupId) {
-      const groupAccounts = accounts.filter(acc => 
-        acc.groupId === account.groupId && !acc.isGroup
-      );
-      const groupIds = groupAccounts.map(acc => acc.id);
-      return trades.filter(t => groupIds.includes(t.accountId));
-    }
-    
-    return trades.filter(t => t.accountId === selectedAccountId);
-  }, [trades, selectedAccountId, accounts]);
+    // Use the same filtering logic as the main Trading Health view
+    const accountIds = getAccountIdsForSelection(selectedAccountId);
+    console.log('🏥 Trading Health Preview: selectedAccountId:', selectedAccountId);
+    console.log('🏥 Trading Health Preview: accountIds for selection:', accountIds);
+    const filtered = trades.filter(t => accountIds.includes(t.accountId));
+    console.log('🏥 Trading Health Preview: Total trades:', trades.length, '→ Filtered:', filtered.length);
+    return filtered;
+  }, [trades, selectedAccountId]);
 
   // Basic users get 7-day window, Premium gets 30-day
   const timeWindow = isPremium ? '30d' : '7d';
