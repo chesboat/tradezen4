@@ -129,14 +129,17 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
   const [selectedTagFilters, setSelectedTagFilters] = useState<Set<string>>(new Set());
   const { getAllTags } = useTagStore();
 
-  // Debug: Log when account selection changes
+  // Reset to page 1 when account changes
   React.useEffect(() => {
     console.log('🔄 TradesView: Account changed to:', selectedAccountId);
     console.log('🔄 TradesView: Total trades in store:', trades.length);
     const ids = getAccountIdsForSelection(selectedAccountId || null, includeArchived);
     const filtered = trades.filter(t => ids.includes(t.accountId));
     console.log('🔄 TradesView: Filtered trades for this account:', filtered.length, 'Account IDs:', ids);
-  }, [selectedAccountId, trades.length, includeArchived]);
+    
+    // Reset pagination when account changes to prevent showing empty page
+    setCurrentPage(1);
+  }, [selectedAccountId, includeArchived]);
 
   // Get unique symbols for filter dropdown
   const uniqueSymbols = useMemo(() => {
