@@ -129,7 +129,7 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
   const [selectedTagFilters, setSelectedTagFilters] = useState<Set<string>>(new Set());
   const { getAllTags } = useTagStore();
 
-  // Reset to page 1 when account changes
+  // Reset to page 1 and update filter when account changes
   React.useEffect(() => {
     console.log('🔄 TradesView: Account changed to:', selectedAccountId);
     console.log('🔄 TradesView: Total trades in store:', trades.length);
@@ -139,6 +139,10 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
     
     // Reset pagination when account changes to prevent showing empty page
     setCurrentPage(1);
+    
+    // Update the account filter to match the selected account
+    // This prevents double-filtering where trades are filtered by both selectedAccountId and filters.account
+    setFilters(prev => ({ ...prev, account: selectedAccountId || 'all' }));
   }, [selectedAccountId, includeArchived]);
 
   // Get unique symbols for filter dropdown
