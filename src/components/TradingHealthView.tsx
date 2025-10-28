@@ -83,7 +83,11 @@ export const TradingHealthView: React.FC = () => {
   // Apple-style: Smart filtering using getAccountIdsForSelection (handles groups, single, all)
   const filteredTrades = useMemo(() => {
     const accountIds = getAccountIdsForSelection(selectedAccountId);
-    return trades.filter(t => accountIds.includes(t.accountId));
+    console.log('🏥 Trading Health: selectedAccountId:', selectedAccountId);
+    console.log('🏥 Trading Health: accountIds for selection:', accountIds);
+    const filtered = trades.filter(t => accountIds.includes(t.accountId));
+    console.log('🏥 Trading Health: Total trades:', trades.length, '→ Filtered:', filtered.length);
+    return filtered;
   }, [trades, selectedAccountId]);
 
   // Debug: Log trades data

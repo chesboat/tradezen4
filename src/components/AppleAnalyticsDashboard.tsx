@@ -1800,7 +1800,10 @@ export const AppleAnalyticsDashboard: React.FC = () => {
   const filteredTrades = React.useMemo(() => {
     // Filter by account (handles grouped accounts correctly)
     const accountIds = getAccountIdsForSelection(selectedAccountId);
+    console.log('📊 Analytics: selectedAccountId:', selectedAccountId);
+    console.log('📊 Analytics: accountIds for selection:', accountIds);
     let filtered = tierFilteredTrades.filter(t => accountIds.includes(t.accountId));
+    console.log('📊 Analytics: Tier-filtered trades:', tierFilteredTrades.length, '→ Account-filtered:', filtered.length);
 
     // Filter by symbol if selected
     if (symbolFilter) {
