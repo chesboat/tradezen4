@@ -151,7 +151,7 @@ export const CalendarFrame: React.FC<CalendarFrameProps> = ({ theme }) => {
                       ? 'bg-muted/20 border-transparent opacity-30'
                       : day.isToday
                       ? 'bg-primary/10 border-primary'
-                      : day.pnl > 0
+                      : (day.pnl ?? 0) > 0
                       ? 'bg-card border-border hover:border-primary/50'
                       : day.isWeekend
                       ? 'bg-muted/10 border-transparent'
@@ -170,7 +170,7 @@ export const CalendarFrame: React.FC<CalendarFrameProps> = ({ theme }) => {
                         <Flame className="w-3 h-3 text-orange-500" />
                       )}
                     </div>
-                    {day.pnl > 0 && (
+                    {(day.pnl ?? 0) > 0 && (
                       <div className="mt-auto">
                         <div className="text-xs font-bold text-green-500">
                           +${day.pnl}

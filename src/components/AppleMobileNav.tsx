@@ -19,7 +19,8 @@ import {
   LogOut,
   Zap,
   Plus,
-  Users
+  Users,
+  HelpCircle
 } from 'lucide-react';
 import { useNavigationStore } from '@/store/useNavigationStore';
 import { useUserProfileStore, getUserDisplayName } from '@/store/useUserProfileStore';
