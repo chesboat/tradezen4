@@ -133,18 +133,20 @@ export const ReflectionHub: React.FC<ReflectionHubProps> = ({ date, className })
 
       {/* General Thoughts (TipTap editor) */}
       <div className="space-y-3 p-3 sm:p-4 bg-gradient-to-br from-card to-muted/20 rounded-xl border border-border overflow-x-hidden">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3 min-w-0">
+        <div className="flex flex-col gap-3">
+          <div className="flex items-start gap-3">
             <div className="p-2 bg-secondary/20 rounded-lg shrink-0">
               <Layers className="w-4 h-4 text-secondary-foreground" />
             </div>
-            <div className="min-w-0">
-              <h3 className="text-sm font-semibold truncate">General Thoughts</h3>
-              <p className="text-xs text-muted-foreground truncate">Free-form notes to supplement your insight blocks</p>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-3 mb-1">
+                <h3 className="text-sm font-semibold">General Thoughts</h3>
+                <div className="text-xs text-muted-foreground shrink-0">
+                  {isSavingThoughts ? 'Saving…' : lastSavedAt ? `Saved ${lastSavedAt.toLocaleTimeString()}` : ''}
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">Free-form notes to supplement your insight blocks</p>
             </div>
-          </div>
-          <div className="text-xs text-muted-foreground shrink-0">
-            {isSavingThoughts ? 'Saving…' : lastSavedAt ? `Saved ${lastSavedAt.toLocaleTimeString()}` : ''}
           </div>
         </div>
         <TipTapEditor

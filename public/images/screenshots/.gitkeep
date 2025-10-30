@@ -1,0 +1,17 @@
+# Screenshot Placeholders
+
+This directory will contain the marketing screenshots for the homepage preview.
+
+See SCREENSHOT_GUIDE.md for detailed instructions on capturing these screenshots.
+
+Required files:
+- 01-trading-health-light.png (Daily rings, streaks, discipline tracking)
+- 02-analytics-light.png (Performance charts, win rate, P&L)
+- 03-journal-light.png (Trade notes, folders, templates)
+- 04-calendar-dark.png (Monthly view, streaks, P&L per day)
+- 05-habits-dark.png (Daily habits, categories, 5-day streak)
+- 06-wellness-dark.png (Sleep, meditation, exercise, mood)
+- 07-quests-dark.png (Active challenges, XP rewards, level)
+- 08-todo-dark.png (Trading tasks, routines, completion %)
+- 09-ai-coach-dark.png (Personalized insights, premium features)
+

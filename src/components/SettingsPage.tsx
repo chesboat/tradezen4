@@ -801,6 +801,39 @@ export const SettingsPage: React.FC = () => {
             }}
           />
         </motion.div>
+
+        {/* Legal & Support Links */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground pb-8"
+        >
+          <button
+            onClick={() => setCurrentView('support')}
+            className="hover:text-primary transition-colors"
+          >
+            Help & Support
+          </button>
+          <button
+            onClick={() => setCurrentView('privacy')}
+            className="hover:text-primary transition-colors"
+          >
+            Privacy Policy
+          </button>
+          <button
+            onClick={() => setCurrentView('terms')}
+            className="hover:text-primary transition-colors"
+          >
+            Terms of Service
+          </button>
+          <a
+            href="mailto:support@refinejournal.com"
+            className="hover:text-primary transition-colors"
+          >
+            Contact Us
+          </a>
+        </motion.div>
       </div>
       
       {/* Upgrade Modal */}

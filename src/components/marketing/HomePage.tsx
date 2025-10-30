@@ -20,6 +20,7 @@ import {
   FileText
 } from 'lucide-react';
 import { useNavigationStore } from '@/store/useNavigationStore';
+import { DashboardHeroPreview } from './DashboardHeroPreview';
 
 interface HomePageProps {
   onGetStarted: () => void;
@@ -228,22 +229,17 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted, onViewPricing 
             </div>
           </motion.div>
 
-          {/* Hero Image/Screenshot Placeholder */}
+          {/* Dashboard Hero Preview - Real Components */}
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
             className="mt-16 relative"
           >
-            <div className="relative mx-auto max-w-5xl">
+            <div className="relative mx-auto max-w-6xl">
               <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-orange-500/20 blur-3xl rounded-full" />
-              <div className="relative bg-card border-2 border-border rounded-2xl shadow-2xl p-4 sm:p-8">
-                <div className="bg-muted/30 rounded-xl aspect-video flex items-center justify-center text-muted-foreground">
-                  <div className="text-center">
-                    <BarChart3 className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                    <p className="text-sm">Dashboard Preview</p>
-                  </div>
-                </div>
+              <div className="relative">
+                <DashboardHeroPreview />
               </div>
             </div>
           </motion.div>
@@ -736,6 +732,90 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted, onViewPricing 
           </motion.div>
         </div>
       </section>
+
+      {/* Footer */}
+      <footer className="bg-muted/30 border-t border-border py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <div className="grid md:grid-cols-4 gap-8 mb-8">
+            {/* Brand */}
+            <div>
+              <h3 className="font-bold text-lg mb-4">Refine</h3>
+              <p className="text-sm text-muted-foreground">
+                The trading journal built for serious traders who want to master their psychology.
+              </p>
+            </div>
+
+            {/* Product */}
+            <div>
+              <h4 className="font-semibold mb-4">Product</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li>
+                  <button onClick={() => setCurrentView('pricing')} className="hover:text-primary transition-colors">
+                    Pricing
+                  </button>
+                </li>
+                <li>
+                  <a href="#features" className="hover:text-primary transition-colors">
+                    Features
+                  </a>
+                </li>
+                <li>
+                  <button onClick={onGetStarted} className="hover:text-primary transition-colors">
+                    Start Free Trial
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            {/* Support */}
+            <div>
+              <h4 className="font-semibold mb-4">Support</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li>
+                  <a href="mailto:support@refinejournal.com" className="hover:text-primary transition-colors">
+                    Contact Us
+                  </a>
+                </li>
+                <li>
+                  <a href="/support" className="hover:text-primary transition-colors">
+                    Help Center
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Legal */}
+            <div>
+              <h4 className="font-semibold mb-4">Legal</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li>
+                  <a href="/privacy" className="hover:text-primary transition-colors">
+                    Privacy Policy
+                  </a>
+                </li>
+                <li>
+                  <a href="/terms" className="hover:text-primary transition-colors">
+                    Terms of Service
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Bottom Bar */}
+          <div className="pt-8 border-t border-border flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
+            <p>© 2025 Refine. All rights reserved.</p>
+            <div className="flex items-center gap-4">
+              <a href="https://twitter.com/refinejournal" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
+                Twitter
+              </a>
+              <a href="mailto:support@refinejournal.com" className="hover:text-primary transition-colors">
+                Email
+              </a>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };

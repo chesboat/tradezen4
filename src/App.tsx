@@ -4,6 +4,9 @@ import { PublicNoteView } from './components/PublicNoteView';
 import { PublicTradeInsightView } from './components/PublicTradeInsightView';
 import { StreakPreview } from './components/StreakPreview';
 import { SettingsPage } from './components/SettingsPage';
+import { SupportPage } from './components/SupportPage';
+import { PrivacyPolicy } from './components/legal/PrivacyPolicy';
+import { TermsOfService } from './components/legal/TermsOfService';
 import { Sidebar } from './components/Sidebar';
 import { AppleMobileNav } from './components/AppleMobileNav';
 import { ActivityLog } from './components/ActivityLog';
@@ -358,6 +361,12 @@ function AppContent() {
         return <CoachView />;
       case 'settings':
         return <SettingsPage />;
+      case 'support':
+        return <SupportPage />;
+      case 'privacy':
+        return <PrivacyPolicy />;
+      case 'terms':
+        return <TermsOfService />;
       case 'todos':
         return <MobileTodoPage />;
       case 'insights':

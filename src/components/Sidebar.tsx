@@ -596,6 +596,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
                   </p>
                 </div>
                 <div className="flex items-center gap-1">
+                  <Tooltip content="Help & Support" position="top">
+                    <motion.button
+                      className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+                      onClick={() => setCurrentView('support')}
+                      whileHover={hoverScale}
+                      whileTap={tapScale}
+                    >
+                      <HelpCircle className="w-4 h-4" />
+                    </motion.button>
+                  </Tooltip>
                   <Tooltip content="Settings" position="top">
                     <motion.button
                       className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
@@ -621,6 +631,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onAddTrade }) => {
             </motion.div>
           ) : (
             <div className="p-3 flex flex-col items-center gap-2">
+              {/* Help & Support */}
+              <Tooltip content="Help & Support" position="right">
+                <motion.button
+                  className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => setCurrentView('support')}
+                  whileHover={hoverScale}
+                  whileTap={tapScale}
+                >
+                  <HelpCircle className="w-4 h-4" />
+                </motion.button>
+              </Tooltip>
               {/* Settings */}
               <Tooltip content="Settings" position="right">
                 <motion.button

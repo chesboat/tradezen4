@@ -1,0 +1,185 @@
+═══════════════════════════════════════════════════════════════
+  📸 HOMEPAGE SCREENSHOT CHECKLIST
+═══════════════════════════════════════════════════════════════
+
+SETUP (Do Once)
+═══════════════════════════════════════════════════════════════
+[ ] Browser zoom at 100%
+[ ] Hide bookmarks bar
+[ ] Close unnecessary tabs
+[ ] Disable browser extensions
+[ ] Clear any notifications
+[ ] Set window size: 2560x1440 or larger
+
+DEMO DATA (30 minutes)
+═══════════════════════════════════════════════════════════════
+[ ] Create profitable trades (+$3,247 monthly)
+[ ] Set up 5-day streak
+[ ] Complete 70-80% of daily habits
+[ ] Add journal entry with +$422.50 trade
+[ ] Populate calendar with October data
+[ ] Set up 3 playbook strategies
+[ ] Configure AI insights
+
+LIGHT MODE SCREENSHOTS (15 minutes)
+═══════════════════════════════════════════════════════════════
+[ ] 01-trading-health-light.png
+    → Navigate to Trading Health
+    → Show rings 70-90% filled
+    → Display 5-day streak
+    → Verify sidebar visible
+    → Capture at 2560x1440
+
+[ ] 02-analytics-light.png
+    → Navigate to Analytics
+    → Show win rate 61.5%
+    → Display upward equity curve
+    → Show +$3,247 monthly P&L
+    → Verify sidebar visible
+    → Capture at 2560x1440
+
+[ ] 03-journal-light.png
+    → Navigate to Notebook
+    → Open trade note (+$422.50)
+    → Show folder structure
+    → Display tags and templates
+    → Verify sidebar visible
+    → Capture at 2560x1440
+
+SWITCH TO DARK MODE (5 minutes)
+═══════════════════════════════════════════════════════════════
+[ ] Toggle dark mode in app settings
+[ ] Verify theme applied correctly
+[ ] Check contrast and readability
+
+DARK MODE SCREENSHOTS (30 minutes)
+═══════════════════════════════════════════════════════════════
+[ ] 04-calendar-dark.png
+    → Navigate to Calendar
+    → Show October 2025
+    → Display 18 trading days
+    → Show 5-day streak with 🔥
+    → Display +$3,247 monthly total
+    → Verify sidebar visible
+    → Capture at 2560x1440
+
+[ ] 05-habits-dark.png
+    → Navigate to Habits
+    → Show daily habit tracking
+    → Display 3-4 habit categories
+    → Show completion checkboxes
+    → Display current streak (5 days)
+    → Show weekly consistency view
+    → Verify sidebar visible
+    → Capture at 2560x1440
+
+[ ] 06-wellness-dark.png
+    → Navigate to Wellness
+    → Show mental/physical health tracking
+    → Display meditation, exercise, sleep
+    → Show wellness streaks
+    → Display mood/energy tracking
+    → Show weekly wellness summary
+    → Verify sidebar visible
+    → Capture at 2560x1440
+
+[ ] 07-quests-dark.png
+    → Navigate to Quests
+    → Show active quests/challenges
+    → Display XP rewards (100-500 XP)
+    → Show progress bars
+    → Display completed quests
+    → Show level/XP total
+    → Verify sidebar visible
+    → Capture at 2560x1440
+
+[ ] 08-todo-dark.png
+    → Navigate to Todo List
+    → Show trading tasks
+    → Display daily routines
+    → Show completed items (60-70%)
+    → Display priority levels
+    → Show categories (Pre-market, Post-market)
+    → Verify sidebar visible
+    → Capture at 2560x1440
+
+[ ] 09-ai-coach-dark.png
+    → Navigate to AI Coach
+    → Show 2-3 insights
+    → Display "5-day streak" message
+    → Show supporting charts
+    → Display premium badge
+    → Verify sidebar visible
+    → Capture at 2560x1440
+
+QUALITY CHECK (Each Screenshot)
+═══════════════════════════════════════════════════════════════
+[ ] Full sidebar visible
+[ ] No personal information
+[ ] Correct theme (light/dark)
+[ ] No browser UI visible
+[ ] No loading states
+[ ] No error messages
+[ ] Aspirational data showing
+[ ] High resolution (2560x1440+)
+
+OPTIMIZATION (10 minutes)
+═══════════════════════════════════════════════════════════════
+[ ] Use ImageOptim (Mac) or TinyPNG (Web)
+[ ] Optimize each image to < 500KB
+[ ] Verify quality after optimization
+[ ] Check file names are correct
+
+DEPLOYMENT (2 minutes)
+═══════════════════════════════════════════════════════════════
+[ ] Place all 9 images in: /public/images/screenshots/
+[ ] Verify filenames match exactly:
+    01-trading-health-light.png
+    02-analytics-light.png
+    03-journal-light.png
+    04-calendar-dark.png
+    05-habits-dark.png
+    06-wellness-dark.png
+    07-quests-dark.png
+    08-todo-dark.png
+    09-ai-coach-dark.png
+
+TESTING (5 minutes)
+═══════════════════════════════════════════════════════════════
+[ ] Refresh homepage
+[ ] Verify all images load
+[ ] Check animation smoothness
+[ ] Test hover pause
+[ ] Test dot navigation
+[ ] Check mobile responsiveness
+[ ] Verify theme transition works
+
+FINAL VERIFICATION
+═══════════════════════════════════════════════════════════════
+[ ] All 9 screenshots captured
+[ ] All images optimized
+[ ] All files in correct location
+[ ] Homepage preview working
+[ ] Animations smooth
+[ ] No console errors
+[ ] Ready to show the world! 🚀
+
+═══════════════════════════════════════════════════════════════
+TOTAL TIME: ~90 minutes
+═══════════════════════════════════════════════════════════════
+
+TIPS:
+• Do all screenshots in one session for consistency
+• Use the same window size for all captures
+• Keep demo data consistent across all views
+• Take breaks between light and dark mode
+• Double-check filenames before deploying
+
+HELP:
+• Full guide: SCREENSHOT_GUIDE.md
+• Demo data: DEMO_DATA_TEMPLATE.md
+• Quick ref: SCREENSHOT_QUICK_REFERENCE.md
+• Strategy: WWDC26_HOMEPAGE_DASHBOARD_STRATEGY.md
+
+═══════════════════════════════════════════════════════════════
+

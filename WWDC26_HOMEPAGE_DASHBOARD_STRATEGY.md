@@ -1,504 +1,355 @@
-# WWDC26 Homepage Dashboard Preview Strategy
-## Product Meeting: refine.trading Marketing Optimization
+# 🍎 Apple Design Team: Homepage Dashboard Strategy (FINAL)
 
-**Date**: October 11, 2025  
-**Attendees**: Jon Ive (Design), Tim Cook (Leadership), Craig Federighi (Software), Alan Dye (Human Interface)  
-**Product**: Refine Trading Journal - Premium Trading Health Platform
+## Executive Summary
 
----
-
-## 1. EXECUTIVE SUMMARY
-
-The homepage dashboard preview is the **critical conversion moment** where visitors understand that Refine isn't just another trading journal—it's a comprehensive trading health system. This 16:9 hero section needs to communicate sophistication, clarity, and the unique "Trading Health" value proposition at first glance.
-
-**Current State**: Static placeholder with icon  
-**Proposed State**: Animated, dual-theme showcase demonstrating product depth
+We've implemented a **screenshot-based animated preview** for the homepage that showcases the complete trading journal experience. This approach prioritizes **authenticity** and **trust** - showing traders exactly what they'll get.
 
 ---
 
-## 2. THE JONY IVE PERSPECTIVE: FORM & FUNCTION
+## 🎯 The Apple Philosophy Applied
 
-### Design Philosophy
-> "We don't just make products. We create experiences that reveal themselves over time."
+### Why Screenshots Over Components?
 
-The dashboard preview should **unfold gradually**, not overwhelm. Key principles:
+**Jony Ive's Perspective:**
+> "Truth in materials. Truth in function. When someone visits your sales page, they should see the actual product, not a recreation. Screenshots are honest."
 
-- **Progressive Disclosure**: Show one concept at a time
-- **Intentional Motion**: Every animation has purpose
-- **Material Honesty**: Real UI, real data (demo), real product
-- **Breathing Room**: White space is a feature, not a bug
-
-### Visual Strategy: Light → Dark Transition
-
-**Why both themes matter:**
-1. **Universal Appeal**: Day traders (light mode) + late-night traders (dark mode)
-2. **Professional Context**: Light mode = "I'm serious about this" for WWDC audience
-3. **Emotional Range**: Light feels disciplined, dark feels focused
-4. **Technical Showcase**: Demonstrates sophisticated theme system
-
-### The Animation Sequence (10-second loop)
-
-```
-[0-2s]  Light Mode: Trading Health Rings (Edge 75, Consistency 68, Risk 52)
-        → Emphasize the unique "health" metaphor
-        
-[2-4s]  Light Mode: Smooth transition to Analytics view
-        → Win rate charts, P&L curves, showing depth
-        
-[4-5s]  Theme Transition: Elegant fade from light → dark
-        → Showcase design system quality
-        
-[5-7s]  Dark Mode: Daily Rings Calendar view
-        → Monthly overview, streak visualization
-        
-[7-9s]  Dark Mode: AI Insights panel
-        → Show "Trading Intelligence" premium feature
-        
-[9-10s] Subtle fade, loop reset
-```
+**Key Principles:**
+1. **Material Honesty** - Real screenshots = real product
+2. **Intentional Motion** - Smooth 1-second transitions with subtle parallax
+3. **Progressive Disclosure** - 10 frames revealing depth over 35 seconds
+4. **Emotional Journey** - Light mode (approachable) → Dark mode (powerful)
+5. **Breathing Room** - 3.5 seconds per frame, 1.2s theme transition
 
 ---
 
-## 3. THE TIM COOK PERSPECTIVE: BUSINESS VALUE
+## 🎬 The 35-Second Story
 
-### Conversion Optimization
+### Act 1: Core Value (Light Mode)
+**Duration: 10.5 seconds**
 
-**Hypothesis**: Showing both light and dark mode increases conversion by demonstrating:
-- **Completeness**: "This product is fully realized"
-- **Flexibility**: "This works for my workflow"  
-- **Premium Quality**: "This is worth paying for"
+1. **Trading Health** (3.5s)
+   - Opens with unique differentiator
+   - Shows discipline and habit building
+   - Emotional hook: "I can be consistent"
 
-### Competitive Positioning
+2. **Analytics** (3.5s)
+   - Demonstrates depth and sophistication
+   - Shows profitability and improvement
+   - Credibility: "This is a serious tool"
 
-**Tradezella**: Shows static screenshots, desktop-only  
-**Edgewonk**: Complex Excel-like interface  
-**Refine**: Fluid, modern, Apple-quality design
+3. **Journal** (3.5s)
+   - Core feature: detailed trade notes
+   - Shows organization and reflection
+   - Relatability: "This is what I need"
 
-The animated preview is a **product differentiator**. It says: "We're not legacy software. We're the future."
+### Transition: The Reveal (1.2s)
+**Sparkles animation** - Smooth gradient from light to dark
+- Signals premium features ahead
+- Creates anticipation
+- Shows attention to detail
 
-### Key Metrics to Influence
-- **Time on Page**: Animation keeps visitors engaged 10+ seconds
-- **Scroll Depth**: Users scroll to see more features
-- **Trial Signups**: Visitors who see animation → 2x conversion (hypothesis)
+### Act 2: Gamification & Habits (Dark Mode)
+**Duration: 21 seconds**
+
+4. **Calendar** (3.5s)
+   - Habit tracking with streaks
+   - Visual progress over time
+   - Motivation: "I can build momentum"
+
+5. **Habits** (3.5s)
+   - Daily habit tracking with categories
+   - Streak building (5 days 🔥)
+   - Accountability: "I won't break the chain"
+
+6. **Wellness** (3.5s)
+   - Mental and physical health tracking
+   - Sleep, meditation, exercise
+   - Holistic: "I'm taking care of myself"
+
+7. **Quests** (3.5s)
+   - Gamified challenges with XP
+   - Active and completed quests
+   - Engagement: "This is actually fun"
+
+8. **Todo** (3.5s)
+   - Trading task management
+   - Daily routines and checklists
+   - Organization: "I'm staying on top of everything"
+
+9. **AI Coach** (3.5s)
+   - Personalized insights
+   - Premium feature showcase
+   - CTA moment: "I need this now"
+
+**Total Loop: 35.2 seconds** → Seamless restart
 
 ---
 
-## 4. THE CRAIG FEDERIGHI PERSPECTIVE: TECHNICAL EXECUTION
+## 🛠 Technical Implementation
 
-### Performance Constraints
-
-**Critical Requirements**:
-- **< 2 MB total**: Optimized demo data, no video files
-- **60 FPS**: Framer Motion + CSS transforms only
-- **Progressive Loading**: Show static image first, animate after
-- **Mobile Responsive**: 16:9 desktop, 4:3 mobile
-
-### Implementation Approach
-
-**Option A: Component-Based (Recommended)**
-- Build lightweight dashboard preview component
-- Real Recharts/UI components with demo data
-- Framer Motion for smooth transitions
-- Intersection Observer to trigger only when visible
-
-**Option B: Video/GIF**
-- ❌ Not recommended: File size, quality, no interactivity
-
-**Option C: Lottie Animation**
-- ❌ Over-engineered for this use case
-
-### Technical Spec
-
+### Component Architecture
 ```typescript
-<DashboardPreview>
-  <AnimationController duration={10000} loop>
-    <Frame index={0} duration={2000}>
-      <TradingHealthRings theme="light" demo />
-    </Frame>
-    <Frame index={1} duration={2000}>
-      <AnalyticsView theme="light" demo />
-    </Frame>
-    <Frame index={2} duration={1000}>
-      <ThemeTransition from="light" to="dark" />
-    </Frame>
-    <Frame index={3} duration={2000}>
-      <CalendarView theme="dark" demo />
-    </Frame>
-    <Frame index={4} duration={2000}>
-      <AIInsightsPanel theme="dark" demo />
-    </Frame>
-    <Frame index={5} duration={1000}>
-      <FadeReset />
-    </Frame>
-  </AnimationController>
-</DashboardPreview>
+DashboardHeroPreview.tsx
+├── Browser Chrome (macOS style)
+├── Screenshot Container (16:9 aspect ratio)
+│   ├── Image with fade + parallax
+│   ├── Theme transition animation
+│   └── Fallback placeholders
+├── Progress Indicators (10 dots)
+└── Pause on Hover
+```
+
+### Animation Details
+- **Transition**: 1.0s opacity + subtle scale (1.02 → 1.0)
+- **Easing**: `[0.4, 0, 0.2, 1]` (Apple's signature curve)
+- **Frame Duration**: 3.5s (optimal for comprehension)
+- **Theme Transition**: 1.2s with Sparkles icon
+- **Intersection Observer**: Only animates when visible (performance)
+
+### File Structure
+```
+/public/images/screenshots/
+├── 01-trading-health-light.png
+├── 02-analytics-light.png
+├── 03-journal-light.png
+├── 04-calendar-dark.png
+├── 05-habits-dark.png
+├── 06-wellness-dark.png
+├── 07-quests-dark.png
+├── 08-todo-dark.png
+└── 09-ai-coach-dark.png
 ```
 
 ---
 
-## 5. THE ALAN DYE PERSPECTIVE: HUMAN INTERFACE DESIGN
+## 📸 Screenshot Specifications
 
-### Emotional Journey
+### Technical Requirements
+- **Resolution**: 2560x1440 minimum
+- **Format**: PNG (optimized to < 500KB)
+- **Aspect Ratio**: 16:9
+- **Color Space**: sRGB
+- **Compression**: Lossless → Lossy optimization
 
-**What the visitor should feel:**
+### Content Requirements
+✅ **Must Include:**
+- Full sidebar navigation
+- Main content area
+- Top header/navigation
+- Aspirational demo data
+- Current theme (light/dark)
 
-| Moment | Screen | Emotion | Message |
-|--------|--------|---------|---------|
-| 0-2s | Health Rings (Light) | Curiosity | "What is this 'trading health' concept?" |
-| 2-4s | Analytics (Light) | Recognition | "Ah, it tracks everything I need" |
-| 4-5s | Theme Transition | Delight | "Wow, that's smooth" |
-| 5-7s | Calendar (Dark) | Understanding | "I can see my progress over time" |
-| 7-9s | AI Insights (Dark) | Desire | "I want this intelligence for my trading" |
+❌ **Must Exclude:**
+- Personal/sensitive information
+- Browser UI elements
+- Development tools
+- Empty states
+- Error messages
 
-### Accessibility Considerations
-
-- **Reduced Motion**: Respect `prefers-reduced-motion`, show crossfade only
-- **Color Contrast**: Ensure WCAG AAA compliance in both themes
-- **Screen Readers**: Include descriptive alt text for each frame
-- **Focus Management**: Pause animation if user tabs into CTA buttons
-
-### Micro-Interactions
-
-**Subtle touches that elevate quality:**
-- Ring progress animates with elastic easing
-- Chart lines draw in smoothly (not pop in)
-- Theme transition uses elegant 0.8s ease-out-cubic
-- AI sparkle icon pulses gently
-- Cursor hover pauses animation (user control)
-
----
-
-## 6. RECOMMENDED DASHBOARD STATES TO SHOWCASE
-
-### Frame 1: Trading Health Rings (Light Mode) - 2 seconds
-**Purpose**: Lead with unique value prop
-
-```
-┌─────────────────────────────────────────────────┐
-│  Today                              Oct 11, 2025 │
-│                                                   │
-│     💰 Edge          🎯 Consistency    ⚠️ Risk   │
-│      ⟨75⟩              ⟨68⟩            ⟨52⟩      │
-│       75                68              52       │
-│                                                   │
-│  ✓ Journal Logged    ✓ Plan Followed            │
-│  ✓ Edge Documented   ⚠️ Risk elevated            │
-└─────────────────────────────────────────────────┘
-```
-
-**Why this frame:**
-- **Immediate differentiation**: "Trading Health" is unique to Refine
-- **Apple Watch aesthetic**: Familiar to WWDC audience
-- **Gamification visible**: Rings + checkmarks = motivation
-- **Light mode**: Professional, clean, "serious traders use this"
+### Data Guidelines
+- **P&L**: Positive, realistic (+$200-800/day)
+- **Win Rate**: 55-65% (believable)
+- **Streaks**: 3-7 days (achievable)
+- **Completion**: 60-80% (aspirational)
+- **Dates**: Current month (October 2025)
 
 ---
 
-### Frame 2: Analytics Overview (Light Mode) - 2 seconds
-**Purpose**: Show analytical depth
+## 🎨 Design Principles
 
-```
-┌─────────────────────────────────────────────────┐
-│  Performance Analytics                    30 Days│
-│                                                   │
-│  $24,450.75    68%        1.8:1       📈 +15%   │
-│  Total P&L     Win Rate   Avg R:R     vs Last Mo│
-│                                                   │
-│  ╭─ Equity Curve ──────────────────────────────╮│
-│  │              ╱╲        ╱                     ││
-│  │            ╱    ╲    ╱                       ││
-│  │          ╱        ╲╱                         ││
-│  ╰───────────────────────────────────────────── ╯│
-└─────────────────────────────────────────────────┘
-```
+### 1. Full Context
+Show the **complete interface** - sidebar + main content. This:
+- Builds credibility (not hiding anything)
+- Shows depth of features
+- Demonstrates real workflow
+- Creates familiarity
 
-**Why this frame:**
-- **Reassurance**: "Yes, we have all the standard metrics too"
-- **Visual hierarchy**: Clear, not cluttered
-- **Positive data**: Demo shows winning trader (aspirational)
-- **Charts animate in**: Smooth line drawing
+### 2. Aspirational Data
+Use **positive but believable** data:
+- Winning trades (but not unrealistic)
+- Active streaks (but not impossible)
+- Completed habits (but not perfect)
+- Shows the "best version" of the user
 
----
+### 3. Visual Hierarchy
+**Light Mode First** (approachable, friendly)
+- Trading Health (unique)
+- Analytics (credible)
+- Journal (core)
 
-### Frame 3: Theme Transition - 1 second
-**Purpose**: Showcase design system quality
-
-**Animation Details:**
-- Background: `bg-white` → `bg-background` (elegant fade)
-- Text: `text-foreground` smoothly adjusts
-- Charts: Colors morph without jarring
-- Border: `border-border` adapts
-- Glow effects: Subtle dark mode shadows appear
-
-**Why this matters:**
-- **Polish indicator**: Shows attention to detail
-- **User flexibility**: "I can use this anytime, anywhere"
-- **Technical proof**: Real theming, not just screenshots
+**Dark Mode Second** (powerful, premium)
+- Calendar (consistency)
+- Reporting (depth)
+- Backtesting (sophistication)
+- Replay (innovation)
+- Playbook (organization)
+- AI Coach (premium CTA)
 
 ---
 
-### Frame 4: Calendar View (Dark Mode) - 2 seconds
-**Purpose**: Show long-term tracking capability
+## 🎯 Conversion Psychology
 
-```
-┌─────────────────────────────────────────────────┐
-│  📅 October 2025                    🔥 12-day streak│
-│                                                   │
-│  Mo Tu We Th Fr Sa Su                            │
-│                  🟢 🟢  [Sat 1, Sun 2]           │
-│  🟢 🟡 🟢 🟢 🟢 ⚫ ⚫  [Mon-Sun, week 1]          │
-│  🟢 🟢 🟢 🟡 🟢 🔵 🔵  [Week 2, current]         │
-│                                                   │
-│  🟢 All rings closed   🟡 Partial   ⚫ No data    │
-└─────────────────────────────────────────────────┘
-```
+### Frame 1-3: "This is for me"
+- Show core value immediately
+- Demonstrate professionalism
+- Build trust with real interface
 
-**Why this frame:**
-- **Habit formation**: Visual streak = retention
-- **Dark mode strength**: Colors pop, less eye strain
-- **Monthly view**: Shows commitment/consistency tracking
-- **Competitive edge**: Most journals don't have calendar view
+### Frame 4: "This is beautiful"
+- Theme transition creates delight
+- Shows attention to detail
+- Signals premium quality
 
----
+### Frame 5-9: "This is everything I need"
+- Progressive feature disclosure
+- Each frame adds depth
+- Ends with premium CTA (AI Coach)
 
-### Frame 5: AI Insights (Dark Mode) - 2 seconds
-**Purpose**: Tease premium feature
-
-```
-┌─────────────────────────────────────────────────┐
-│  ✨ Trading Intelligence                  Premium│
-│                                                   │
-│  📊 Pattern Detected                             │
-│  You have a 78% win rate on Tuesday mornings     │
-│  (9:30-11:00 ET) when trading momentum setups.   │
-│  Consider focusing more volume here.             │
-│                                                   │
-│  🎯 Habit Correlation                            │
-│  Days you log pre-market plan correlate with     │
-│  +$240 higher average P&L.                       │
-│                                                   │
-│  [Upgrade to Premium] →                          │
-└─────────────────────────────────────────────────┘
-```
-
-**Why this frame:**
-- **AI wow factor**: Shows genuine intelligence
-- **Premium preview**: Clear upgrade path
-- **Actionable insights**: Real value, not fluff
-- **Dark mode ending**: Leaves sophisticated impression
+### Loop Restart: "I want to see more"
+- Seamless loop encourages re-watching
+- Hover to pause = engagement
+- Click dots = exploration
 
 ---
 
-## 7. IMPLEMENTATION PRIORITIES
+## 📊 Success Metrics
 
-### Phase 1: MVP (Ship before WWDC26) ✅
+### What to Track
+1. **Time on Page** - Are they watching the full loop?
+2. **Interaction Rate** - Are they pausing/clicking dots?
+3. **Scroll Depth** - Do they continue past preview?
+4. **Sign-up Rate** - Does this convert?
 
-**Goal**: Functional animated preview with real components
-
-- [ ] Create `<DashboardHeroPreview>` component
-- [ ] Build 5 frame states with demo data
-- [ ] Implement Framer Motion orchestration
-- [ ] Add intersection observer (animate only when visible)
-- [ ] Optimize performance (< 2 MB, 60 FPS)
-- [ ] Test on mobile (responsive frames)
-
-**Timeline**: 2-3 days development + 1 day QA
-
----
-
-### Phase 2: Polish (Post-launch iteration)
-
-- [ ] Add hover-to-pause interaction
-- [ ] Implement accessibility features
-- [ ] A/B test animation vs static
-- [ ] Add subtle sound effects (optional, user-controlled)
-- [ ] Create manual frame scrubber (user control)
+### Optimization Opportunities
+- A/B test frame order
+- Test different durations
+- Experiment with transition styles
+- Try different ending CTAs
 
 ---
 
-### Phase 3: Advanced (Future)
+## 🚀 Implementation Status
 
-- [ ] Personalized preview (query params with user's data)
-- [ ] Interactive demo (click to explore frames)
-- [ ] Video export of animation (social sharing)
+### ✅ Completed
+- [x] Screenshot-based animation system
+- [x] 10-frame sequence with theme transition
+- [x] Smooth transitions with Apple easing
+- [x] Browser chrome mockup
+- [x] Progress indicators
+- [x] Pause on hover
+- [x] Intersection observer (performance)
+- [x] Fallback placeholders
+- [x] Comprehensive documentation
 
----
+### 📋 Next Steps (Your Action Items)
+1. **Set up demo data** using `DEMO_DATA_TEMPLATE.md`
+2. **Capture 9 screenshots** following `SCREENSHOT_GUIDE.md`
+3. **Optimize images** (< 500KB each)
+4. **Place in** `/public/images/screenshots/`
+5. **Test on homepage** and iterate
 
-## 8. ALTERNATIVE APPROACHES (EVALUATED & REJECTED)
-
-### ❌ Option: Static Screenshot Only
-**Pros**: Fast to implement, lightweight  
-**Cons**: Boring, doesn't convey product depth, loses theme showcase
-
-### ❌ Option: Video Background
-**Pros**: Easy to create in After Effects  
-**Cons**: Large file size, no interactivity, poor mobile performance
-
-### ❌ Option: Click-through Carousel
-**Pros**: User-controlled, accessible  
-**Cons**: Requires interaction (many won't engage), loses fluid storytelling
-
-### ✅ **Selected: Automated Component Animation**
-**Pros**: 
-- Real product UI (authentic)
-- Smooth, cinematic experience
-- Showcases both themes naturally
-- Performant with Framer Motion
-- Mobile-friendly
-- SEO-friendly (real HTML/CSS)
-
-**Cons**:
-- Requires more dev time (worth it)
-- Need careful performance optimization
+**Estimated Time: 90 minutes**
 
 ---
 
-## 9. SUCCESS METRICS
+## 📚 Documentation Created
 
-### Quantitative KPIs
-- **Engagement**: Average time on homepage increases by 30%+
-- **Scroll Depth**: 60%+ of visitors scroll past hero (up from 45%)
-- **Trial Signups**: 3-5% conversion rate on homepage traffic
-- **Mobile Performance**: Lighthouse score > 90
+1. **SCREENSHOT_GUIDE.md** (Comprehensive)
+   - Detailed specs for each screenshot
+   - Step-by-step capture process
+   - Quality checklist
+   - Optimization tips
 
-### Qualitative Feedback
-- User interviews: "The animation helped me understand the product"
-- NPS drivers: "Design quality" mentioned in positive feedback
-- Support tickets: Fewer "What does Refine do?" inquiries
+2. **SCREENSHOT_QUICK_REFERENCE.md** (At-a-glance)
+   - Quick checklist format
+   - Key data points
+   - 90-minute workflow
+   - Pro tips
 
----
+3. **DEMO_DATA_TEMPLATE.md** (Copy-paste ready)
+   - Exact numbers to use
+   - Consistent narrative
+   - Journal entry examples
+   - Calendar data
 
-## 10. APPLE TEAM RECOMMENDATIONS SUMMARY
-
-### Jony Ive's Vote: **Animated Dual-Theme Showcase** ✅
-> "The transition from light to dark tells a story. It says we've thought about every detail. That's what great design does."
-
-### Tim Cook's Vote: **Animated Preview with Clear Value Prop** ✅
-> "If we can't communicate our unique value in the hero section, we've already lost the customer. The rings + analytics + AI progression is our story."
-
-### Craig Federighi's Vote: **Component-Based Animation** ✅
-> "We can build this efficiently with Framer Motion. Real components mean consistent quality and easier iteration. No video files."
-
-### Alan Dye's Vote: **Emotional Journey Through Frames** ✅
-> "Each frame should make them feel something. Curiosity → Recognition → Delight → Understanding → Desire. That's the path to conversion."
+4. **WWDC26_HOMEPAGE_DASHBOARD_STRATEGY.md** (This doc)
+   - Strategic overview
+   - Technical implementation
+   - Design principles
+   - Success metrics
 
 ---
 
-## 11. FINAL DECISION
+## 💡 Your Unique Competitive Advantage
 
-**APPROVED**: Implement animated dashboard preview with 5-frame sequence showcasing:
-1. Trading Health Rings (light)
-2. Analytics Overview (light)  
-3. Light → Dark transition
-4. Calendar View (dark)
-5. AI Insights (dark)
+### TradeZella's Focus
+- **What they do**: Analysis, backtesting, replay
+- **Who they target**: Analytical traders who want to study patterns
+- **Their promise**: "Analyze your trades like a pro"
 
-**Rationale**:
-- ✅ Differentiates from competitors  
-- ✅ Showcases unique "Trading Health" concept  
-- ✅ Demonstrates design quality (both themes)  
-- ✅ Technically feasible with current stack  
-- ✅ Mobile-responsive  
-- ✅ Accessible with reduced-motion support  
-- ✅ Performant (< 2 MB, 60 FPS target)  
+### Your Focus  
+- **What you do**: Habits, wellness, gamification, discipline
+- **Who you target**: Traders who need consistency and accountability
+- **Your promise**: "Build the discipline that creates consistent profits"
 
-**Next Steps**:
-1. Create component implementation ticket
-2. Design team creates detailed frame mockups
-3. Engineering implements with Framer Motion
-4. QA tests performance across devices
-5. A/B test vs static for 2 weeks
-6. Ship winner before WWDC26 announcement
+### The Key Difference
+- **They focus on the past** (analysis, replay, backtesting)
+- **You focus on the present** (daily discipline, habits, wellness)
 
----
+### Why You Win
+Most traders don't fail because they lack analysis tools.
+They fail because they lack discipline and consistency.
 
-## 12. APPENDIX: TECHNICAL IMPLEMENTATION SKETCH
+**You solve the real problem.**
 
-```typescript
-// src/components/marketing/DashboardHeroPreview.tsx
+### Your 5 Unique Features
+1. **Trading Health Rings** - Visual discipline tracking (like Apple Activity)
+2. **Habit Tracking** - Streak building with accountability
+3. **Wellness Integration** - Mental + physical health for trading performance
+4. **Gamification (Quests)** - XP, levels, challenges make it fun
+5. **Todo System** - Trading-specific task management
 
-import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useEffect } from 'react';
+### The Emotional Edge
+- 🔥 **Streaks** - Fear of breaking the chain
+- ✅ **Completion** - Satisfaction of checking boxes
+- 📈 **Progress** - Visual improvement over time
+- 🎮 **Gamification** - Fun and engagement
+- 🏆 **Achievements** - Sense of accomplishment
 
-const frames = [
-  { id: 'health-rings-light', duration: 2000, theme: 'light' },
-  { id: 'analytics-light', duration: 2000, theme: 'light' },
-  { id: 'theme-transition', duration: 1000, theme: 'transition' },
-  { id: 'calendar-dark', duration: 2000, theme: 'dark' },
-  { id: 'ai-insights-dark', duration: 2000, theme: 'dark' },
-];
-
-export const DashboardHeroPreview = () => {
-  const [currentFrame, setCurrentFrame] = useState(0);
-  const [isVisible, setIsVisible] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
-
-  // Intersection observer - only animate when visible
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => setIsVisible(entry.isIntersecting),
-      { threshold: 0.5 }
-    );
-    const element = document.getElementById('dashboard-preview');
-    if (element) observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
-
-  // Animation loop
-  useEffect(() => {
-    if (!isVisible || isPaused) return;
-    
-    const timeout = setTimeout(() => {
-      setCurrentFrame((prev) => (prev + 1) % frames.length);
-    }, frames[currentFrame].duration);
-    
-    return () => clearTimeout(timeout);
-  }, [currentFrame, isVisible, isPaused]);
-
-  const currentTheme = frames[currentFrame].theme;
-
-  return (
-    <motion.div
-      id="dashboard-preview"
-      className={`relative rounded-2xl overflow-hidden shadow-2xl ${
-        currentTheme === 'dark' ? 'bg-background-dark' : 'bg-white'
-      }`}
-      onHoverStart={() => setIsPaused(true)}
-      onHoverEnd={() => setIsPaused(false)}
-      initial={{ opacity: 0, y: 40 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.8, delay: 0.4 }}
-    >
-      <AnimatePresence mode="wait">
-        {currentFrame === 0 && <HealthRingsFrame key="health" theme="light" />}
-        {currentFrame === 1 && <AnalyticsFrame key="analytics" theme="light" />}
-        {currentFrame === 2 && <ThemeTransitionFrame key="transition" />}
-        {currentFrame === 3 && <CalendarFrame key="calendar" theme="dark" />}
-        {currentFrame === 4 && <AIInsightsFrame key="ai" theme="dark" />}
-      </AnimatePresence>
-      
-      {/* Progress indicators */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-        {frames.map((_, i) => (
-          <div
-            key={i}
-            className={`h-1 rounded-full transition-all ${
-              i === currentFrame 
-                ? 'w-8 bg-primary' 
-                : 'w-2 bg-muted-foreground/30'
-            }`}
-          />
-        ))}
-      </div>
-    </motion.div>
-  );
-};
-```
+### The Conversion Moment
+When they see the **Trading Health rings** with a **5-day streak 🔥**, they think:
+> "This is what I've been missing. This will keep me accountable."
 
 ---
 
-**Document Owner**: Product Team  
-**Last Updated**: October 11, 2025  
-**Status**: Approved for Implementation  
-**Target Launch**: Before WWDC26 (June 2026)
+## 🎬 Final Thoughts
 
+This implementation follows Apple's philosophy:
+- **Honest** - Real screenshots, not mockups
+- **Intentional** - Every frame serves the story
+- **Delightful** - Smooth animations create emotion
+- **Complete** - Shows full depth of product
+
+The result is a **35-second cinematic experience** that makes traders think:
+> "This is exactly what I need. I want my trading to look like this."
+
+---
+
+## 🔗 Quick Links
+
+- Implementation: `src/components/marketing/DashboardHeroPreview.tsx`
+- Screenshot Guide: `SCREENSHOT_GUIDE.md`
+- Quick Reference: `SCREENSHOT_QUICK_REFERENCE.md`
+- Demo Data: `DEMO_DATA_TEMPLATE.md`
+- Screenshot Folder: `/public/images/screenshots/`
+
+---
+
+**Status**: ✅ Ready for screenshots
+**Next Action**: Capture 9 screenshots following the guide
+**Expected Impact**: Significant increase in homepage conversion
+
+---
+
+*"The best way to predict the future is to design it."* - Jony Ive
+
+Let's show traders the future of their trading journey. 🚀
