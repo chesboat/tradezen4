@@ -7,6 +7,10 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Check, Sparkles, Zap, TrendingUp, Clock, Calendar, Tag, History, BarChart3, Settings, FlaskConical, Target, Brain } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
+import { getPriceId, upgradeSubscription } from '@/lib/stripe';
+import { useUserProfileStore } from '@/store/useUserProfileStore';
+import toast from 'react-hot-toast';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useNavigationStore } from '@/store/useNavigationStore';
 import { SUBSCRIPTION_PLANS } from '@/types/subscription';
@@ -75,8 +79,10 @@ const POWER_FEATURES = [
 
 export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, feature }) => {
   const { isTrial, isBasic } = useSubscription();
+  const { currentUser } = useAuth();
   const { setCurrentView } = useNavigationStore();
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>('annual');
+  const [isLoading, setIsLoading] = useState(false);
   
   const premiumPlan = SUBSCRIPTION_PLANS.premium;
   
@@ -298,14 +304,61 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, fea
             {/* Footer - Sticky */}
             <div className="p-4 sm:p-6 border-t border-border bg-muted/20 flex-shrink-0">
               <button
-                onClick={() => {
-                  onClose();
-                  setCurrentView('pricing');
+                onClick={async () => {
+                  if (isBasic) {
+                    // Existing Basic customer → upgrade directly via Stripe API with proration
+                    try {
+                      if (!currentUser) {
+                        onClose();
+                        setCurrentView('pricing');
+                        return;
+                      }
+
+                      const priceId = getPriceId('premium', billingPeriod);
+                      if (!priceId) {
+                        toast.error(`Missing Premium ${billingPeriod} price ID. Check production env vars.`);
+                        return;
+                      }
+
+                      setIsLoading(true);
+                      toast.loading('Upgrading your subscription...', { id: 'upgrade' });
+
+                      await upgradeSubscription(currentUser.uid, priceId);
+
+                      // Poll Firestore for upgrade confirmation
+                      let attempts = 0;
+                      const maxAttempts = 15;
+                      const interval = setInterval(async () => {
+                        attempts++;
+                        const { loadFromFirestore } = useUserProfileStore.getState();
+                        const updated = await loadFromFirestore(currentUser.uid);
+                        if (updated?.subscriptionTier === 'premium') {
+                          clearInterval(interval);
+                          toast.success('Welcome to Premium! 🎉', { id: 'upgrade' });
+                          setIsLoading(false);
+                          onClose();
+                        } else if (attempts >= maxAttempts) {
+                          clearInterval(interval);
+                          toast.success("Upgrade complete! If you don't see changes, refresh.", { id: 'upgrade' });
+                          setIsLoading(false);
+                          onClose();
+                        }
+                      }, 1000);
+                    } catch (e: any) {
+                      console.error('Upgrade failed from modal:', e);
+                      toast.error(e?.message || 'Failed to upgrade subscription', { id: 'upgrade' });
+                      setIsLoading(false);
+                    }
+                  } else {
+                    // Trial/new users → go to pricing to start trial
+                    onClose();
+                    setCurrentView('pricing');
+                  }
                 }}
                 className="w-full py-3 sm:py-3.5 bg-gradient-to-r from-primary to-purple-600 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
               >
                 <Sparkles className="w-5 h-5" />
-                {buttonText}
+                {isLoading ? 'Upgrading…' : buttonText}
               </button>
               <p className="text-xs text-center text-muted-foreground mt-3">
                 {subText}
