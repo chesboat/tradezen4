@@ -356,22 +356,26 @@ export const ShareCalendarSnapshot: React.FC<ShareCalendarSnapshotProps> = ({
             </div>
           </div>
 
-          {/* Day headers */}
-          <div className="grid grid-cols-7 gap-1 mb-3">
-            {DAYS_OF_WEEK.map((day) => (
+          {/* Day headers - Mon-Fri + Week */}
+          <div className="grid grid-cols-6 gap-1 mb-3">
+            {DAYS_OF_WEEK.slice(1, 6).map((day) => (
               <div key={`h-${day}`} className="text-center font-semibold text-muted-foreground text-[11px] py-1">
                 {day}
               </div>
             ))}
+            <div className="text-center font-semibold text-muted-foreground text-[11px] py-1">
+              Week
+            </div>
           </div>
 
           {/* Calendar - Weeks stacked vertically */}
-          <div className="space-y-4">
+          <div className="space-y-3">
             {data.weeks.map((week, weekIndex) => (
-              <div key={weekIndex} className="space-y-2">
-                {/* Week grid - 7 columns, square tiles */}
-                <div className="grid grid-cols-7 gap-1">
-                  {week.map((day, dayIndex) => {
+              <div key={weekIndex}>
+                {/* Week grid - 6 columns (Mon-Fri + Week Summary), square tiles */}
+                <div className="grid grid-cols-6 gap-1">
+                  {/* Mon-Fri only (indices 1-5) */}
+                  {week.slice(1, 6).map((day, dayIndex) => {
                     const dayDate = new Date(day.date);
                     const isWeekend = dayDate.getDay() === 0 || dayDate.getDay() === 6;
                     return (
@@ -423,29 +427,27 @@ export const ShareCalendarSnapshot: React.FC<ShareCalendarSnapshotProps> = ({
                       </div>
                     );
                   })}
-                </div>
 
-                {/* Week summary - full width card below week */}
-                <div 
-                  className={cn(
-                    'rounded-lg border p-3 text-center',
-                    data.weeklySummaries[weekIndex]?.totalPnl > 0 ? 'bg-green-50/10 border-green-500/30' : 
-                    data.weeklySummaries[weekIndex]?.totalPnl < 0 ? 'bg-red-50/10 border-red-500/30' : 'bg-card border-border/50'
-                  )}
-                >
-                  <div className="text-xs text-muted-foreground mb-1">
-                    Week {data.weeklySummaries[weekIndex]?.weekNumber}
-                  </div>
-                  <div className="flex items-center justify-between gap-2">
+                  {/* Week Summary - 6th column (rightmost) */}
+                  <div 
+                    className={cn(
+                      'rounded-lg border flex flex-col items-center justify-center h-16 text-center relative overflow-hidden',
+                      data.weeklySummaries[weekIndex]?.totalPnl > 0 ? 'bg-green-50/10 border-green-500/30' : 
+                      data.weeklySummaries[weekIndex]?.totalPnl < 0 ? 'bg-red-50/10 border-red-500/30' : 'bg-card border-border/50'
+                    )}
+                  >
+                    <div className="text-[9px] text-muted-foreground mb-0.5">
+                      W{data.weeklySummaries[weekIndex]?.weekNumber}
+                    </div>
                     <div className={cn(
-                      'flex-1 text-sm font-bold',
+                      'text-xs font-bold leading-none truncate w-full px-1',
                       data.weeklySummaries[weekIndex]?.totalPnl > 0 ? 'text-green-500' : 
                       data.weeklySummaries[weekIndex]?.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
                     )}>
                       {formatCurrency(data.weeklySummaries[weekIndex]?.totalPnl || 0)}
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      {data.weeklySummaries[weekIndex]?.activeDays || 0} days
+                    <div className="text-[7px] text-muted-foreground leading-none">
+                      {data.weeklySummaries[weekIndex]?.activeDays || 0}d
                     </div>
                   </div>
                 </div>
