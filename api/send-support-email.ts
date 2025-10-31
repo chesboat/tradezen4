@@ -29,9 +29,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Send email via Resend
-    // Note: Use 'onboarding@resend.dev' for testing if domain not verified
     const { data, error } = await resend.emails.send({
-      from: 'Refine Support <onboarding@resend.dev>',
+      from: 'Refine Support <support@refine.trading>',
       to: 'support@refine.trading',
       replyTo: userEmail || 'noreply@refine.trading',
       subject: `Support Request: ${subject}`,
