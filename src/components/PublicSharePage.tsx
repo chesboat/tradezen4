@@ -2834,21 +2834,7 @@ export const PublicSharePage: React.FC = () => {
                               
                               return (
                                 <div key={weekIndex}>
-                                  {/* Week Summary Header - Mobile Only */}
-                                  <div className="flex items-center justify-between px-2 py-1 bg-muted/20 rounded-lg lg:hidden mb-2">
-                                    <span className="text-xs font-medium text-muted-foreground">Week {weekIndex + 1}</span>
-                                    <div className="flex items-center gap-2 text-xs">
-                                      <span className={`font-medium ${
-                                        weekTotalPnl > 0 ? 'text-green-500' : 
-                                        weekTotalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
-                                      }`}>
-                                        {weekTotalPnl !== 0 ? formatCurrency(weekTotalPnl) : '$0'}
-                                      </span>
-                                      <span className="text-muted-foreground">• {weekActiveDays}d</span>
-                                    </div>
-                                  </div>
-                                  
-                                  {/* Week Row - 6 Days + Week Summary (mobile style across breakpoints) */}
+                                  {/* Week Row - 6 Days + Week Summary (matches share modal layout) */}
                                   <div className="grid grid-cols-7 gap-1 sm:gap-1.5 lg:gap-2">
                                     {/* Sunday through Friday (first 6 days) */}
                                     {week.slice(0, 6).map((day, dayIndex) => {
@@ -2922,18 +2908,19 @@ export const PublicSharePage: React.FC = () => {
                                       );
                                     })}
                                     
-                                    {/* Week Summary Column (replaces Saturday) */}
+                                    {/* Week Summary Column (replaces Saturday) - Perfect Square */}
                                     <motion.div
-                                      className="bg-muted/30 border border-border/50 rounded p-1 sm:p-2 lg:p-4 cursor-pointer aspect-square sm:aspect-[7/6] lg:aspect-[7/6] flex flex-col justify-center overflow-hidden"
+                                      className="bg-muted/30 border border-border/50 rounded p-1 sm:p-1.5 lg:p-3 cursor-pointer aspect-square flex flex-col justify-center overflow-hidden"
                                       onClick={redirectToSignup}
                                       whileHover={{ scale: 1.0 }}
+                                      whileTap={{ scale: 0.98 }}
                                       title="Sign up to view weekly details"
                                     >
-                                      <div className="text-center space-y-0 sm:space-y-1 lg:space-y-2 pb-1">
-                                        <div className="text-[8px] sm:text-[10px] lg:text-xs 2xl:text-sm 3xl:text-sm 4xl:text-sm font-medium text-muted-foreground truncate">
+                                      <div className="text-center space-y-0.5 sm:space-y-1 lg:space-y-2">
+                                        <div className="text-[7px] sm:text-[10px] lg:text-xs font-medium text-muted-foreground truncate leading-none">
                                           W{weekIndex + 1}
                                         </div>
-                                        <div className={`text-[8px] sm:text-xs lg:text-base 2xl:text-lg 3xl:text-xl 4xl:text-xl font-bold leading-none truncate whitespace-nowrap ${
+                                        <div className={`text-[8px] sm:text-xs lg:text-sm font-bold leading-none truncate whitespace-nowrap ${
                                           weekTotalPnl > 0 ? 'text-green-500' : 
                                           weekTotalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
                                         }`}>
@@ -2942,17 +2929,17 @@ export const PublicSharePage: React.FC = () => {
                                             weekTotalPnl !== 0 ? `${weekTotalPnl > 0 ? '+' : ''}${Math.round(weekTotalPnl)}` : '$0'
                                           }
                                         </div>
-                                        <div className="text-[10px] lg:text-xs 2xl:text-xs 3xl:text-sm 4xl:text-sm text-muted-foreground leading-none">
+                                        <div className="text-[6px] sm:text-[9px] lg:text-xs text-muted-foreground leading-none">
                                           {weekActiveDays}d
                                         </div>
                                       </div>
                                     </motion.div>
                                   </div>
                                   
-                                  {/* Saturday Data - Show separately if exists */}
+                                  {/* Saturday Data - Show separately if exists and has activity */}
                                   {week[6] && week[6].tradesCount > 0 && (
-                                    <div className="mt-2 p-2 bg-muted/10 rounded-lg border border-border/20">
-                                      <div className="flex items-center justify-between text-xs">
+                                    <div className="mt-2 p-2 bg-muted/10 rounded-lg border border-border/20 text-xs">
+                                      <div className="flex items-center justify-between">
                                         <span className="text-muted-foreground">Sat {week[6].day}:</span>
                                         <div className="flex items-center gap-2">
                                           {week[6].pnl !== 0 && (
