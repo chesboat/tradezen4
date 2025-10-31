@@ -552,7 +552,7 @@ ${shareUrl}`,
                   </div>
                 </div>
 
-                 {/* Simple Uniform Calendar Grid - Responsive: 6 cols mobile (no Sat), 8 cols desktop */}
+                 {/* Simple Uniform Calendar Grid - Responsive: 6 cols mobile (Mon-Fri + Week), 8 cols desktop */}
                 <div 
                   className="grid lg:grid-cols-8" 
                   style={{ 
@@ -560,30 +560,37 @@ ${shareUrl}`,
                     gridTemplateColumns: window.innerWidth < 768 ? 'repeat(6, 1fr)' : 'repeat(8, 1fr)'
                   }}
                 >
-                  {/* Headers Row - Responsive: 6 cols mobile (Sun-Fri + Week), 8 cols desktop */}
-                  {DAYS_OF_WEEK.slice(0, 6).map((day, idx) => (
-                    <div key={day} className="text-center font-semibold text-muted-foreground text-[10px] sm:text-xs" style={{ paddingTop: window.innerWidth < 768 ? '4px' : '8px', paddingBottom: window.innerWidth < 768 ? '4px' : '8px' }}>
+                  {/* Headers Row - Responsive: 6 cols mobile (Mon-Fri + Week), 8 cols desktop (Sun-Sat + Week) */}
+                  {/* Mobile: Show Mon-Fri headers */}
+                  {window.innerWidth < 768 && DAYS_OF_WEEK.slice(1, 6).map((day, idx) => (
+                    <div key={day} className="text-center font-semibold text-muted-foreground text-[10px]" style={{ paddingTop: '4px', paddingBottom: '4px' }}>
                       {day}
                     </div>
                   ))}
-                  {/* Week header - Always visible on mobile (6th column), hidden on desktop */}
-                  <div className="lg:hidden text-center font-semibold text-muted-foreground text-[10px] sm:text-xs" style={{ paddingTop: window.innerWidth < 768 ? '4px' : '8px', paddingBottom: window.innerWidth < 768 ? '4px' : '8px' }}>
-                    Week
-                  </div>
-                  {/* Saturday header - Desktop only */}
-                  <div className="hidden lg:block text-center font-semibold text-muted-foreground text-[10px] sm:text-xs" style={{ paddingTop: '8px', paddingBottom: '8px' }}>
-                    Sat
-                  </div>
-                  {/* Week header - Desktop only (8th column) */}
-                  <div className="hidden lg:block text-center font-semibold text-muted-foreground text-[10px] sm:text-xs" style={{ paddingTop: '8px', paddingBottom: '8px' }}>
-                    Week
-                  </div>
+                  {/* Mobile: Week header (6th column) */}
+                  {window.innerWidth < 768 && (
+                    <div className="text-center font-semibold text-muted-foreground text-[10px]" style={{ paddingTop: '4px', paddingBottom: '4px' }}>
+                      Week
+                    </div>
+                  )}
+                  {/* Desktop: Show all Sun-Sat headers */}
+                  {window.innerWidth >= 768 && DAYS_OF_WEEK.map((day, idx) => (
+                    <div key={day} className="text-center font-semibold text-muted-foreground text-xs" style={{ paddingTop: '8px', paddingBottom: '8px' }}>
+                      {day}
+                    </div>
+                  ))}
+                  {/* Desktop: Week header (8th column) */}
+                  {window.innerWidth >= 768 && (
+                    <div className="text-center font-semibold text-muted-foreground text-xs" style={{ paddingTop: '8px', paddingBottom: '8px' }}>
+                      Week
+                    </div>
+                  )}
 
-                  {/* Calendar Rows - 6 columns mobile (Sun-Fri + Week), 8 columns desktop (Sun-Sat + Week) */}
+                  {/* Calendar Rows - 6 columns mobile (Mon-Fri + Week), 8 columns desktop (Sun-Sat + Week) */}
                   {calendarData.weeks.map((week: any, weekIndex: number) => (
                     <React.Fragment key={weekIndex}>
-                      {/* Days Sun-Fri (indices 0-5) - Always visible */}
-                      {week.slice(0, 6).map((day: any, dayIndex: number) => {
+                      {/* Mobile: Days Mon-Fri only (indices 1-5) */}
+                      {window.innerWidth < 768 && week.slice(1, 6).map((day: any, dayIndex: number) => {
                         const isWeekend = day.date.getDay() === 0 || day.date.getDay() === 6;
                         
                         return (
@@ -654,123 +661,165 @@ ${shareUrl}`,
                         );
                       })}
 
-                      {/* Week Summary Column - Always visible (6th column on mobile, 8th on desktop) */}
-                      <div 
-                        className={cn(
-                          'lg:hidden relative rounded-lg border border-border/50 transition-all duration-200 bg-card',
-                          weeklyData[weekIndex]?.totalPnl > 0 && 'border-green-500/30 bg-green-50/10',
-                          weeklyData[weekIndex]?.totalPnl < 0 && 'border-red-500/30 bg-red-50/10',
-                        )}
-                        style={{ 
-                          aspectRatio: '1', 
-                          minHeight: window.innerWidth < 768 ? '45px' : '60px', 
-                          display: 'flex', 
-                          flexDirection: 'column', 
-                          width: '100%',
-                          boxSizing: 'border-box'
-                        }}
-                      >
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', textAlign: 'center', gap: '2px', padding: window.innerWidth < 768 ? '2px' : '4px', minWidth: 0 }}>
-                          <div className="text-[8px] sm:text-[10px] font-medium text-muted-foreground leading-none">
-                            W{weeklyData[weekIndex]?.weekNumber}
-                          </div>
-                          <div 
-                            className={cn(
-                              'font-bold leading-none',
-                              weeklyData[weekIndex]?.totalPnl > 0 ? 'text-green-500' : 
-                              weeklyData[weekIndex]?.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
-                            )}
-                            style={{
-                              fontSize: window.innerWidth < 768 ? '11px' : '14px',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                              maxWidth: '100%'
-                            }}
-                          >
-                            {formatCurrencyApple(weeklyData[weekIndex]?.totalPnl || 0, { showSign: false })}
-                          </div>
-                          <div className="text-[7px] sm:text-[9px] text-muted-foreground leading-none">
-                            {weeklyData[weekIndex]?.activeDays || 0}d
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Saturday - Only shown on desktop (7th column) */}
-                      <div
-                        className={`hidden lg:block ${getDayClassName(week[6])}`}
-                        style={{ 
-                          aspectRatio: '1', 
-                          minHeight: window.innerWidth < 768 ? '48px' : '60px', 
-                          display: 'flex', 
-                          flexDirection: 'column', 
-                          width: '100%',
-                          boxSizing: 'border-box'
-                        }}
-                      >
-                        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '2px 4px' }}>
-                          {/* Date - Top Left, subtle */}
-                          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 'auto' }}>
-                            <span className={cn(
-                              'text-[9px] sm:text-xs font-normal leading-none',
-                              week[6].isOtherMonth ? 'text-muted-foreground/60' : 'text-muted-foreground'
-                            )}>
-                              {week[6].date.getDate()}
-                            </span>
-                            {week[6].hasReflection && (
-                              <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-green-500" />
-                            )}
-                          </div>
-                          
-                          {/* Center Content - Apple Style */}
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, textAlign: 'center' }}>
-                            <div className="text-[7px] sm:text-[10px] text-muted-foreground/50 font-normal">
-                              Weekend
+                      {/* Mobile: Week Summary Column (6th column) */}
+                      {window.innerWidth < 768 && (
+                        <div 
+                          className={cn(
+                            'relative rounded-lg border border-border/50 transition-all duration-200 bg-card',
+                            weeklyData[weekIndex]?.totalPnl > 0 && 'border-green-500/30 bg-green-50/10',
+                            weeklyData[weekIndex]?.totalPnl < 0 && 'border-red-500/30 bg-red-50/10',
+                          )}
+                          style={{ 
+                            aspectRatio: '1', 
+                            minHeight: '45px', 
+                            display: 'flex', 
+                            flexDirection: 'column', 
+                            width: '100%',
+                            boxSizing: 'border-box'
+                          }}
+                        >
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', textAlign: 'center', gap: '2px', padding: '2px', minWidth: 0 }}>
+                            <div className="text-[8px] font-medium text-muted-foreground leading-none">
+                              W{weeklyData[weekIndex]?.weekNumber}
+                            </div>
+                            <div 
+                              className={cn(
+                                'font-bold leading-none',
+                                weeklyData[weekIndex]?.totalPnl > 0 ? 'text-green-500' : 
+                                weeklyData[weekIndex]?.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
+                              )}
+                              style={{
+                                fontSize: '11px',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                maxWidth: '100%'
+                              }}
+                            >
+                              {formatCurrencyApple(weeklyData[weekIndex]?.totalPnl || 0, { showSign: false })}
+                            </div>
+                            <div className="text-[7px] text-muted-foreground leading-none">
+                              {weeklyData[weekIndex]?.activeDays || 0}d
                             </div>
                           </div>
                         </div>
-                      </div>
+                      )}
 
-                      {/* Week Summary - Desktop only (8th column) */}
-                      <div 
-                        className={cn(
-                          'hidden lg:flex relative rounded-lg border border-border/50 transition-all duration-200 bg-card',
-                          weeklyData[weekIndex]?.totalPnl > 0 && 'border-green-500/30 bg-green-50/10',
-                          weeklyData[weekIndex]?.totalPnl < 0 && 'border-red-500/30 bg-red-50/10',
-                        )}
-                        style={{ 
-                          aspectRatio: '1', 
-                          minHeight: '60px', 
-                          flexDirection: 'column', 
-                          width: '100%',
-                          boxSizing: 'border-box'
-                        }}
-                      >
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', textAlign: 'center', gap: '2px', padding: '4px', minWidth: 0 }}>
-                          <div className="text-[10px] font-medium text-muted-foreground leading-none">
-                            W{weeklyData[weekIndex]?.weekNumber}
-                          </div>
-                          <div 
-                            className={cn(
-                              'font-bold leading-none',
-                              weeklyData[weekIndex]?.totalPnl > 0 ? 'text-green-500' : 
-                              weeklyData[weekIndex]?.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
-                            )}
-                            style={{
-                              fontSize: '14px',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                              maxWidth: '100%'
+                      {/* Desktop: All 7 days (Sun-Sat) */}
+                      {window.innerWidth >= 768 && week.map((day: any, dayIndex: number) => {
+                        const isWeekend = day.date.getDay() === 0 || day.date.getDay() === 6;
+                        
+                        return (
+                          <div
+                            key={`${weekIndex}-${dayIndex}`}
+                            className={`${getDayClassName(day)}`}
+                            style={{ 
+                              aspectRatio: '1', 
+                              minHeight: '60px', 
+                              display: 'flex', 
+                              flexDirection: 'column', 
+                              width: '100%',
+                              boxSizing: 'border-box'
                             }}
                           >
-                            {formatCurrencyApple(weeklyData[weekIndex]?.totalPnl || 0, { showSign: false })}
+                            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '2px 4px' }}>
+                              {/* Date - Top Left, subtle */}
+                              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 'auto' }}>
+                                <span className={cn(
+                                  'text-xs font-normal leading-none',
+                                  day.isOtherMonth ? 'text-muted-foreground/60' : 'text-muted-foreground'
+                                )}>
+                                  {day.date.getDate()}
+                                </span>
+                                {day.hasReflection && (
+                                  <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                                )}
+                              </div>
+                              
+                              {/* Center Content - Apple Style */}
+                              {isWeekend ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, textAlign: 'center' }}>
+                                  <div className="text-[10px] text-muted-foreground/50 font-normal">
+                                    Weekend
+                                  </div>
+                                </div>
+                              ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, gap: '2px', minWidth: 0 }}>
+                                  {/* P&L - Hero element */}
+                                  {day.pnl !== 0 && (
+                                    <div 
+                                      className={cn(
+                                        'font-bold tracking-tight leading-none text-center',
+                                        day.pnl > 0 ? 'text-green-500' : 'text-red-500'
+                                      )}
+                                      style={{
+                                        fontSize: '14px',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'nowrap',
+                                        maxWidth: '100%'
+                                      }}
+                                    >
+                                      {formatCurrencyApple(day.pnl, { showSign: false })}
+                                    </div>
+                                  )}
+                                  
+                                  {/* Trade Count - Very subtle */}
+                                  {day.tradesCount > 0 && (
+                                    <div className="text-[10px] text-muted-foreground/50 font-normal leading-none">
+                                      {day.tradesCount}t
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
                           </div>
-                          <div className="text-[9px] text-muted-foreground leading-none">
-                            {weeklyData[weekIndex]?.activeDays || 0}d
+                        );
+                      })}
+
+                      {/* Desktop: Week Summary - (8th column) */}
+                      {window.innerWidth >= 768 && (
+                        <div 
+                          className={cn(
+                            'relative rounded-lg border border-border/50 transition-all duration-200 bg-card',
+                            weeklyData[weekIndex]?.totalPnl > 0 && 'border-green-500/30 bg-green-50/10',
+                            weeklyData[weekIndex]?.totalPnl < 0 && 'border-red-500/30 bg-red-50/10',
+                          )}
+                          style={{ 
+                            aspectRatio: '1', 
+                            minHeight: '60px', 
+                            display: 'flex',
+                            flexDirection: 'column', 
+                            width: '100%',
+                            boxSizing: 'border-box'
+                          }}
+                        >
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', textAlign: 'center', gap: '2px', padding: '4px', minWidth: 0 }}>
+                            <div className="text-[10px] font-medium text-muted-foreground leading-none">
+                              W{weeklyData[weekIndex]?.weekNumber}
+                            </div>
+                            <div 
+                              className={cn(
+                                'font-bold leading-none',
+                                weeklyData[weekIndex]?.totalPnl > 0 ? 'text-green-500' : 
+                                weeklyData[weekIndex]?.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
+                              )}
+                              style={{
+                                fontSize: '14px',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                maxWidth: '100%'
+                              }}
+                            >
+                              {formatCurrencyApple(weeklyData[weekIndex]?.totalPnl || 0, { showSign: false })}
+                            </div>
+                            <div className="text-[9px] text-muted-foreground leading-none">
+                              {weeklyData[weekIndex]?.activeDays || 0}d
+                            </div>
                           </div>
                         </div>
-                      </div>
+                      )}
                     </React.Fragment>
                   ))}
                 </div>
