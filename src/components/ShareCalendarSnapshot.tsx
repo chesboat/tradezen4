@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { BookOpen, Zap } from 'lucide-react';
+import { Zap } from 'lucide-react';
 
 type Day = {
   date: string | Date;
@@ -40,6 +40,18 @@ export const ShareCalendarSnapshot: React.FC<ShareCalendarSnapshotProps> = ({
   const accentColor = propsAccentColor || (params.get('accent') as 'blue' | 'purple' | 'green' | 'orange' | 'red' | 'pink' | 'mono') || 'blue';
   
   let data: RenderData | null = propsData || null;
+  
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  // Detect mobile viewport
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   
   // If no props data, try URL params (legacy support)
   if (!data) {
@@ -121,43 +133,22 @@ export const ShareCalendarSnapshot: React.FC<ShareCalendarSnapshotProps> = ({
 
   // Set accent color
   React.useEffect(() => {
-    console.log('[ShareCalendarSnapshot] Setting accent color:', accentColor, 'theme:', theme);
     const root = document.documentElement;
     const palette = accentColorPalettes[accentColor][theme];
-    console.log('[ShareCalendarSnapshot] Palette:', palette);
     root.style.setProperty('--primary', palette.primary, 'important');
     root.style.setProperty('--primary-foreground', palette.primaryForeground, 'important');
     root.style.setProperty('--ring', palette.ring, 'important');
-    console.log('[ShareCalendarSnapshot] CSS variables set:', {
-      primary: root.style.getPropertyValue('--primary'),
-      primaryForeground: root.style.getPropertyValue('--primary-foreground'),
-      ring: root.style.getPropertyValue('--ring')
-    });
   }, [theme, accentColor]);
 
   const formatCurrency = (amount: number) => {
     const sign = amount >= 0 ? '+' : '';
     const abs = Math.abs(amount);
     
-    // Abbreviate large numbers
     if (abs >= 1000) {
       return `${sign}$${(abs / 1000).toFixed(1)}k`;
     }
     
-    // Whole numbers for smaller amounts
     return `${sign}$${Math.round(abs)}`;
-  };
-
-  const formatPnL = (pnl: number) => {
-    if (pnl === 0) return null;
-    return (
-      <div className={cn(
-        'text-base font-bold tracking-tight',
-        pnl > 0 ? 'text-green-500' : 'text-red-500'
-      )}>
-        {formatCurrency(pnl)}
-      </div>
-    );
   };
 
   const getDayClassName = (day: Day) => {
@@ -168,13 +159,10 @@ export const ShareCalendarSnapshot: React.FC<ShareCalendarSnapshotProps> = ({
                     dayDate.getFullYear() === today.getFullYear();
     
     return cn(
-      'relative p-3 rounded-xl border transition-all duration-200 cursor-pointer',
-      // Match calendar styling
+      'relative p-2 rounded-lg border transition-all duration-200',
       theme === 'dark' ? 'bg-zinc-900/50' : 'bg-white',
       'border-border/50',
-      // Today styling with accent color
       isToday && 'border-primary ring-2 ring-primary/50',
-      // P&L coloring
       !isToday && day.pnl > 0 && 'border-green-500/30 bg-green-50/10',
       !isToday && day.pnl < 0 && 'border-red-500/30 bg-red-50/10',
       day.isOtherMonth && 'opacity-40'
@@ -190,151 +178,307 @@ export const ShareCalendarSnapshot: React.FC<ShareCalendarSnapshotProps> = ({
   // Get accent color values for inline styles
   const accentPalette = accentColorPalettes[accentColor][theme];
   
-  return (
-    <div className={cn('min-h-screen overflow-x-hidden flex items-center justify-center bg-gradient-to-br', gradientClass, theme)}>
-      {/* Match preview exactly */}
-      <div className="relative p-6 w-full max-w-6xl flex items-center justify-center" style={{ aspectRatio: '16/10' }}>
-        <div className="max-w-5xl w-[92%] relative">
-          <div 
-            className="bg-background rounded-xl pt-4 pb-6 px-6 border relative" 
-            style={{ 
-              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15), 0 10px 20px rgba(0, 0, 0, 0.1), 0 5px 10px rgba(0, 0, 0, 0.05)',
-              filter: 'drop-shadow(0 25px 25px rgba(0, 0, 0, 0.15))',
-              // Apply accent color inline to override Tailwind defaults
-              '--primary': accentPalette.primary,
-              '--primary-foreground': accentPalette.primaryForeground,
-              '--ring': accentPalette.ring,
-            } as React.CSSProperties
-          }>
-            {/* Header */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-4">
-                <h1 className="text-2xl font-bold text-foreground">{data.monthName} {data.year}</h1>
-                <div className="px-4 py-2 bg-primary/10 text-primary rounded-lg flex items-center justify-center text-sm font-medium leading-none">TODAY</div>
+  // ============================================================
+  // DESKTOP LAYOUT (≥768px) - Original beautiful grid
+  // ============================================================
+  if (!isMobile) {
+    return (
+      <div className={cn('min-h-screen overflow-x-hidden flex items-center justify-center bg-gradient-to-br p-6', gradientClass, theme)}>
+        <div style={{ aspectRatio: '16/10', width: '100%', maxWidth: '100%' }} className="flex items-center justify-center">
+          <div className="w-[92%] relative h-full">
+            <div 
+              className="bg-background rounded-xl pt-4 pb-6 px-6 border relative h-full flex flex-col" 
+              style={{ 
+                boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15), 0 10px 20px rgba(0, 0, 0, 0.1), 0 5px 10px rgba(0, 0, 0, 0.05)',
+                filter: 'drop-shadow(0 25px 25px rgba(0, 0, 0, 0.15))',
+                '--primary': accentPalette.primary,
+                '--primary-foreground': accentPalette.primaryForeground,
+                '--ring': accentPalette.ring,
+              } as React.CSSProperties
+            }>
+              {/* Header */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-4">
+                  <h1 className="text-2xl font-bold text-foreground">{data.monthName} {data.year}</h1>
+                  <div className="px-4 py-2 bg-primary/10 text-primary rounded-lg flex items-center justify-center text-sm font-medium leading-none">TODAY</div>
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Monthly: <span className={cn("font-semibold", data.monthlyPnl > 0 ? "text-green-500" : data.monthlyPnl < 0 ? "text-red-500" : "text-muted-foreground")}>{formatCurrency(data.monthlyPnl)}</span>
+                </div>
               </div>
-              <div className="text-sm text-muted-foreground">
-                Monthly: <span className={cn("font-semibold", data.monthlyPnl > 0 ? "text-green-500" : data.monthlyPnl < 0 ? "text-red-500" : "text-muted-foreground")}>{formatCurrency(data.monthlyPnl)}</span>
+
+              {/* Calendar Grid */}
+              <div className="grid grid-cols-8 flex-1 overflow-hidden" style={{ gap: '4px', rowGap: '4px' }}>
+                {/* Headers Row */}
+                {DAYS_OF_WEEK.map((day) => (
+                  <div key={`h-${day}`} className="text-center font-semibold text-muted-foreground py-2 text-sm">{day}</div>
+                ))}
+                <div className="text-center font-semibold text-muted-foreground py-2 text-sm">Week</div>
+
+                {/* Calendar Rows */}
+                {data.weeks.map((week, weekIndex) => (
+                  <React.Fragment key={weekIndex}>
+                    {week.map((day, dayIndex) => {
+                      const dayDate = new Date(day.date);
+                      const isWeekend = dayDate.getDay() === 0 || dayDate.getDay() === 6;
+                      return (
+                        <div
+                          key={`${weekIndex}-${dayIndex}`}
+                          className={`${getDayClassName(day)} w-full`}
+                          style={{ aspectRatio: '1', minHeight: '80px', display: 'flex', flexDirection: 'column' }}
+                        >
+                          <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '4px 6px' }}>
+                            {/* Date - Top Left */}
+                            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 'auto' }}>
+                              <span className={cn(
+                                'text-xs font-normal leading-none',
+                                day.isOtherMonth ? 'text-muted-foreground/60' : 'text-muted-foreground'
+                              )}>
+                                {dayDate.getDate()}
+                              </span>
+                              {day.hasReflection && (
+                                <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                              )}
+                            </div>
+                            
+                            {isWeekend ? (
+                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, textAlign: 'center' }}>
+                                <div className="text-[10px] text-muted-foreground/50 font-normal">Weekend</div>
+                              </div>
+                            ) : (
+                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, gap: '4px' }}>
+                                {/* P&L */}
+                                {day.pnl !== 0 && (
+                                  <div className={cn(
+                                    'text-sm font-bold tracking-tight leading-none whitespace-nowrap',
+                                    day.pnl > 0 ? 'text-green-500' : 'text-red-500'
+                                  )}>
+                                    {formatCurrency(day.pnl)}
+                                  </div>
+                                )}
+                                
+                                {/* Trade Count */}
+                                {day.tradesCount > 0 && (
+                                  <div className="text-[10px] text-muted-foreground/50 font-normal leading-none">
+                                    {day.tradesCount} trade{day.tradesCount > 1 ? 's' : ''}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {/* Week Summary */}
+                    <div 
+                      className={cn(
+                        'relative rounded-lg border border-border/50 bg-card w-full',
+                        data.weeklySummaries[weekIndex]?.totalPnl > 0 && 'border-green-500/30 bg-green-50/10',
+                        data.weeklySummaries[weekIndex]?.totalPnl < 0 && 'border-red-500/30 bg-red-50/10',
+                      )}
+                      style={{ aspectRatio: '1', minHeight: '80px', display: 'flex', flexDirection: 'column' }}
+                    >
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', textAlign: 'center', gap: '4px', padding: '12px' }}>
+                        <div className="text-xs font-medium text-muted-foreground">
+                          Week {data.weeklySummaries[weekIndex]?.weekNumber}
+                        </div>
+                        <div className={cn(
+                          'text-sm font-bold',
+                          data.weeklySummaries[weekIndex]?.totalPnl > 0 ? 'text-green-500' : 
+                          data.weeklySummaries[weekIndex]?.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
+                        )}>
+                          {formatCurrency(data.weeklySummaries[weekIndex]?.totalPnl || 0)}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {data.weeklySummaries[weekIndex]?.activeDays || 0} days
+                        </div>
+                      </div>
+                    </div>
+                  </React.Fragment>
+                ))}
+              </div>
+
+              {/* Refine Branding */}
+              <div className="flex items-center justify-center mt-6">
+                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-muted/30 backdrop-blur-sm">
+                  <Zap className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-medium text-foreground">Refine</span>
+                  <span className="text-xs text-muted-foreground">· refine.trading</span>
+                </div>
               </div>
             </div>
+          </div>
+        </div>
+        
+        {/* CTA - Desktop only */}
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-background/95 via-background/80 to-transparent backdrop-blur-sm border-t border-border/50">
+          <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
+            <div className="flex-1">
+              <div className="font-semibold text-foreground">Track your edge like this trader</div>
+              <div className="text-sm text-muted-foreground">Journal, analyze, and refine your trading strategy</div>
+            </div>
+            <a
+              href="/"
+              className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium whitespace-nowrap"
+            >
+              Start Free Trial
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-            {/* Calendar Grid */}
-            <div className="grid grid-cols-8" style={{ gap: '4px', rowGap: '4px' }}>
-              {/* Headers Row */}
-              {DAYS_OF_WEEK.map((day) => (
-                <div key={`h-${day}`} className="text-center font-semibold text-muted-foreground py-2">{day}</div>
-              ))}
-              <div className="text-center font-semibold text-muted-foreground py-2">Week</div>
+  // ============================================================
+  // MOBILE LAYOUT (<768px) - Card-based, stacked, NO OVERLAPS
+  // ============================================================
+  return (
+    <div className={cn('min-h-screen overflow-x-hidden flex flex-col items-center justify-start bg-gradient-to-br p-4', gradientClass, theme)}>
+      <div className="w-full max-w-md">
+        <div 
+          className="bg-background rounded-xl pt-4 pb-4 px-4 border" 
+          style={{ 
+            boxShadow: '0 10px 20px rgba(0, 0, 0, 0.15)',
+            '--primary': accentPalette.primary,
+            '--primary-foreground': accentPalette.primaryForeground,
+            '--ring': accentPalette.ring,
+          } as React.CSSProperties
+        }>
+          {/* Mobile Header */}
+          <div className="mb-4">
+            <div className="flex items-baseline justify-between gap-2 mb-2">
+              <h1 className="text-xl font-bold text-foreground">{data.monthName} {data.year}</h1>
+              <div className="px-2 py-1 bg-primary/10 text-primary rounded text-xs font-medium leading-none whitespace-nowrap">TODAY</div>
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Monthly: <span className={cn("font-semibold text-sm", data.monthlyPnl > 0 ? "text-green-500" : data.monthlyPnl < 0 ? "text-red-500" : "text-muted-foreground")}>{formatCurrency(data.monthlyPnl)}</span>
+            </div>
+          </div>
 
-              {/* Calendar Rows - flattened into single grid */}
-              {data.weeks.map((week, weekIndex) => (
-                <React.Fragment key={weekIndex}>
+          {/* Day headers */}
+          <div className="grid grid-cols-7 gap-1 mb-3">
+            {DAYS_OF_WEEK.map((day) => (
+              <div key={`h-${day}`} className="text-center font-semibold text-muted-foreground text-[11px] py-1">
+                {day}
+              </div>
+            ))}
+          </div>
+
+          {/* Calendar - Weeks stacked vertically */}
+          <div className="space-y-4">
+            {data.weeks.map((week, weekIndex) => (
+              <div key={weekIndex} className="space-y-2">
+                {/* Week grid - 7 columns, square tiles */}
+                <div className="grid grid-cols-7 gap-1">
                   {week.map((day, dayIndex) => {
                     const dayDate = new Date(day.date);
                     const isWeekend = dayDate.getDay() === 0 || dayDate.getDay() === 6;
                     return (
                       <div
                         key={`${weekIndex}-${dayIndex}`}
-                        className={`${getDayClassName(day)} w-full`}
-                        style={{ aspectRatio: '6/5', minHeight: '80px', display: 'flex', flexDirection: 'column' }}
+                        className={cn(
+                          getDayClassName(day),
+                          'w-full flex flex-col items-center justify-between h-16 text-center relative overflow-hidden'
+                        )}
                       >
-                        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '4px 6px' }}>
-                          {/* Date - Top Left, subtle */}
-                          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 'auto' }}>
-                            <span className={cn(
-                              'text-xs font-normal leading-none',
-                              day.isOtherMonth ? 'text-muted-foreground/60' : 'text-muted-foreground'
-                            )}>
-                              {dayDate.getDate()}
-                            </span>
-                            {day.hasReflection && (
-                              <div className="w-1.5 h-1.5 rounded-full bg-green-500" style={{ marginTop: '2px' }} />
-                            )}
-                          </div>
-                          
+                        {/* Date number - top */}
+                        <span className={cn(
+                          'text-xs font-semibold leading-none pt-1',
+                          day.isOtherMonth ? 'text-muted-foreground/40' : 'text-muted-foreground'
+                        )}>
+                          {dayDate.getDate()}
+                        </span>
+
+                        {/* Center content */}
+                        <div className="flex-1 flex flex-col items-center justify-center gap-0.5 px-0.5">
                           {isWeekend ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, textAlign: 'center' }}>
-                              <div className="text-[10px] text-muted-foreground/50 font-normal">Weekend</div>
-                            </div>
+                            <span className="text-[8px] text-muted-foreground/50 font-normal">wknd</span>
                           ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, gap: '4px' }}>
-                              {/* P&L - Hero element, large and bold */}
+                            <>
+                              {/* P&L - HERO, never overlaps */}
                               {day.pnl !== 0 && (
-                                <div className={cn(
-                                  'text-base font-bold tracking-tight leading-none whitespace-nowrap',
+                                <span className={cn(
+                                  'text-xs font-bold leading-none truncate w-full',
                                   day.pnl > 0 ? 'text-green-500' : 'text-red-500'
                                 )}>
                                   {formatCurrency(day.pnl)}
-                                </div>
+                                </span>
                               )}
                               
-                              {/* Trade Count - Very subtle */}
+                              {/* Trade count - subtle, small */}
                               {day.tradesCount > 0 && (
-                                <div className="text-[10px] text-muted-foreground/50 font-normal leading-none">
-                                  {day.tradesCount} trade{day.tradesCount > 1 ? 's' : ''}
-                                </div>
+                                <span className="text-[7px] text-muted-foreground/60 font-normal leading-none">
+                                  {day.tradesCount}t
+                                </span>
                               )}
-                            </div>
+                            </>
                           )}
                         </div>
+
+                        {/* Reflection indicator - bottom corner */}
+                        {day.hasReflection && !day.isOtherMonth && (
+                          <div className="absolute bottom-1 right-1 w-1 h-1 rounded-full bg-green-500" />
+                        )}
                       </div>
                     );
                   })}
+                </div>
 
-                  {/* Week Summary */}
-                  <div 
-                    className={cn(
-                      'relative rounded-xl border border-border/50 bg-card w-full',
-                      data.weeklySummaries[weekIndex]?.totalPnl > 0 && 'border-green-500/30 bg-green-50/10',
-                      data.weeklySummaries[weekIndex]?.totalPnl < 0 && 'border-red-500/30 bg-red-50/10',
-                    )}
-                    style={{ aspectRatio: '6/5', minHeight: '80px', display: 'flex', flexDirection: 'column' }}
-                  >
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', textAlign: 'center', gap: '4px', padding: '12px' }}>
-                      <div className="text-xs font-medium text-muted-foreground">
-                        Week {data.weeklySummaries[weekIndex]?.weekNumber}
-                      </div>
-                      <div className={cn(
-                        'text-sm font-bold',
-                        data.weeklySummaries[weekIndex]?.totalPnl > 0 ? 'text-green-500' : 
-                        data.weeklySummaries[weekIndex]?.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
-                      )}>
-                        {formatCurrency(data.weeklySummaries[weekIndex]?.totalPnl || 0)}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {data.weeklySummaries[weekIndex]?.activeDays || 0} days
-                      </div>
+                {/* Week summary - full width card below week */}
+                <div 
+                  className={cn(
+                    'rounded-lg border p-3 text-center',
+                    data.weeklySummaries[weekIndex]?.totalPnl > 0 ? 'bg-green-50/10 border-green-500/30' : 
+                    data.weeklySummaries[weekIndex]?.totalPnl < 0 ? 'bg-red-50/10 border-red-500/30' : 'bg-card border-border/50'
+                  )}
+                >
+                  <div className="text-xs text-muted-foreground mb-1">
+                    Week {data.weeklySummaries[weekIndex]?.weekNumber}
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className={cn(
+                      'flex-1 text-sm font-bold',
+                      data.weeklySummaries[weekIndex]?.totalPnl > 0 ? 'text-green-500' : 
+                      data.weeklySummaries[weekIndex]?.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
+                    )}>
+                      {formatCurrency(data.weeklySummaries[weekIndex]?.totalPnl || 0)}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {data.weeklySummaries[weekIndex]?.activeDays || 0} days
                     </div>
                   </div>
-                </React.Fragment>
-              ))}
-            </div>
-
-            {/* Refine Branding */}
-            <div className="flex items-center justify-center mt-6">
-              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-muted/30 backdrop-blur-sm">
-                <Zap className="w-4 h-4 text-primary" />
-                <span className="text-sm font-medium text-foreground">Refine</span>
-                <span className="text-xs text-muted-foreground">· refine.trading</span>
+                </div>
               </div>
+            ))}
+          </div>
+
+          {/* Branding */}
+          <div className="flex items-center justify-center mt-4">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/30 backdrop-blur-sm">
+              <Zap className="w-3 h-3 text-primary" />
+              <span className="text-xs font-medium text-foreground">Refine</span>
+              <span className="text-[10px] text-muted-foreground">· refine.trading</span>
             </div>
           </div>
         </div>
-      </div>
-      
-      {/* CTA for conversions - only shown on web, not in screenshots */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-background/95 via-background/80 to-transparent backdrop-blur-sm border-t border-border/50">
-        <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
-          <div className="flex-1">
-            <div className="font-semibold text-foreground">Track your edge like this trader</div>
-            <div className="text-sm text-muted-foreground">Journal, analyze, and refine your trading strategy</div>
+
+        {/* Mobile CTA */}
+        <div className="mt-6 p-4 bg-background/80 backdrop-blur-sm rounded-xl border border-border/50">
+          <div className="text-center mb-3">
+            <div className="font-semibold text-foreground text-sm">Track your edge</div>
+            <div className="text-xs text-muted-foreground">Like this trader</div>
           </div>
           <a
             href="/"
-            className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium whitespace-nowrap"
+            className="block w-full px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 active:bg-primary/80 transition-colors font-semibold text-center text-sm"
           >
             Start Free Trial
           </a>
         </div>
+
+        {/* Spacing for mobile */}
+        <div className="h-4" />
       </div>
     </div>
   );
