@@ -472,14 +472,15 @@ ${shareUrl}`,
             )}
           >
             <div
-              className="relative w-full max-w-6xl flex items-center justify-center"
+              className="relative w-full flex items-center justify-center"
               style={{ 
                 aspectRatio: window.innerWidth < 768 ? 'auto' : '16/10',
-                padding: window.innerWidth < 768 ? '8px' : '24px'
+                padding: window.innerWidth < 768 ? '4px' : '24px',
+                maxWidth: window.innerWidth < 768 ? '100%' : '1536px'
               }}
             >
               {/* Calendar Content - Exact replica of CalendarView */}
-              <div className="max-w-5xl w-full relative" data-share-calendar-card>
+              <div className="w-full relative" style={{ maxWidth: window.innerWidth < 768 ? '100%' : '1280px' }} data-share-calendar-card>
                 <div 
                   className={`${theme}`}
                   style={{
@@ -494,7 +495,7 @@ ${shareUrl}`,
                     style={{ 
                       boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15), 0 10px 20px rgba(0, 0, 0, 0.1), 0 5px 10px rgba(0, 0, 0, 0.05)',
                       filter: 'drop-shadow(0 25px 25px rgba(0, 0, 0, 0.15))',
-                      padding: window.innerWidth < 768 ? '12px 8px' : '24px'
+                      padding: window.innerWidth < 768 ? '8px 4px' : '24px'
                     }}
                   >
                 {/* Header - Responsive */}
@@ -549,7 +550,7 @@ ${shareUrl}`,
                 <div 
                   className="grid lg:grid-cols-8" 
                   style={{ 
-                    gap: window.innerWidth < 768 ? '4px' : '4px',
+                    gap: window.innerWidth < 768 ? '3px' : '4px',
                     gridTemplateColumns: window.innerWidth < 768 ? 'repeat(6, 1fr)' : 'repeat(8, 1fr)'
                   }}
                 >
@@ -585,14 +586,14 @@ ${shareUrl}`,
                             className={`${getDayClassName(day)}`}
                             style={{ 
                               aspectRatio: '1', 
-                              minHeight: window.innerWidth < 768 ? '48px' : '60px', 
+                              minHeight: window.innerWidth < 768 ? '45px' : '60px', 
                               display: 'flex', 
                               flexDirection: 'column', 
                               width: '100%',
                               boxSizing: 'border-box'
                             }}
                           >
-                            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '2px 4px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: window.innerWidth < 768 ? '2px 2px' : '2px 4px' }}>
                               {/* Date - Top Left, subtle */}
                               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 'auto' }}>
                                 <span className={cn(
@@ -656,14 +657,14 @@ ${shareUrl}`,
                         )}
                         style={{ 
                           aspectRatio: '1', 
-                          minHeight: window.innerWidth < 768 ? '48px' : '60px', 
+                          minHeight: window.innerWidth < 768 ? '45px' : '60px', 
                           display: 'flex', 
                           flexDirection: 'column', 
                           width: '100%',
                           boxSizing: 'border-box'
                         }}
                       >
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', textAlign: 'center', gap: '2px', padding: '4px', minWidth: 0 }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', textAlign: 'center', gap: '2px', padding: window.innerWidth < 768 ? '2px' : '4px', minWidth: 0 }}>
                           <div className="text-[8px] sm:text-[10px] font-medium text-muted-foreground leading-none">
                             W{weeklyData[weekIndex]?.weekNumber}
                           </div>
