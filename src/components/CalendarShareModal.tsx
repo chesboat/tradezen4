@@ -521,24 +521,21 @@ ${shareUrl}`,
                   </div>
                 </div>
 
-                {/* Simple Uniform Calendar Grid - Tight gaps for preview */}
-                <div className="grid grid-cols-8 gap-1">
-                  {/* Headers Row */}
-                  {DAYS_OF_WEEK.map((day) => (
+                {/* Simple Uniform Calendar Grid - Match journal layout */}
+                <div className="grid grid-cols-7 gap-1">
+                  {/* Headers Row - 7 days only */}
+                  {DAYS_OF_WEEK.slice(0, 7).map((day) => (
                     <div key={day} className="text-center font-semibold text-muted-foreground py-2 text-[10px] sm:text-xs">
                       {day}
                     </div>
                   ))}
-                  <div className="text-center font-semibold text-muted-foreground py-2 text-[10px] sm:text-xs">
-                    Week
-                  </div>
 
-                  {/* Calendar Rows - flattened into single grid */}
+                  {/* Calendar Rows - 7 columns (Sun-Sat, with week summary replacing Sat) */}
                   {calendarData.weeks.map((week: any, weekIndex: number) => (
                     <React.Fragment key={weekIndex}>
-                      {/* Week Days - All 7 days including Saturday */}
-                      {week.map((day: any, dayIndex: number) => {
-                        const isWeekend = day.date.getDay() === 0 || day.date.getDay() === 6; // Sunday or Saturday
+                      {/* Days 0-5 (Sun-Fri) */}
+                      {week.slice(0, 6).map((day: any, dayIndex: number) => {
+                        const isWeekend = day.date.getDay() === 0 || day.date.getDay() === 6;
                         
                         return (
                           <div
@@ -599,10 +596,10 @@ ${shareUrl}`,
                         );
                       })}
 
-                      {/* Week Summary */}
+                      {/* Saturday Column - Show Week Summary Instead */}
                       <div 
                         className={cn(
-                          'relative rounded-xl border border-border/50 transition-all duration-200 cursor-pointer bg-card',
+                          'relative rounded-lg border border-border/50 transition-all duration-200 bg-card',
                           weeklyData[weekIndex]?.totalPnl > 0 && 'border-green-500/30 bg-green-50/10',
                           weeklyData[weekIndex]?.totalPnl < 0 && 'border-red-500/30 bg-red-50/10',
                         )}
@@ -615,18 +612,18 @@ ${shareUrl}`,
                           boxSizing: 'border-box'
                         }}
                       >
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', textAlign: 'center', gap: '2px', padding: '4px' }}>
-                          <div className="text-[8px] sm:text-xs font-medium text-muted-foreground leading-none">
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', textAlign: 'center', gap: '1px', padding: '4px' }}>
+                          <div className="text-[7px] sm:text-[10px] font-medium text-muted-foreground leading-none">
                             W{weeklyData[weekIndex]?.weekNumber}
                           </div>
                           <div className={cn(
-                            'text-[9px] sm:text-sm font-bold leading-none truncate w-full',
+                            'text-[8px] sm:text-xs lg:text-sm font-bold leading-none truncate w-full',
                             weeklyData[weekIndex]?.totalPnl > 0 ? 'text-green-500' : 
                             weeklyData[weekIndex]?.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
                           )}>
                             {formatCurrencyApple(weeklyData[weekIndex]?.totalPnl || 0, { showSign: false })}
                           </div>
-                          <div className="text-[7px] sm:text-xs text-muted-foreground leading-none">
+                          <div className="text-[6px] sm:text-[9px] text-muted-foreground leading-none">
                             {weeklyData[weekIndex]?.activeDays || 0}d
                           </div>
                         </div>
