@@ -525,11 +525,11 @@ ${shareUrl}`,
                 <div className="grid grid-cols-8 gap-1">
                   {/* Headers Row */}
                   {DAYS_OF_WEEK.map((day) => (
-                    <div key={day} className="text-center font-semibold text-muted-foreground py-2">
+                    <div key={day} className="text-center font-semibold text-muted-foreground py-2 text-[10px] sm:text-xs">
                       {day}
                     </div>
                   ))}
-                  <div className="text-center font-semibold text-muted-foreground py-2">
+                  <div className="text-center font-semibold text-muted-foreground py-2 text-[10px] sm:text-xs">
                     Week
                   </div>
 
@@ -545,41 +545,41 @@ ${shareUrl}`,
                             key={`${weekIndex}-${dayIndex}`}
                             className={`${getDayClassName(day)}`}
                             style={{ 
-                              aspectRatio: '6/5', 
-                              minHeight: '80px', 
+                              aspectRatio: '1', 
+                              minHeight: '60px', 
                               display: 'flex', 
                               flexDirection: 'column', 
                               width: '100%',
                               boxSizing: 'border-box'
                             }}
                           >
-                            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '4px 6px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '2px 4px' }}>
                               {/* Date - Top Left, subtle */}
                               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 'auto' }}>
                                 <span className={cn(
-                                  'text-xs font-normal leading-none',
+                                  'text-[9px] sm:text-xs font-normal leading-none',
                                   day.isOtherMonth ? 'text-muted-foreground/60' : 'text-muted-foreground'
                                 )}>
                                   {day.date.getDate()}
                                 </span>
                                 {day.hasReflection && (
-                                  <div className="w-1.5 h-1.5 rounded-full bg-green-500" style={{ marginTop: '2px' }} />
+                                  <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-green-500" />
                                 )}
                               </div>
                               
                               {/* Center Content - Apple Style */}
                               {isWeekend ? (
                                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, textAlign: 'center' }}>
-                                  <div className="text-[10px] text-muted-foreground/50 font-normal">
+                                  <div className="text-[7px] sm:text-[10px] text-muted-foreground/50 font-normal">
                                     Weekend
                                   </div>
                                 </div>
                               ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, gap: '4px' }}>
-                                  {/* P&L - Hero element, large and bold */}
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, gap: '2px' }}>
+                                  {/* P&L - Hero element, responsive sizing */}
                                   {day.pnl !== 0 && (
                                     <div className={cn(
-                                      'text-base font-bold tracking-tight leading-none whitespace-nowrap',
+                                      'text-[9px] sm:text-sm lg:text-base font-bold tracking-tight leading-none truncate w-full text-center',
                                       day.pnl > 0 ? 'text-green-500' : 'text-red-500'
                                     )}>
                                       {formatCurrencyApple(day.pnl, { showSign: false })}
@@ -588,8 +588,8 @@ ${shareUrl}`,
                                   
                                   {/* Trade Count - Very subtle */}
                                   {day.tradesCount > 0 && (
-                                    <div className="text-[10px] text-muted-foreground/50 font-normal leading-none">
-                                      {day.tradesCount} trade{day.tradesCount > 1 ? 's' : ''}
+                                    <div className="text-[6px] sm:text-[9px] lg:text-[10px] text-muted-foreground/50 font-normal leading-none">
+                                      {day.tradesCount}t
                                     </div>
                                   )}
                                 </div>
@@ -607,27 +607,27 @@ ${shareUrl}`,
                           weeklyData[weekIndex]?.totalPnl < 0 && 'border-red-500/30 bg-red-50/10',
                         )}
                         style={{ 
-                          aspectRatio: '6/5', 
-                          minHeight: '80px', 
+                          aspectRatio: '1', 
+                          minHeight: '60px', 
                           display: 'flex', 
                           flexDirection: 'column', 
                           width: '100%',
                           boxSizing: 'border-box'
                         }}
                       >
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', textAlign: 'center', gap: '4px', padding: '12px' }}>
-                          <div className="text-xs font-medium text-muted-foreground">
-                            Week {weeklyData[weekIndex]?.weekNumber}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', textAlign: 'center', gap: '2px', padding: '4px' }}>
+                          <div className="text-[8px] sm:text-xs font-medium text-muted-foreground leading-none">
+                            W{weeklyData[weekIndex]?.weekNumber}
                           </div>
                           <div className={cn(
-                            'text-sm font-bold',
+                            'text-[9px] sm:text-sm font-bold leading-none truncate w-full',
                             weeklyData[weekIndex]?.totalPnl > 0 ? 'text-green-500' : 
                             weeklyData[weekIndex]?.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
                           )}>
                             {formatCurrencyApple(weeklyData[weekIndex]?.totalPnl || 0, { showSign: false })}
                           </div>
-                          <div className="text-xs text-muted-foreground">
-                            {weeklyData[weekIndex]?.activeDays || 0} days
+                          <div className="text-[7px] sm:text-xs text-muted-foreground leading-none">
+                            {weeklyData[weekIndex]?.activeDays || 0}d
                           </div>
                         </div>
                       </div>
