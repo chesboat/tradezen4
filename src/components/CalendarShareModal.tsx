@@ -389,18 +389,23 @@ ${shareUrl}`,
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center"
+        style={{ padding: window.innerWidth < 768 ? '0' : '16px' }}
         onClick={onClose}
       >
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
-          className="bg-background rounded-xl border max-w-6xl w-full h-[90vh] flex flex-col overflow-hidden"
+          className="bg-background border w-full h-[90vh] flex flex-col overflow-hidden"
+          style={{ 
+            maxWidth: window.innerWidth < 768 ? '100%' : '1536px',
+            borderRadius: window.innerWidth < 768 ? '0' : '12px'
+          }}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Modal Header */}
-          <div className="flex items-center justify-between p-6 border-b">
+          <div className="flex items-center justify-between border-b" style={{ padding: window.innerWidth < 768 ? '12px 8px' : '24px' }}>
             <div>
               <h2 className="text-xl font-semibold">Share Calendar</h2>
               <p className="text-sm text-muted-foreground">
@@ -465,11 +470,12 @@ ${shareUrl}`,
           <div 
             ref={canvasRef}
             className={cn(
-              "p-4 flex-1 flex items-center justify-center overflow-hidden",
+              "flex-1 flex items-center justify-center overflow-hidden",
               theme === 'dark' 
                 ? "bg-gradient-to-br from-indigo-950 via-purple-900 to-pink-900" 
                 : "bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100"
             )}
+            style={{ padding: window.innerWidth < 768 ? '0' : '16px' }}
           >
             <div
               className="relative w-full flex items-center justify-center"
