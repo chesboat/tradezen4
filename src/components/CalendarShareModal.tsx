@@ -545,30 +545,37 @@ ${shareUrl}`,
                   </div>
                 </div>
 
-                 {/* Simple Uniform Calendar Grid - Responsive: 7 cols mobile, 8 cols desktop */}
+                 {/* Simple Uniform Calendar Grid - Responsive: 6 cols mobile (no Sat), 8 cols desktop */}
                 <div 
                   className="grid lg:grid-cols-8" 
                   style={{ 
                     gap: window.innerWidth < 768 ? '4px' : '4px',
-                    gridTemplateColumns: window.innerWidth < 768 ? 'repeat(7, 1fr)' : 'repeat(8, 1fr)'
+                    gridTemplateColumns: window.innerWidth < 768 ? 'repeat(6, 1fr)' : 'repeat(8, 1fr)'
                   }}
                 >
-                  {/* Headers Row - Responsive */}
-                  {DAYS_OF_WEEK.map((day, idx) => (
+                  {/* Headers Row - Responsive: 6 cols mobile (Sun-Fri + Week), 8 cols desktop */}
+                  {DAYS_OF_WEEK.slice(0, 6).map((day, idx) => (
                     <div key={day} className="text-center font-semibold text-muted-foreground text-[10px] sm:text-xs" style={{ paddingTop: window.innerWidth < 768 ? '4px' : '8px', paddingBottom: window.innerWidth < 768 ? '4px' : '8px' }}>
-                      {/* On mobile, show "Week" for Saturday column */}
-                      <span className="lg:hidden">{idx === 6 ? 'Week' : day}</span>
-                      <span className="hidden lg:inline">{day}</span>
+                      {day}
                     </div>
                   ))}
-                  <div className="hidden lg:block text-center font-semibold text-muted-foreground text-[10px] sm:text-xs" style={{ paddingTop: window.innerWidth < 768 ? '4px' : '8px', paddingBottom: window.innerWidth < 768 ? '4px' : '8px' }}>
+                  {/* Week header - Always visible on mobile (6th column), hidden on desktop */}
+                  <div className="lg:hidden text-center font-semibold text-muted-foreground text-[10px] sm:text-xs" style={{ paddingTop: window.innerWidth < 768 ? '4px' : '8px', paddingBottom: window.innerWidth < 768 ? '4px' : '8px' }}>
+                    Week
+                  </div>
+                  {/* Saturday header - Desktop only */}
+                  <div className="hidden lg:block text-center font-semibold text-muted-foreground text-[10px] sm:text-xs" style={{ paddingTop: '8px', paddingBottom: '8px' }}>
+                    Sat
+                  </div>
+                  {/* Week header - Desktop only (8th column) */}
+                  <div className="hidden lg:block text-center font-semibold text-muted-foreground text-[10px] sm:text-xs" style={{ paddingTop: '8px', paddingBottom: '8px' }}>
                     Week
                   </div>
 
-                  {/* Calendar Rows - 8 columns desktop, 7 columns mobile (Sun-Fri + Week Summary) */}
+                  {/* Calendar Rows - 6 columns mobile (Sun-Fri + Week), 8 columns desktop (Sun-Sat + Week) */}
                   {calendarData.weeks.map((week: any, weekIndex: number) => (
                     <React.Fragment key={weekIndex}>
-                      {/* Days Sun-Fri (indices 0-5, which is Sun-Fri) */}
+                      {/* Days Sun-Fri (indices 0-5) - Always visible */}
                       {week.slice(0, 6).map((day: any, dayIndex: number) => {
                         const isWeekend = day.date.getDay() === 0 || day.date.getDay() === 6;
                         
@@ -640,10 +647,10 @@ ${shareUrl}`,
                         );
                       })}
 
-                      {/* Week Summary Column - Always visible in 7th column (replaces Saturday on mobile, 8th column on desktop) */}
+                      {/* Week Summary Column - Always visible (6th column on mobile, 8th on desktop) */}
                       <div 
                         className={cn(
-                          'relative rounded-lg border border-border/50 transition-all duration-200 bg-card',
+                          'lg:hidden relative rounded-lg border border-border/50 transition-all duration-200 bg-card',
                           weeklyData[weekIndex]?.totalPnl > 0 && 'border-green-500/30 bg-green-50/10',
                           weeklyData[weekIndex]?.totalPnl < 0 && 'border-red-500/30 bg-red-50/10',
                         )}
@@ -667,7 +674,7 @@ ${shareUrl}`,
                               weeklyData[weekIndex]?.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
                             )}
                             style={{
-                              fontSize: window.innerWidth < 768 ? '10px' : '14px',
+                              fontSize: window.innerWidth < 768 ? '11px' : '14px',
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
                               whiteSpace: 'nowrap',
@@ -682,7 +689,7 @@ ${shareUrl}`,
                         </div>
                       </div>
 
-                      {/* Saturday - Only shown on desktop (8th column) */}
+                      {/* Saturday - Only shown on desktop (7th column) */}
                       <div
                         className={`hidden lg:block ${getDayClassName(week[6])}`}
                         style={{ 
@@ -713,6 +720,47 @@ ${shareUrl}`,
                             <div className="text-[7px] sm:text-[10px] text-muted-foreground/50 font-normal">
                               Weekend
                             </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Week Summary - Desktop only (8th column) */}
+                      <div 
+                        className={cn(
+                          'hidden lg:flex relative rounded-lg border border-border/50 transition-all duration-200 bg-card',
+                          weeklyData[weekIndex]?.totalPnl > 0 && 'border-green-500/30 bg-green-50/10',
+                          weeklyData[weekIndex]?.totalPnl < 0 && 'border-red-500/30 bg-red-50/10',
+                        )}
+                        style={{ 
+                          aspectRatio: '1', 
+                          minHeight: '60px', 
+                          flexDirection: 'column', 
+                          width: '100%',
+                          boxSizing: 'border-box'
+                        }}
+                      >
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', textAlign: 'center', gap: '2px', padding: '4px', minWidth: 0 }}>
+                          <div className="text-[10px] font-medium text-muted-foreground leading-none">
+                            W{weeklyData[weekIndex]?.weekNumber}
+                          </div>
+                          <div 
+                            className={cn(
+                              'font-bold leading-none',
+                              weeklyData[weekIndex]?.totalPnl > 0 ? 'text-green-500' : 
+                              weeklyData[weekIndex]?.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
+                            )}
+                            style={{
+                              fontSize: '14px',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              maxWidth: '100%'
+                            }}
+                          >
+                            {formatCurrencyApple(weeklyData[weekIndex]?.totalPnl || 0, { showSign: false })}
+                          </div>
+                          <div className="text-[9px] text-muted-foreground leading-none">
+                            {weeklyData[weekIndex]?.activeDays || 0}d
                           </div>
                         </div>
                       </div>
