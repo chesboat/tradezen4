@@ -546,7 +546,13 @@ ${shareUrl}`,
                 </div>
 
                  {/* Simple Uniform Calendar Grid - Responsive: 7 cols mobile, 8 cols desktop */}
-                <div className="grid grid-cols-7 lg:grid-cols-8" style={{ gap: window.innerWidth < 768 ? '4px' : '4px' }}>
+                <div 
+                  className="grid lg:grid-cols-8" 
+                  style={{ 
+                    gap: window.innerWidth < 768 ? '4px' : '4px',
+                    gridTemplateColumns: window.innerWidth < 768 ? 'repeat(7, 1fr)' : 'repeat(8, 1fr)'
+                  }}
+                >
                   {/* Headers Row - Responsive */}
                   {DAYS_OF_WEEK.map((day, idx) => (
                     <div key={day} className="text-center font-semibold text-muted-foreground text-[10px] sm:text-xs" style={{ paddingTop: window.innerWidth < 768 ? '4px' : '8px', paddingBottom: window.innerWidth < 768 ? '4px' : '8px' }}>
@@ -562,7 +568,7 @@ ${shareUrl}`,
                   {/* Calendar Rows - 8 columns desktop, 7 columns mobile (Sun-Fri + Week Summary) */}
                   {calendarData.weeks.map((week: any, weekIndex: number) => (
                     <React.Fragment key={weekIndex}>
-                      {/* Days Sun-Fri (first 6 days) */}
+                      {/* Days Sun-Fri (indices 0-5, which is Sun-Fri) */}
                       {week.slice(0, 6).map((day: any, dayIndex: number) => {
                         const isWeekend = day.date.getDay() === 0 || day.date.getDay() === 6;
                         
@@ -601,13 +607,22 @@ ${shareUrl}`,
                                   </div>
                                 </div>
                               ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, gap: '2px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, gap: '2px', minWidth: 0 }}>
                                   {/* P&L - Hero element, responsive sizing */}
                                   {day.pnl !== 0 && (
-                                    <div className={cn(
-                                      'text-[9px] sm:text-sm lg:text-base font-bold tracking-tight leading-none truncate w-full text-center',
-                                      day.pnl > 0 ? 'text-green-500' : 'text-red-500'
-                                    )}>
+                                    <div 
+                                      className={cn(
+                                        'font-bold tracking-tight leading-none text-center',
+                                        day.pnl > 0 ? 'text-green-500' : 'text-red-500'
+                                      )}
+                                      style={{
+                                        fontSize: window.innerWidth < 768 ? '11px' : '14px',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'nowrap',
+                                        maxWidth: '100%'
+                                      }}
+                                    >
                                       {formatCurrencyApple(day.pnl, { showSign: false })}
                                     </div>
                                   )}
@@ -641,18 +656,27 @@ ${shareUrl}`,
                           boxSizing: 'border-box'
                         }}
                       >
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', textAlign: 'center', gap: '1px', padding: '4px' }}>
-                          <div className="text-[7px] sm:text-[10px] font-medium text-muted-foreground leading-none">
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', textAlign: 'center', gap: '2px', padding: '4px', minWidth: 0 }}>
+                          <div className="text-[8px] sm:text-[10px] font-medium text-muted-foreground leading-none">
                             W{weeklyData[weekIndex]?.weekNumber}
                           </div>
-                          <div className={cn(
-                            'text-[8px] sm:text-xs lg:text-sm font-bold leading-none truncate w-full',
-                            weeklyData[weekIndex]?.totalPnl > 0 ? 'text-green-500' : 
-                            weeklyData[weekIndex]?.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
-                          )}>
+                          <div 
+                            className={cn(
+                              'font-bold leading-none',
+                              weeklyData[weekIndex]?.totalPnl > 0 ? 'text-green-500' : 
+                              weeklyData[weekIndex]?.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
+                            )}
+                            style={{
+                              fontSize: window.innerWidth < 768 ? '10px' : '14px',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              maxWidth: '100%'
+                            }}
+                          >
                             {formatCurrencyApple(weeklyData[weekIndex]?.totalPnl || 0, { showSign: false })}
                           </div>
-                          <div className="text-[6px] sm:text-[9px] text-muted-foreground leading-none">
+                          <div className="text-[7px] sm:text-[9px] text-muted-foreground leading-none">
                             {weeklyData[weekIndex]?.activeDays || 0}d
                           </div>
                         </div>
