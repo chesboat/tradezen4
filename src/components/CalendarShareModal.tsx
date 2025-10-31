@@ -472,8 +472,8 @@ ${shareUrl}`,
             )}
           >
             <div
-              className="relative p-6 w-full max-w-6xl flex items-center justify-center"
-              style={{ aspectRatio: '16/10' }}
+              className="relative p-2 sm:p-6 w-full max-w-6xl flex items-center justify-center"
+              style={{ aspectRatio: window.innerWidth < 768 ? 'auto' : '16/10' }}
             >
               {/* Calendar Content - Exact replica of CalendarView */}
               <div className="max-w-5xl w-[92%] relative" data-share-calendar-card>
@@ -521,15 +521,15 @@ ${shareUrl}`,
                   </div>
                 </div>
 
-                {/* Simple Uniform Calendar Grid - Match journal layout */}
-                <div className="grid grid-cols-8 gap-1">
-                  {/* Headers Row - 8 columns (Sun-Sat + Week) */}
+                {/* Simple Uniform Calendar Grid - Responsive: 7 cols mobile, 8 cols desktop */}
+                <div className="grid grid-cols-7 lg:grid-cols-8 gap-1">
+                  {/* Headers Row - Responsive */}
                   {DAYS_OF_WEEK.map((day) => (
                     <div key={day} className="text-center font-semibold text-muted-foreground py-2 text-[10px] sm:text-xs">
                       {day}
                     </div>
                   ))}
-                  <div className="text-center font-semibold text-muted-foreground py-2 text-[10px] sm:text-xs">
+                  <div className="hidden lg:block text-center font-semibold text-muted-foreground py-2 text-[10px] sm:text-xs">
                     Week
                   </div>
 
@@ -599,10 +599,10 @@ ${shareUrl}`,
                         );
                       })}
 
-                      {/* Week Summary - Right column */}
+                      {/* Week Summary - Right column (hidden on mobile) */}
                       <div 
                         className={cn(
-                          'relative rounded-lg border border-border/50 transition-all duration-200 bg-card',
+                          'hidden lg:block relative rounded-lg border border-border/50 transition-all duration-200 bg-card',
                           weeklyData[weekIndex]?.totalPnl > 0 && 'border-green-500/30 bg-green-50/10',
                           weeklyData[weekIndex]?.totalPnl < 0 && 'border-red-500/30 bg-red-50/10',
                         )}

@@ -2751,16 +2751,19 @@ export const PublicSharePage: React.FC = () => {
 
                     {/* Mobile-First Calendar Design */}
                     <div className="space-y-2 lg:space-y-4">
-                      {/* Day Headers - Responsive */}
-                      <div className="grid grid-cols-7 gap-0.5 sm:gap-1 lg:gap-3">
-                        {['S', 'M', 'T', 'W', 'T', 'F', 'Week'].map((day, index) => (
+                      {/* Day Headers - Responsive: 7 cols mobile, 8 cols desktop */}
+                      <div className="grid grid-cols-7 lg:grid-cols-8 gap-0.5 sm:gap-1 lg:gap-3">
+                        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
                           <div key={index} className="text-center text-[10px] sm:text-xs lg:text-sm font-semibold text-muted-foreground py-1 lg:py-2">
                             <span className="lg:hidden">{day}</span>
                             <span className="hidden lg:inline">
-                              {index < 6 ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'][index] : 'Week'}
+                              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][index]}
                             </span>
                           </div>
                         ))}
+                        <div className="hidden lg:block text-center text-[10px] sm:text-xs lg:text-sm font-semibold text-muted-foreground py-1 lg:py-2">
+                          Week
+                        </div>
                       </div>
 
                           {/* Generate weeks from calendar data */}
@@ -2833,25 +2836,9 @@ export const PublicSharePage: React.FC = () => {
                               const weekActiveDays = weekDays.length;
                               
                               return (
-                                <div key={weekIndex}>
-                                  {/* Week Summary Header - Mobile Only */}
-                                  <div className="flex items-center justify-between px-2 py-1 bg-muted/20 rounded-lg lg:hidden mb-2">
-                                    <span className="text-xs font-medium text-muted-foreground">Week {weekIndex + 1}</span>
-                                    <div className="flex items-center gap-2 text-xs">
-                                      <span className={`font-medium ${
-                                        weekTotalPnl > 0 ? 'text-green-500' : 
-                                        weekTotalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
-                                      }`}>
-                                        {weekTotalPnl !== 0 ? formatCurrency(weekTotalPnl) : '$0'}
-                                      </span>
-                                      <span className="text-muted-foreground">• {weekActiveDays}d</span>
-                                    </div>
-                                  </div>
-                                  
-                                  {/* Week Row - 6 Days + Week Summary (mobile style across breakpoints) */}
-                                  <div className="grid grid-cols-7 gap-1 sm:gap-1.5 lg:gap-2">
-                                    {/* Sunday through Friday (first 6 days) */}
-                                    {week.slice(0, 6).map((day, dayIndex) => {
+                                <div key={weekIndex} className="grid grid-cols-7 lg:grid-cols-8 gap-1 sm:gap-1.5 lg:gap-2">
+                                    {/* All 7 days (Sun-Sat) */}
+                                    {week.map((day, dayIndex) => {
                                       const getDayClassName = () => {
                                         let classes = 'relative p-1 sm:p-1.5 lg:p-3 rounded border border-border/30 bg-card cursor-pointer aspect-square flex flex-col overflow-hidden';
                                         
@@ -2922,9 +2909,9 @@ export const PublicSharePage: React.FC = () => {
                                       );
                                     })}
                                     
-                                    {/* Week Summary Column (replaces Saturday) - Perfect Square */}
+                                    {/* Week Summary Column - Hidden on mobile, shown on desktop */}
                                     <motion.div
-                                      className="bg-muted/30 border border-border/50 rounded p-1 sm:p-2 lg:p-4 cursor-pointer aspect-square flex flex-col justify-center overflow-hidden"
+                                      className="hidden lg:flex bg-muted/30 border border-border/50 rounded p-1 sm:p-2 lg:p-4 cursor-pointer aspect-square flex-col justify-center overflow-hidden"
                                       onClick={redirectToSignup}
                                       whileHover={{ scale: 1.0 }}
                                       whileTap={{ scale: 0.98 }}
@@ -2948,24 +2935,6 @@ export const PublicSharePage: React.FC = () => {
                                         </div>
                                       </div>
                                     </motion.div>
-                                  </div>
-                                  
-                                  {/* Saturday Data - Show separately if exists and has activity */}
-                                  {week[6] && week[6].tradesCount > 0 && (
-                                    <div className="mt-2 p-2 bg-muted/10 rounded-lg border border-border/20 text-xs">
-                                      <div className="flex items-center justify-between">
-                                        <span className="text-muted-foreground">Sat {week[6].day}:</span>
-                                        <div className="flex items-center gap-2">
-                                          {week[6].pnl !== 0 && (
-                                            <span className={`font-medium ${week[6].pnl > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                                              {formatCurrency(week[6].pnl)}
-                                            </span>
-                                          )}
-                                          <span className="text-muted-foreground">{week[6].tradesCount}t</span>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  )}
                                 </div>
                               );
                             });
