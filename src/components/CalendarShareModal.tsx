@@ -472,11 +472,14 @@ ${shareUrl}`,
             )}
           >
             <div
-              className="relative p-2 sm:p-6 w-full max-w-6xl flex items-center justify-center"
-              style={{ aspectRatio: window.innerWidth < 768 ? 'auto' : '16/10' }}
+              className="relative w-full max-w-6xl flex items-center justify-center"
+              style={{ 
+                aspectRatio: window.innerWidth < 768 ? 'auto' : '16/10',
+                padding: window.innerWidth < 768 ? '8px' : '24px'
+              }}
             >
               {/* Calendar Content - Exact replica of CalendarView */}
-              <div className="max-w-5xl w-[92%] relative" data-share-calendar-card>
+              <div className="max-w-5xl w-full relative" data-share-calendar-card>
                 <div 
                   className={`${theme}`}
                   style={{
@@ -486,52 +489,73 @@ ${shareUrl}`,
                     '--ring': accentColorPalettes[accentColor][theme === 'dark' ? 'dark' : 'light'].ring,
                   } as React.CSSProperties
                 }>
-                  <div className="bg-background rounded-xl pt-4 pb-6 px-6 border relative" 
-                   style={{ 
-                     boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15), 0 10px 20px rgba(0, 0, 0, 0.1), 0 5px 10px rgba(0, 0, 0, 0.05)',
-                     filter: 'drop-shadow(0 25px 25px rgba(0, 0, 0, 0.15))'
-                   }}>
-                {/* Header - Exact replica */}
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2">
-                      <div className="p-2 rounded-lg text-muted-foreground">
-                        <ChevronLeft className="w-5 h-5" />
-                      </div>
-                      
-                      <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-                        <span>{currentMonth}</span>
-                        <span>{currentYear}</span>
+                  <div 
+                    className="bg-background rounded-xl border relative" 
+                    style={{ 
+                      boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15), 0 10px 20px rgba(0, 0, 0, 0.1), 0 5px 10px rgba(0, 0, 0, 0.05)',
+                      filter: 'drop-shadow(0 25px 25px rgba(0, 0, 0, 0.15))',
+                      padding: window.innerWidth < 768 ? '12px 8px' : '24px'
+                    }}
+                  >
+                {/* Header - Responsive */}
+                <div className="mb-3 lg:mb-4">
+                  {/* Mobile Header - Compact */}
+                  <div className="lg:hidden">
+                    <div className="flex items-center justify-between mb-2">
+                      <h1 className="text-lg font-bold text-foreground">
+                        {currentMonth} {currentYear}
                       </h1>
-                      
-                      <div className="p-2 rounded-lg text-muted-foreground">
-                        <ChevronRight className="w-5 h-5" />
+                      <div className="px-3 py-1 bg-primary/10 text-primary rounded-lg text-xs font-medium leading-none">
+                        TODAY
                       </div>
                     </div>
-                    
-                    <div className="px-4 py-2 bg-primary/10 text-primary rounded-lg flex items-center justify-center text-sm font-medium leading-none">
-                      TODAY
+                    <div className="text-xs text-muted-foreground">
+                      Monthly: <span className={cn("font-semibold", monthlyPnL > 0 ? "text-green-500" : monthlyPnL < 0 ? "text-red-500" : "text-muted-foreground")}>{formatCurrencyApple(monthlyPnL, { showSign: false })}</span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4">
-                    <div className="text-sm text-muted-foreground">
-                      Monthly: <span className={cn("font-semibold", monthlyPnL > 0 ? "text-green-500" : monthlyPnL < 0 ? "text-red-500" : "text-muted-foreground")}>{formatCurrencyApple(monthlyPnL, { showSign: false })}</span>
+                  {/* Desktop Header - Full */}
+                  <div className="hidden lg:flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2">
+                        <div className="p-2 rounded-lg text-muted-foreground">
+                          <ChevronLeft className="w-5 h-5" />
+                        </div>
+                        
+                        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+                          <span>{currentMonth}</span>
+                          <span>{currentYear}</span>
+                        </h1>
+                        
+                        <div className="p-2 rounded-lg text-muted-foreground">
+                          <ChevronRight className="w-5 h-5" />
+                        </div>
+                      </div>
+                      
+                      <div className="px-4 py-2 bg-primary/10 text-primary rounded-lg flex items-center justify-center text-sm font-medium leading-none">
+                        TODAY
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                      <div className="text-sm text-muted-foreground">
+                        Monthly: <span className={cn("font-semibold", monthlyPnL > 0 ? "text-green-500" : monthlyPnL < 0 ? "text-red-500" : "text-muted-foreground")}>{formatCurrencyApple(monthlyPnL, { showSign: false })}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
 
                  {/* Simple Uniform Calendar Grid - Responsive: 7 cols mobile, 8 cols desktop */}
-                <div className="grid grid-cols-7 lg:grid-cols-8 gap-1">
+                <div className="grid grid-cols-7 lg:grid-cols-8" style={{ gap: window.innerWidth < 768 ? '4px' : '4px' }}>
                   {/* Headers Row - Responsive */}
                   {DAYS_OF_WEEK.map((day, idx) => (
-                    <div key={day} className="text-center font-semibold text-muted-foreground py-2 text-[10px] sm:text-xs">
+                    <div key={day} className="text-center font-semibold text-muted-foreground text-[10px] sm:text-xs" style={{ paddingTop: window.innerWidth < 768 ? '4px' : '8px', paddingBottom: window.innerWidth < 768 ? '4px' : '8px' }}>
                       {/* On mobile, show "Week" for Saturday column */}
                       <span className="lg:hidden">{idx === 6 ? 'Week' : day}</span>
                       <span className="hidden lg:inline">{day}</span>
                     </div>
                   ))}
-                  <div className="hidden lg:block text-center font-semibold text-muted-foreground py-2 text-[10px] sm:text-xs">
+                  <div className="hidden lg:block text-center font-semibold text-muted-foreground text-[10px] sm:text-xs" style={{ paddingTop: window.innerWidth < 768 ? '4px' : '8px', paddingBottom: window.innerWidth < 768 ? '4px' : '8px' }}>
                     Week
                   </div>
 
@@ -548,7 +572,7 @@ ${shareUrl}`,
                             className={`${getDayClassName(day)}`}
                             style={{ 
                               aspectRatio: '1', 
-                              minHeight: '60px', 
+                              minHeight: window.innerWidth < 768 ? '48px' : '60px', 
                               display: 'flex', 
                               flexDirection: 'column', 
                               width: '100%',
@@ -610,7 +634,7 @@ ${shareUrl}`,
                         )}
                         style={{ 
                           aspectRatio: '1', 
-                          minHeight: '60px', 
+                          minHeight: window.innerWidth < 768 ? '48px' : '60px', 
                           display: 'flex', 
                           flexDirection: 'column', 
                           width: '100%',
@@ -639,7 +663,7 @@ ${shareUrl}`,
                         className={`hidden lg:block ${getDayClassName(week[6])}`}
                         style={{ 
                           aspectRatio: '1', 
-                          minHeight: '60px', 
+                          minHeight: window.innerWidth < 768 ? '48px' : '60px', 
                           display: 'flex', 
                           flexDirection: 'column', 
                           width: '100%',
