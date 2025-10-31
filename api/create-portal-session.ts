@@ -77,13 +77,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.log('🎫 Creating portal session for customer:', customerId);
 
     const appUrl = process.env.VITE_APP_URL || 'http://localhost:5173';
+    const portalConfigurationId = process.env.STRIPE_PORTAL_CONFIGURATION_ID;
 
     // Create Customer Portal Session
     try {
-      const session = await stripe.billingPortal.sessions.create({
+      const params: Stripe.BillingPortal.SessionCreateParams = {
         customer: customerId,
         return_url: `${appUrl}/?view=settings`,
-      });
+      };
+      if (portalConfigurationId) {
+        params.configuration = portalConfigurationId;
+      }
+
+      const session = await stripe.billingPortal.sessions.create(params);
 
       console.log('✅ Portal session created successfully');
       return res.status(200).json({ url: session.url });
@@ -100,6 +106,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (stripeError.message?.includes('does not have a subscription')) {
           return res.status(400).json({ 
             message: 'No active subscription found. Please choose a plan first.' 
+          });
+        }
+        if (stripeError.message?.includes('default configuration is not set')) {
+          return res.status(500).json({
+            message: 'Customer Portal is not configured for live mode. Please contact support.',
+            error: 'Missing live mode default Customer Portal configuration in Stripe.'
           });
         }
       }
