@@ -522,19 +522,22 @@ ${shareUrl}`,
                 </div>
 
                 {/* Simple Uniform Calendar Grid - Match journal layout */}
-                <div className="grid grid-cols-7 gap-1">
-                  {/* Headers Row - 7 days only */}
-                  {DAYS_OF_WEEK.slice(0, 7).map((day) => (
+                <div className="grid grid-cols-8 gap-1">
+                  {/* Headers Row - 8 columns (Sun-Sat + Week) */}
+                  {DAYS_OF_WEEK.map((day) => (
                     <div key={day} className="text-center font-semibold text-muted-foreground py-2 text-[10px] sm:text-xs">
                       {day}
                     </div>
                   ))}
+                  <div className="text-center font-semibold text-muted-foreground py-2 text-[10px] sm:text-xs">
+                    Week
+                  </div>
 
-                  {/* Calendar Rows - 7 columns (Sun-Sat, with week summary replacing Sat) */}
+                  {/* Calendar Rows - 8 columns (Sun-Sat + Week Summary) */}
                   {calendarData.weeks.map((week: any, weekIndex: number) => (
                     <React.Fragment key={weekIndex}>
-                      {/* Days 0-5 (Sun-Fri) */}
-                      {week.slice(0, 6).map((day: any, dayIndex: number) => {
+                      {/* All 7 days (Sun-Sat) */}
+                      {week.map((day: any, dayIndex: number) => {
                         const isWeekend = day.date.getDay() === 0 || day.date.getDay() === 6;
                         
                         return (
@@ -596,7 +599,7 @@ ${shareUrl}`,
                         );
                       })}
 
-                      {/* Saturday Column - Show Week Summary Instead */}
+                      {/* Week Summary - Right column */}
                       <div 
                         className={cn(
                           'relative rounded-lg border border-border/50 transition-all duration-200 bg-card',
