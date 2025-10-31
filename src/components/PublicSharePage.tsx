@@ -2853,7 +2853,7 @@ export const PublicSharePage: React.FC = () => {
                                     {/* Sunday through Friday (first 6 days) */}
                                     {week.slice(0, 6).map((day, dayIndex) => {
                                       const getDayClassName = () => {
-                                        let classes = 'relative p-1 sm:p-2 lg:p-3 rounded border border-border/30 bg-card cursor-pointer aspect-square sm:aspect-[7/6] lg:aspect-[7/6] flex flex-col overflow-hidden';
+                                        let classes = 'relative p-1 sm:p-1.5 lg:p-3 rounded border border-border/30 bg-card cursor-pointer aspect-square flex flex-col overflow-hidden';
                                         
                                         if (day.isOtherMonth) classes += ' opacity-30';
                                         if (day.isToday) classes += ' ring-1 ring-primary/50 bg-primary/5';
@@ -2874,7 +2874,7 @@ export const PublicSharePage: React.FC = () => {
                                         else displayValue = `${pnl > 0 ? '+' : ''}${Math.round(pnl)}`;
                                         
                                         return (
-                                          <div className={`text-[8px] sm:text-xs lg:text-sm font-medium leading-none ${pnl > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                          <div className={`text-[8px] sm:text-xs lg:text-sm font-medium leading-none truncate ${pnl > 0 ? 'text-green-500' : 'text-red-500'}`}>
                                             {displayValue}
                                           </div>
                                         );
@@ -2889,27 +2889,35 @@ export const PublicSharePage: React.FC = () => {
                                           whileTap={{ scale: 0.98 }}
                                           title="Sign up to view day details"
                                         >
-                                                                                  <div className="h-full flex flex-col justify-between">
-                                          {/* Top Row - Date and Indicator */}
-                                          <div className="flex items-center justify-between mb-1">
-                                            <span className={`text-[10px] sm:text-xs lg:text-sm 2xl:text-sm 3xl:text-base 4xl:text-base font-medium ${
-                                              day.isOtherMonth ? 'text-muted-foreground/60' : 'text-foreground'
-                                            }`}>
-                                              {day.day}
-                                            </span>
-                                            {day.hasReflection && (
-                                              <div className="w-1.5 h-1.5 lg:w-2 lg:h-2 rounded-full bg-green-500"></div>
-                                            )}
+                                          <div className="h-full flex flex-col justify-between">
+                                            {/* Top Row - Date and Indicator */}
+                                            <div className="flex items-center justify-between">
+                                              <span className={`text-[10px] sm:text-xs lg:text-sm font-medium leading-none ${
+                                                day.isOtherMonth ? 'text-muted-foreground/60' : 'text-foreground'
+                                              }`}>
+                                                {day.day}
+                                              </span>
+                                              {day.hasReflection && (
+                                                <div className="w-1 h-1 lg:w-1.5 lg:h-1.5 rounded-full bg-green-500"></div>
+                                              )}
+                                            </div>
+                                            
+                                            {/* Center - PnL and Trades (compact) */}
+                                            <div className="flex flex-col items-center justify-center gap-0.5 flex-1 min-w-0">
+                                              {/* P&L - HERO element */}
+                                              {day.pnl !== 0 && (
+                                                <div className={`text-[7px] sm:text-[9px] lg:text-xs font-bold leading-none truncate w-full text-center ${day.pnl > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                                  {Math.abs(day.pnl) > 999 ? `${day.pnl > 0 ? '+' : ''}${(day.pnl/1000).toFixed(1)}k` : `${day.pnl > 0 ? '+' : ''}${Math.round(day.pnl)}`}
+                                                </div>
+                                              )}
+                                              {/* Trade count - subtle indicator */}
+                                              {day.tradesCount > 0 && (
+                                                <div className="text-[6px] sm:text-[8px] lg:text-[10px] text-muted-foreground/70 leading-none">
+                                                  {day.tradesCount}t
+                                                </div>
+                                              )}
+                                            </div>
                                           </div>
-                                          
-                                          {/* Bottom Row - Compact: PnL and Trades only */}
-                                          <div className="flex flex-col items-center lg:items-start leading-tight">
-                                            <div className={`text-[8px] sm:text-[10px] lg:text-xs 2xl:text-sm 3xl:text-base 4xl:text-base font-bold ${day.pnl > 0 ? 'text-green-500' : day.pnl < 0 ? 'text-red-500' : 'text-muted-foreground'}`}>{Math.abs(day.pnl) > 999 ? `${day.pnl > 0 ? '+' : ''}${(day.pnl/1000).toFixed(1)}k` : `${day.pnl > 0 ? '+' : ''}${Math.round(day.pnl)}`}</div>
-                                            {day.tradesCount > 0 && (
-                                              <div className="text-[8px] sm:text-[10px] lg:text-[11px] 2xl:text-xs 3xl:text-sm 4xl:text-sm text-muted-foreground">{day.tradesCount} trades</div>
-                                            )}
-                                          </div>
-                                        </div>
                                         </motion.div>
                                       );
                                     })}
