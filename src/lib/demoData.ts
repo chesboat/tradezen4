@@ -13,30 +13,65 @@ export const DEMO_HEALTH_METRICS: TradingHealthMetrics = {
   edge: {
     value: 75,
     goal: 80,
-    percentage: 93.75,
-    trend: 'improving' as const,
     status: 'good' as const,
-    description: 'Your trading edge is strong',
+    trend: 'improving' as const,
+    weekOverWeekChange: 3.5,
+    expectancy: 0.35,
+    winRate: 68,
+    profitFactor: 1.8,
+    wins: 96,
+    losses: 46,
+    totalWinningPnl: 32450,
+    totalLosingPnl: -8000,
   },
   consistency: {
     value: 68,
     goal: 80,
-    percentage: 85,
-    trend: 'improving' as const,
     status: 'good' as const,
-    description: 'Consistent execution',
+    trend: 'improving' as const,
+    weekOverWeekChange: 2.1,
+    rulesFollowed: 17,
+    totalRules: 20,
+    ruleBreakdown: [
+      {
+        id: 'rm-1',
+        rule: 'Risk <= 1% per trade',
+        name: 'Position sizing discipline',
+        category: 'risk-management',
+        passed: true,
+        description: 'Kept risk per trade under 1% this week.'
+      },
+      {
+        id: 'jr-1',
+        rule: 'Journal after each trade',
+        name: 'Post-trade journaling',
+        category: 'journaling',
+        passed: true,
+        description: 'Documented each trade within 10 minutes of close.'
+      },
+      {
+        id: 'ds-1',
+        rule: 'No revenge trading',
+        name: 'Discipline under pressure',
+        category: 'discipline',
+        passed: false,
+        description: 'One instance of re-entry without a new setup.'
+      }
+    ],
+    currentStreak: 6,
+    longestStreak: 14,
   },
   riskControl: {
     value: 52,
     goal: 80,
-    percentage: 65,
-    trend: 'stable' as const,
     status: 'needs-work' as const,
-    description: 'Risk elevated - review position sizing',
+    trend: 'stable' as const,
+    weekOverWeekChange: -1.2,
+    currentDrawdown: 850,
+    peakEquity: 24450.75,
+    avgRisk: 0.9,
+    maxConsecutiveLosses: 3,
   },
-  overallScore: 65,
-  timeWindow: 'today' as const,
-  lastUpdated: new Date().toISOString(),
 };
 
 // ============================================
