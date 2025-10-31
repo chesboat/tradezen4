@@ -2751,17 +2751,23 @@ export const PublicSharePage: React.FC = () => {
 
                     {/* Mobile-First Calendar Design */}
                     <div className="space-y-2 lg:space-y-4">
-                      {/* Day Headers - Responsive: 7 cols mobile, 8 cols desktop */}
-                      <div className="grid grid-cols-7 lg:grid-cols-8 gap-0.5 sm:gap-1 lg:gap-3">
-                        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
-                          <div key={index} className="text-center text-[10px] sm:text-xs lg:text-sm font-semibold text-muted-foreground py-1 lg:py-2">
-                            <span className="lg:hidden">{day}</span>
-                            <span className="hidden lg:inline">
-                              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][index]}
-                            </span>
+                      {/* Day Headers - Responsive: 6 cols mobile (Mon-Fri + Week), 8 cols desktop (Sun-Sat + Week) */}
+                      <div className="grid grid-cols-6 lg:grid-cols-8 gap-0.5 sm:gap-1 lg:gap-3">
+                        {/* Mobile: Mon-Fri headers */}
+                        <div className="lg:hidden text-center text-[10px] font-semibold text-muted-foreground py-1">M</div>
+                        <div className="lg:hidden text-center text-[10px] font-semibold text-muted-foreground py-1">T</div>
+                        <div className="lg:hidden text-center text-[10px] font-semibold text-muted-foreground py-1">W</div>
+                        <div className="lg:hidden text-center text-[10px] font-semibold text-muted-foreground py-1">T</div>
+                        <div className="lg:hidden text-center text-[10px] font-semibold text-muted-foreground py-1">F</div>
+                        <div className="lg:hidden text-center text-[10px] font-semibold text-muted-foreground py-1">Week</div>
+                        
+                        {/* Desktop: Sun-Sat headers */}
+                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, index) => (
+                          <div key={index} className="hidden lg:block text-center text-sm font-semibold text-muted-foreground py-2">
+                            {day}
                           </div>
                         ))}
-                        <div className="hidden lg:block text-center text-[10px] sm:text-xs lg:text-sm font-semibold text-muted-foreground py-1 lg:py-2">
+                        <div className="hidden lg:block text-center text-sm font-semibold text-muted-foreground py-2">
                           Week
                         </div>
                       </div>
@@ -2836,9 +2842,9 @@ export const PublicSharePage: React.FC = () => {
                               const weekActiveDays = weekDays.length;
                               
                               return (
-                                <div key={weekIndex} className="grid grid-cols-7 lg:grid-cols-8 gap-1 sm:gap-1.5 lg:gap-2">
-                                    {/* All 7 days (Sun-Sat) */}
-                                    {week.map((day, dayIndex) => {
+                                <div key={weekIndex} className="grid grid-cols-6 lg:grid-cols-8 gap-1 sm:gap-1.5 lg:gap-2">
+                                    {/* Mobile: Mon-Fri only (indices 1-5) */}
+                                    {week.slice(1, 6).map((day, dayIndex) => {
                                       const getDayClassName = () => {
                                         let classes = 'relative p-1 sm:p-1.5 lg:p-3 rounded border border-border/30 bg-card cursor-pointer aspect-square flex flex-col overflow-hidden';
                                         
@@ -2869,8 +2875,8 @@ export const PublicSharePage: React.FC = () => {
                                       
                                       return (
                                         <motion.div
-                                          key={`${weekIndex}-${dayIndex}`}
-                                          className={getDayClassName()}
+                                          key={`${weekIndex}-${dayIndex}-mobile`}
+                                          className={`lg:hidden ${getDayClassName()}`}
                                           onClick={redirectToSignup}
                                           whileHover={{ scale: 1.0 }}
                                           whileTap={{ scale: 0.98 }}
@@ -2909,9 +2915,102 @@ export const PublicSharePage: React.FC = () => {
                                       );
                                     })}
                                     
-                                    {/* Week Summary Column - Hidden on mobile, shown on desktop */}
+                                    {/* Mobile: Week Summary (6th column) */}
                                     <motion.div
-                                      className="hidden lg:flex bg-muted/30 border border-border/50 rounded p-1 sm:p-2 lg:p-4 cursor-pointer aspect-square flex-col justify-center overflow-hidden"
+                                      className="lg:hidden bg-muted/30 border border-border/50 rounded p-1 cursor-pointer aspect-square flex flex-col justify-center overflow-hidden"
+                                      onClick={redirectToSignup}
+                                      whileHover={{ scale: 1.0 }}
+                                      whileTap={{ scale: 0.98 }}
+                                      title="Sign up to view weekly details"
+                                    >
+                                      <div className="text-center space-y-0.5">
+                                        <div className="text-[8px] font-medium text-muted-foreground truncate">
+                                          W{weekIndex + 1}
+                                        </div>
+                                        <div className={`text-[10px] font-bold leading-none truncate whitespace-nowrap ${
+                                          weekTotalPnl > 0 ? 'text-green-500' : 
+                                          weekTotalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
+                                        }`}>
+                                          {Math.abs(weekTotalPnl) > 999 ? 
+                                            `${weekTotalPnl > 0 ? '+' : ''}${(weekTotalPnl/1000).toFixed(1)}k` : 
+                                            weekTotalPnl !== 0 ? `${weekTotalPnl > 0 ? '+' : ''}${Math.round(weekTotalPnl)}` : '$0'
+                                          }
+                                        </div>
+                                        <div className="text-[7px] text-muted-foreground leading-none">
+                                          {weekActiveDays}d
+                                        </div>
+                                      </div>
+                                    </motion.div>
+
+                                    {/* Desktop: All 7 days (Sun-Sat) */}
+                                    {week.map((day, dayIndex) => {
+                                      const getDayClassName = () => {
+                                        let classes = 'hidden lg:flex relative p-3 rounded border border-border/30 bg-card cursor-pointer aspect-square flex-col overflow-hidden';
+                                        
+                                        if (day.isOtherMonth) classes += ' opacity-30';
+                                        if (day.isToday) classes += ' ring-1 ring-primary/50 bg-primary/5';
+                                        if (day.tradesCount > 0) classes += ' bg-muted/20';
+                                        if (day.pnl > 0) classes += ' border-green-500/40';
+                                        if (day.pnl < 0) classes += ' border-red-500/40';
+                                        
+                                        return classes;
+                                      };
+                                      
+                                      const isWeekend = day.date.getDay() === 0 || day.date.getDay() === 6;
+                                      
+                                      return (
+                                        <motion.div
+                                          key={`${weekIndex}-${dayIndex}-desktop`}
+                                          className={getDayClassName()}
+                                          onClick={redirectToSignup}
+                                          whileHover={{ scale: 1.0 }}
+                                          whileTap={{ scale: 0.98 }}
+                                          title="Sign up to view day details"
+                                        >
+                                          <div className="h-full flex flex-col justify-between">
+                                            {/* Top Row - Date and Indicator */}
+                                            <div className="flex items-center justify-between">
+                                              <span className={`text-sm font-medium leading-none ${
+                                                day.isOtherMonth ? 'text-muted-foreground/60' : 'text-foreground'
+                                              }`}>
+                                                {day.day}
+                                              </span>
+                                              {day.hasReflection && (
+                                                <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+                                              )}
+                                            </div>
+                                            
+                                            {/* Center - PnL and Trades */}
+                                            {isWeekend ? (
+                                              <div className="flex flex-col items-center justify-center flex-1">
+                                                <div className="text-[10px] text-muted-foreground/50 font-normal">
+                                                  Weekend
+                                                </div>
+                                              </div>
+                                            ) : (
+                                              <div className="flex flex-col items-center justify-center gap-0.5 flex-1 min-w-0">
+                                                {/* P&L - HERO element */}
+                                                {day.pnl !== 0 && (
+                                                  <div className={`text-xs font-bold leading-none truncate w-full text-center ${day.pnl > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                                    {Math.abs(day.pnl) > 999 ? `${day.pnl > 0 ? '+' : ''}${(day.pnl/1000).toFixed(1)}k` : `${day.pnl > 0 ? '+' : ''}${Math.round(day.pnl)}`}
+                                                  </div>
+                                                )}
+                                                {/* Trade count - subtle indicator */}
+                                                {day.tradesCount > 0 && (
+                                                  <div className="text-[10px] text-muted-foreground/70 leading-none">
+                                                    {day.tradesCount}t
+                                                  </div>
+                                                )}
+                                              </div>
+                                            )}
+                                          </div>
+                                        </motion.div>
+                                      );
+                                    })}
+                                    
+                                    {/* Desktop: Week Summary Column (8th column) */}
+                                    <motion.div
+                                      className="hidden lg:flex bg-muted/30 border border-border/50 rounded p-4 cursor-pointer aspect-square flex-col justify-center overflow-hidden"
                                       onClick={redirectToSignup}
                                       whileHover={{ scale: 1.0 }}
                                       whileTap={{ scale: 0.98 }}
