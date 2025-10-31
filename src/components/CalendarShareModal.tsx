@@ -521,23 +521,25 @@ ${shareUrl}`,
                   </div>
                 </div>
 
-                {/* Simple Uniform Calendar Grid - Responsive: 7 cols mobile, 8 cols desktop */}
+                 {/* Simple Uniform Calendar Grid - Responsive: 7 cols mobile, 8 cols desktop */}
                 <div className="grid grid-cols-7 lg:grid-cols-8 gap-1">
                   {/* Headers Row - Responsive */}
-                  {DAYS_OF_WEEK.map((day) => (
+                  {DAYS_OF_WEEK.map((day, idx) => (
                     <div key={day} className="text-center font-semibold text-muted-foreground py-2 text-[10px] sm:text-xs">
-                      {day}
+                      {/* On mobile, show "Week" for Saturday column */}
+                      <span className="lg:hidden">{idx === 6 ? 'Week' : day}</span>
+                      <span className="hidden lg:inline">{day}</span>
                     </div>
                   ))}
                   <div className="hidden lg:block text-center font-semibold text-muted-foreground py-2 text-[10px] sm:text-xs">
                     Week
                   </div>
 
-                  {/* Calendar Rows - 8 columns (Sun-Sat + Week Summary) */}
+                  {/* Calendar Rows - 8 columns desktop, 7 columns mobile (Sun-Fri + Week Summary) */}
                   {calendarData.weeks.map((week: any, weekIndex: number) => (
                     <React.Fragment key={weekIndex}>
-                      {/* All 7 days (Sun-Sat) */}
-                      {week.map((day: any, dayIndex: number) => {
+                      {/* Days Sun-Fri (first 6 days) */}
+                      {week.slice(0, 6).map((day: any, dayIndex: number) => {
                         const isWeekend = day.date.getDay() === 0 || day.date.getDay() === 6;
                         
                         return (
@@ -599,10 +601,10 @@ ${shareUrl}`,
                         );
                       })}
 
-                      {/* Week Summary - Right column (hidden on mobile) */}
+                      {/* Week Summary Column - Always visible in 7th column (replaces Saturday on mobile, 8th column on desktop) */}
                       <div 
                         className={cn(
-                          'hidden lg:block relative rounded-lg border border-border/50 transition-all duration-200 bg-card',
+                          'relative rounded-lg border border-border/50 transition-all duration-200 bg-card',
                           weeklyData[weekIndex]?.totalPnl > 0 && 'border-green-500/30 bg-green-50/10',
                           weeklyData[weekIndex]?.totalPnl < 0 && 'border-red-500/30 bg-red-50/10',
                         )}
@@ -628,6 +630,41 @@ ${shareUrl}`,
                           </div>
                           <div className="text-[6px] sm:text-[9px] text-muted-foreground leading-none">
                             {weeklyData[weekIndex]?.activeDays || 0}d
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Saturday - Only shown on desktop (8th column) */}
+                      <div
+                        className={`hidden lg:block ${getDayClassName(week[6])}`}
+                        style={{ 
+                          aspectRatio: '1', 
+                          minHeight: '60px', 
+                          display: 'flex', 
+                          flexDirection: 'column', 
+                          width: '100%',
+                          boxSizing: 'border-box'
+                        }}
+                      >
+                        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '2px 4px' }}>
+                          {/* Date - Top Left, subtle */}
+                          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 'auto' }}>
+                            <span className={cn(
+                              'text-[9px] sm:text-xs font-normal leading-none',
+                              week[6].isOtherMonth ? 'text-muted-foreground/60' : 'text-muted-foreground'
+                            )}>
+                              {week[6].date.getDate()}
+                            </span>
+                            {week[6].hasReflection && (
+                              <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-green-500" />
+                            )}
+                          </div>
+                          
+                          {/* Center Content - Apple Style */}
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, textAlign: 'center' }}>
+                            <div className="text-[7px] sm:text-[10px] text-muted-foreground/50 font-normal">
+                              Weekend
+                            </div>
                           </div>
                         </div>
                       </div>
