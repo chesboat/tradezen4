@@ -12,14 +12,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const { subject, message, userEmail, userId, displayName } = req.body;
 
+    console.log('📧 Received support request:', { subject, userEmail, userId });
+
     // Validate required fields
     if (!subject || !message) {
       return res.status(400).json({ message: 'Subject and message are required' });
     }
 
+    // Check if API key exists
+    if (!process.env.RESEND_API_KEY) {
+      console.error('❌ RESEND_API_KEY not found in environment variables');
+      return res.status(500).json({ 
+        message: 'Email service not configured',
+        error: 'Missing API key' 
+      });
+    }
+
     // Send email via Resend
+    // Note: Use 'onboarding@resend.dev' for testing if domain not verified
     const { data, error } = await resend.emails.send({
-      from: 'Refine Support <support@refine.trading>',
+      from: 'Refine Support <onboarding@resend.dev>',
       to: 'support@refine.trading',
       replyTo: userEmail || 'noreply@refine.trading',
       subject: `Support Request: ${subject}`,
@@ -51,10 +63,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
     if (error) {
-      console.error('Resend API error:', error);
+      console.error('❌ Resend API error:', JSON.stringify(error, null, 2));
       return res.status(500).json({ 
         message: 'Failed to send email',
-        error: error.message 
+        error: error.message || 'Unknown error',
+        details: error
       });
     }
 
@@ -66,9 +79,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   } catch (error: any) {
     console.error('❌ Error sending support email:', error);
+    console.error('Error details:', JSON.stringify(error, null, 2));
     return res.status(500).json({ 
       message: 'Failed to send support email',
-      error: error.message 
+      error: error.message || 'Unknown error',
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 }
