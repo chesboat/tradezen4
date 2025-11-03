@@ -484,16 +484,17 @@ ${shareUrl}`,
               style={{ 
                 padding: window.innerWidth < 768 ? '4px' : '0',
                 maxWidth: window.innerWidth < 768 ? '100%' : '100%',
-                paddingTop: window.innerWidth >= 768 ? '20px' : '0'
+                paddingTop: window.innerWidth >= 768 ? '40px' : '0',
+                paddingBottom: window.innerWidth >= 768 ? '40px' : '0'
               }}
             >
               {/* Calendar Content - Scales to fit */}
               <div 
                 className="w-full relative" 
                 style={{ 
-                  maxWidth: window.innerWidth < 768 ? '100%' : '1200px',
+                  maxWidth: window.innerWidth < 768 ? '100%' : '1100px',
                   maxHeight: '100%',
-                  transform: window.innerWidth >= 768 ? 'scale(0.75)' : 'none',
+                  transform: window.innerWidth >= 768 ? 'scale(0.68)' : 'none',
                   transformOrigin: 'top center'
                 }} 
                 data-share-calendar-card
