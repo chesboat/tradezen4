@@ -966,5 +966,3 @@ ${shareUrl}`,
     </AnimatePresence>
   );
 };
-
-};
