@@ -470,19 +470,22 @@ ${shareUrl}`,
           <div 
             ref={canvasRef}
             className={cn(
-              "flex-1 flex items-center justify-center overflow-hidden",
+              "flex-1 flex items-center justify-center",
               theme === 'dark' 
                 ? "bg-gradient-to-br from-indigo-950 via-purple-900 to-pink-900" 
                 : "bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100"
             )}
-            style={{ padding: window.innerWidth < 768 ? '0' : '16px' }}
+            style={{ 
+              padding: window.innerWidth < 768 ? '0' : '16px',
+              overflow: 'auto'
+            }}
           >
             <div
               className="relative w-full flex items-center justify-center"
               style={{ 
-                aspectRatio: window.innerWidth < 768 ? 'auto' : '16/10',
                 padding: window.innerWidth < 768 ? '4px' : '24px',
-                maxWidth: window.innerWidth < 768 ? '100%' : '1536px'
+                maxWidth: window.innerWidth < 768 ? '100%' : '1280px',
+                margin: '0 auto'
               }}
             >
               {/* Calendar Content - Exact replica of CalendarView */}
