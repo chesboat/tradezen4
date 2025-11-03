@@ -189,7 +189,7 @@ export const ShareCalendarSnapshot: React.FC<ShareCalendarSnapshotProps> = ({
             className="w-full relative"
             style={{
               maxWidth: '1000px',
-              transform: 'scale(0.82)',
+              transform: 'scale(0.95)',
               transformOrigin: 'top center'
             }}
           >
@@ -262,7 +262,7 @@ export const ShareCalendarSnapshot: React.FC<ShareCalendarSnapshotProps> = ({
                                       day.pnl > 0 ? 'text-green-500' : 'text-red-500'
                                     )}
                                     style={{
-                                      fontSize: '26px',
+                                      fontSize: '24px',
                                       overflow: 'hidden',
                                       textOverflow: 'ellipsis',
                                       whiteSpace: 'nowrap',
@@ -296,7 +296,7 @@ export const ShareCalendarSnapshot: React.FC<ShareCalendarSnapshotProps> = ({
                       style={{ aspectRatio: '1', minHeight: '50px', display: 'flex', flexDirection: 'column' }}
                     >
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', textAlign: 'center', gap: '4px', padding: '12px' }}>
-                        <div className="text-xs font-medium text-muted-foreground leading-none">
+                        <div className="text-md font-medium text-muted-foreground leading-none">
                           W{data.weeklySummaries[weekIndex]?.weekNumber}
                         </div>
                         <div 
@@ -306,7 +306,7 @@ export const ShareCalendarSnapshot: React.FC<ShareCalendarSnapshotProps> = ({
                             data.weeklySummaries[weekIndex]?.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
                           )}
                           style={{
-                            fontSize: '16px',
+                            fontSize: '24px',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
                             whiteSpace: 'nowrap',
@@ -315,7 +315,7 @@ export const ShareCalendarSnapshot: React.FC<ShareCalendarSnapshotProps> = ({
                         >
                           {formatCurrency(data.weeklySummaries[weekIndex]?.totalPnl || 0)}
                         </div>
-                        <div className="text-[10px] text-muted-foreground leading-none">
+                        <div className="text-[16px] text-muted-foreground leading-none">
                           {data.weeklySummaries[weekIndex]?.activeDays || 0}d
                         </div>
                       </div>

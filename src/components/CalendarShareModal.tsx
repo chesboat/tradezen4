@@ -490,7 +490,7 @@ ${shareUrl}`,
                 className="w-full relative" 
                 style={{ 
                   maxWidth: window.innerWidth < 768 ? '100%' : '1200px',
-                  transform: window.innerWidth >= 768 ? 'scale(0.75)' : 'none',
+                  transform: window.innerWidth >= 768 ? 'scale(0.70)' : 'none',
                   transformOrigin: 'center center'
                 }} 
                 data-share-calendar-card
@@ -761,7 +761,7 @@ ${shareUrl}`,
                                         day.pnl > 0 ? 'text-green-500' : 'text-red-500'
                                       )}
                                       style={{
-                                        fontSize: '32px',
+                                        fontSize: '24px',
                                         overflow: 'hidden',
                                         textOverflow: 'ellipsis',
                                         whiteSpace: 'nowrap',
@@ -813,7 +813,7 @@ ${shareUrl}`,
                                 weeklyData[weekIndex]?.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
                               )}
                               style={{
-                                fontSize: '20px',
+                                fontSize: '24px',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
                                 whiteSpace: 'nowrap',
