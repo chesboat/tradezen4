@@ -490,7 +490,7 @@ ${shareUrl}`,
                 className="w-full relative" 
                 style={{ 
                   maxWidth: window.innerWidth < 768 ? '100%' : '1200px',
-                  transform: window.innerWidth >= 768 ? 'scale(0.95)' : 'none',
+                  transform: window.innerWidth >= 768 ? 'scale(0.75)' : 'none',
                   transformOrigin: 'center center'
                 }} 
                 data-share-calendar-card
@@ -723,7 +723,7 @@ ${shareUrl}`,
                             className={`${getDayClassName(day)}`}
                             style={{ 
                               aspectRatio: '1', 
-                              minHeight: '70px', 
+                              minHeight: '60px', 
                               display: 'flex', 
                               flexDirection: 'column', 
                               width: '100%',
@@ -795,7 +795,7 @@ ${shareUrl}`,
                           )}
                           style={{ 
                             aspectRatio: '1', 
-                            minHeight: '70px', 
+                            minHeight: '60px', 
                             display: 'flex',
                             flexDirection: 'column', 
                             width: '100%',
