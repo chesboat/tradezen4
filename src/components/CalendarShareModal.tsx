@@ -723,18 +723,18 @@ ${shareUrl}`,
                             className={`${getDayClassName(day)}`}
                             style={{ 
                               aspectRatio: '1', 
-                              minHeight: '60px', 
+                              minHeight: '70px', 
                               display: 'flex', 
                               flexDirection: 'column', 
                               width: '100%',
                               boxSizing: 'border-box'
                             }}
                           >
-                            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '2px 4px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '4px 6px' }}>
                               {/* Date - Top Left, subtle */}
                               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 'auto' }}>
                                 <span className={cn(
-                                  'text-xs font-normal leading-none',
+                                  'text-sm font-normal leading-none',
                                   day.isOtherMonth ? 'text-muted-foreground/60' : 'text-muted-foreground'
                                 )}>
                                   {day.date.getDate()}
@@ -752,7 +752,7 @@ ${shareUrl}`,
                                   </div>
                                 </div>
                               ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, gap: '2px', minWidth: 0 }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, gap: '4px', minWidth: 0 }}>
                                   {/* P&L - Hero element */}
                                   {day.pnl !== 0 && (
                                     <div 
@@ -761,7 +761,7 @@ ${shareUrl}`,
                                         day.pnl > 0 ? 'text-green-500' : 'text-red-500'
                                       )}
                                       style={{
-                                        fontSize: '14px',
+                                        fontSize: '32px',
                                         overflow: 'hidden',
                                         textOverflow: 'ellipsis',
                                         whiteSpace: 'nowrap',
@@ -774,7 +774,7 @@ ${shareUrl}`,
                                   
                                   {/* Trade Count - Very subtle */}
                                   {day.tradesCount > 0 && (
-                                    <div className="text-[10px] text-muted-foreground/50 font-normal leading-none">
+                                    <div className="text-lg text-muted-foreground/50 font-normal leading-none">
                                       {day.tradesCount}t
                                     </div>
                                   )}
@@ -795,15 +795,15 @@ ${shareUrl}`,
                           )}
                           style={{ 
                             aspectRatio: '1', 
-                            minHeight: '60px', 
+                            minHeight: '70px', 
                             display: 'flex',
                             flexDirection: 'column', 
                             width: '100%',
                             boxSizing: 'border-box'
                           }}
                         >
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', textAlign: 'center', gap: '2px', padding: '4px', minWidth: 0 }}>
-                            <div className="text-[10px] font-medium text-muted-foreground leading-none">
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', textAlign: 'center', gap: '4px', padding: '6px', minWidth: 0 }}>
+                            <div className="text-sm font-medium text-muted-foreground leading-none">
                               W{weeklyData[weekIndex]?.weekNumber}
                             </div>
                             <div 
@@ -813,7 +813,7 @@ ${shareUrl}`,
                                 weeklyData[weekIndex]?.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
                               )}
                               style={{
-                                fontSize: '14px',
+                                fontSize: '20px',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
                                 whiteSpace: 'nowrap',
@@ -822,7 +822,7 @@ ${shareUrl}`,
                             >
                               {formatCurrencyApple(weeklyData[weekIndex]?.totalPnl || 0, { showSign: false })}
                             </div>
-                            <div className="text-[9px] text-muted-foreground leading-none">
+                            <div className="text-xs text-muted-foreground leading-none">
                               {weeklyData[weekIndex]?.activeDays || 0}d
                             </div>
                           </div>
