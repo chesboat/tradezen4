@@ -480,22 +480,18 @@ ${shareUrl}`,
             }}
           >
             <div
-              className="relative w-full h-full flex items-start justify-center"
+              className="relative w-full h-full flex items-center justify-center"
               style={{ 
-                padding: window.innerWidth < 768 ? '4px' : '0',
-                maxWidth: window.innerWidth < 768 ? '100%' : '100%',
-                paddingTop: window.innerWidth >= 768 ? '10px' : '0',
-                paddingBottom: window.innerWidth >= 768 ? '10px' : '0'
+                padding: window.innerWidth < 768 ? '4px' : '24px'
               }}
             >
               {/* Calendar Content - Scales to fit */}
               <div 
                 className="w-full relative" 
                 style={{ 
-                  maxWidth: window.innerWidth < 768 ? '100%' : '1000px',
-                  maxHeight: '100%',
-                  transform: window.innerWidth >= 768 ? 'scale(0.82)' : 'none',
-                  transformOrigin: 'top center'
+                  maxWidth: window.innerWidth < 768 ? '100%' : '1200px',
+                  transform: window.innerWidth >= 768 ? 'scale(0.95)' : 'none',
+                  transformOrigin: 'center center'
                 }} 
                 data-share-calendar-card
               >
