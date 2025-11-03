@@ -199,10 +199,10 @@ export const ShareCalendarSnapshot: React.FC<ShareCalendarSnapshotProps> = ({
               {/* Header */}
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-4">
-                  <h1 className="text-2xl font-bold text-foreground">{data.monthName} {data.year}</h1>
-                  <div className="px-4 py-2 bg-primary/10 text-primary rounded-lg flex items-center justify-center text-sm font-medium leading-none">TODAY</div>
+                  <h1 className="text-3xl font-bold text-foreground">{data.monthName} {data.year}</h1>
+                  <div className="px-5 py-2.5 bg-primary/10 text-primary rounded-lg flex items-center justify-center text-base font-medium leading-none">TODAY</div>
                 </div>
-                <div className="text-sm text-muted-foreground">
+                <div className="text-base text-muted-foreground">
                   Monthly: <span className={cn("font-semibold", data.monthlyPnl > 0 ? "text-green-500" : data.monthlyPnl < 0 ? "text-red-500" : "text-muted-foreground")}>{formatCurrency(data.monthlyPnl)}</span>
                 </div>
               </div>
@@ -211,9 +211,9 @@ export const ShareCalendarSnapshot: React.FC<ShareCalendarSnapshotProps> = ({
               <div className="grid grid-cols-8 flex-1 overflow-hidden" style={{ gap: '4px', rowGap: '4px' }}>
                 {/* Headers Row */}
                 {DAYS_OF_WEEK.map((day) => (
-                  <div key={`h-${day}`} className="text-center font-semibold text-muted-foreground py-2 text-sm">{day}</div>
+                  <div key={`h-${day}`} className="text-center font-semibold text-muted-foreground text-sm" style={{ paddingTop: '8px', paddingBottom: '8px' }}>{day}</div>
                 ))}
-                <div className="text-center font-semibold text-muted-foreground py-2 text-sm">Week</div>
+                <div className="text-center font-semibold text-muted-foreground text-sm" style={{ paddingTop: '8px', paddingBottom: '8px' }}>Week</div>
 
                 {/* Calendar Rows */}
                 {data.weeks.map((week, weekIndex) => (
@@ -225,13 +225,13 @@ export const ShareCalendarSnapshot: React.FC<ShareCalendarSnapshotProps> = ({
                         <div
                           key={`${weekIndex}-${dayIndex}`}
                           className={`${getDayClassName(day)} w-full`}
-                          style={{ aspectRatio: '1', minHeight: '80px', display: 'flex', flexDirection: 'column' }}
+                          style={{ aspectRatio: '1', minHeight: '50px', display: 'flex', flexDirection: 'column' }}
                         >
                           <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '4px 6px' }}>
                             {/* Date - Top Left */}
                             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 'auto' }}>
                               <span className={cn(
-                                'text-xs font-normal leading-none',
+                                'text-sm font-normal leading-none',
                                 day.isOtherMonth ? 'text-muted-foreground/60' : 'text-muted-foreground'
                               )}>
                                 {dayDate.getDate()}
@@ -249,18 +249,27 @@ export const ShareCalendarSnapshot: React.FC<ShareCalendarSnapshotProps> = ({
                               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, gap: '4px' }}>
                                 {/* P&L */}
                                 {day.pnl !== 0 && (
-                                  <div className={cn(
-                                    'text-sm font-bold tracking-tight leading-none whitespace-nowrap',
-                                    day.pnl > 0 ? 'text-green-500' : 'text-red-500'
-                                  )}>
+                                  <div 
+                                    className={cn(
+                                      'font-bold tracking-tight leading-none',
+                                      day.pnl > 0 ? 'text-green-500' : 'text-red-500'
+                                    )}
+                                    style={{
+                                      fontSize: '26px',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                      whiteSpace: 'nowrap',
+                                      maxWidth: '100%'
+                                    }}
+                                  >
                                     {formatCurrency(day.pnl)}
                                   </div>
                                 )}
                                 
                                 {/* Trade Count */}
                                 {day.tradesCount > 0 && (
-                                  <div className="text-[10px] text-muted-foreground/50 font-normal leading-none">
-                                    {day.tradesCount} trade{day.tradesCount > 1 ? 's' : ''}
+                                  <div className="text-base text-muted-foreground/50 font-normal leading-none">
+                                    {day.tradesCount}t
                                   </div>
                                 )}
                               </div>
@@ -277,21 +286,30 @@ export const ShareCalendarSnapshot: React.FC<ShareCalendarSnapshotProps> = ({
                         data.weeklySummaries[weekIndex]?.totalPnl > 0 && 'border-green-500/30 bg-green-50/10',
                         data.weeklySummaries[weekIndex]?.totalPnl < 0 && 'border-red-500/30 bg-red-50/10',
                       )}
-                      style={{ aspectRatio: '1', minHeight: '80px', display: 'flex', flexDirection: 'column' }}
+                      style={{ aspectRatio: '1', minHeight: '50px', display: 'flex', flexDirection: 'column' }}
                     >
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', textAlign: 'center', gap: '4px', padding: '12px' }}>
-                        <div className="text-xs font-medium text-muted-foreground">
-                          Week {data.weeklySummaries[weekIndex]?.weekNumber}
+                        <div className="text-xs font-medium text-muted-foreground leading-none">
+                          W{data.weeklySummaries[weekIndex]?.weekNumber}
                         </div>
-                        <div className={cn(
-                          'text-sm font-bold',
-                          data.weeklySummaries[weekIndex]?.totalPnl > 0 ? 'text-green-500' : 
-                          data.weeklySummaries[weekIndex]?.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
-                        )}>
+                        <div 
+                          className={cn(
+                            'font-bold',
+                            data.weeklySummaries[weekIndex]?.totalPnl > 0 ? 'text-green-500' : 
+                            data.weeklySummaries[weekIndex]?.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
+                          )}
+                          style={{
+                            fontSize: '16px',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            maxWidth: '100%'
+                          }}
+                        >
                           {formatCurrency(data.weeklySummaries[weekIndex]?.totalPnl || 0)}
                         </div>
-                        <div className="text-xs text-muted-foreground">
-                          {data.weeklySummaries[weekIndex]?.activeDays || 0} days
+                        <div className="text-[10px] text-muted-foreground leading-none">
+                          {data.weeklySummaries[weekIndex]?.activeDays || 0}d
                         </div>
                       </div>
                     </div>
