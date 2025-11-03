@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { Zap } from 'lucide-react';
+import { Zap, Flame } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { getStreakStyling, getStreakAnimation } from '@/lib/streakStyling';
 
 type Day = {
   date: string | Date;
@@ -21,6 +23,7 @@ type RenderData = {
   weeks: Day[][];
   weeklySummaries: WeekSummary[];
   monthlyPnl: number;
+  currentStreak?: number;
 };
 
 interface ShareCalendarSnapshotProps {
@@ -243,9 +246,24 @@ export const ShareCalendarSnapshot: React.FC<ShareCalendarSnapshotProps> = ({
                               )}>
                                 {dayDate.getDate()}
                               </span>
-                              {day.hasReflection && (
-                                <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                              )}
+                              {day.hasReflection && (() => {
+                                const today = new Date();
+                                today.setHours(0, 0, 0, 0);
+                                const dayDateObj = new Date(day.date);
+                                dayDateObj.setHours(0, 0, 0, 0);
+                                const dayPosition = Math.floor((today.getTime() - dayDateObj.getTime()) / (1000 * 60 * 60 * 24));
+                                const streakOnThatDay = Math.max(1, (data.currentStreak || 0) - dayPosition);
+                                const streakStyle = getStreakStyling(streakOnThatDay, dayPosition);
+                                const animation = getStreakAnimation(streakStyle.animationType);
+                                
+                                return animation ? (
+                                  <motion.div {...animation}>
+                                    <Flame className={cn("w-3 h-3", streakStyle.className, streakStyle.glowClass)} />
+                                  </motion.div>
+                                ) : (
+                                  <Flame className={cn("w-3 h-3", streakStyle.className, streakStyle.glowClass)} />
+                                );
+                              })()}
                             </div>
                             
                             {isWeekend ? (
@@ -445,10 +463,29 @@ export const ShareCalendarSnapshot: React.FC<ShareCalendarSnapshotProps> = ({
                           )}
                         </div>
 
-                        {/* Reflection indicator - bottom corner */}
-                        {day.hasReflection && !day.isOtherMonth && (
-                          <div className="absolute bottom-1 right-1 w-1 h-1 rounded-full bg-green-500" />
-                        )}
+                        {/* Reflection indicator - flame streak */}
+                        {day.hasReflection && !day.isOtherMonth && (() => {
+                          const today = new Date();
+                          today.setHours(0, 0, 0, 0);
+                          const dayDateObj = new Date(day.date);
+                          dayDateObj.setHours(0, 0, 0, 0);
+                          const dayPosition = Math.floor((today.getTime() - dayDateObj.getTime()) / (1000 * 60 * 60 * 24));
+                          const streakOnThatDay = Math.max(1, (data.currentStreak || 0) - dayPosition);
+                          const streakStyle = getStreakStyling(streakOnThatDay, dayPosition);
+                          const animation = getStreakAnimation(streakStyle.animationType);
+                          
+                          return (
+                            <div className="absolute top-1 right-1">
+                              {animation ? (
+                                <motion.div {...animation}>
+                                  <Flame className={cn("w-1.5 h-1.5", streakStyle.className, streakStyle.glowClass)} />
+                                </motion.div>
+                              ) : (
+                                <Flame className={cn("w-1.5 h-1.5", streakStyle.className, streakStyle.glowClass)} />
+                              )}
+                            </div>
+                          );
+                        })()}
                       </div>
                     );
                   })}

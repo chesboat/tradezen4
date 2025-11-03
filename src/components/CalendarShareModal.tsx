@@ -11,8 +11,10 @@ import {
   ChevronRight,
   Share,
   Twitter,
-  Instagram
+  Instagram,
+  Flame
 } from 'lucide-react';
+import { getStreakStyling, getStreakAnimation } from '@/lib/streakStyling';
 import { formatDate } from '@/lib/localStorageUtils';
 import { formatCurrencyApple } from '@/lib/appleFormatters';
 import { renderCalendarToDataURL } from '@/lib/share/CalendarRenderer';
@@ -27,6 +29,7 @@ interface CalendarShareModalProps {
   currentDate: Date;
   calendarData: any;
   weeklyData: any[];
+  currentStreak: number;
 }
 
 
@@ -35,7 +38,8 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
   onClose,
   currentDate,
   calendarData,
-  weeklyData
+  weeklyData,
+  currentStreak
 }) => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const captureRef = useRef<HTMLDivElement>(null); // offscreen, fixed-size capture target
@@ -209,6 +213,7 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
         monthlyPnl: monthlyPnL,
         totalTrades,
         calendarData: flattenedCalendarData,
+        currentStreak,
         theme: effectiveTheme,
         accentColor,
         isPublic: true,
@@ -623,9 +628,24 @@ ${shareUrl}`,
                                 )}>
                                   {day.date.getDate()}
                                 </span>
-                                {day.hasReflection && (
-                                  <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-green-500" />
-                                )}
+                                {day.hasReflection && (() => {
+                                  const today = new Date();
+                                  today.setHours(0, 0, 0, 0);
+                                  const dayDate = new Date(day.date);
+                                  dayDate.setHours(0, 0, 0, 0);
+                                  const dayPosition = Math.floor((today.getTime() - dayDate.getTime()) / (1000 * 60 * 60 * 24));
+                                  const streakOnThatDay = Math.max(1, currentStreak - dayPosition);
+                                  const streakStyle = getStreakStyling(streakOnThatDay, dayPosition);
+                                  const animation = getStreakAnimation(streakStyle.animationType);
+                                  
+                                  return animation ? (
+                                    <motion.div {...animation}>
+                                      <Flame className={cn("w-1.5 h-1.5", streakStyle.className, streakStyle.glowClass)} />
+                                    </motion.div>
+                                  ) : (
+                                    <Flame className={cn("w-1.5 h-1.5", streakStyle.className, streakStyle.glowClass)} />
+                                  );
+                                })()}
                               </div>
                               
                               {/* Center Content - Apple Style */}
@@ -739,9 +759,24 @@ ${shareUrl}`,
                                 )}>
                                   {day.date.getDate()}
                                 </span>
-                                {day.hasReflection && (
-                                  <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                                )}
+                                {day.hasReflection && (() => {
+                                  const today = new Date();
+                                  today.setHours(0, 0, 0, 0);
+                                  const dayDate = new Date(day.date);
+                                  dayDate.setHours(0, 0, 0, 0);
+                                  const dayPosition = Math.floor((today.getTime() - dayDate.getTime()) / (1000 * 60 * 60 * 24));
+                                  const streakOnThatDay = Math.max(1, currentStreak - dayPosition);
+                                  const streakStyle = getStreakStyling(streakOnThatDay, dayPosition);
+                                  const animation = getStreakAnimation(streakStyle.animationType);
+                                  
+                                  return animation ? (
+                                    <motion.div {...animation}>
+                                      <Flame className={cn("w-3 h-3", streakStyle.className, streakStyle.glowClass)} />
+                                    </motion.div>
+                                  ) : (
+                                    <Flame className={cn("w-3 h-3", streakStyle.className, streakStyle.glowClass)} />
+                                  );
+                                })()}
                               </div>
                               
                               {/* Center Content - Apple Style */}

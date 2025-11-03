@@ -1433,6 +1433,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
         currentDate={currentDate}
         calendarData={calendarData}
         weeklyData={weeklyData}
+        currentStreak={currentStreak}
       />
 
       {/* Weekly Review Modal */}
