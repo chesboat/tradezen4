@@ -484,17 +484,17 @@ ${shareUrl}`,
               style={{ 
                 padding: window.innerWidth < 768 ? '4px' : '0',
                 maxWidth: window.innerWidth < 768 ? '100%' : '100%',
-                paddingTop: window.innerWidth >= 768 ? '20px' : '0',
-                paddingBottom: window.innerWidth >= 768 ? '20px' : '0'
+                paddingTop: window.innerWidth >= 768 ? '10px' : '0',
+                paddingBottom: window.innerWidth >= 768 ? '10px' : '0'
               }}
             >
               {/* Calendar Content - Scales to fit */}
               <div 
                 className="w-full relative" 
                 style={{ 
-                  maxWidth: window.innerWidth < 768 ? '100%' : '1100px',
+                  maxWidth: window.innerWidth < 768 ? '100%' : '1000px',
                   maxHeight: '100%',
-                  transform: window.innerWidth >= 768 ? 'scale(0.78)' : 'none',
+                  transform: window.innerWidth >= 768 ? 'scale(0.82)' : 'none',
                   transformOrigin: 'top center'
                 }} 
                 data-share-calendar-card
@@ -611,7 +611,7 @@ ${shareUrl}`,
                             className={`${getDayClassName(day)}`}
                             style={{ 
                               aspectRatio: '1', 
-                              minHeight: window.innerWidth < 768 ? '45px' : '60px', 
+                              minHeight: window.innerWidth < 768 ? '45px' : '50px', 
                               display: 'flex', 
                               flexDirection: 'column', 
                               width: '100%',
@@ -649,7 +649,7 @@ ${shareUrl}`,
                                         day.pnl > 0 ? 'text-green-500' : 'text-red-500'
                                       )}
                                       style={{
-                                        fontSize: window.innerWidth < 768 ? '11px' : '22px',
+                                        fontSize: window.innerWidth < 768 ? '11px' : '26px',
                                         overflow: 'hidden',
                                         textOverflow: 'ellipsis',
                                         whiteSpace: 'nowrap',
@@ -662,7 +662,7 @@ ${shareUrl}`,
                                   
                                   {/* Trade Count - Very subtle */}
                                   {day.tradesCount > 0 && (
-                                    <div className="text-[6px] sm:text-[9px] lg:text-sm text-muted-foreground/50 font-normal leading-none">
+                                    <div className="text-[6px] sm:text-[9px] lg:text-base text-muted-foreground/50 font-normal leading-none">
                                       {day.tradesCount}t
                                     </div>
                                   )}
@@ -691,7 +691,7 @@ ${shareUrl}`,
                           }}
                         >
                           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', textAlign: 'center', gap: '2px', padding: '2px', minWidth: 0 }}>
-                            <div className="text-[10px] font-medium text-muted-foreground leading-none">
+                            <div className="text-xs font-medium text-muted-foreground leading-none">
                               W{weeklyData[weekIndex]?.weekNumber}
                             </div>
                             <div 
@@ -701,7 +701,7 @@ ${shareUrl}`,
                                 weeklyData[weekIndex]?.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
                               )}
                               style={{
-                                fontSize: '14px',
+                                fontSize: '16px',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
                                 whiteSpace: 'nowrap',
@@ -710,7 +710,7 @@ ${shareUrl}`,
                             >
                               {formatCurrencyApple(weeklyData[weekIndex]?.totalPnl || 0, { showSign: false })}
                             </div>
-                            <div className="text-[9px] text-muted-foreground leading-none">
+                            <div className="text-[10px] text-muted-foreground leading-none">
                               {weeklyData[weekIndex]?.activeDays || 0}d
                             </div>
                           </div>
