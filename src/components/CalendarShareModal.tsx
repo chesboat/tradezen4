@@ -470,26 +470,33 @@ ${shareUrl}`,
           <div 
             ref={canvasRef}
             className={cn(
-              "flex-1 flex items-center justify-center",
+              "flex-1 flex items-center justify-center overflow-hidden",
               theme === 'dark' 
                 ? "bg-gradient-to-br from-indigo-950 via-purple-900 to-pink-900" 
                 : "bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100"
             )}
             style={{ 
-              padding: window.innerWidth < 768 ? '0' : '16px',
-              overflow: 'auto'
+              padding: window.innerWidth < 768 ? '0' : '16px'
             }}
           >
             <div
-              className="relative w-full flex items-center justify-center"
+              className="relative w-full h-full flex items-center justify-center"
               style={{ 
-                padding: window.innerWidth < 768 ? '4px' : '24px',
-                maxWidth: window.innerWidth < 768 ? '100%' : '1280px',
-                margin: '0 auto'
+                padding: window.innerWidth < 768 ? '4px' : '0',
+                maxWidth: window.innerWidth < 768 ? '100%' : '100%'
               }}
             >
-              {/* Calendar Content - Exact replica of CalendarView */}
-              <div className="w-full relative" style={{ maxWidth: window.innerWidth < 768 ? '100%' : '1280px' }} data-share-calendar-card>
+              {/* Calendar Content - Scales to fit */}
+              <div 
+                className="w-full relative" 
+                style={{ 
+                  maxWidth: window.innerWidth < 768 ? '100%' : '1200px',
+                  maxHeight: '100%',
+                  transform: window.innerWidth >= 768 ? 'scale(0.85)' : 'none',
+                  transformOrigin: 'center center'
+                }} 
+                data-share-calendar-card
+              >
                 <div 
                   className={`${theme}`}
                   style={{
@@ -958,4 +965,6 @@ ${shareUrl}`,
       </motion.div>
     </AnimatePresence>
   );
+};
+
 };
