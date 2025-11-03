@@ -480,10 +480,11 @@ ${shareUrl}`,
             }}
           >
             <div
-              className="relative w-full h-full flex items-center justify-center"
+              className="relative w-full h-full flex items-start justify-center"
               style={{ 
                 padding: window.innerWidth < 768 ? '4px' : '0',
-                maxWidth: window.innerWidth < 768 ? '100%' : '100%'
+                maxWidth: window.innerWidth < 768 ? '100%' : '100%',
+                paddingTop: window.innerWidth >= 768 ? '20px' : '0'
               }}
             >
               {/* Calendar Content - Scales to fit */}
@@ -492,8 +493,8 @@ ${shareUrl}`,
                 style={{ 
                   maxWidth: window.innerWidth < 768 ? '100%' : '1200px',
                   maxHeight: '100%',
-                  transform: window.innerWidth >= 768 ? 'scale(0.85)' : 'none',
-                  transformOrigin: 'center center'
+                  transform: window.innerWidth >= 768 ? 'scale(0.75)' : 'none',
+                  transformOrigin: 'top center'
                 }} 
                 data-share-calendar-card
               >
@@ -647,7 +648,7 @@ ${shareUrl}`,
                                         day.pnl > 0 ? 'text-green-500' : 'text-red-500'
                                       )}
                                       style={{
-                                        fontSize: window.innerWidth < 768 ? '11px' : '14px',
+                                        fontSize: window.innerWidth < 768 ? '11px' : '18px',
                                         overflow: 'hidden',
                                         textOverflow: 'ellipsis',
                                         whiteSpace: 'nowrap',
@@ -660,7 +661,7 @@ ${shareUrl}`,
                                   
                                   {/* Trade Count - Very subtle */}
                                   {day.tradesCount > 0 && (
-                                    <div className="text-[6px] sm:text-[9px] lg:text-[10px] text-muted-foreground/50 font-normal leading-none">
+                                    <div className="text-[6px] sm:text-[9px] lg:text-xs text-muted-foreground/50 font-normal leading-none">
                                       {day.tradesCount}t
                                     </div>
                                   )}
