@@ -183,11 +183,18 @@ export const ShareCalendarSnapshot: React.FC<ShareCalendarSnapshotProps> = ({
   // ============================================================
   if (!isMobile) {
     return (
-      <div className={cn('min-h-screen overflow-x-hidden flex items-center justify-center bg-gradient-to-br p-6', gradientClass, theme)}>
-        <div style={{ aspectRatio: '16/10', width: '100%', maxWidth: '100%' }} className="flex items-center justify-center">
-          <div className="w-[92%] relative h-full">
+      <div className={cn('min-h-screen overflow-x-hidden flex items-start justify-center bg-gradient-to-br', gradientClass, theme)} style={{ paddingTop: '40px', paddingBottom: '40px' }}>
+        <div className="relative w-full h-full flex items-start justify-center">
+          <div 
+            className="w-full relative"
+            style={{
+              maxWidth: '1000px',
+              transform: 'scale(0.82)',
+              transformOrigin: 'top center'
+            }}
+          >
             <div 
-              className="bg-background rounded-xl pt-4 pb-6 px-6 border relative h-full flex flex-col" 
+              className="bg-background rounded-xl pt-4 pb-6 px-6 border relative" 
               style={{ 
                 boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15), 0 10px 20px rgba(0, 0, 0, 0.1), 0 5px 10px rgba(0, 0, 0, 0.05)',
                 filter: 'drop-shadow(0 25px 25px rgba(0, 0, 0, 0.15))',
@@ -208,7 +215,7 @@ export const ShareCalendarSnapshot: React.FC<ShareCalendarSnapshotProps> = ({
               </div>
 
               {/* Calendar Grid */}
-              <div className="grid grid-cols-8 flex-1 overflow-hidden" style={{ gap: '4px', rowGap: '4px' }}>
+              <div className="grid grid-cols-8" style={{ gap: '4px', rowGap: '4px' }}>
                 {/* Headers Row */}
                 {DAYS_OF_WEEK.map((day) => (
                   <div key={`h-${day}`} className="text-center font-semibold text-muted-foreground text-sm" style={{ paddingTop: '8px', paddingBottom: '8px' }}>{day}</div>
