@@ -484,8 +484,8 @@ ${shareUrl}`,
               style={{ 
                 padding: window.innerWidth < 768 ? '4px' : '0',
                 maxWidth: window.innerWidth < 768 ? '100%' : '100%',
-                paddingTop: window.innerWidth >= 768 ? '40px' : '0',
-                paddingBottom: window.innerWidth >= 768 ? '40px' : '0'
+                paddingTop: window.innerWidth >= 768 ? '20px' : '0',
+                paddingBottom: window.innerWidth >= 768 ? '20px' : '0'
               }}
             >
               {/* Calendar Content - Scales to fit */}
@@ -494,7 +494,7 @@ ${shareUrl}`,
                 style={{ 
                   maxWidth: window.innerWidth < 768 ? '100%' : '1100px',
                   maxHeight: '100%',
-                  transform: window.innerWidth >= 768 ? 'scale(0.68)' : 'none',
+                  transform: window.innerWidth >= 768 ? 'scale(0.78)' : 'none',
                   transformOrigin: 'top center'
                 }} 
                 data-share-calendar-card
@@ -541,23 +541,23 @@ ${shareUrl}`,
                           <ChevronLeft className="w-5 h-5" />
                         </div>
                         
-                        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+                        <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
                           <span>{currentMonth}</span>
                           <span>{currentYear}</span>
                         </h1>
                         
                         <div className="p-2 rounded-lg text-muted-foreground">
-                          <ChevronRight className="w-5 h-5" />
+                          <ChevronRight className="w-6 h-6" />
                         </div>
                       </div>
                       
-                      <div className="px-4 py-2 bg-primary/10 text-primary rounded-lg flex items-center justify-center text-sm font-medium leading-none">
+                      <div className="px-5 py-2.5 bg-primary/10 text-primary rounded-lg flex items-center justify-center text-base font-medium leading-none">
                         TODAY
                       </div>
                     </div>
 
                     <div className="flex items-center gap-4">
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-base text-muted-foreground">
                         Monthly: <span className={cn("font-semibold", monthlyPnL > 0 ? "text-green-500" : monthlyPnL < 0 ? "text-red-500" : "text-muted-foreground")}>{formatCurrencyApple(monthlyPnL, { showSign: false })}</span>
                       </div>
                     </div>
@@ -587,13 +587,13 @@ ${shareUrl}`,
                   )}
                   {/* Desktop: Show all Sun-Sat headers */}
                   {window.innerWidth >= 768 && DAYS_OF_WEEK.map((day, idx) => (
-                    <div key={day} className="text-center font-semibold text-muted-foreground text-xs" style={{ paddingTop: '8px', paddingBottom: '8px' }}>
+                    <div key={day} className="text-center font-semibold text-muted-foreground text-sm" style={{ paddingTop: '8px', paddingBottom: '8px' }}>
                       {day}
                     </div>
                   ))}
                   {/* Desktop: Week header (8th column) */}
                   {window.innerWidth >= 768 && (
-                    <div className="text-center font-semibold text-muted-foreground text-xs" style={{ paddingTop: '8px', paddingBottom: '8px' }}>
+                    <div className="text-center font-semibold text-muted-foreground text-sm" style={{ paddingTop: '8px', paddingBottom: '8px' }}>
                       Week
                     </div>
                   )}
@@ -622,7 +622,7 @@ ${shareUrl}`,
                               {/* Date - Top Left, subtle */}
                               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 'auto' }}>
                                 <span className={cn(
-                                  'text-[9px] sm:text-xs font-normal leading-none',
+                                  'text-[9px] sm:text-sm font-normal leading-none',
                                   day.isOtherMonth ? 'text-muted-foreground/60' : 'text-muted-foreground'
                                 )}>
                                   {day.date.getDate()}
@@ -649,7 +649,7 @@ ${shareUrl}`,
                                         day.pnl > 0 ? 'text-green-500' : 'text-red-500'
                                       )}
                                       style={{
-                                        fontSize: window.innerWidth < 768 ? '11px' : '18px',
+                                        fontSize: window.innerWidth < 768 ? '11px' : '22px',
                                         overflow: 'hidden',
                                         textOverflow: 'ellipsis',
                                         whiteSpace: 'nowrap',
@@ -662,7 +662,7 @@ ${shareUrl}`,
                                   
                                   {/* Trade Count - Very subtle */}
                                   {day.tradesCount > 0 && (
-                                    <div className="text-[6px] sm:text-[9px] lg:text-xs text-muted-foreground/50 font-normal leading-none">
+                                    <div className="text-[6px] sm:text-[9px] lg:text-sm text-muted-foreground/50 font-normal leading-none">
                                       {day.tradesCount}t
                                     </div>
                                   )}
@@ -691,7 +691,7 @@ ${shareUrl}`,
                           }}
                         >
                           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', textAlign: 'center', gap: '2px', padding: '2px', minWidth: 0 }}>
-                            <div className="text-[8px] font-medium text-muted-foreground leading-none">
+                            <div className="text-[10px] font-medium text-muted-foreground leading-none">
                               W{weeklyData[weekIndex]?.weekNumber}
                             </div>
                             <div 
@@ -701,7 +701,7 @@ ${shareUrl}`,
                                 weeklyData[weekIndex]?.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
                               )}
                               style={{
-                                fontSize: '11px',
+                                fontSize: '14px',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
                                 whiteSpace: 'nowrap',
@@ -710,7 +710,7 @@ ${shareUrl}`,
                             >
                               {formatCurrencyApple(weeklyData[weekIndex]?.totalPnl || 0, { showSign: false })}
                             </div>
-                            <div className="text-[7px] text-muted-foreground leading-none">
+                            <div className="text-[9px] text-muted-foreground leading-none">
                               {weeklyData[weekIndex]?.activeDays || 0}d
                             </div>
                           </div>
