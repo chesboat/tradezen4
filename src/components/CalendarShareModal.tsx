@@ -20,6 +20,8 @@ import { formatCurrencyApple } from '@/lib/appleFormatters';
 import { renderCalendarToDataURL } from '@/lib/share/CalendarRenderer';
 import { useTheme } from '@/hooks/useTheme';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { useAccountFilterStore } from '@/store/useAccountFilterStore';
+import { MultiAccountSelector } from './MultiAccountSelector';
 import { cn } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
@@ -30,6 +32,8 @@ interface CalendarShareModalProps {
   calendarData: any;
   weeklyData: any[];
   currentStreak: number;
+  selectedAccountIds?: string[];
+  onAccountSelectionChange?: (accountIds: string[]) => void;
 }
 
 
@@ -39,18 +43,33 @@ export const CalendarShareModal: React.FC<CalendarShareModalProps> = ({
   currentDate,
   calendarData,
   weeklyData,
-  currentStreak
+  currentStreak,
+  selectedAccountIds = [],
+  onAccountSelectionChange
 }) => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const captureRef = useRef<HTMLDivElement>(null); // offscreen, fixed-size capture target
   const [isGenerating, setIsGenerating] = useState(false);
   const { theme } = useTheme();
   const { accentColor, accentColorPalettes } = useAccentColor();
+  const { accounts } = useAccountFilterStore();
 
   const currentMonth = new Intl.DateTimeFormat('en-US', { month: 'long' }).format(currentDate);
   const currentYear = currentDate.getFullYear();
   const monthlyPnL = weeklyData.reduce((sum, week) => sum + week.totalPnl, 0);
   const totalTrades = weeklyData.reduce((sum, week) => sum + week.tradesCount, 0);
+  
+  // Get selected account names for display
+  const selectedAccountNames = selectedAccountIds
+    .map(id => accounts.find(acc => acc.id === id)?.name)
+    .filter(Boolean)
+    .join(', ');
+  
+  const accountDisplayText = selectedAccountIds.length === 1 
+    ? selectedAccountNames
+    : selectedAccountIds.length > 1 
+      ? `${selectedAccountIds.length} accounts`
+      : 'All accounts';
 
   const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -411,11 +430,24 @@ ${shareUrl}`,
         >
           {/* Modal Header */}
           <div className="flex items-center justify-between border-b" style={{ padding: window.innerWidth < 768 ? '12px 8px' : '24px' }}>
-            <div>
-              <h2 className="text-xl font-semibold">Share Calendar</h2>
-              <p className="text-sm text-muted-foreground">
-                Post your {currentMonth} performance to social media
-              </p>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-4 mb-2">
+                <div>
+                  <h2 className="text-xl font-semibold">Share Calendar</h2>
+                  <p className="text-sm text-muted-foreground">
+                    {currentMonth} • {accountDisplayText}
+                  </p>
+                </div>
+                {onAccountSelectionChange && (
+                  <div className="w-64">
+                    <MultiAccountSelector
+                      selectedAccountIds={selectedAccountIds}
+                      onSelectionChange={onAccountSelectionChange}
+                      label=""
+                    />
+                  </div>
+                )}
+              </div>
             </div>
             <div className="flex items-center gap-2">
               {/* X.com Share */}

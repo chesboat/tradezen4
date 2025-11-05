@@ -36,6 +36,7 @@ import { DayDetailModalApple as DayDetailModal } from './DayDetailModalApple';
 import { CalendarShareModal } from './CalendarShareModal';
 import { WeeklyReviewModal } from './WeeklyReviewModal';
 import { WeeklyReviewViewModal } from './WeeklyReviewViewModal';
+import { MultiAccountSelector } from './MultiAccountSelector';
 import { Tooltip } from './ui/Tooltip';
 
 const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -49,12 +50,24 @@ interface CalendarViewProps {
 }
 
 export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
-  const { selectedAccountId } = useAccountFilterStore();
+  const { selectedAccountId, accounts } = useAccountFilterStore();
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isWeeklyReviewOpen, setIsWeeklyReviewOpen] = useState(false);
   const [weeklyReviewWeek, setWeeklyReviewWeek] = useState<string | undefined>(undefined);
   const [selectedWeeklyReview, setSelectedWeeklyReview] = useState<WeeklyReview | null>(null);
   const [isWeeklyReviewViewOpen, setIsWeeklyReviewViewOpen] = useState(false);
+  
+  // Multi-account selection for share modal
+  // Initialize with current selected account (or first active account)
+  const [shareSelectedAccountIds, setShareSelectedAccountIds] = useState<string[]>(() => {
+    if (selectedAccountId) {
+      // If it's a group, expand to all accounts in the group
+      const accountIds = getAccountIdsForSelection(selectedAccountId);
+      return accountIds;
+    }
+    return [];
+  });
+  
   const { trades } = useTradeStore();
   const { getNotesForDate } = useQuickNoteStore();
   const { reflections, getReflectionByDate, getReflectionStreak } = useDailyReflectionStore();
@@ -233,19 +246,33 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
   };
 
   // Helper function to create calendar day data
-  const createCalendarDay = useCallback((date: Date, isOtherMonth: boolean): CalendarDay => {
+  // accountFilter can be either selectedAccountId (for main view) or an array of account IDs (for share modal)
+  const createCalendarDay = useCallback((date: Date, isOtherMonth: boolean, accountFilter?: string | string[]): CalendarDay => {
     const dayStart = new Date(date);
     dayStart.setHours(0, 0, 0, 0);
     const dayEnd = new Date(date);
     dayEnd.setHours(23, 59, 59, 999);
     
+    // Determine which account IDs to include
+    let accountIds: string[];
+    if (Array.isArray(accountFilter)) {
+      // Direct array of account IDs (for share modal)
+      accountIds = accountFilter;
+    } else {
+      // Use selectedAccountId logic (for main view)
+      const filterAccountId = accountFilter || selectedAccountId;
+      if (!filterAccountId) {
+        accountIds = accounts.map(a => a.id);
+      } else {
+        accountIds = getAccountIdsForSelection(filterAccountId);
+      }
+    }
+    
     // Get trades for this day
     const dayTrades = trades.filter(trade => {
       const tradeDate = new Date(trade.entryTime);
       if (!(tradeDate >= dayStart && tradeDate <= dayEnd)) return false;
-      if (!selectedAccountId) return true;
-      const ids = getAccountIdsForSelection(selectedAccountId);
-      return ids.includes(trade.accountId);
+      return accountIds.includes(trade.accountId);
     });
     
     // Calculate day statistics
@@ -274,9 +301,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
     
     // Get notes for this day
     const dayNotes = getNotesForDate(date).filter(note => {
-      if (!selectedAccountId) return true;
-      const ids = getAccountIdsForSelection(selectedAccountId);
-      return ids.includes(note.accountId);
+      return accountIds.includes(note.accountId);
     });
     
     // Check if a meaningful reflection exists for this day
@@ -284,9 +309,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
     const dateString = date.toISOString().split('T')[0];
     const reflection = reflections.find(r => {
       if (r.date !== dateString) return false;
-      if (!selectedAccountId) return true;
-      const ids = getAccountIdsForSelection(selectedAccountId);
-      return ids.includes(r.accountId);
+      return accountIds.includes(r.accountId);
     });
     
     // Check for old-style reflection fields
@@ -298,32 +321,29 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
     ));
     
     // Also check for new Insight Blocks (Insight Blocks 2.0)
-    // Check all accounts that match the filter, not just selectedAccountId
+    // Check all accounts that match the filter
     let hasInsightBlocks = false;
-    if (selectedAccountId) {
-      const ids = getAccountIdsForSelection(selectedAccountId);
-      for (const accountId of ids) {
-        const insightReflection = getInsightReflection(dateString, accountId);
-        if (insightReflection && insightReflection.insightBlocks && insightReflection.insightBlocks.length > 0) {
-          // Only count if blocks have actual content (non-empty text)
-          const hasContent = insightReflection.insightBlocks.some(block => 
-            block.content && block.content.trim().length > 0
-          );
-          if (hasContent) {
-            hasInsightBlocks = true;
-            // Debug logging (temporary)
-            if (dateString === new Date().toISOString().split('T')[0]) {
-              console.log(`[Calendar] Found Insight Blocks for today (${dateString}):`, {
-                accountId,
-                blocksCount: insightReflection.insightBlocks.length,
-                blocks: insightReflection.insightBlocks.map(b => ({ 
-                  title: b.title, 
-                  contentLength: b.content?.length || 0 
-                }))
-              });
-            }
-            break;
+    for (const accountId of accountIds) {
+      const insightReflection = getInsightReflection(dateString, accountId);
+      if (insightReflection && insightReflection.insightBlocks && insightReflection.insightBlocks.length > 0) {
+        // Only count if blocks have actual content (non-empty text)
+        const hasContent = insightReflection.insightBlocks.some(block => 
+          block.content && block.content.trim().length > 0
+        );
+        if (hasContent) {
+          hasInsightBlocks = true;
+          // Debug logging (temporary)
+          if (dateString === new Date().toISOString().split('T')[0]) {
+            console.log(`[Calendar] Found Insight Blocks for today (${dateString}):`, {
+              accountId,
+              blocksCount: insightReflection.insightBlocks.length,
+              blocks: insightReflection.insightBlocks.map(b => ({ 
+                title: b.title, 
+                contentLength: b.content?.length || 0 
+              }))
+            });
           }
+          break;
         }
       }
     }
@@ -335,8 +355,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
     if (dateString === new Date().toISOString().split('T')[0]) {
       console.log(`[Calendar] Today's reflection status:`, {
         dateString,
-        selectedAccountId,
-        accountIds: selectedAccountId ? getAccountIdsForSelection(selectedAccountId) : [],
+        accountIds,
         hasOldReflection,
         hasInsightBlocks,
         hasReflection
@@ -356,7 +375,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
       winRate,
       isOtherMonth,
     };
-  }, [trades, selectedAccountId, getNotesForDate, reflections, getInsightReflection, insightReflectionData]);
+  }, [trades, selectedAccountId, accounts, getNotesForDate, reflections, getInsightReflection, insightReflectionData]);
 
   // Calculate calendar data
   const calendarData = useMemo(() => {
@@ -448,6 +467,100 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
       };
     });
   }, [calendarData.weeks]);
+
+  // Generate calendar data for share modal with selected accounts
+  const shareCalendarData = useMemo(() => {
+    if (shareSelectedAccountIds.length === 0) return calendarData;
+    
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    
+    // Get first day of month and number of days
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = firstDay.getDay();
+    
+    // Get previous month's last day properly
+    const prevMonthLastDay = new Date(year, month, 0);
+    const prevMonthDays = prevMonthLastDay.getDate();
+    
+    // Build calendar grid
+    const calendarDays: CalendarDay[] = [];
+    const weeks: CalendarDay[][] = [];
+    
+    // Previous month days (fill from the beginning of the week)
+    for (let i = startingDayOfWeek - 1; i >= 0; i--) {
+      const dayNum = prevMonthDays - i;
+      const date = new Date(year, month - 1, dayNum);
+      calendarDays.push(createCalendarDay(date, true, shareSelectedAccountIds));
+    }
+    
+    // Current month days
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(year, month, day);
+      calendarDays.push(createCalendarDay(date, false, shareSelectedAccountIds));
+    }
+    
+    // Next month days (fill to complete the week)
+    const remainingDays = 7 - (calendarDays.length % 7);
+    if (remainingDays < 7) {
+      for (let day = 1; day <= remainingDays; day++) {
+        const date = new Date(year, month + 1, day);
+        calendarDays.push(createCalendarDay(date, true, shareSelectedAccountIds));
+      }
+    }
+    
+    // Split into weeks
+    for (let i = 0; i < calendarDays.length; i += 7) {
+      weeks.push(calendarDays.slice(i, i + 7));
+    }
+    
+    return { weeks };
+  }, [currentDate, shareSelectedAccountIds, createCalendarDay]);
+
+  // Generate weekly data for share modal
+  const shareWeeklyData = useMemo(() => {
+    return shareCalendarData.weeks.map((week, index) => {
+      const weekDays = week.filter(day => !day.isOtherMonth);
+      const totalPnl = weekDays.reduce((sum, day) => sum + day.pnl, 0);
+      const totalXP = weekDays.reduce((sum, day) => sum + day.xpEarned, 0);
+      const totalTrades = weekDays.reduce((sum, day) => sum + day.tradesCount, 0);
+      
+      const avgMoodScore = weekDays.length > 0 
+        ? weekDays.reduce((sum, day) => {
+            const moodScores = { excellent: 5, good: 4, neutral: 3, poor: 2, terrible: 1 };
+            return sum + moodScores[day.mood];
+          }, 0) / weekDays.length 
+        : 3;
+      
+      const avgMood: MoodType = avgMoodScore >= 4.5 ? 'excellent' :
+                               avgMoodScore >= 3.5 ? 'good' :
+                               avgMoodScore >= 2.5 ? 'neutral' :
+                               avgMoodScore >= 1.5 ? 'poor' : 'terrible';
+      
+      const avgRR = weekDays.length > 0 
+        ? weekDays.reduce((sum, day) => sum + day.avgRR, 0) / weekDays.length 
+        : 0;
+      
+      const avgWinRate = weekDays.length > 0 
+        ? weekDays.reduce((sum, day) => sum + day.winRate, 0) / weekDays.length 
+        : 0;
+
+      return {
+        weekStart: week[0].date,
+        weekEnd: week[6].date,
+        totalPnl,
+        totalXP,
+        avgMood,
+        tradesCount: totalTrades,
+        winRate: avgWinRate,
+        avgRR,
+        activeDays: weekDays.filter(d => d.tradesCount > 0).length,
+        weekNumber: index + 1,
+      };
+    });
+  }, [shareCalendarData.weeks]);
 
   const navigateMonth = (direction: 'prev' | 'next') => {
     setCurrentDate(prev => {
@@ -1431,9 +1544,11 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
         currentDate={currentDate}
-        calendarData={calendarData}
-        weeklyData={weeklyData}
+        calendarData={shareCalendarData}
+        weeklyData={shareWeeklyData}
         currentStreak={currentStreak}
+        selectedAccountIds={shareSelectedAccountIds}
+        onAccountSelectionChange={setShareSelectedAccountIds}
       />
 
       {/* Weekly Review Modal */}
