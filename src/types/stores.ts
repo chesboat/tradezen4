@@ -20,6 +20,13 @@ export interface ActivityLogState {
 export interface AccountFilterState {
   selectedAccountId: string | null;
   accounts: TradingAccount[];
+  // Multi-select mode
+  multiSelectMode: boolean;
+  selectedAccountIds: string[];
+  setMultiSelectMode: (enabled: boolean) => void;
+  setSelectedAccountIds: (accountIds: string[]) => void;
+  toggleAccountInMultiSelect: (accountId: string) => void;
+  // Single-select mode (legacy)
   setSelectedAccount: (accountId: string | null) => void;
   addAccount: (account: Omit<TradingAccount, 'id' | 'createdAt' | 'updatedAt'>) => Promise<TradingAccount>;
   updateAccount: (id: string, updates: Partial<TradingAccount>) => void;

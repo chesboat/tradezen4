@@ -8,6 +8,49 @@ const accountService = new FirestoreService<TradingAccount>('tradingAccounts');
 export const useAccountFilterStore = create<AccountFilterState>((set, get) => ({
   selectedAccountId: null,
   accounts: [],
+  
+  // Multi-select mode state
+  multiSelectMode: false,
+  selectedAccountIds: [],
+  
+  setMultiSelectMode: (enabled) => {
+    const state = get();
+    if (enabled) {
+      // Switching to multi-select: initialize with current selection
+      const currentIds = state.selectedAccountId 
+        ? getAccountIdsForSelection(state.selectedAccountId)
+        : [];
+      set({ 
+        multiSelectMode: true,
+        selectedAccountIds: currentIds.length > 0 ? currentIds : []
+      });
+    } else {
+      // Switching to single-select: use first selected account or keep current
+      const firstId = state.selectedAccountIds[0] || state.selectedAccountId;
+      set({ 
+        multiSelectMode: false,
+        selectedAccountId: firstId
+      });
+    }
+  },
+  
+  setSelectedAccountIds: (accountIds) => {
+    set({ selectedAccountIds: accountIds });
+  },
+  
+  toggleAccountInMultiSelect: (accountId) => {
+    const state = get();
+    const currentIds = state.selectedAccountIds;
+    const isSelected = currentIds.includes(accountId);
+    
+    if (isSelected) {
+      // Don't allow deselecting the last account
+      if (currentIds.length === 1) return;
+      set({ selectedAccountIds: currentIds.filter(id => id !== accountId) });
+    } else {
+      set({ selectedAccountIds: [...currentIds, accountId] });
+    }
+  },
 
   setSelectedAccount: (accountId) => {
     set({ selectedAccountId: accountId });
@@ -248,9 +291,20 @@ export const filterRealAccounts = <T extends { accountId: string }>(items: T[]):
 
 // Helper: resolve which account IDs are in scope for a given selection
 export const getAccountIdsForSelection = (selectedId: string | null, includeArchived: boolean = false): string[] => {
-  const { accounts } = useAccountFilterStore.getState();
+  const { accounts, multiSelectMode, selectedAccountIds } = useAccountFilterStore.getState();
   const filterFn = (a: TradingAccount) => includeArchived ? getAccountStatus(a) !== 'deleted' : isAccountActive(a);
   
+  // 🍎 APPLE ENHANCEMENT: Multi-select mode takes precedence
+  if (multiSelectMode && selectedAccountIds.length > 0) {
+    // Return the explicitly selected account IDs
+    // Filter to ensure they still exist and match the archive filter
+    return selectedAccountIds.filter(id => {
+      const acc = accounts.find(a => a.id === id);
+      return acc && (includeArchived || filterFn(acc));
+    });
+  }
+  
+  // Legacy single-select behavior (unchanged)
   // Special case: "all-with-archived" shows ALL accounts (active + archived)
   if (selectedId === 'all-with-archived') {
     return accounts.filter(a => getAccountStatus(a) !== 'deleted').map(a => a.id);

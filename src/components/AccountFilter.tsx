@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { ChevronDown, Check, Plus, CreditCard, Edit3, Archive } from 'lucide-react';
+import { ChevronDown, Check, Plus, CreditCard, Edit3, Archive, CheckSquare, Square } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAccountFilterStore, initializeDefaultAccounts, isAccountActive, getAccountStatus } from '@/store/useAccountFilterStore';
 import { Users } from 'lucide-react';
 import { AccountManagementModal } from './AccountManagementModal';
 import { TradingAccount } from '@/types';
 import { CopyTradingManager } from './CopyTradingManager';
+import { cn } from '@/lib/utils';
 
 interface AccountFilterProps {
   className?: string;
@@ -22,7 +23,11 @@ export const AccountFilter: React.FC<AccountFilterProps> = ({ className, isMobil
   const { 
     selectedAccountId, 
     accounts, 
-    setSelectedAccount
+    setSelectedAccount,
+    multiSelectMode,
+    selectedAccountIds,
+    setMultiSelectMode,
+    toggleAccountInMultiSelect
   } = useAccountFilterStore();
 
   // Handle both individual accounts and groups
@@ -206,11 +211,54 @@ export const AccountFilter: React.FC<AccountFilterProps> = ({ className, isMobil
     }
   };
 
+  // Get display text for multi-select mode
+  const getMultiSelectDisplayText = () => {
+    if (selectedAccountIds.length === 0) return 'Select accounts';
+    if (selectedAccountIds.length === 1) {
+      const account = accounts.find(acc => acc.id === selectedAccountIds[0]);
+      return account?.name || 'Unknown account';
+    }
+    return `${selectedAccountIds.length} accounts`;
+  };
+
   // Render account list content (shared between dropdown and mobile sheet)
   const renderAccountList = () => (
     <>
-              {/* All Active Accounts option */}
-              {accounts.length > 1 && activeAccounts.length > 0 && (
+              {/* Multi-Select Mode Toggle */}
+              {accounts.length > 1 && (
+                <div className="px-3 py-2 border-b border-border">
+                  <motion.button
+                    onClick={() => setMultiSelectMode(!multiSelectMode)}
+                    className={cn(
+                      "w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all",
+                      multiSelectMode 
+                        ? "bg-primary/10 text-primary border border-primary/20" 
+                        : "bg-muted hover:bg-accent border border-transparent"
+                    )}
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
+                  >
+                    <div className="flex items-center gap-2">
+                      {multiSelectMode ? (
+                        <CheckSquare className="w-4 h-4" />
+                      ) : (
+                        <Square className="w-4 h-4" />
+                      )}
+                      <span className="text-sm font-medium">
+                        {multiSelectMode ? 'Multi-Select Mode' : 'Enable Multi-Select'}
+                      </span>
+                    </div>
+                    {multiSelectMode && selectedAccountIds.length > 0 && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-primary/20">
+                        {selectedAccountIds.length} selected
+                      </span>
+                    )}
+                  </motion.button>
+                </div>
+              )}
+
+              {/* All Active Accounts option (only in single-select mode) */}
+              {!multiSelectMode && accounts.length > 1 && activeAccounts.length > 0 && (
                 <motion.button
                   className={`w-full flex items-center gap-3 px-3 py-2.5 hover:bg-accent transition-colors group ${
                     selectedAccountId === null ? 'bg-accent' : ''
@@ -237,8 +285,8 @@ export const AccountFilter: React.FC<AccountFilterProps> = ({ className, isMobil
                 </motion.button>
               )}
               
-              {/* All Accounts (Including Archived) option */}
-              {accounts.length > 1 && archivedAccounts.length > 0 && (
+              {/* All Accounts (Including Archived) option (only in single-select mode) */}
+              {!multiSelectMode && accounts.length > 1 && archivedAccounts.length > 0 && (
                 <motion.button
                   className={`w-full flex items-center gap-3 px-3 py-2.5 hover:bg-accent transition-colors group ${
                     selectedAccountId === 'all-with-archived' ? 'bg-accent' : ''
@@ -280,17 +328,32 @@ export const AccountFilter: React.FC<AccountFilterProps> = ({ className, isMobil
                 const isFollower = followerIds.has(account.id);
                 const hasFollowers = (account.linkedAccountIds || []).length > 0;
                 const followers = accounts.filter(a => (account.linkedAccountIds || []).includes(a.id));
+                const isSelected = multiSelectMode 
+                  ? selectedAccountIds.includes(account.id)
+                  : selectedAccountId === account.id;
+                
                 return (
                   <div key={account.id} className="[transition:none]">
                     <motion.button
                       className={`w-full flex items-center gap-3 px-3 py-2.5 hover:bg-accent transition-colors group ${
-                        selectedAccountId === account.id ? 'bg-accent' : ''
+                        isSelected ? 'bg-accent' : ''
                       } ${isFollower ? 'pl-6' : ''}`}
-                      onClick={() => handleAccountSelect(account.id)}
+                      onClick={() => multiSelectMode ? toggleAccountInMultiSelect(account.id) : handleAccountSelect(account.id)}
                       whileHover={{ x: 2 }}
                       whileTap={{ scale: 0.98 }}
                     >
-                      <span className="text-sm">{getAccountIcon(account)}</span>
+                      {multiSelectMode ? (
+                        <div className={cn(
+                          "w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all",
+                          isSelected 
+                            ? "bg-primary border-primary" 
+                            : "border-border bg-background"
+                        )}>
+                          {isSelected && <Check className="w-3 h-3 text-primary-foreground" strokeWidth={3} />}
+                        </div>
+                      ) : (
+                        <span className="text-sm">{getAccountIcon(account)}</span>
+                      )}
                       <div className="flex-1 text-left">
                         <div className="text-sm font-medium text-popover-foreground flex items-center">
                           {account.name}
@@ -321,21 +384,24 @@ export const AccountFilter: React.FC<AccountFilterProps> = ({ className, isMobil
                       </div>
                       
                       <div className="flex items-center gap-2">
-                        <button
-                          onClick={(e) => handleEditAccount(account, e)}
-                          className="p-1 opacity-0 group-hover:opacity-100 hover:bg-primary/10 rounded transition-all"
-                          title="Edit account"
-                        >
-                          <Edit3 className="w-3 h-3 text-muted-foreground hover:text-primary" />
-                        </button>
+                        {!multiSelectMode && (
+                          <button
+                            onClick={(e) => handleEditAccount(account, e)}
+                            className="p-1 opacity-0 group-hover:opacity-100 hover:bg-primary/10 rounded transition-all"
+                            title="Edit account"
+                          >
+                            <Edit3 className="w-3 h-3 text-muted-foreground hover:text-primary" />
+                          </button>
+                        )}
                         
-                        {selectedAccountId === account.id && (
+                        {!multiSelectMode && selectedAccountId === account.id && (
                           <Check className="w-4 h-4 text-primary" />
                         )}
                       </div>
                     </motion.button>
 
-                    {hasFollowers && (
+                    {/* Hide group totals in multi-select mode */}
+                    {!multiSelectMode && hasFollowers && (
                       <motion.button
                         className={`w-full flex items-center gap-3 px-3 py-2.5 hover:bg-accent transition-colors group pl-6 ${
                           selectedAccountId === `group:${account.id}` ? 'bg-accent' : ''
@@ -370,17 +436,33 @@ export const AccountFilter: React.FC<AccountFilterProps> = ({ className, isMobil
                       Archived Accounts ({archivedAccounts.length})
                     </div>
                   </div>
-                  {archivedAccounts.map((account) => (
+                  {archivedAccounts.map((account) => {
+                    const isSelected = multiSelectMode 
+                      ? selectedAccountIds.includes(account.id)
+                      : selectedAccountId === account.id;
+                    
+                    return (
                     <motion.button
                       key={account.id}
                       className={`w-full flex items-center gap-3 px-3 py-2.5 hover:bg-accent transition-colors group opacity-60 ${
-                        selectedAccountId === account.id ? 'bg-accent' : ''
+                        isSelected ? 'bg-accent' : ''
                       }`}
-                      onClick={() => handleAccountSelect(account.id)}
+                      onClick={() => multiSelectMode ? toggleAccountInMultiSelect(account.id) : handleAccountSelect(account.id)}
                       whileHover={{ x: 2 }}
                       whileTap={{ scale: 0.98 }}
                     >
-                      <span className="text-sm">{getAccountIcon(account)}</span>
+                      {multiSelectMode ? (
+                        <div className={cn(
+                          "w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all",
+                          isSelected 
+                            ? "bg-primary border-primary" 
+                            : "border-border bg-background"
+                        )}>
+                          {isSelected && <Check className="w-3 h-3 text-primary-foreground" strokeWidth={3} />}
+                        </div>
+                      ) : (
+                        <span className="text-sm">{getAccountIcon(account)}</span>
+                      )}
                       <div className="flex-1 text-left">
                         <div className="text-sm font-medium text-popover-foreground flex items-center gap-1.5">
                           {account.name}
@@ -395,20 +477,23 @@ export const AccountFilter: React.FC<AccountFilterProps> = ({ className, isMobil
                       </div>
                       
                       <div className="flex items-center gap-2">
-                        <button
-                          onClick={(e) => handleEditAccount(account, e)}
-                          className="p-1 opacity-0 group-hover:opacity-100 hover:bg-primary/10 rounded transition-all"
-                          title="Edit account"
-                        >
-                          <Edit3 className="w-3 h-3 text-muted-foreground hover:text-primary" />
-                        </button>
+                        {!multiSelectMode && (
+                          <button
+                            onClick={(e) => handleEditAccount(account, e)}
+                            className="p-1 opacity-0 group-hover:opacity-100 hover:bg-primary/10 rounded transition-all"
+                            title="Edit account"
+                          >
+                            <Edit3 className="w-3 h-3 text-muted-foreground hover:text-primary" />
+                          </button>
+                        )}
                         
-                        {selectedAccountId === account.id && (
+                        {!multiSelectMode && selectedAccountId === account.id && (
                           <Check className="w-4 h-4 text-primary" />
                         )}
                       </div>
                     </motion.button>
-                  ))}
+                    );
+                  })}
                 </>
               )}
 
@@ -481,7 +566,19 @@ export const AccountFilter: React.FC<AccountFilterProps> = ({ className, isMobil
         whileHover={{ scale: 1.01 }}
         whileTap={{ scale: 0.99 }}
       >
-        {selectedAccount ? (
+        {multiSelectMode ? (
+          <div className="flex items-center gap-2 flex-1">
+            <CheckSquare className="w-4 h-4 text-primary" />
+            <div className="flex-1 text-left">
+              <div className="text-sm font-medium text-foreground">
+                {getMultiSelectDisplayText()}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Multi-select mode • {selectedAccountIds.length} selected
+              </div>
+            </div>
+          </div>
+        ) : selectedAccount ? (
           <div className="flex items-center gap-2 flex-1">
             <span className="text-sm">{getAccountIcon(selectedAccount)}</span>
             <div className="flex-1 text-left">
