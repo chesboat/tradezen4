@@ -298,11 +298,12 @@ export const getAccountIdsForSelection = (selectedId: string | null, includeArch
   
   // 🍎 APPLE ENHANCEMENT: Multi-select mode takes precedence
   if (multiSelectMode && selectedAccountIds.length > 0) {
-    // Return the explicitly selected account IDs
-    // Filter to ensure they still exist and match the archive filter
+    // In multi-select mode, the user explicitly chose these accounts
+    // So we include them regardless of archive status (they made the choice!)
+    // Only filter out deleted accounts
     return selectedAccountIds.filter(id => {
       const acc = accounts.find(a => a.id === id);
-      return acc && (includeArchived || filterFn(acc));
+      return acc && getAccountStatus(acc) !== 'deleted';
     });
   }
   
