@@ -290,6 +290,8 @@ export const filterRealAccounts = <T extends { accountId: string }>(items: T[]):
 };
 
 // Helper: resolve which account IDs are in scope for a given selection
+// NOTE: This function reads from the store, so components using it should depend on
+// both selectedAccountId AND the multi-select state for proper reactivity
 export const getAccountIdsForSelection = (selectedId: string | null, includeArchived: boolean = false): string[] => {
   const { accounts, multiSelectMode, selectedAccountIds } = useAccountFilterStore.getState();
   const filterFn = (a: TradingAccount) => includeArchived ? getAccountStatus(a) !== 'deleted' : isAccountActive(a);
@@ -325,6 +327,16 @@ export const getAccountIdsForSelection = (selectedId: string | null, includeArch
   // When explicitly selecting an individual account (even archived), always return it
   // This allows viewing historical data from archived accounts
   return single && getAccountStatus(single) !== 'deleted' ? [selectedId] : [];
+};
+
+// Helper to get a stable reference for dependency arrays
+// Returns a string that changes when the selection changes (for any mode)
+export const getAccountSelectionKey = (): string => {
+  const { selectedAccountId, multiSelectMode, selectedAccountIds } = useAccountFilterStore.getState();
+  if (multiSelectMode) {
+    return `multi:${selectedAccountIds.sort().join(',')}`;
+  }
+  return `single:${selectedAccountId || 'all'}`;
 };
 
 // Get the full group (leader first) for any account selection (single or group)

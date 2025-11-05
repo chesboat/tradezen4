@@ -50,7 +50,7 @@ interface CalendarViewProps {
 }
 
 export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
-  const { selectedAccountId, accounts } = useAccountFilterStore();
+  const { selectedAccountId, accounts, multiSelectMode, selectedAccountIds: storeSelectedAccountIds } = useAccountFilterStore();
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isWeeklyReviewOpen, setIsWeeklyReviewOpen] = useState(false);
   const [weeklyReviewWeek, setWeeklyReviewWeek] = useState<string | undefined>(undefined);
@@ -375,7 +375,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
       winRate,
       isOtherMonth,
     };
-  }, [trades, selectedAccountId, accounts, getNotesForDate, reflections, getInsightReflection, insightReflectionData]);
+  }, [trades, selectedAccountId, multiSelectMode, storeSelectedAccountIds, accounts, getNotesForDate, reflections, getInsightReflection, insightReflectionData]);
 
   // Calculate calendar data
   const calendarData = useMemo(() => {

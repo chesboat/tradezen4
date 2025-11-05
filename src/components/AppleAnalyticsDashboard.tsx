@@ -1758,7 +1758,7 @@ const WhatsNextCard: React.FC<{ trades: any[] }> = ({ trades }) => {
 
 export const AppleAnalyticsDashboard: React.FC = () => {
   const { trades, getFilteredByTier } = useTradeStore();
-  const { selectedAccountId } = useAccountFilterStore();
+  const { selectedAccountId, multiSelectMode, selectedAccountIds } = useAccountFilterStore();
   const { isExpanded: activityLogExpanded } = useActivityLogStore();
   const { isExpanded: todoExpanded } = useTodoStore();
   const { tier, isPremium } = useSubscription();
@@ -1793,6 +1793,8 @@ export const AppleAnalyticsDashboard: React.FC = () => {
     // Filter by account (handles grouped accounts correctly)
     const accountIds = getAccountIdsForSelection(selectedAccountId);
     console.log('📊 Analytics: selectedAccountId:', selectedAccountId);
+    console.log('📊 Analytics: multiSelectMode:', multiSelectMode);
+    console.log('📊 Analytics: selectedAccountIds:', selectedAccountIds);
     console.log('📊 Analytics: accountIds for selection:', accountIds);
     let filtered = tierFilteredTrades.filter(t => accountIds.includes(t.accountId));
     console.log('📊 Analytics: Tier-filtered trades:', tierFilteredTrades.length, '→ Account-filtered:', filtered.length);
@@ -1825,7 +1827,7 @@ export const AppleAnalyticsDashboard: React.FC = () => {
     }
 
     return filtered;
-  }, [tierFilteredTrades, selectedAccountId, selectedPeriod, symbolFilter, customStartDate, customEndDate, activeFilter, getFilteredTrades]);
+  }, [tierFilteredTrades, selectedAccountId, multiSelectMode, selectedAccountIds, selectedPeriod, symbolFilter, customStartDate, customEndDate, activeFilter, getFilteredTrades]);
 
   // Get comparison trades for "vs normal" analysis
   const comparisonTrades = React.useMemo(() => {

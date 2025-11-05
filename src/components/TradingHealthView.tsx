@@ -51,7 +51,7 @@ if (import.meta.env.DEV) {
 export const TradingHealthView: React.FC = () => {
   const { trades } = useTradeStore();
   const { profile: userProfile } = useUserProfileStore();
-  const { selectedAccountId, accounts } = useAccountFilterStore();
+  const { selectedAccountId, accounts, multiSelectMode, selectedAccountIds } = useAccountFilterStore();
   const { isPremium } = useSubscription();
 
   // Basic users get 7-day window, Premium gets 30/90-day
@@ -84,11 +84,13 @@ export const TradingHealthView: React.FC = () => {
   const filteredTrades = useMemo(() => {
     const accountIds = getAccountIdsForSelection(selectedAccountId);
     console.log('🏥 Trading Health: selectedAccountId:', selectedAccountId);
+    console.log('🏥 Trading Health: multiSelectMode:', multiSelectMode);
+    console.log('🏥 Trading Health: selectedAccountIds:', selectedAccountIds);
     console.log('🏥 Trading Health: accountIds for selection:', accountIds);
     const filtered = trades.filter(t => accountIds.includes(t.accountId));
     console.log('🏥 Trading Health: Total trades:', trades.length, '→ Filtered:', filtered.length);
     return filtered;
-  }, [trades, selectedAccountId]);
+  }, [trades, selectedAccountId, multiSelectMode, selectedAccountIds]);
 
   // Debug: Log trades data
   React.useEffect(() => {
