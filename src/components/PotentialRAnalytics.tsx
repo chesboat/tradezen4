@@ -16,6 +16,15 @@ export const PotentialRAnalytics: React.FC<PotentialRCardProps> = ({ trades }) =
     const winsWithPotentialR = trades.filter(
       t => t.result === 'win' && t.potentialR && t.potentialR > 0
     );
+    
+    // Debug logging
+    console.log('🎯 PotentialRAnalytics DEBUG:', {
+      totalTrades: trades.length,
+      winningTrades: trades.filter(t => t.result === 'win').length,
+      winsWithPotentialR: winsWithPotentialR.length,
+      tradesWithPotentialRField: trades.filter(t => t.potentialR !== undefined).length,
+      sampleTrades: trades.slice(0, 3).map(t => ({ id: t.id, result: t.result, potentialR: t.potentialR, riskRewardRatio: t.riskRewardRatio }))
+    });
 
     if (winsWithPotentialR.length === 0) {
       return null;
