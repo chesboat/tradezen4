@@ -13,9 +13,16 @@ export const PotentialRAnalytics: React.FC<PotentialRCardProps> = ({ trades }) =
   // Calculate potential R insights
   const analysis = useMemo(() => {
     // Only analyze winning trades with potentialR data
+    const isWinResult = (r?: string) => (r ?? '').toLowerCase() === 'win';
     const winsWithPotentialR = trades.filter(
-      t => t.result === 'win' && t.potentialR && t.potentialR > 0
+      t => isWinResult(t.result) && typeof t.potentialR === 'number' && t.potentialR > 0
     );
+    // Debug
+    console.debug('PotentialRAnalytics DEBUG', {
+      totalTrades: trades.length,
+      winTrades: trades.filter(t => isWinResult(t.result)).length,
+      withPotentialR: winsWithPotentialR.length,
+    });
     
     // Debug logging
     console.log('🎯 PotentialRAnalytics DEBUG:', {
@@ -34,7 +41,7 @@ export const PotentialRAnalytics: React.FC<PotentialRCardProps> = ({ trades }) =
     const targetGroups = new Map<number, { potentialRs: number[]; count: number; pnl: number[] }>();
 
     winsWithPotentialR.forEach(trade => {
-      const targetR = trade.riskRewardRatio;
+      const targetR = Number(trade.riskRewardRatio) || 0;
       const existing = targetGroups.get(targetR) || { potentialRs: [], count: 0, pnl: [] };
       existing.potentialRs.push(trade.potentialR!);
       existing.count++;
