@@ -23,6 +23,7 @@ import { TimeIntelligence } from './TimeIntelligence';
 import { UpgradeModal } from './UpgradeModal';
 import { hasFeature } from '@/lib/tierLimits';
 import { calculateTradingHealth } from '@/lib/tradingHealth/metricsEngine';
+import { PotentialRAnalytics } from './PotentialRAnalytics';
 
 // ===============================================
 // TYPES & UTILITIES
@@ -2048,6 +2049,9 @@ export const AppleAnalyticsDashboard: React.FC = () => {
 
         {/* Smart Insights */}
         <SmartInsightsCard trades={filteredTrades} />
+
+        {/* Potential R Analysis */}
+        <PotentialRAnalytics trades={filteredTrades} />
 
         {/* Setup Analytics (Premium) */}
         <SetupAnalytics 
