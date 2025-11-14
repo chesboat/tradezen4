@@ -119,6 +119,8 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
   const [editingExitId, setEditingExitId] = useState<string | null>(null);
   const [editingExitValue, setEditingExitValue] = useState<string>('');
   const [editingTagsId, setEditingTagsId] = useState<string | null>(null);
+  const [editingPotentialRId, setEditingPotentialRId] = useState<string | null>(null);
+  const [editingPotentialRValue, setEditingPotentialRValue] = useState<string>('');
   const [quickFilter, setQuickFilter] = useState<'all' | 'today' | 'week' | 'winners' | 'losers' | 'marked'>('all');
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [swipedTradeId, setSwipedTradeId] = useState<string | null>(null);
@@ -380,6 +382,30 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
   const handleTagsSave = async (tradeId: string, newTags: string[]) => {
     await updateTrade(tradeId, { tags: newTags });
     setEditingTagsId(null);
+  };
+
+  // Potential R handlers (Apple-style)
+  const handlePotentialRClick = (trade: Trade) => {
+    setEditingPotentialRId(trade.id);
+    setEditingPotentialRValue(trade.potentialR?.toString() || '');
+  };
+
+  const handlePotentialRSave = async (tradeId: string) => {
+    const newPotentialR = parseFloat(editingPotentialRValue);
+    if (!isNaN(newPotentialR) && newPotentialR > 0) {
+      await updateTrade(tradeId, { potentialR: newPotentialR });
+    }
+    setEditingPotentialRId(null);
+    setEditingPotentialRValue('');
+  };
+
+  const handlePotentialRKeyDown = (e: React.KeyboardEvent, tradeId: string) => {
+    if (e.key === 'Enter') {
+      handlePotentialRSave(tradeId);
+    } else if (e.key === 'Escape') {
+      setEditingPotentialRId(null);
+      setEditingPotentialRValue('');
+    }
   };
 
   const toggleTagFilter = (tag: string) => {
@@ -1474,6 +1500,23 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                                 {trade.markedForReview ? 'Unmark for Review' : 'Mark for Review'}
                               </span>
                             </button>
+                            {trade.result === 'win' && (
+                              <>
+                                <div className="h-px bg-border my-1" />
+                                <button
+                                  onClick={() => {
+                                    handlePotentialRClick(trade);
+                                    setOpenMenuId(null);
+                                  }}
+                                  className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-muted/50 transition-colors text-left"
+                                >
+                                  <Target className="w-4 h-4 text-blue-500" />
+                                  <span className="text-sm">
+                                    {trade.potentialR ? `Potential R: ${trade.potentialR.toFixed(2)}` : 'Add Potential R'}
+                                  </span>
+                                </button>
+                              </>
+                            )}
                             <div className="h-px bg-border my-1" />
                             <button
                               onClick={() => {
@@ -1767,6 +1810,82 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
           </button>
         </div>
       )}
+
+      {/* Potential R Input Modal (Apple-style) */}
+      <AnimatePresence>
+        {editingPotentialRId && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/20 flex items-center justify-center p-4"
+            onClick={() => {
+              setEditingPotentialRId(null);
+              setEditingPotentialRValue('');
+            }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-card border border-border rounded-2xl shadow-xl p-6 w-full max-w-sm"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="text-xl font-semibold mb-4 text-foreground">Potential R Reached</h2>
+              <p className="text-sm text-muted-foreground mb-4">
+                How far did price actually run past your target? Enter the R value it reached.
+              </p>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Price ran to: <span className="text-muted-foreground">R</span>
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      value={editingPotentialRValue}
+                      onChange={(e) => setEditingPotentialRValue(e.target.value)}
+                      onKeyDown={(e) => handlePotentialRKeyDown(e, editingPotentialRId)}
+                      placeholder="e.g. 1.2"
+                      className="flex-1 px-3 py-2 bg-muted/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      autoFocus
+                    />
+                    <span className="text-muted-foreground font-medium">R</span>
+                  </div>
+                </div>
+
+                <div className="bg-muted/30 rounded-lg p-3">
+                  <p className="text-xs text-muted-foreground">
+                    💡 <span className="font-medium">Example:</span> If you targeted 0.75R but price ran to 1.5R, enter <span className="text-foreground">1.5</span>
+                  </p>
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <button
+                    onClick={() => {
+                      setEditingPotentialRId(null);
+                      setEditingPotentialRValue('');
+                    }}
+                    className="flex-1 px-4 py-2 bg-muted/50 hover:bg-muted/70 text-foreground rounded-lg transition-colors font-medium text-sm"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => handlePotentialRSave(editingPotentialRId)}
+                    disabled={!editingPotentialRValue || isNaN(parseFloat(editingPotentialRValue))}
+                    className="flex-1 px-4 py-2 bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground rounded-lg transition-colors font-medium text-sm"
+                  >
+                    Save
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Image Import Modal */}
       <AnimatePresence>

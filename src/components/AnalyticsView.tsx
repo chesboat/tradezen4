@@ -34,6 +34,7 @@ import EdgeScoreExplanationModal from './EdgeScoreExplanationModal';
 import { useAnalyticsTilesStore } from '@/store/useAnalyticsTilesStore';
 import AnalyticsTilesModal from './AnalyticsTilesModal';
 import { Tooltip } from './ui/Tooltip';
+import { PotentialRAnalytics } from './PotentialRAnalytics';
 
 interface PeriodFilter {
   label: string;
@@ -754,6 +755,9 @@ export const AnalyticsView: React.FC = () => {
       </div>
 
       {/* Removed secondary Performance Overview chart per request */}
+
+      {/* Potential R Analysis Card */}
+      <PotentialRAnalytics trades={filteredTrades} />
 
       {/* Detailed Metrics Grid */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">

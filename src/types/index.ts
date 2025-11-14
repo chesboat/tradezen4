@@ -46,6 +46,8 @@ export interface Trade extends FirestoreDocument {
   reviewTags?: string[];
   reviewedAt?: string | Date;
   reviewImages?: string[]; // Chart screenshots/annotations
+  // Potential R tracking (how far price actually ran past target)
+  potentialR?: number; // Actual R value that price reached (for wins only)
 }
 
 export interface QuickNote extends FirestoreDocument {
