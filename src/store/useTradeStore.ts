@@ -212,11 +212,69 @@ export const useTradeStore = create<TradeState>((set, get) => ({
     }
   },
 
-  // Delete trade
-  deleteTrade: async (id: string) => {
+  // Delete trade (with cascade to linked accounts)
+  deleteTrade: async (id: string, cascadeToLinked: boolean = true) => {
     try {
-      await tradeService.delete(id);
       const currentTrades = get().trades;
+      const tradeToDelete = currentTrades.find(t => t.id === id);
+      
+      if (!tradeToDelete) {
+        console.warn('Trade not found for deletion:', id);
+        return;
+      }
+      
+      // Delete the main trade
+      await tradeService.delete(id);
+      
+      // Cascade to linked accounts if enabled
+      if (cascadeToLinked) {
+        try {
+          const { accounts } = (await import('./useAccountFilterStore')).useAccountFilterStore.getState();
+          const sourceAccount = accounts.find(a => a.id === tradeToDelete.accountId);
+          
+          // Get all related account IDs (linked accounts + parent if this is a linked account)
+          let relatedAccountIds: string[] = [];
+          
+          // If source account has linked accounts
+          if (sourceAccount?.linkedAccountIds?.length) {
+            relatedAccountIds = [...sourceAccount.linkedAccountIds];
+          }
+          
+          // Also check if this account IS a linked account of another
+          const parentAccount = accounts.find(a => a.linkedAccountIds?.includes(tradeToDelete.accountId));
+          if (parentAccount) {
+            relatedAccountIds.push(parentAccount.id);
+            // Also add other linked accounts of the parent
+            parentAccount.linkedAccountIds?.forEach(lid => {
+              if (lid !== tradeToDelete.accountId && !relatedAccountIds.includes(lid)) {
+                relatedAccountIds.push(lid);
+              }
+            });
+          }
+          
+          if (relatedAccountIds.length > 0) {
+            // Find matching trades in linked accounts (same symbol, same entry time within 1 minute)
+            const tradeEntryTime = new Date(tradeToDelete.entryTime).getTime();
+            const matchingTrades = currentTrades.filter(t => 
+              t.id !== id && // Not the one we're already deleting
+              relatedAccountIds.includes(t.accountId) &&
+              t.symbol === tradeToDelete.symbol &&
+              Math.abs(new Date(t.entryTime).getTime() - tradeEntryTime) < 60000 // Within 1 minute
+            );
+            
+            if (matchingTrades.length > 0) {
+              console.log('🔗 Cascading delete to', matchingTrades.length, 'linked trades');
+              await Promise.all(matchingTrades.map(t => tradeService.delete(t.id)));
+            }
+          }
+        } catch (cascadeError) {
+          console.warn('Failed to cascade delete to linked accounts:', cascadeError);
+          // Don't throw - the main trade was deleted successfully
+        }
+      }
+      
+      // Let the realtime listener update the state
+      // But also update locally for immediate feedback
       const updatedTrades = currentTrades.filter(trade => trade.id !== id);
       set({ trades: updatedTrades });
     } catch (error) {

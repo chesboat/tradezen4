@@ -91,54 +91,61 @@ export const TradeImageImport: React.FC<TradeImageImportProps> = ({ isOpen, onCl
 
     try {
       const systemPrompt = `You are a precise data extraction engine for trading platform screenshots.
-You specialize in extracting trade data from prop trading platforms like Topstep, Apex, and similar.
+You specialize in extracting trade data from prop trading platforms like Topstep, Apex, ProjectX, and similar.
 
 Return ONLY valid JSON with this exact schema:
 {
   "date": string | null,           // Trading date EXACTLY as shown (e.g., "01/17/2025" or "January 17, 2025")
   "trades": [
     {
-      "symbol": string,            // e.g., "MES", "NQ", "ES", "MNQ"
+      "symbol": string,            // e.g., "MES", "NQ", "ES", "MNQ", "MESZ4", "NQZ4"
       "direction": "long" | "short",
-      "quantity": number | null,   // Number of contracts
+      "quantity": number | null,   // Number of contracts (usually 1-10 for prop trading)
       "entryTime": string | null,  // Time EXACTLY as shown (e.g., "9:32:15 AM" or "14:30:00")
-      "exitTime": string | null,   // Time EXACTLY as shown
-      "entryPrice": number | null, // Entry price as decimal
-      "exitPrice": number | null,  // Exit price as decimal
-      "pnl": number | null,        // Net P&L (positive or negative number)
+      "exitTime": string | null,   // Time EXACTLY as shown  
+      "entryPrice": number | null, // Entry/fill price - usually 4-5 digits with decimals (e.g., 5892.25)
+      "exitPrice": number | null,  // Exit price - usually 4-5 digits with decimals
+      "pnl": number | null,        // Net P&L - CRITICAL: check sign carefully!
       "fees": number | null,
       "commissions": number | null
     }
   ]
 }
 
-CRITICAL RULES:
+CRITICAL P&L RULES (most common error source):
+- P&L shown in GREEN or with + sign = POSITIVE number
+- P&L shown in RED, with - sign, or in parentheses () = NEGATIVE number
+- Look at the actual text color! Red text = loss = negative
+- "$50.00" in green = 50, "$50.00" in red = -50
+- "(50.00)" always means -50 (accounting notation for negative)
+- Check for a separate "Net P&L" or "Realized P&L" column - that's the final number
+
+OTHER RULES:
 1. Extract ALL visible trades from the table - don't skip any rows
-2. For direction: "Buy" or "Long" = "long", "Sell" or "Short" = "short"
-3. Numbers must be plain decimals (remove $ signs, commas)
-4. Negative P&L: if shown in red, with minus sign, or in parentheses like (50.00), make it negative
-5. If a value is blank/missing, use null
-6. DATES: Copy the date EXACTLY as displayed in the screenshot - do NOT convert to ISO format
-7. TIMES: Copy times EXACTLY as shown (include AM/PM if visible)
-8. Topstep/ProjectX tables show: Symbol, Side, Qty, Fill Price, P&L
-9. Look for dates in page headers, filter bars, or column headers`;
+2. For direction: "Buy" or "Long" = "long", "Sell" or "Short" = "short"  
+3. Numbers: remove $ signs, commas. Keep decimal places.
+4. DATES: Copy EXACTLY as shown - do NOT convert formats
+5. TIMES: Copy EXACTLY with AM/PM if visible
+6. Common futures: MES, ES, NQ, MNQ, RTY, YM (with possible month codes like Z4, H5)
+7. Topstep/ProjectX P&L column is usually the rightmost number column`;
 
-      const userText = `Extract ALL trades from this trading platform screenshot.
+      const userText = `Extract ALL trades from this Topstep/ProjectX trading screenshot.
 
-IMPORTANT: Look carefully for the DATE shown in the screenshot:
-- Check the page header, title bar, or date filter/selector
-- Common formats: "01/17/2025", "January 17, 2025", "Fri Jan 17"
-- Copy the date EXACTLY as shown - this is critical for accuracy
+CRITICAL CHECKS:
+1. DATE: Find the date in headers, filter bar, or title. Copy EXACTLY as shown.
+2. P&L SIGN: Look at the COLOR of the P&L numbers!
+   - Green text or + sign = positive profit
+   - Red text, - sign, or parentheses = negative loss
+   This is the #1 source of errors - double-check each P&L sign.
 
-Common column names to look for:
-- Symbol/Instrument: MES, NQ, ES, MNQ, etc.
-- Side/Direction: Buy/Long or Sell/Short  
-- Qty/Quantity/Contracts: number of contracts
-- Entry/Fill Price, Exit Price
-- P&L/Profit/Net: the profit or loss amount (negative if red or in parentheses)
-- Time/Timestamp: when the trade occurred (copy exactly with AM/PM)
+Column mapping (Topstep/ProjectX):
+- Symbol: MES, NQ, ES, MNQ (may have month codes like Z4)
+- Side: Buy = long, Sell = short
+- Qty: Number of contracts (1-10 typically)
+- Fill Price / Avg Price: Entry price (4-5 digit number like 5892.25)
+- P&L / Net P&L / Realized: The profit/loss amount - CHECK THE COLOR
 
-Return valid JSON only. Extract EVERY trade row visible - don't skip any.`;
+Extract every visible trade row. Return valid JSON only.`;
 
       const response = await authenticatedFetch('/api/parse-trade-image', {
         method: 'POST',

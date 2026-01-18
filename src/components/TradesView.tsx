@@ -30,7 +30,8 @@ import {
   Archive,
   MoreVertical,
   Star,
-  Hash
+  Hash,
+  CheckSquare
 } from 'lucide-react';
 import { InlineTradeEntry, InlineEntryTrigger } from './InlineTradeEntry';
 import { useTradeStore } from '@/store/useTradeStore';
@@ -786,6 +787,24 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
           {/* Quick add trigger - spreadsheet style */}
           <InlineEntryTrigger onClick={() => setShowInlineEntry(true)} />
+          
+          {/* Select mode toggle */}
+          <button
+            onClick={() => {
+              setSelectionMode(!selectionMode);
+              if (selectionMode) setSelectedTrades(new Set());
+            }}
+            className={cn(
+              "flex items-center gap-2 px-3 py-2 rounded-lg transition-colors",
+              selectionMode 
+                ? "bg-primary text-primary-foreground" 
+                : "bg-muted/50 hover:bg-muted/70"
+            )}
+            title="Select multiple trades for bulk actions"
+          >
+            <CheckSquare className="w-4 h-4" />
+            <span className="hidden sm:inline">{selectionMode ? 'Cancel' : 'Select'}</span>
+          </button>
           
           {/* Mobile: Hide view mode toggle on small screens, default to cards */}
           <button
