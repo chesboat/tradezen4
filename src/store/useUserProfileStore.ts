@@ -45,7 +45,12 @@ export interface UserProfile {
     theme: 'light' | 'dark' | 'system';
     notifications: boolean;
     autoBackup: boolean;
-    accentColor?: 'blue' | 'purple' | 'green' | 'orange' | 'red' | 'pink' | 'mono';
+    accentColor?: 'blue' | 'indigo' | 'purple' | 'green' | 'orange' | 'red' | 'pink' | 'mono';
+    styleTheme?: 'default' | 'botanical';
+    customColors?: {
+      background: string | null;
+      accent: string | null;
+    };
   };
   stats: {
     totalTrades: number;
@@ -533,6 +538,12 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
         };
         if (profile.preferences.accentColor) {
           prefs.accentColor = profile.preferences.accentColor;
+        }
+        if (profile.preferences.styleTheme) {
+          prefs.styleTheme = profile.preferences.styleTheme;
+        }
+        if (profile.preferences.customColors) {
+          prefs.customColors = profile.preferences.customColors;
         }
         dataToWrite.preferences = prefs;
       }

@@ -18,12 +18,14 @@ import {
   Camera,
   X as CloseIcon,
   Image as ImageIcon,
-  Maximize2
+  Maximize2,
+  Plus
 } from 'lucide-react';
 import { PublicShareDialog } from './PublicShareDialog';
 import { ReflectionHub } from './ReflectionHub';
 import { ImageUpload } from './ImageUpload';
 import { NoteContent } from './NoteContent';
+import { InlineTradeEntry } from './InlineTradeEntry';
 import { useTradeStore } from '@/store/useTradeStore';
 import { useQuickNoteStore } from '@/store/useQuickNoteStore';
 import { useAccountFilterStore, getAccountIdsForSelection } from '@/store/useAccountFilterStore';
@@ -57,6 +59,7 @@ export const DayDetailModalApple: React.FC<DayDetailModalAppleProps> = ({
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [allTradesExpanded, setAllTradesExpanded] = useState(false);
   const [viewMode, setViewMode] = useState<'workflow' | 'story'>('workflow');
+  const [showInlineTradeEntry, setShowInlineTradeEntry] = useState(false);
 
   // Filter trades and notes for this day (with proper grouped account support)
   const dayTrades = useMemo(() => {
@@ -410,7 +413,42 @@ export const DayDetailModalApple: React.FC<DayDetailModalAppleProps> = ({
                       <div className="text-xs text-muted-foreground mt-1">Trades</div>
                     </div>
                   </div>
+                  
+                  {/* Add Trade Button - Always Visible */}
+                  {!showInlineTradeEntry && (
+                    <motion.button
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      onClick={() => setShowInlineTradeEntry(true)}
+                      className="w-full mt-3 py-2.5 px-4 rounded-xl border border-dashed border-primary/40 hover:border-primary hover:bg-primary/5 transition-all flex items-center justify-center gap-2 group"
+                    >
+                      <Plus className="w-4 h-4 text-primary" />
+                      <span className="text-sm font-medium text-primary">Add Trade</span>
+                    </motion.button>
+                  )}
                 </motion.div>
+
+                {/* Inline Trade Entry */}
+                <AnimatePresence>
+                  {showInlineTradeEntry && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.2 }}
+                      className="rounded-xl border border-border overflow-visible"
+                    >
+                      <InlineTradeEntry
+                        onClose={() => setShowInlineTradeEntry(false)}
+                        onSuccess={() => {
+                          // Keep the entry open for rapid logging
+                          // The trade will appear in dayTrades via the store update
+                        }}
+                        defaultDate={dateString}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 {/* Daily Reflection - The Story */}
                 <motion.div

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Search, 
@@ -32,6 +32,7 @@ import {
   Star,
   Hash
 } from 'lucide-react';
+import { InlineTradeEntry, InlineEntryTrigger } from './InlineTradeEntry';
 import { useTradeStore } from '@/store/useTradeStore';
 import TradeImageImport from '@/components/TradeImageImport';
 import { useAccountFilterStore, getAccountIdsForSelection } from '@/store/useAccountFilterStore';
@@ -126,10 +127,30 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
   const [swipedTradeId, setSwipedTradeId] = useState<string | null>(null);
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
   const [selectionMode, setSelectionMode] = useState(false);
+  const [showInlineEntry, setShowInlineEntry] = useState(false);
   
   // Tag filters
   const [selectedTagFilters, setSelectedTagFilters] = useState<Set<string>>(new Set());
   const { getAllTags } = useTagStore();
+
+  // Keyboard shortcut for inline entry (N key)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if user is typing in an input/textarea
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+      
+      // N key opens inline entry
+      if (e.key === 'n' || e.key === 'N') {
+        e.preventDefault();
+        setShowInlineEntry(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Reset to page 1 and update filter when account changes
   React.useEffect(() => {
@@ -763,6 +784,9 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
           </p>
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+          {/* Quick add trigger - spreadsheet style */}
+          <InlineEntryTrigger onClick={() => setShowInlineEntry(true)} />
+          
           {/* Mobile: Hide view mode toggle on small screens, default to cards */}
           <button
             onClick={() => setViewMode(viewMode === 'table' ? 'cards' : 'table')}
@@ -776,7 +800,7 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
             className="flex items-center justify-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors"
           >
             <Plus className="w-4 h-4" />
-            Add Trade
+            Full Entry
           </button>
           <button
             onClick={() => setShowImageImport(true)}
@@ -1110,6 +1134,21 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
         )}
       </AnimatePresence>
 
+      {/* Inline Trade Entry - Spreadsheet style */}
+      <AnimatePresence>
+        {showInlineEntry && (
+          <div className="bg-card rounded-lg border overflow-hidden">
+            <InlineTradeEntry 
+              onClose={() => setShowInlineEntry(false)}
+              onSuccess={() => {
+                // Keep inline entry open for rapid entry
+                // User can press Escape when done
+              }}
+            />
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* Trades Table/Cards */}
       {viewMode === 'table' ? (
         <div className="bg-muted/30 rounded-lg overflow-hidden">
@@ -1403,7 +1442,7 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                         />
                       ) : (
                         <span className="cursor-pointer hover:text-primary transition-colors" title="Tap to edit">
-                          {trade.riskRewardRatio.toFixed(2)}
+                          {(trade.riskRewardRatio ?? 0).toFixed(2)}
                         </span>
                       )}
                     </td>
@@ -1664,7 +1703,7 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                     />
                   ) : (
                     <span className="ml-2 cursor-pointer active:text-primary transition-colors">
-                      {trade.riskRewardRatio.toFixed(2)}
+                      {(trade.riskRewardRatio ?? 0).toFixed(2)}
                     </span>
                   )}
                 </div>

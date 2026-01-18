@@ -90,29 +90,49 @@ export const TradeImageImport: React.FC<TradeImageImportProps> = ({ isOpen, onCl
     setParsedTrades([]);
 
     try {
-      const systemPrompt = `You are a precise data extraction engine for trading tables.
-Return ONLY valid JSON with the schema:
+      const systemPrompt = `You are a precise data extraction engine for trading platform screenshots.
+You specialize in extracting trade data from prop trading platforms like Topstep, Apex, and similar.
+
+Return ONLY valid JSON with this exact schema:
 {
-  "date": string?,                 // ISO date if visible (e.g., 2025-08-07)
-  "timezoneOffsetMinutes": number?,
+  "date": string | null,           // Trading date if visible (ISO format: "2025-01-18")
+  "timezoneOffsetMinutes": number | null,
   "trades": [
     {
-      "symbol": string,
-      "direction": "long"|"short",
-      "quantity": number?,
-      "entryTime": string?,
-      "exitTime": string?,
-      "entryPrice": number?,
-      "exitPrice": number?,
-      "pnl": number?,
-      "fees": number?,
-      "commissions": number?
+      "symbol": string,            // e.g., "MES", "NQ", "ES", "MNQ"
+      "direction": "long" | "short",
+      "quantity": number | null,   // Number of contracts
+      "entryTime": string | null,  // Time of entry
+      "exitTime": string | null,   // Time of exit
+      "entryPrice": number | null, // Entry price
+      "exitPrice": number | null,  // Exit price  
+      "pnl": number | null,        // Profit/loss (positive or negative number)
+      "fees": number | null,
+      "commissions": number | null
     }
   ]
 }
-Rules:\n- Use data exactly as shown in the screenshot.\n- Numbers should be plain (no $ or commas).\n- Direction should be long or short.\n- If a cell is blank or ambiguous, omit that field.`;
 
-      const userText = `Extract trades visible in this screenshot. The columns often include: Symbol, Side/Direction, Quantity, Entry Time, Exit Time, Entry Price, Exit Price, P&L, Fees/Commissions. Only return JSON.`;
+CRITICAL RULES:
+- Extract ALL visible trades from the table
+- For direction: "Buy" or "Long" = "long", "Sell" or "Short" = "short"
+- Numbers must be plain (remove $ signs, commas, parentheses)
+- Negative P&L: if shown in red, with minus, or in parentheses like (50.00), make it negative
+- If a value is blank/missing, use null
+- Topstep/ProjectX tables often show: Symbol, Side, Qty, Fill Price, P&L columns
+- Look for dates in headers or row data`;
+
+      const userText = `Extract ALL trades from this trading platform screenshot.
+
+Common column names to look for:
+- Symbol/Instrument: MES, NQ, ES, MNQ, etc.
+- Side/Direction: Buy/Long or Sell/Short
+- Qty/Quantity/Contracts: number of contracts
+- Entry/Fill Price, Exit Price
+- P&L/Profit/Net: the profit or loss amount
+- Time/Timestamp: when the trade occurred
+
+Return valid JSON only. Extract every trade row you can see.`;
 
       const response = await authenticatedFetch('/api/parse-trade-image', {
         method: 'POST',
@@ -120,7 +140,7 @@ Rules:\n- Use data exactly as shown in the screenshot.\n- Numbers should be plai
           dataUrl,
           systemPrompt,
           userText,
-          model: 'gpt-4o-mini',
+          model: 'gpt-4o', // Use full GPT-4o for better vision parsing
         }),
       });
 
@@ -386,11 +406,21 @@ Rules:\n- Use data exactly as shown in the screenshot.\n- Numbers should be plai
       setParsedBaseDate(baseDate);
       setParsedTrades(normalized);
       if (!normalized || normalized.length === 0) {
-        setParseError('No trades recognized. Try cropping to the table area and re-upload.');
+        setParseError('No trades found in image. Tips:\n• Make sure the trade table is clearly visible\n• Crop to just the table area for best results\n• Ensure columns like Symbol, Side, P&L are visible');
       }
     } catch (err: any) {
       console.error('Image parsing failed:', err);
-      setParseError(err?.message || 'Failed to parse screenshot');
+      const errorMsg = err?.message || 'Failed to parse screenshot';
+      // Provide more helpful error messages
+      if (errorMsg.includes('rate limit') || errorMsg.includes('429')) {
+        setParseError('Rate limit reached. Please wait a moment and try again.');
+      } else if (errorMsg.includes('401') || errorMsg.includes('auth')) {
+        setParseError('Authentication error. Please refresh the page and try again.');
+      } else if (errorMsg.includes('Empty')) {
+        setParseError('Could not read the image. Try a clearer screenshot with the trade table visible.');
+      } else {
+        setParseError(`Parsing failed: ${errorMsg}\n\nTips: Try cropping to just the trade table.`);
+      }
     } finally {
       setIsParsing(false);
     }

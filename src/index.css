@@ -211,7 +211,95 @@
   
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-primary, -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", Inter, system-ui, sans-serif);
     font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* 
+   * BOTANICAL / MINIMAL STYLE THEME
+   * Inspired by bullet journal aesthetics
+   * - JetBrains Mono font
+   * - Light grey paper background (#d3d3d3)
+   * - Deep indigo accent (#170895)
+   * - Dot grid patterns
+   */
+  .style-botanical {
+    /* Light grey paper background - #d3d3d3 */
+    --background: 0 0% 83%;
+    --foreground: 247 90% 20%;
+    
+    /* Cards - slightly lighter than background */
+    --card: 0 0% 88%;
+    --card-foreground: 247 90% 20%;
+    
+    /* Popovers and modals */
+    --popover: 0 0% 90%;
+    --popover-foreground: 247 90% 20%;
+    
+    /* Deep indigo primary - #170895 */
+    --primary: 247 90% 31%;
+    --primary-foreground: 0 0% 100%;
+    
+    /* Secondary surfaces */
+    --secondary: 0 0% 78%;
+    --secondary-foreground: 247 90% 20%;
+    
+    /* Muted elements */
+    --muted: 0 0% 75%;
+    --muted-foreground: 247 30% 40%;
+    
+    /* Accent/hover states */
+    --accent: 0 0% 78%;
+    --accent-foreground: 247 90% 20%;
+    
+    /* Destructive */
+    --destructive: 0 84% 50%;
+    --destructive-foreground: 0 0% 100%;
+    
+    /* Borders - subtle grey */
+    --border: 0 0% 72%;
+    --input: 0 0% 72%;
+    --ring: 247 90% 31%;
+  }
+
+  /* Botanical Dark Mode - Deep indigo-tinged dark */
+  .style-botanical.dark {
+    /* Deep charcoal with slight blue tint */
+    --background: 247 15% 8%;
+    --foreground: 0 0% 85%;
+    
+    /* Cards - elevated surfaces */
+    --card: 247 12% 12%;
+    --card-foreground: 0 0% 85%;
+    
+    /* Popovers */
+    --popover: 247 12% 14%;
+    --popover-foreground: 0 0% 85%;
+    
+    /* Indigo accent - brighter for dark mode visibility */
+    --primary: 247 85% 55%;
+    --primary-foreground: 0 0% 100%;
+    
+    /* Secondary */
+    --secondary: 247 10% 16%;
+    --secondary-foreground: 0 0% 85%;
+    
+    /* Muted */
+    --muted: 247 10% 18%;
+    --muted-foreground: 0 0% 50%;
+    
+    /* Accent */
+    --accent: 247 10% 18%;
+    --accent-foreground: 0 0% 85%;
+    
+    /* Destructive */
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 0 0% 100%;
+    
+    /* Borders */
+    --border: 247 10% 22%;
+    --input: 247 10% 22%;
+    --ring: 247 85% 55%;
   }
 }
 
@@ -264,6 +352,227 @@
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+  
+  /* ========================================
+   * BOTANICAL / MINIMAL THEME UTILITIES
+   * Clean, focused, bullet-journal aesthetic
+   * ======================================== */
+  
+  /* Dot grid pattern - bullet journal style */
+  .style-botanical .botanical-dots {
+    background-image: radial-gradient(circle, hsl(var(--primary) / 0.25) 1.5px, transparent 1.5px);
+    background-size: 24px 24px;
+  }
+  
+  .style-botanical.dark .botanical-dots {
+    background-image: radial-gradient(circle, hsl(var(--primary) / 0.15) 1.5px, transparent 1.5px);
+    background-size: 24px 24px;
+  }
+  
+  /* Auto dot grid on main content - using pseudo-element overlay */
+  .style-botanical main {
+    position: relative;
+  }
+  
+  .style-botanical main::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: radial-gradient(circle, hsl(var(--primary) / 0.12) 1px, transparent 1px);
+    background-size: 20px 20px;
+    pointer-events: none;
+    z-index: 0;
+  }
+  
+  .style-botanical main > * {
+    position: relative;
+    z-index: 1;
+  }
+  
+  .style-botanical.dark main::before {
+    background-image: radial-gradient(circle, hsl(var(--primary) / 0.06) 1px, transparent 1px);
+  }
+  
+  /* Typography - monospace everywhere */
+  .style-botanical * {
+    font-family: var(--font-primary) !important;
+    letter-spacing: -0.01em;
+  }
+  
+  /* Tighter line heights for that handwritten feel */
+  .style-botanical h1, 
+  .style-botanical h2, 
+  .style-botanical h3 {
+    letter-spacing: -0.02em;
+    font-weight: 600;
+  }
+  
+  /* Smaller, subtler section headers */
+  .style-botanical .text-xs.uppercase {
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    opacity: 0.7;
+  }
+  
+  /* ========================================
+   * CARDS & CONTAINERS - Paper-like feel
+   * ======================================== */
+  
+  /* Softer rounded corners */
+  .style-botanical .rounded-xl {
+    border-radius: 0.375rem;
+  }
+  
+  .style-botanical .rounded-2xl {
+    border-radius: 0.5rem;
+  }
+  
+  .style-botanical .rounded-lg {
+    border-radius: 0.25rem;
+  }
+  
+  /* Thinner, softer borders */
+  .style-botanical .border {
+    border-width: 1px;
+    border-color: hsl(var(--border) / 0.6);
+  }
+  
+  /* Cards: no shadow, just subtle border */
+  .style-botanical .bg-card {
+    box-shadow: none;
+    border: 1px solid hsl(var(--border) / 0.5);
+  }
+  
+  /* Hover states - very subtle */
+  .style-botanical .hover\:bg-accent:hover {
+    background-color: hsl(var(--accent) / 0.4);
+  }
+  
+  .style-botanical .hover\:bg-muted\/30:hover {
+    background-color: hsl(var(--muted) / 0.2);
+  }
+  
+  /* ========================================
+   * TABLES & LISTS - Cleaner lines
+   * ======================================== */
+  
+  /* Table rows - thinner dividers */
+  .style-botanical .divide-y > * {
+    border-color: hsl(var(--border) / 0.4);
+  }
+  
+  .style-botanical table th,
+  .style-botanical table td {
+    border-color: hsl(var(--border) / 0.3);
+    padding-top: 0.625rem;
+    padding-bottom: 0.625rem;
+  }
+  
+  /* Table headers - understated */
+  .style-botanical table th {
+    font-weight: 500;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: hsl(var(--muted-foreground));
+  }
+  
+  /* ========================================
+   * BUTTONS & INTERACTIVE - Minimal style
+   * ======================================== */
+  
+  /* Primary buttons - flat, no gradient */
+  .style-botanical .bg-primary {
+    background: hsl(var(--primary));
+    box-shadow: none;
+  }
+  
+  .style-botanical .bg-primary:hover {
+    filter: brightness(1.1);
+  }
+  
+  /* Secondary buttons - ghost style */
+  .style-botanical button:not(.bg-primary):not(.bg-destructive) {
+    box-shadow: none;
+  }
+  
+  /* ========================================
+   * BADGES & TAGS - Subtle indicators
+   * ======================================== */
+  
+  .style-botanical .rounded-full[class*="bg-"] {
+    font-size: 0.7rem;
+    padding: 0.125rem 0.5rem;
+    font-weight: 500;
+  }
+  
+  /* Win/Loss colors - muted versions */
+  .style-botanical .text-green-500 {
+    color: hsl(142 60% 35%);
+  }
+  
+  .style-botanical .text-red-500 {
+    color: hsl(0 65% 45%);
+  }
+  
+  .style-botanical.dark .text-green-500 {
+    color: hsl(142 50% 55%);
+  }
+  
+  .style-botanical.dark .text-red-500 {
+    color: hsl(0 55% 60%);
+  }
+  
+  /* ========================================
+   * SIDEBAR - Cleaner navigation
+   * ======================================== */
+  
+  .style-botanical aside {
+    border-right-color: hsl(var(--border) / 0.4);
+  }
+  
+  .style-botanical aside .border-b {
+    border-color: hsl(var(--border) / 0.3);
+  }
+  
+  /* ========================================
+   * MODALS & SHEETS - Paper aesthetic
+   * ======================================== */
+  
+  .style-botanical [role="dialog"] {
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 20px hsl(var(--foreground) / 0.1);
+  }
+  
+  /* ========================================
+   * INPUTS - Clean underline style feel
+   * ======================================== */
+  
+  .style-botanical input,
+  .style-botanical textarea,
+  .style-botanical select {
+    border-radius: 0.25rem;
+    border-color: hsl(var(--border) / 0.6);
+  }
+  
+  .style-botanical input:focus,
+  .style-botanical textarea:focus,
+  .style-botanical select:focus {
+    border-color: hsl(var(--primary));
+    box-shadow: none;
+    outline: none;
+  }
+  
+  /* ========================================
+   * EMPTY STATES - Handwritten feel
+   * ======================================== */
+  
+  .style-botanical .text-muted-foreground {
+    opacity: 0.8;
   }
   
   /* Scroll affordance: gradient fades for scrollable containers */

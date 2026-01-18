@@ -10,6 +10,17 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  server: {
+    proxy: {
+      // Proxy API requests to Vercel in development
+      // Change this URL to your deployed Vercel domain
+      '/api': {
+        target: process.env.VITE_API_URL || 'https://tradzen.vercel.app',
+        changeOrigin: true,
+        secure: true,
+      },
+    },
+  },
   build: {
     outDir: 'dist',
     assetsDir: 'assets',

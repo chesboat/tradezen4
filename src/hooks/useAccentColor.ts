@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useUserProfileStore } from '@/store/useUserProfileStore';
 
-export type AccentColor = 'blue' | 'purple' | 'green' | 'orange' | 'red' | 'pink' | 'mono';
+export type AccentColor = 'blue' | 'indigo' | 'purple' | 'green' | 'orange' | 'red' | 'pink' | 'mono';
 
 // Define color palettes for light and dark modes
 export const accentColorPalettes = {
@@ -18,6 +18,21 @@ export const accentColorPalettes = {
       primary: '217 91% 60%',
       primaryForeground: '0 0% 100%',
       ring: '217 91% 60%',
+    }
+  },
+  indigo: {
+    name: 'Deep Indigo',
+    emoji: '🌿',
+    isPremium: false, // Free - pairs with Minimal theme
+    light: {
+      primary: '247 90% 31%',      // #170895
+      primaryForeground: '0 0% 100%',
+      ring: '247 90% 31%',
+    },
+    dark: {
+      primary: '247 85% 55%',      // Brighter for dark mode
+      primaryForeground: '0 0% 100%',
+      ring: '247 85% 55%',
     }
   },
   purple: {

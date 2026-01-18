@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 // Settings page for profile management and XP sync
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   User, 
   Camera, 
@@ -18,12 +18,18 @@ import {
   Zap,
   Calendar,
   CreditCard,
-  Sparkles
+  Sparkles,
+  Leaf,
+  Palette,
+  Pipette,
+  X
 } from 'lucide-react';
 import { useUserProfileStore } from '@/store/useUserProfileStore';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
 import { useAccentColor, accentColorPalettes, type AccentColor } from '@/hooks/useAccentColor';
+import { useStyleTheme, styleThemes, type StyleTheme } from '@/hooks/useStyleTheme';
+import { useCustomColors } from '@/hooks/useCustomColors';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useNavigationStore } from '@/store/useNavigationStore';
 import { getTrialInfo, getTrialMessage, formatPrice, formatAnnualMonthly } from '@/lib/subscription';
@@ -34,13 +40,20 @@ import toast from 'react-hot-toast';
 import DisciplineModeToggle from '@/components/discipline/DisciplineModeToggle';
 import { setDisciplineMode } from '@/lib/discipline';
 import { UpgradeModal } from './UpgradeModal';
+import { ColorPicker, ColorSwatch } from './ColorPicker';
 
 export const SettingsPage: React.FC = () => {
   const { profile, updateProfile, updateDisplayName, refreshStats } = useUserProfileStore();
   const { currentUser } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { accentColor, setAccentColor } = useAccentColor();
+  const { styleTheme, setStyleTheme, currentConfig } = useStyleTheme();
+  const { customColors, setCustomBackground, setCustomAccent, clearCustomColors, hasCustomColors } = useCustomColors();
   const { tier, plan, hasAccess, isPremium } = useSubscription();
+  
+  // Color picker modal states
+  const [showBgPicker, setShowBgPicker] = useState(false);
+  const [showAccentPicker, setShowAccentPicker] = useState(false);
   const { setCurrentView } = useNavigationStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -579,6 +592,87 @@ export const SettingsPage: React.FC = () => {
             </div>
           </div>
 
+          {/* Style Theme Picker - New */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <label className="block text-sm font-medium">Style</label>
+              <span className="text-xs text-muted-foreground">Font & aesthetic</span>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {(Object.entries(styleThemes) as [StyleTheme, typeof styleThemes[StyleTheme]][]).map(([key, config]) => {
+                const isSelected = styleTheme === key;
+                
+                return (
+                  <button
+                    key={key}
+                    onClick={() => {
+                      setStyleTheme(key);
+                      toast.success(`Style changed to ${config.name}`);
+                    }}
+                    className={`relative flex flex-col items-start gap-3 p-4 rounded-xl border transition-all ${
+                      isSelected
+                        ? 'bg-primary/5 border-primary ring-2 ring-primary/20'
+                        : 'bg-background hover:bg-accent/50 border-border hover:border-primary/30'
+                    }`}
+                  >
+                    {/* Style Preview */}
+                    <div 
+                      className="w-full h-16 rounded-lg flex items-center justify-center relative overflow-hidden"
+                      style={{
+                        backgroundColor: theme === 'dark' 
+                          ? (key === 'botanical' ? '#161320' : '#0a0a0a')
+                          : config.preview.bgColor,
+                      }}
+                    >
+                      {/* Dot grid pattern for botanical */}
+                      {key === 'botanical' && (
+                        <div 
+                          className="absolute inset-0"
+                          style={{
+                            backgroundImage: `radial-gradient(circle, ${config.preview.accentColor}25 1px, transparent 1px)`,
+                            backgroundSize: '12px 12px',
+                          }}
+                        />
+                      )}
+                      {/* Font preview */}
+                      <span 
+                        className="relative z-10 text-sm font-medium"
+                        style={{ 
+                          fontFamily: key === 'botanical' ? '"JetBrains Mono", monospace' : 'Inter, system-ui',
+                          color: config.preview.accentColor,
+                          letterSpacing: key === 'botanical' ? '-0.02em' : 'normal',
+                        }}
+                      >
+                        {config.preview.fontPreview}
+                      </span>
+                    </div>
+                    
+                    {/* Style Info */}
+                    <div className="flex items-center gap-2">
+                      {key === 'botanical' ? (
+                        <Leaf className="w-4 h-4 text-primary" />
+                      ) : (
+                        <Sparkles className="w-4 h-4 text-primary" />
+                      )}
+                      <div className="text-left">
+                        <p className="text-sm font-medium">{config.emoji} {config.name}</p>
+                        <p className="text-xs text-muted-foreground">{config.description}</p>
+                      </div>
+                    </div>
+                    
+                    {/* Selected indicator */}
+                    {isSelected && (
+                      <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-primary" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-xs text-muted-foreground mt-3">
+              Style affects fonts and overall visual aesthetic across the entire app.
+            </p>
+          </div>
+
           {/* Accent Color Picker */}
           <div>
             <div className="flex items-center justify-between mb-3">
@@ -672,6 +766,140 @@ export const SettingsPage: React.FC = () => {
             <p className="text-xs text-muted-foreground mt-3">
               Accent color applies to buttons, links, and interactive elements throughout the app.
             </p>
+          </div>
+
+          {/* Custom Colors - Premium Feature */}
+          <div className="pt-4 border-t border-border">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Pipette className="w-4 h-4 text-primary" />
+                <label className="text-sm font-medium">Custom Colors</label>
+                <span className="px-1.5 py-0.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] font-bold rounded">PRO</span>
+              </div>
+              {hasCustomColors && isPremium && (
+                <button
+                  onClick={() => {
+                    clearCustomColors();
+                    toast.success('Custom colors reset to defaults');
+                  }}
+                  className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+                >
+                  <X className="w-3 h-3" />
+                  Reset
+                </button>
+              )}
+            </div>
+            
+            {isPremium ? (
+              <div className="space-y-4">
+                <p className="text-xs text-muted-foreground">
+                  Pick your own background and accent colors with the Photoshop-style color picker.
+                </p>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Background Color */}
+                  <div className="relative">
+                    <label className="block text-xs text-muted-foreground mb-2">Background</label>
+                    <button
+                      onClick={() => setShowBgPicker(true)}
+                      className="w-full h-12 rounded-lg border-2 border-dashed border-border hover:border-primary/50 transition-colors flex items-center justify-center gap-2 group"
+                      style={customColors.background ? { backgroundColor: customColors.background, borderStyle: 'solid' } : {}}
+                    >
+                      {customColors.background ? (
+                        <span className="text-xs font-mono opacity-80" style={{ color: customColors.background ? (parseInt(customColors.background.slice(1), 16) > 0x7fffff ? '#000' : '#fff') : undefined }}>
+                          {customColors.background.toUpperCase()}
+                        </span>
+                      ) : (
+                        <>
+                          <Pipette className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                          <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">Pick color</span>
+                        </>
+                      )}
+                    </button>
+                    
+                    {/* Background Color Picker Modal */}
+                    <AnimatePresence>
+                      {showBgPicker && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowBgPicker(false)}>
+                          <ColorPicker
+                            color={customColors.background || '#d3d3d3'}
+                            onChange={(color) => {
+                              setCustomBackground(color);
+                              toast.success('Background color updated');
+                            }}
+                            onClose={() => setShowBgPicker(false)}
+                            label="Background Color"
+                          />
+                        </div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                  
+                  {/* Accent Color */}
+                  <div className="relative">
+                    <label className="block text-xs text-muted-foreground mb-2">Accent</label>
+                    <button
+                      onClick={() => setShowAccentPicker(true)}
+                      className="w-full h-12 rounded-lg border-2 border-dashed border-border hover:border-primary/50 transition-colors flex items-center justify-center gap-2 group"
+                      style={customColors.accent ? { backgroundColor: customColors.accent, borderStyle: 'solid' } : {}}
+                    >
+                      {customColors.accent ? (
+                        <span className="text-xs font-mono opacity-80" style={{ color: customColors.accent ? (parseInt(customColors.accent.slice(1), 16) > 0x7fffff ? '#000' : '#fff') : undefined }}>
+                          {customColors.accent.toUpperCase()}
+                        </span>
+                      ) : (
+                        <>
+                          <Pipette className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                          <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">Pick color</span>
+                        </>
+                      )}
+                    </button>
+                    
+                    {/* Accent Color Picker Modal */}
+                    <AnimatePresence>
+                      {showAccentPicker && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowAccentPicker(false)}>
+                          <ColorPicker
+                            color={customColors.accent || '#170895'}
+                            onChange={(color) => {
+                              setCustomAccent(color);
+                              toast.success('Accent color updated');
+                            }}
+                            onClose={() => setShowAccentPicker(false)}
+                            label="Accent Color"
+                          />
+                        </div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-4 rounded-xl bg-gradient-to-br from-primary/5 via-purple-500/5 to-pink-500/5 border border-primary/10"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center flex-shrink-0">
+                    <Pipette className="w-5 h-5 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-semibold mb-1 text-sm">Photoshop-Style Color Picker</h4>
+                    <p className="text-xs text-muted-foreground mb-3">
+                      Pick any color you want for your background and accent. Enter hex codes or use the visual picker.
+                    </p>
+                    <button
+                      onClick={() => setShowUpgradeModal(true)}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+                    >
+                      <Crown className="w-4 h-4" />
+                      Unlock Custom Colors
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
           </div>
         </motion.div>
 

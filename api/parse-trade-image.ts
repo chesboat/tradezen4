@@ -50,12 +50,12 @@ export default async function handler(
           role: 'user',
           content: [
             { type: 'text', text: userText },
-            { type: 'image_url', image_url: { url: dataUrl } },
+            { type: 'image_url', image_url: { url: dataUrl, detail: 'high' } },
           ],
         },
       ],
       response_format: { type: 'json_object' },
-      max_completion_tokens: 1200,
+      max_completion_tokens: 4000, // Increased to handle many trades
     });
 
     const content = completion.choices[0]?.message?.content || '';
