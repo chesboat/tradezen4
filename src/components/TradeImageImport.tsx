@@ -95,18 +95,17 @@ You specialize in extracting trade data from prop trading platforms like Topstep
 
 Return ONLY valid JSON with this exact schema:
 {
-  "date": string | null,           // Trading date if visible (ISO format: "2025-01-18")
-  "timezoneOffsetMinutes": number | null,
+  "date": string | null,           // Trading date EXACTLY as shown (e.g., "01/17/2025" or "January 17, 2025")
   "trades": [
     {
       "symbol": string,            // e.g., "MES", "NQ", "ES", "MNQ"
       "direction": "long" | "short",
       "quantity": number | null,   // Number of contracts
-      "entryTime": string | null,  // Time of entry
-      "exitTime": string | null,   // Time of exit
-      "entryPrice": number | null, // Entry price
-      "exitPrice": number | null,  // Exit price  
-      "pnl": number | null,        // Profit/loss (positive or negative number)
+      "entryTime": string | null,  // Time EXACTLY as shown (e.g., "9:32:15 AM" or "14:30:00")
+      "exitTime": string | null,   // Time EXACTLY as shown
+      "entryPrice": number | null, // Entry price as decimal
+      "exitPrice": number | null,  // Exit price as decimal
+      "pnl": number | null,        // Net P&L (positive or negative number)
       "fees": number | null,
       "commissions": number | null
     }
@@ -114,25 +113,32 @@ Return ONLY valid JSON with this exact schema:
 }
 
 CRITICAL RULES:
-- Extract ALL visible trades from the table
-- For direction: "Buy" or "Long" = "long", "Sell" or "Short" = "short"
-- Numbers must be plain (remove $ signs, commas, parentheses)
-- Negative P&L: if shown in red, with minus, or in parentheses like (50.00), make it negative
-- If a value is blank/missing, use null
-- Topstep/ProjectX tables often show: Symbol, Side, Qty, Fill Price, P&L columns
-- Look for dates in headers or row data`;
+1. Extract ALL visible trades from the table - don't skip any rows
+2. For direction: "Buy" or "Long" = "long", "Sell" or "Short" = "short"
+3. Numbers must be plain decimals (remove $ signs, commas)
+4. Negative P&L: if shown in red, with minus sign, or in parentheses like (50.00), make it negative
+5. If a value is blank/missing, use null
+6. DATES: Copy the date EXACTLY as displayed in the screenshot - do NOT convert to ISO format
+7. TIMES: Copy times EXACTLY as shown (include AM/PM if visible)
+8. Topstep/ProjectX tables show: Symbol, Side, Qty, Fill Price, P&L
+9. Look for dates in page headers, filter bars, or column headers`;
 
       const userText = `Extract ALL trades from this trading platform screenshot.
 
+IMPORTANT: Look carefully for the DATE shown in the screenshot:
+- Check the page header, title bar, or date filter/selector
+- Common formats: "01/17/2025", "January 17, 2025", "Fri Jan 17"
+- Copy the date EXACTLY as shown - this is critical for accuracy
+
 Common column names to look for:
 - Symbol/Instrument: MES, NQ, ES, MNQ, etc.
-- Side/Direction: Buy/Long or Sell/Short
+- Side/Direction: Buy/Long or Sell/Short  
 - Qty/Quantity/Contracts: number of contracts
 - Entry/Fill Price, Exit Price
-- P&L/Profit/Net: the profit or loss amount
-- Time/Timestamp: when the trade occurred
+- P&L/Profit/Net: the profit or loss amount (negative if red or in parentheses)
+- Time/Timestamp: when the trade occurred (copy exactly with AM/PM)
 
-Return valid JSON only. Extract every trade row you can see.`;
+Return valid JSON only. Extract EVERY trade row visible - don't skip any.`;
 
       const response = await authenticatedFetch('/api/parse-trade-image', {
         method: 'POST',
@@ -174,7 +180,7 @@ Return valid JSON only. Extract every trade row you can see.`;
         throw new Error('AI returned non‑JSON output. Please try again.');
       }
       console.log('[Image Import] OCR JSON:', json);
-      const { date, timezoneOffsetMinutes } = json as { date?: string; timezoneOffsetMinutes?: number };
+      const { date } = json as { date?: string };
       let trades = (json as any).trades as ParsedTrade[] | undefined;
       if (!trades) {
         const candidates = Object.values(json).filter(v => Array.isArray(v)) as any[];
@@ -183,18 +189,48 @@ Return valid JSON only. Extract every trade row you can see.`;
         ));
         trades = candidates.find(isTradeLike) as any;
       }
-      // If a session date was detected, keep as base for time-only cells
-      let baseDate: Date | null = null;
-      if (date) {
-        const tzOffset = typeof timezoneOffsetMinutes === 'number' ? timezoneOffsetMinutes : undefined;
-        const d = new Date(date);
-        if (tzOffset !== undefined && Number.isFinite(tzOffset)) {
-          // Normalize to provided timezone offset
-          const localOffset = d.getTimezoneOffset();
-          d.setMinutes(d.getMinutes() + (localOffset - tzOffset));
+      
+      // Parse date as LOCAL time (not UTC) to avoid day-shift issues
+      const parseDateAsLocal = (dateStr: string): Date | null => {
+        if (!dateStr) return null;
+        const text = dateStr.trim();
+        
+        // Try mm/dd/yyyy format first (common US format)
+        let m = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+        if (m) {
+          return new Date(parseInt(m[3]), parseInt(m[1]) - 1, parseInt(m[2]), 12, 0, 0);
         }
-        baseDate = d;
-      }
+        
+        // Try yyyy-mm-dd (ISO format) - parse as LOCAL noon to avoid timezone shift
+        m = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (m) {
+          return new Date(parseInt(m[1]), parseInt(m[2]) - 1, parseInt(m[3]), 12, 0, 0);
+        }
+        
+        // Try "Month Day, Year" format
+        m = text.match(/^(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{1,2}),?\s+(\d{4})$/i);
+        if (m) {
+          const months: Record<string, number> = {
+            january: 0, february: 1, march: 2, april: 3, may: 4, june: 5,
+            july: 6, august: 7, september: 8, october: 9, november: 10, december: 11
+          };
+          const mo = months[m[1].toLowerCase()];
+          return new Date(parseInt(m[3]), mo, parseInt(m[2]), 12, 0, 0);
+        }
+        
+        // Fallback: try native parsing but force to local noon
+        const native = new Date(text);
+        if (!isNaN(native.getTime())) {
+          // If it parsed as UTC midnight, adjust to local noon
+          return new Date(native.getFullYear(), native.getMonth(), native.getDate(), 12, 0, 0);
+        }
+        
+        return null;
+      };
+      
+      // If a session date was detected, keep as base for time-only cells
+      let baseDate: Date | null = date ? parseDateAsLocal(date) : null;
+      console.log('[Image Import] Parsed base date:', date, '->', baseDate);
 
       const toDate = (value: string | undefined, base: Date | null): Date | undefined => {
         if (!value) return undefined;
