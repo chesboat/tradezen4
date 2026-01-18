@@ -79,32 +79,35 @@ export const useStyleTheme = () => {
     return 'default';
   });
 
-  // Sync from profile when it loads (more robust detection)
+  // Sync from profile when it loads - use JSON stringify to detect any preference change
+  const profilePrefsJson = JSON.stringify(profile?.preferences || {});
+  
   useEffect(() => {
     const profileTheme = profile?.preferences?.styleTheme;
     if (profileTheme && styleThemes[profileTheme]) {
-      console.log('🎨 Profile loaded with style theme:', profileTheme);
+      console.log('🎨 Profile preferences changed, style theme:', profileTheme);
+      
+      // Always apply CSS when profile preferences change
+      const root = document.documentElement;
+      const config = styleThemes[profileTheme];
+      
+      // Remove all style theme classes and add current
+      Object.keys(styleThemes).forEach((key) => {
+        root.classList.remove(`style-${key}`);
+      });
+      root.classList.add(`style-${profileTheme}`);
+      root.style.setProperty('--font-primary', config.fontFamily);
+      root.style.setProperty('--font-mono', config.fontFamilyMono);
       
       // Update state if different
       if (profileTheme !== styleTheme) {
         setStyleThemeState(profileTheme);
-      } else {
-        // State matches but CSS might not be applied yet - force re-apply
-        const root = document.documentElement;
-        const config = styleThemes[profileTheme];
-        
-        // Remove all style theme classes and add current
-        Object.keys(styleThemes).forEach((key) => {
-          root.classList.remove(`style-${key}`);
-        });
-        root.classList.add(`style-${profileTheme}`);
-        root.style.setProperty('--font-primary', config.fontFamily);
-        root.style.setProperty('--font-mono', config.fontFamilyMono);
-        console.log('🎨 Re-applied style theme CSS from profile');
       }
+      
+      console.log('🎨 Applied style theme from profile:', profileTheme);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile?.id, profile?.preferences?.styleTheme]); // Watch profile.id to detect when profile loads
+  }, [profilePrefsJson]); // Watch entire preferences object for any changes
 
   // Apply style theme
   useEffect(() => {

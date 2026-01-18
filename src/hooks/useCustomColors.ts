@@ -109,14 +109,16 @@ export const useCustomColors = () => {
     return { background: null, accent: null };
   });
   
-  // Sync from profile when it loads (more robust detection)
+  // Sync from profile when it loads - use JSON stringify to detect any preference change
+  const profilePrefsJson = JSON.stringify(profile?.preferences || {});
+  
   useEffect(() => {
     const profileColors = profile?.preferences?.customColors;
-    if (profileColors) {
-      console.log('🎨 Profile loaded with custom colors:', profileColors);
+    if (profileColors && (profileColors.background || profileColors.accent)) {
+      console.log('🎨 Profile preferences changed, custom colors:', profileColors);
       setCustomColorsState(profileColors);
     }
-  }, [profile?.id, profile?.preferences?.customColors]); // Watch profile.id to detect when profile loads
+  }, [profilePrefsJson]); // Watch entire preferences object for any changes
   
   // Apply custom colors as CSS variables
   useEffect(() => {
