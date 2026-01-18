@@ -79,14 +79,32 @@ export const useStyleTheme = () => {
     return 'default';
   });
 
-  // Sync from profile when it loads
+  // Sync from profile when it loads (more robust detection)
   useEffect(() => {
-    if (profile?.preferences?.styleTheme && profile.preferences.styleTheme !== styleTheme) {
-      console.log('🎨 Loading style theme from profile:', profile.preferences.styleTheme);
-      setStyleThemeState(profile.preferences.styleTheme);
+    const profileTheme = profile?.preferences?.styleTheme;
+    if (profileTheme && styleThemes[profileTheme]) {
+      console.log('🎨 Profile loaded with style theme:', profileTheme);
+      
+      // Update state if different
+      if (profileTheme !== styleTheme) {
+        setStyleThemeState(profileTheme);
+      } else {
+        // State matches but CSS might not be applied yet - force re-apply
+        const root = document.documentElement;
+        const config = styleThemes[profileTheme];
+        
+        // Remove all style theme classes and add current
+        Object.keys(styleThemes).forEach((key) => {
+          root.classList.remove(`style-${key}`);
+        });
+        root.classList.add(`style-${profileTheme}`);
+        root.style.setProperty('--font-primary', config.fontFamily);
+        root.style.setProperty('--font-mono', config.fontFamilyMono);
+        console.log('🎨 Re-applied style theme CSS from profile');
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile?.preferences?.styleTheme]);
+  }, [profile?.id, profile?.preferences?.styleTheme]); // Watch profile.id to detect when profile loads
 
   // Apply style theme
   useEffect(() => {

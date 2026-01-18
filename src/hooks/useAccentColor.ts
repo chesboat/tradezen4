@@ -154,14 +154,33 @@ export const useAccentColor = () => {
     return 'blue';
   });
 
-  // Sync from profile when it loads
+  // Sync from profile when it loads (more robust detection)
   useEffect(() => {
-    if (profile?.preferences?.accentColor && profile.preferences.accentColor !== accentColor) {
-      console.log('🎨 Loading accent color from profile:', profile.preferences.accentColor);
-      setAccentColorState(profile.preferences.accentColor);
+    const profileColor = profile?.preferences?.accentColor;
+    if (profileColor && accentColorPalettes[profileColor]) {
+      // Always apply profile color when profile loads, even if state matches
+      // This ensures CSS variables are set correctly on initial load
+      console.log('🎨 Profile loaded with accent color:', profileColor);
+      
+      // Update state if different
+      if (profileColor !== accentColor) {
+        setAccentColorState(profileColor);
+      } else {
+        // State matches but CSS might not be applied yet - force re-apply
+        const root = window.document.documentElement;
+        const isDark = root.classList.contains('dark');
+        const palette = accentColorPalettes[profileColor];
+        const colors = isDark ? palette.dark : palette.light;
+        
+        root.setAttribute('data-accent', profileColor);
+        root.style.setProperty('--primary', colors.primary, 'important');
+        root.style.setProperty('--primary-foreground', colors.primaryForeground, 'important');
+        root.style.setProperty('--ring', colors.ring, 'important');
+        console.log('🎨 Re-applied accent color CSS from profile');
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile?.preferences?.accentColor]); // accentColor intentionally omitted to prevent loop
+  }, [profile?.id, profile?.preferences?.accentColor]); // Watch profile.id to detect when profile loads
 
   // Apply accent color by setting data attribute AND CSS variables
   useEffect(() => {
