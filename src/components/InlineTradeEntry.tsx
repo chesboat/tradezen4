@@ -130,9 +130,8 @@ export const InlineTradeEntry: React.FC<InlineTradeEntryProps> = ({ onClose, onS
   
   // Determine trade result from P&L
   const getTradeResult = (pnlValue: number): TradeResult => {
-    if (pnlValue > 0) return 'win';
-    if (pnlValue < 0) return 'loss';
-    return 'scratch';
+    if (pnlValue >= 0) return 'win'; // Win or scratch (break-even)
+    return 'loss';
   };
   
   // Submit the trade
@@ -168,18 +167,18 @@ export const InlineTradeEntry: React.FC<InlineTradeEntryProps> = ({ onClose, onS
       const sharesNum = parseFloat(shares) || 1;
       const rrNum = parseFloat(rr) || 1;
       
-      const newTrade: Omit<Trade, 'id'> = {
+      const newTrade: Omit<Trade, 'id' | 'createdAt' | 'updatedAt'> = {
         symbol: symbol.toUpperCase().trim(),
         direction,
         entryPrice: entryPriceNum,
         exitPrice: exitPriceNum,
-        shares: sharesNum,
+        quantity: sharesNum,
         pnl: finalPnl,
         riskRewardRatio: rrNum,
         result: getTradeResult(finalPnl),
         entryTime: tradeDateObj.toISOString(),
         exitTime: tradeDateObj.toISOString(),
-        mood: mood || undefined,
+        mood: mood || 'neutral', // Default to neutral if not selected
         notes: '',
         accountId,
         riskAmount: Math.abs(finalPnl) || 100,
