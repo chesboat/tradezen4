@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useUserProfileStore } from '@/store/useUserProfileStore';
 
 /**
@@ -202,6 +202,10 @@ export const useCustomColors = () => {
   // Get current mode's colors
   const currentColors = isDark ? customColors.dark : customColors.light;
   
+  // Track if this is user-initiated change vs initial load
+  const isUserChangeRef = useRef(false);
+  const lastSyncedColorsRef = useRef<string | null>(null);
+  
   // Apply custom colors as CSS variables
   useEffect(() => {
     const root = document.documentElement;
@@ -265,9 +269,20 @@ export const useCustomColors = () => {
     
     // Save to localStorage
     localStorage.setItem('refine-custom-colors', JSON.stringify(customColors));
+  }, [customColors, currentColors, isDark]);
+  
+  // Separate effect for syncing to profile (only on user changes)
+  useEffect(() => {
+    const colorsJson = JSON.stringify(customColors);
     
-    // Sync to profile
-    if (profile && JSON.stringify(profile.preferences?.customColors) !== JSON.stringify(customColors)) {
+    // Skip if this is the same as what we last synced
+    if (lastSyncedColorsRef.current === colorsJson) {
+      return;
+    }
+    
+    // Only sync if user made a change (not on initial load from profile)
+    if (isUserChangeRef.current && profile) {
+      lastSyncedColorsRef.current = colorsJson;
       updateProfile({
         preferences: {
           ...profile.preferences,
@@ -275,11 +290,13 @@ export const useCustomColors = () => {
         },
       });
       syncToFirestore();
+      console.log('🎨 Synced custom colors to profile');
     }
-  }, [customColors, currentColors, isDark, profile]);
+  }, [customColors, profile, updateProfile, syncToFirestore]);
   
   // Set background for specific mode or current mode
   const setCustomBackground = useCallback((color: string | null, mode?: 'light' | 'dark') => {
+    isUserChangeRef.current = true; // Mark as user change
     const targetMode = mode || (isDark ? 'dark' : 'light');
     setCustomColorsState(prev => ({
       ...prev,
@@ -289,6 +306,7 @@ export const useCustomColors = () => {
   
   // Set accent for specific mode or current mode
   const setCustomAccent = useCallback((color: string | null, mode?: 'light' | 'dark') => {
+    isUserChangeRef.current = true; // Mark as user change
     const targetMode = mode || (isDark ? 'dark' : 'light');
     setCustomColorsState(prev => ({
       ...prev,
@@ -298,6 +316,7 @@ export const useCustomColors = () => {
   
   // Clear colors for specific mode or all
   const clearCustomColors = useCallback((mode?: 'light' | 'dark') => {
+    isUserChangeRef.current = true; // Mark as user change
     if (mode) {
       setCustomColorsState(prev => ({
         ...prev,
