@@ -43,8 +43,9 @@ import { useNavigationStore } from './store/useNavigationStore';
 import { initializeDefaultAccounts } from './store/useAccountFilterStore';
 import { initializeDefaultQuests } from './store/useQuestStore';
 import { useTheme } from './hooks/useTheme';
-import { useAccentColor } from './hooks/useAccentColor';
-import { useStyleTheme } from './hooks/useStyleTheme';
+import { useAccentColor, accentColorPalettes } from './hooks/useAccentColor';
+import { useStyleTheme, styleThemes } from './hooks/useStyleTheme';
+import { useCustomColors } from './hooks/useCustomColors';
 import { useTradeLoggerModal } from './hooks/useTradeLoggerModal';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LevelUpToast } from './components/xp/LevelUpToast';
@@ -83,6 +84,7 @@ function AppContent() {
   const { theme } = useTheme();
   useAccentColor(); // Initialize accent color system
   useStyleTheme(); // Initialize style theme system
+  useCustomColors(); // Initialize custom colors system
   const tradeLoggerModal = useTradeLoggerModal();
   const { initializeProfile } = useUserProfileStore();
   const { isExpanded: todoExpanded, railWidth } = useTodoStore();
@@ -90,6 +92,47 @@ function AppContent() {
   const { currentMilestone, dismiss: dismissMilestone } = useStreakMilestoneStore();
   const { tier, hasAccess, isExpired } = useSubscription();
   const { profile } = useUserProfileStore();
+  
+  // 🎨 ROBUST THEME APPLICATION: Apply theme settings when profile loads
+  // This is a fallback to ensure themes are applied even if the hooks miss the update
+  const profilePrefsRef = React.useRef<string | null>(null);
+  React.useEffect(() => {
+    if (!profile?.preferences) return;
+    
+    const currentPrefsJson = JSON.stringify(profile.preferences);
+    // Only apply if preferences actually changed (prevents infinite loops)
+    if (profilePrefsRef.current === currentPrefsJson) return;
+    profilePrefsRef.current = currentPrefsJson;
+    
+    console.log('🎨 App: Profile preferences loaded, applying theme settings...');
+    const root = document.documentElement;
+    const isDark = root.classList.contains('dark');
+    
+    // Apply accent color
+    const accentColor = profile.preferences.accentColor;
+    if (accentColor && accentColorPalettes[accentColor]) {
+      const palette = accentColorPalettes[accentColor];
+      const colors = isDark ? palette.dark : palette.light;
+      root.setAttribute('data-accent', accentColor);
+      root.style.setProperty('--primary', colors.primary, 'important');
+      root.style.setProperty('--primary-foreground', colors.primaryForeground, 'important');
+      root.style.setProperty('--ring', colors.ring, 'important');
+      console.log('🎨 App: Applied accent color:', accentColor);
+    }
+    
+    // Apply style theme
+    const styleTheme = profile.preferences.styleTheme;
+    if (styleTheme && styleThemes[styleTheme]) {
+      const config = styleThemes[styleTheme];
+      Object.keys(styleThemes).forEach((key) => {
+        root.classList.remove(`style-${key}`);
+      });
+      root.classList.add(`style-${styleTheme}`);
+      root.style.setProperty('--font-primary', config.fontFamily);
+      root.style.setProperty('--font-mono', config.fontFamilyMono);
+      console.log('🎨 App: Applied style theme:', styleTheme);
+    }
+  }, [profile?.preferences]);
 
   // Marketing site state
   const [marketingPage, setMarketingPage] = React.useState<'home' | 'features' | 'pricing'>('home');
