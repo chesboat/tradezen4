@@ -1,14 +1,26 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useUserProfileStore } from '@/store/useUserProfileStore';
 
 /**
  * Custom Colors System - Premium Feature
  * Allows users to set their own background and accent colors
+ * Supports separate colors for light and dark modes
  */
 
-export interface CustomColors {
+export interface CustomColorSet {
   background: string | null; // Hex color or null for default
   accent: string | null; // Hex color or null for default
+}
+
+export interface CustomColors {
+  light: CustomColorSet;
+  dark: CustomColorSet;
+}
+
+// Legacy format for migration
+interface LegacyCustomColors {
+  background: string | null;
+  accent: string | null;
 }
 
 // Convert hex to HSL string for CSS variables
@@ -88,55 +100,124 @@ function darkenHex(hex: string, amount: number = 0.1): string {
   return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
 }
 
+const defaultCustomColors: CustomColors = {
+  light: { background: null, accent: null },
+  dark: { background: null, accent: null },
+};
+
+// Helper to extract color set from object
+function extractColorSet(obj: unknown): CustomColorSet {
+  if (!obj || typeof obj !== 'object') {
+    return { background: null, accent: null };
+  }
+  const o = obj as Record<string, unknown>;
+  return {
+    background: typeof o.background === 'string' ? o.background : null,
+    accent: typeof o.accent === 'string' ? o.accent : null,
+  };
+}
+
+// Migrate legacy format to new format
+function migrateCustomColors(saved: unknown): CustomColors {
+  if (!saved || typeof saved !== 'object') {
+    return defaultCustomColors;
+  }
+  
+  const obj = saved as Record<string, unknown>;
+  
+  // Check if it's already in new format (has light and dark objects)
+  if ('light' in obj && 'dark' in obj && typeof obj.light === 'object' && typeof obj.dark === 'object') {
+    return {
+      light: extractColorSet(obj.light),
+      dark: extractColorSet(obj.dark),
+    };
+  }
+  
+  // Legacy format: { background, accent } - apply to both modes
+  const legacyColors = extractColorSet(obj);
+  
+  if (legacyColors.background || legacyColors.accent) {
+    return {
+      light: { ...legacyColors },
+      dark: { ...legacyColors },
+    };
+  }
+  
+  return defaultCustomColors;
+}
+
 export const useCustomColors = () => {
   const { profile, updateProfile, syncToFirestore } = useUserProfileStore();
+  
+  // Track current theme mode
+  const [isDark, setIsDark] = useState(() => 
+    document.documentElement.classList.contains('dark')
+  );
   
   // Initialize from profile or localStorage
   const [customColors, setCustomColorsState] = useState<CustomColors>(() => {
     // Try profile first
     if (profile?.preferences?.customColors) {
-      return profile.preferences.customColors;
+      return migrateCustomColors(profile.preferences.customColors);
     }
     
     // Try localStorage
     const saved = localStorage.getItem('refine-custom-colors');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        return migrateCustomColors(JSON.parse(saved));
       } catch {}
     }
     
-    return { background: null, accent: null };
+    return defaultCustomColors;
   });
   
-  // Sync from profile when it loads - use JSON stringify to detect any preference change
+  // Listen for theme changes
+  useEffect(() => {
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName === 'class') {
+          const newIsDark = document.documentElement.classList.contains('dark');
+          setIsDark(newIsDark);
+        }
+      });
+    });
+    
+    observer.observe(document.documentElement, { attributes: true });
+    return () => observer.disconnect();
+  }, []);
+  
+  // Sync from profile when it loads
   const profilePrefsJson = JSON.stringify(profile?.preferences || {});
   
   useEffect(() => {
     const profileColors = profile?.preferences?.customColors;
-    if (profileColors && (profileColors.background || profileColors.accent)) {
-      console.log('🎨 Profile preferences changed, custom colors:', profileColors);
-      setCustomColorsState(profileColors);
+    if (profileColors) {
+      const migrated = migrateCustomColors(profileColors);
+      console.log('🎨 Profile custom colors loaded:', migrated);
+      setCustomColorsState(migrated);
     }
-  }, [profilePrefsJson]); // Watch entire preferences object for any changes
+  }, [profilePrefsJson]);
+  
+  // Get current mode's colors
+  const currentColors = isDark ? customColors.dark : customColors.light;
   
   // Apply custom colors as CSS variables
   useEffect(() => {
     const root = document.documentElement;
-    const isDark = root.classList.contains('dark');
     
-    // Apply custom background
-    if (customColors.background) {
-      const bgHsl = hexToHsl(customColors.background);
+    // Apply custom background for current mode
+    if (currentColors.background) {
+      const bgHsl = hexToHsl(currentColors.background);
       const cardColor = isDark 
-        ? lightenHex(customColors.background, 0.08) 
-        : lightenHex(customColors.background, 0.05);
+        ? lightenHex(currentColors.background, 0.08) 
+        : lightenHex(currentColors.background, 0.05);
       const borderColor = isDark
-        ? lightenHex(customColors.background, 0.15)
-        : darkenHex(customColors.background, 0.1);
+        ? lightenHex(currentColors.background, 0.15)
+        : darkenHex(currentColors.background, 0.1);
       const mutedColor = isDark
-        ? lightenHex(customColors.background, 0.12)
-        : darkenHex(customColors.background, 0.05);
+        ? lightenHex(currentColors.background, 0.12)
+        : darkenHex(currentColors.background, 0.05);
       
       root.style.setProperty('--background', bgHsl, 'important');
       root.style.setProperty('--card', hexToHsl(cardColor), 'important');
@@ -146,10 +227,12 @@ export const useCustomColors = () => {
       root.style.setProperty('--input', hexToHsl(borderColor), 'important');
       
       // Calculate foreground based on background luminance
-      const fgHsl = getContrastColor(customColors.background);
+      const fgHsl = getContrastColor(currentColors.background);
       root.style.setProperty('--foreground', fgHsl, 'important');
       root.style.setProperty('--card-foreground', fgHsl, 'important');
       root.style.setProperty('--popover-foreground', fgHsl, 'important');
+      
+      console.log(`🎨 Applied custom ${isDark ? 'dark' : 'light'} background:`, currentColors.background);
     } else {
       // Remove custom background styles
       root.style.removeProperty('--background');
@@ -163,14 +246,16 @@ export const useCustomColors = () => {
       root.style.removeProperty('--popover-foreground');
     }
     
-    // Apply custom accent
-    if (customColors.accent) {
-      const accentHsl = hexToHsl(customColors.accent);
-      const accentFg = getContrastColor(customColors.accent);
+    // Apply custom accent for current mode
+    if (currentColors.accent) {
+      const accentHsl = hexToHsl(currentColors.accent);
+      const accentFg = getContrastColor(currentColors.accent);
       
       root.style.setProperty('--primary', accentHsl, 'important');
       root.style.setProperty('--primary-foreground', accentFg, 'important');
       root.style.setProperty('--ring', accentHsl, 'important');
+      
+      console.log(`🎨 Applied custom ${isDark ? 'dark' : 'light'} accent:`, currentColors.accent);
     } else {
       // Remove custom accent styles (let accent color system handle it)
       root.style.removeProperty('--primary');
@@ -191,25 +276,49 @@ export const useCustomColors = () => {
       });
       syncToFirestore();
     }
-  }, [customColors, profile]);
+  }, [customColors, currentColors, isDark, profile]);
   
-  const setCustomBackground = (color: string | null) => {
-    setCustomColorsState(prev => ({ ...prev, background: color }));
-  };
+  // Set background for specific mode or current mode
+  const setCustomBackground = useCallback((color: string | null, mode?: 'light' | 'dark') => {
+    const targetMode = mode || (isDark ? 'dark' : 'light');
+    setCustomColorsState(prev => ({
+      ...prev,
+      [targetMode]: { ...prev[targetMode], background: color },
+    }));
+  }, [isDark]);
   
-  const setCustomAccent = (color: string | null) => {
-    setCustomColorsState(prev => ({ ...prev, accent: color }));
-  };
+  // Set accent for specific mode or current mode
+  const setCustomAccent = useCallback((color: string | null, mode?: 'light' | 'dark') => {
+    const targetMode = mode || (isDark ? 'dark' : 'light');
+    setCustomColorsState(prev => ({
+      ...prev,
+      [targetMode]: { ...prev[targetMode], accent: color },
+    }));
+  }, [isDark]);
   
-  const clearCustomColors = () => {
-    setCustomColorsState({ background: null, accent: null });
-  };
+  // Clear colors for specific mode or all
+  const clearCustomColors = useCallback((mode?: 'light' | 'dark') => {
+    if (mode) {
+      setCustomColorsState(prev => ({
+        ...prev,
+        [mode]: { background: null, accent: null },
+      }));
+    } else {
+      setCustomColorsState(defaultCustomColors);
+    }
+  }, []);
   
   return {
     customColors,
+    currentColors, // Colors for current mode
+    isDark,
     setCustomBackground,
     setCustomAccent,
     clearCustomColors,
-    hasCustomColors: !!(customColors.background || customColors.accent),
+    hasCustomColors: !!(currentColors.background || currentColors.accent),
+    hasAnyCustomColors: !!(
+      customColors.light.background || customColors.light.accent ||
+      customColors.dark.background || customColors.dark.accent
+    ),
   };
 };

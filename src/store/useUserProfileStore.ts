@@ -48,8 +48,12 @@ export interface UserProfile {
     accentColor?: 'blue' | 'indigo' | 'purple' | 'green' | 'orange' | 'red' | 'pink' | 'mono';
     styleTheme?: 'default' | 'botanical';
     customColors?: {
-      background: string | null;
-      accent: string | null;
+      // New format: separate colors for light and dark mode
+      light?: { background: string | null; accent: string | null };
+      dark?: { background: string | null; accent: string | null };
+      // Legacy format (for migration)
+      background?: string | null;
+      accent?: string | null;
     };
   };
   stats: {

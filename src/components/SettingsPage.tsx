@@ -48,7 +48,13 @@ export const SettingsPage: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
   const { accentColor, setAccentColor } = useAccentColor();
   const { styleTheme, setStyleTheme, currentConfig } = useStyleTheme();
-  const { customColors, setCustomBackground, setCustomAccent, clearCustomColors, hasCustomColors } = useCustomColors();
+  const { customColors, currentColors, isDark, setCustomBackground, setCustomAccent, clearCustomColors, hasCustomColors, hasAnyCustomColors } = useCustomColors();
+  
+  // Which mode we're editing colors for (follows current theme by default)
+  const [editingMode, setEditingMode] = useState<'light' | 'dark'>(isDark ? 'dark' : 'light');
+  
+  // Get the colors for the mode we're currently editing
+  const editingColors = editingMode === 'dark' ? customColors.dark : customColors.light;
   const { tier, plan, hasAccess, isPremium } = useSubscription();
   
   // Color picker modal states
@@ -776,7 +782,7 @@ export const SettingsPage: React.FC = () => {
                 <label className="text-sm font-medium">Custom Colors</label>
                 <span className="px-1.5 py-0.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] font-bold rounded">PRO</span>
               </div>
-              {hasCustomColors && isPremium && (
+              {hasAnyCustomColors && isPremium && (
                 <button
                   onClick={() => {
                     clearCustomColors();
@@ -785,7 +791,7 @@ export const SettingsPage: React.FC = () => {
                   className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
                 >
                   <X className="w-3 h-3" />
-                  Reset
+                  Reset All
                 </button>
               )}
             </div>
@@ -793,8 +799,40 @@ export const SettingsPage: React.FC = () => {
             {isPremium ? (
               <div className="space-y-4">
                 <p className="text-xs text-muted-foreground">
-                  Pick your own background and accent colors with the Photoshop-style color picker.
+                  Pick your own background and accent colors for each theme mode.
                 </p>
+                
+                {/* Light/Dark Mode Toggle */}
+                <div className="flex items-center gap-1 p-1 bg-muted/50 rounded-lg w-fit">
+                  <button
+                    onClick={() => setEditingMode('light')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                      editingMode === 'light'
+                        ? 'bg-background text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <Sun className="w-3.5 h-3.5" />
+                    Light
+                    {(customColors.light.background || customColors.light.accent) && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setEditingMode('dark')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                      editingMode === 'dark'
+                        ? 'bg-background text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <Moon className="w-3.5 h-3.5" />
+                    Dark
+                    {(customColors.dark.background || customColors.dark.accent) && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                    )}
+                  </button>
+                </div>
                 
                 <div className="grid grid-cols-2 gap-4">
                   {/* Background Color */}
@@ -803,11 +841,11 @@ export const SettingsPage: React.FC = () => {
                     <button
                       onClick={() => setShowBgPicker(true)}
                       className="w-full h-12 rounded-lg border-2 border-dashed border-border hover:border-primary/50 transition-colors flex items-center justify-center gap-2 group"
-                      style={customColors.background ? { backgroundColor: customColors.background, borderStyle: 'solid' } : {}}
+                      style={editingColors.background ? { backgroundColor: editingColors.background, borderStyle: 'solid' } : {}}
                     >
-                      {customColors.background ? (
-                        <span className="text-xs font-mono opacity-80" style={{ color: customColors.background ? (parseInt(customColors.background.slice(1), 16) > 0x7fffff ? '#000' : '#fff') : undefined }}>
-                          {customColors.background.toUpperCase()}
+                      {editingColors.background ? (
+                        <span className="text-xs font-mono opacity-80" style={{ color: editingColors.background ? (parseInt(editingColors.background.slice(1), 16) > 0x7fffff ? '#000' : '#fff') : undefined }}>
+                          {editingColors.background.toUpperCase()}
                         </span>
                       ) : (
                         <>
@@ -822,13 +860,13 @@ export const SettingsPage: React.FC = () => {
                       {showBgPicker && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowBgPicker(false)}>
                           <ColorPicker
-                            color={customColors.background || '#d3d3d3'}
+                            color={editingColors.background || (editingMode === 'dark' ? '#1a1a1a' : '#d3d3d3')}
                             onChange={(color) => {
-                              setCustomBackground(color);
-                              toast.success('Background color updated');
+                              setCustomBackground(color, editingMode);
+                              toast.success(`${editingMode === 'dark' ? 'Dark' : 'Light'} background updated`);
                             }}
                             onClose={() => setShowBgPicker(false)}
-                            label="Background Color"
+                            label={`${editingMode === 'dark' ? 'Dark' : 'Light'} Mode Background`}
                           />
                         </div>
                       )}
@@ -841,11 +879,11 @@ export const SettingsPage: React.FC = () => {
                     <button
                       onClick={() => setShowAccentPicker(true)}
                       className="w-full h-12 rounded-lg border-2 border-dashed border-border hover:border-primary/50 transition-colors flex items-center justify-center gap-2 group"
-                      style={customColors.accent ? { backgroundColor: customColors.accent, borderStyle: 'solid' } : {}}
+                      style={editingColors.accent ? { backgroundColor: editingColors.accent, borderStyle: 'solid' } : {}}
                     >
-                      {customColors.accent ? (
-                        <span className="text-xs font-mono opacity-80" style={{ color: customColors.accent ? (parseInt(customColors.accent.slice(1), 16) > 0x7fffff ? '#000' : '#fff') : undefined }}>
-                          {customColors.accent.toUpperCase()}
+                      {editingColors.accent ? (
+                        <span className="text-xs font-mono opacity-80" style={{ color: editingColors.accent ? (parseInt(editingColors.accent.slice(1), 16) > 0x7fffff ? '#000' : '#fff') : undefined }}>
+                          {editingColors.accent.toUpperCase()}
                         </span>
                       ) : (
                         <>
@@ -860,19 +898,32 @@ export const SettingsPage: React.FC = () => {
                       {showAccentPicker && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowAccentPicker(false)}>
                           <ColorPicker
-                            color={customColors.accent || '#170895'}
+                            color={editingColors.accent || '#170895'}
                             onChange={(color) => {
-                              setCustomAccent(color);
-                              toast.success('Accent color updated');
+                              setCustomAccent(color, editingMode);
+                              toast.success(`${editingMode === 'dark' ? 'Dark' : 'Light'} accent updated`);
                             }}
                             onClose={() => setShowAccentPicker(false)}
-                            label="Accent Color"
+                            label={`${editingMode === 'dark' ? 'Dark' : 'Light'} Mode Accent`}
                           />
                         </div>
                       )}
                     </AnimatePresence>
                   </div>
                 </div>
+                
+                {/* Clear colors for current mode */}
+                {(editingColors.background || editingColors.accent) && (
+                  <button
+                    onClick={() => {
+                      clearCustomColors(editingMode);
+                      toast.success(`${editingMode === 'dark' ? 'Dark' : 'Light'} mode colors reset`);
+                    }}
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Reset {editingMode === 'dark' ? 'dark' : 'light'} mode colors
+                  </button>
+                )}
               </div>
             ) : (
               <motion.div
