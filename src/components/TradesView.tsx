@@ -1510,13 +1510,16 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                                       </div>
                                     </td>
                     <td className="p-3 relative">
-                      <span 
-                        className={cn('text-lg cursor-pointer hover:scale-110 transition-transform', getMoodColor(trade.mood))}
-                        onClick={() => handleMoodClick(trade.id)}
-                        title="Tap to change mood"
-                      >
-                        {getMoodEmoji(trade.mood)}
-                      </span>
+<span 
+                                        className={cn('text-lg cursor-pointer hover:scale-110 transition-transform', getMoodColor(trade.mood))}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleMoodClick(trade.id);
+                                        }}
+                                        title="Tap to change mood"
+                                      >
+                                        {getMoodEmoji(trade.mood)}
+                                      </span>
                       
                       {/* Mood picker popover */}
                       {editingMoodId === trade.id && (
@@ -1813,7 +1816,10 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                 <div className="flex items-center gap-2 relative">
                   <span 
                     className={cn('text-lg cursor-pointer active:scale-110 transition-transform', getMoodColor(trade.mood))}
-                    onClick={() => handleMoodClick(trade.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleMoodClick(trade.id);
+                    }}
                   >
                     {getMoodEmoji(trade.mood)}
                   </span>
