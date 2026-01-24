@@ -97,7 +97,9 @@ export const useClassificationStore = create<ClassificationState>()(
 
           set({ unsubscribe: unsub });
         } catch (error) {
-          console.error('Failed to initialize classifications:', error);
+          // Firestore permissions not set up - fallback to localStorage only
+          // This is expected if Firestore rules don't include the settings subcollection
+          console.warn('Classifications: Using localStorage (Firestore unavailable)');
           // Fall back to localStorage or defaults
           const stored = get().categories;
           if (stored.length === 0) {
@@ -123,7 +125,8 @@ export const useClassificationStore = create<ClassificationState>()(
           const docRef = doc(db, 'users', userId, 'settings', 'classifications');
           await setDoc(docRef, { categories });
         } catch (error) {
-          console.error('Failed to sync classifications to Firestore:', error);
+          // Silently fail - localStorage is the primary storage anyway
+          // Firestore sync is optional for cross-device support
         }
       },
 

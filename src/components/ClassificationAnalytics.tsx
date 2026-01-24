@@ -264,15 +264,6 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
           </motion.div>
         ))}
       </div>
-
-      {/* Add Option Button */}
-      <button
-        className="w-full mt-3 flex items-center gap-1.5 px-2 py-1.5 text-xs text-muted-foreground 
-                   hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors"
-      >
-        <Plus className="w-3 h-3" />
-        New page
-      </button>
     </motion.div>
   );
 };
