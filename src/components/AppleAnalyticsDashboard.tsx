@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   DollarSign, TrendingUp, TrendingDown, Activity, Calendar, 
   Trophy, AlertTriangle, ChevronDown, ChevronRight, X, ArrowUp, ArrowDown,
-  Target, Zap, MinusCircle, Lightbulb, Clock, Trash2, Lock, Sparkles, Info
+  Target, Zap, MinusCircle, Lightbulb, Clock, Trash2, Lock, Sparkles, Info,
+  Eye, EyeOff, Settings2
 } from 'lucide-react';
 import { useTradeStore } from '@/store/useTradeStore';
 import { useAccountFilterStore, getAccountIdsForSelection } from '@/store/useAccountFilterStore';
@@ -1757,6 +1758,43 @@ const WhatsNextCard: React.FC<{ trades: any[] }> = ({ trades }) => {
 // MAIN COMPONENT
 // ===============================================
 
+// Section visibility storage
+const INSIGHTS_VISIBILITY_KEY = 'insights-section-visibility';
+
+interface InsightsSectionVisibility {
+  tradingHealth: boolean;
+  smartInsights: boolean;
+  potentialR: boolean;
+  atAGlance: boolean;
+  calendarHeatmap: boolean;
+  timeIntelligence: boolean;
+  equityCurve: boolean;
+  whatsNext: boolean;
+}
+
+const defaultVisibility: InsightsSectionVisibility = {
+  tradingHealth: true,
+  smartInsights: true,
+  potentialR: true,
+  atAGlance: true,
+  calendarHeatmap: true,
+  timeIntelligence: true,
+  equityCurve: true,
+  whatsNext: true,
+};
+
+const loadInsightsVisibility = (): InsightsSectionVisibility => {
+  try {
+    const stored = localStorage.getItem(INSIGHTS_VISIBILITY_KEY);
+    if (stored) return { ...defaultVisibility, ...JSON.parse(stored) };
+  } catch {}
+  return defaultVisibility;
+};
+
+const saveInsightsVisibility = (visibility: InsightsSectionVisibility) => {
+  localStorage.setItem(INSIGHTS_VISIBILITY_KEY, JSON.stringify(visibility));
+};
+
 export const AppleAnalyticsDashboard: React.FC = () => {
   const { trades, getFilteredByTier } = useTradeStore();
   const { selectedAccountId, multiSelectMode, selectedAccountIds } = useAccountFilterStore();
@@ -1771,8 +1809,18 @@ export const AppleAnalyticsDashboard: React.FC = () => {
   const [showDatePicker, setShowDatePicker] = React.useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = React.useState(false);
   const [upgradeFeature, setUpgradeFeature] = React.useState<string>('');
+  const [showCustomizeMenu, setShowCustomizeMenu] = React.useState(false);
+  const [sectionVisibility, setSectionVisibility] = React.useState<InsightsSectionVisibility>(loadInsightsVisibility);
   
   const hasCustomDateRanges = hasFeature(tier, 'hasCustomDateRanges');
+  
+  const toggleSectionVisibility = (section: keyof InsightsSectionVisibility) => {
+    setSectionVisibility(prev => {
+      const updated = { ...prev, [section]: !prev[section] };
+      saveInsightsVisibility(updated);
+      return updated;
+    });
+  };
 
   const handleUpgradeClick = (featureName: string) => {
     setUpgradeFeature(featureName);
@@ -2014,6 +2062,66 @@ export const AppleAnalyticsDashboard: React.FC = () => {
 
       {/* Main Content */}
       <div className="max-w-7xl 2xl:max-w-[1800px] mx-auto px-6 2xl:px-8 py-8 space-y-8">
+        {/* Customize Sections Button */}
+        <div className="flex justify-end">
+          <div className="relative">
+            <button
+              onClick={() => setShowCustomizeMenu(!showCustomizeMenu)}
+              className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+            >
+              <Settings2 className="w-4 h-4" />
+              Customize
+              <ChevronDown className={cn("w-4 h-4 transition-transform", showCustomizeMenu && "rotate-180")} />
+            </button>
+            
+            <AnimatePresence>
+              {showCustomizeMenu && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowCustomizeMenu(false)} />
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="absolute right-0 top-full mt-2 w-56 bg-popover border border-border rounded-xl shadow-lg z-50 overflow-hidden"
+                  >
+                    <div className="p-2 space-y-1">
+                      <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                        Show/Hide Sections
+                      </div>
+                      {[
+                        { key: 'tradingHealth', label: 'Trading Health' },
+                        { key: 'smartInsights', label: 'Smart Insights' },
+                        { key: 'potentialR', label: 'Potential R Analysis' },
+                        { key: 'atAGlance', label: 'At a Glance' },
+                        { key: 'calendarHeatmap', label: 'Calendar Heatmap' },
+                        { key: 'timeIntelligence', label: 'Time Intelligence' },
+                        { key: 'equityCurve', label: 'Equity Curve' },
+                        { key: 'whatsNext', label: "What's Next" },
+                      ].map(({ key, label }) => (
+                        <button
+                          key={key}
+                          onClick={() => toggleSectionVisibility(key as keyof InsightsSectionVisibility)}
+                          className={cn(
+                            "w-full flex items-center gap-2 px-2 py-2 rounded-lg text-sm transition-colors hover:bg-muted",
+                            !sectionVisibility[key as keyof InsightsSectionVisibility] && "opacity-50"
+                          )}
+                        >
+                          <span className="flex-1 text-left">{label}</span>
+                          {sectionVisibility[key as keyof InsightsSectionVisibility] ? (
+                            <Eye className="w-4 h-4 text-primary" />
+                          ) : (
+                            <EyeOff className="w-4 h-4 text-muted-foreground" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+
         {/* Tier Limit Banner (Basic users only) */}
         {!isPremium && hiddenTradesCount > 0 && (
           <motion.div
@@ -2045,57 +2153,57 @@ export const AppleAnalyticsDashboard: React.FC = () => {
         )}
 
         {/* Trading Health Preview */}
-        <TradingHealthPreviewCard trades={filteredTrades} />
+        {sectionVisibility.tradingHealth && (
+          <TradingHealthPreviewCard trades={filteredTrades} />
+        )}
 
         {/* Smart Insights */}
-        <SmartInsightsCard trades={filteredTrades} />
+        {sectionVisibility.smartInsights && (
+          <SmartInsightsCard trades={filteredTrades} />
+        )}
 
         {/* Potential R Analysis */}
-        <PotentialRAnalytics trades={filteredTrades} />
-
-        {/* Setup Analytics (Premium) */}
-        <SetupAnalytics 
-          trades={filteredTrades} 
-          isPremium={isPremium}
-          onUpgrade={() => handleUpgradeClick('Setup Analytics')}
-        />
+        {sectionVisibility.potentialR && (
+          <PotentialRAnalytics trades={filteredTrades} />
+        )}
 
         {/* At a Glance Weekly */}
-        <AtAGlanceWeekly trades={filteredTrades} />
+        {sectionVisibility.atAGlance && (
+          <AtAGlanceWeekly trades={filteredTrades} />
+        )}
 
         {/* Calendar Heatmap (Premium) */}
-        <CalendarHeatmap
-          trades={filteredTrades}
-          isPremium={isPremium}
-          monthsToShow={3}
-          onUpgrade={() => handleUpgradeClick('Calendar Heatmap')}
-        />
+        {sectionVisibility.calendarHeatmap && (
+          <CalendarHeatmap
+            trades={filteredTrades}
+            isPremium={isPremium}
+            monthsToShow={3}
+            onUpgrade={() => handleUpgradeClick('Calendar Heatmap')}
+          />
+        )}
 
         {/* Time Intelligence (Premium) */}
-        <TimeIntelligence
-          trades={filteredTrades}
-          isPremium={isPremium}
-          onUpgrade={() => handleUpgradeClick('Time Intelligence')}
-        />
+        {sectionVisibility.timeIntelligence && (
+          <TimeIntelligence
+            trades={filteredTrades}
+            isPremium={isPremium}
+            onUpgrade={() => handleUpgradeClick('Time Intelligence')}
+          />
+        )}
 
         {/* Equity Curve */}
-        <AnnotatedEquityCurve 
-          trades={filteredTrades}
-          activityLogExpanded={activityLogExpanded}
-          todoExpanded={todoExpanded}
-        />
+        {sectionVisibility.equityCurve && (
+          <AnnotatedEquityCurve 
+            trades={filteredTrades}
+            activityLogExpanded={activityLogExpanded}
+            todoExpanded={todoExpanded}
+          />
+        )}
 
-        {/* Top Symbols */}
-        <TopSymbolsSection 
-          trades={filteredTrades} 
-          onSymbolFilter={setSymbolFilter}
-        />
-
-        {/* Trade Highlights */}
-        <TradeHighlightsCard trades={filteredTrades} />
-
-        {/* What's Next - Apple always tells you what to do */}
-        <WhatsNextCard trades={filteredTrades} />
+        {/* What's Next */}
+        {sectionVisibility.whatsNext && (
+          <WhatsNextCard trades={filteredTrades} />
+        )}
       </div>
 
       {/* Upgrade Modal */}

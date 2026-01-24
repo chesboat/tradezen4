@@ -24,7 +24,8 @@ import {
   FlaskConical,
   Sparkles,
   Lock,
-  Grid3X3
+  Grid3X3,
+  Lightbulb
 } from 'lucide-react';
 import { useSidebarStore } from '@/store/useSidebarStore';
 import { useNavigationStore } from '@/store/useNavigationStore';
@@ -104,8 +105,8 @@ const navGroups: NavGroup[] = [
     items: [
       {
         id: 'analytics',
-        label: 'Analytics',
-        icon: BarChart3,
+        label: 'Insights',
+        icon: Lightbulb,
         href: '/analytics',
       },
       {

@@ -86,6 +86,15 @@ interface ResultStats {
   totalRR: number;
 }
 
+interface DirectionStats {
+  direction: 'long' | 'short';
+  label: string;
+  dotColor: string;
+  tradeCount: number;
+  winRate: number;
+  totalRR: number;
+}
+
 // Color palette for categories
 const CATEGORY_COLORS = [
   { bg: 'bg-blue-500/10', border: 'border-blue-500/20', accent: 'bg-blue-500', text: 'text-blue-600' },
@@ -116,11 +125,12 @@ interface CardVisibility {
   month: boolean;
   pairs: boolean;
   results: boolean;
+  direction: boolean;
   [categoryId: string]: boolean;
 }
 
 const getDefaultVisibility = (categoryIds: string[]): CardVisibility => {
-  const visibility: CardVisibility = { year: true, month: true, pairs: true, results: true };
+  const visibility: CardVisibility = { year: true, month: true, pairs: true, results: true, direction: true };
   categoryIds.forEach(id => { visibility[id] = true; });
   return visibility;
 };
@@ -452,6 +462,42 @@ export const ClassificationAnalytics: React.FC<ClassificationAnalyticsProps> = (
     ];
   }, [trades]);
 
+  // Calculate direction stats (Long vs Short)
+  const directionStats = useMemo((): DirectionStats[] => {
+    const longs = trades.filter(t => t.direction === 'long');
+    const shorts = trades.filter(t => t.direction === 'short');
+
+    const calcStats = (tradeset: Trade[]): { winRate: number; totalRR: number } => {
+      const countable = tradeset.filter(shouldCountForWinRate);
+      const wins = countable.filter(t => (t.pnl || 0) > 0).length;
+      const winRate = countable.length > 0 ? (wins / countable.length) * 100 : 0;
+      const totalRR = tradeset.reduce((sum, t) => sum + getSignedRR(t), 0);
+      return { winRate, totalRR };
+    };
+
+    const longStats = calcStats(longs);
+    const shortStats = calcStats(shorts);
+
+    return [
+      {
+        direction: 'long',
+        label: 'Long',
+        dotColor: 'bg-green-500',
+        tradeCount: longs.length,
+        winRate: longStats.winRate,
+        totalRR: longStats.totalRR,
+      },
+      {
+        direction: 'short',
+        label: 'Short',
+        dotColor: 'bg-red-500',
+        tradeCount: shorts.length,
+        winRate: shortStats.winRate,
+        totalRR: shortStats.totalRR,
+      },
+    ];
+  }, [trades]);
+
   const hasClassifiedTrades = trades.some(t => t.classifications && Object.keys(t.classifications).length > 0);
   const hasTrades = trades.length > 0;
   const visibleCount = Object.values(cardVisibility).filter(Boolean).length;
@@ -568,6 +614,12 @@ export const ClassificationAnalytics: React.FC<ClassificationAnalyticsProps> = (
                       isVisible={cardVisibility.results}
                       onToggle={() => toggleVisibility('results')}
                     />
+                    <VisibilityToggle
+                      label="Direction Stats"
+                      icon={<TrendingUp className="w-4 h-4" />}
+                      isVisible={cardVisibility.direction}
+                      onToggle={() => toggleVisibility('direction')}
+                    />
                     
                     {categories.length > 0 && (
                       <>
@@ -668,6 +720,16 @@ export const ClassificationAnalytics: React.FC<ClassificationAnalyticsProps> = (
               <ResultStatsCard
                 stats={resultStats}
                 colorIndex={3}
+                hoveredOption={hoveredOption}
+                onHoverOption={setHoveredOption}
+              />
+            )}
+
+            {/* Direction Stats Card */}
+            {cardVisibility.direction && (
+              <DirectionStatsCard
+                stats={directionStats}
+                colorIndex={4}
                 hoveredOption={hoveredOption}
                 onHoverOption={setHoveredOption}
               />
@@ -975,6 +1037,92 @@ const ResultStatsCard: React.FC<ResultStatsCardProps> = ({
                 : ""
             )}>
               {stat.tradeCount > 0 ? stat.avgRR.toFixed(2) : '—'}
+            </div>
+            <div className={cn(
+              "text-sm text-right w-16 font-bold",
+              stat.totalRR > 0 
+                ? "text-green-600 dark:text-green-400" 
+                : stat.totalRR < 0 
+                ? "text-red-600 dark:text-red-400"
+                : ""
+            )}>
+              {stat.tradeCount > 0 ? stat.totalRR.toFixed(1) : '—'}
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    </motion.div>
+  );
+};
+
+// Direction Stats Card (Long vs Short)
+interface DirectionStatsCardProps {
+  stats: DirectionStats[];
+  colorIndex: number;
+  hoveredOption: string | null;
+  onHoverOption: (id: string | null) => void;
+}
+
+const DirectionStatsCard: React.FC<DirectionStatsCardProps> = ({
+  stats,
+  colorIndex,
+  hoveredOption,
+  onHoverOption,
+}) => {
+  const colors = CATEGORY_COLORS[colorIndex % CATEGORY_COLORS.length];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: colorIndex * 0.05 }}
+      className={cn(
+        "rounded-2xl border p-4",
+        colors.border,
+        "bg-card"
+      )}
+    >
+      <div className="flex items-center gap-2 mb-4">
+        <TrendingUp className="w-5 h-5 text-muted-foreground" />
+        <h3 className="font-semibold text-base">Direction Stats</h3>
+      </div>
+
+      <div className="grid grid-cols-[1fr,auto,auto,auto] gap-2 text-xs text-muted-foreground mb-2 px-1">
+        <div>Direction</div>
+        <div className="text-right w-14">Trades</div>
+        <div className="text-right w-14">Win %</div>
+        <div className="text-right w-16">Total RR</div>
+      </div>
+
+      <div className="space-y-1">
+        {stats.map((stat, idx) => (
+          <motion.div
+            key={stat.direction}
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: colorIndex * 0.05 + idx * 0.02 }}
+            onMouseEnter={() => onHoverOption(`direction-${stat.direction}`)}
+            onMouseLeave={() => onHoverOption(null)}
+            className={cn(
+              "grid grid-cols-[1fr,auto,auto,auto] gap-2 items-center px-2 py-2 rounded-lg transition-colors",
+              "hover:bg-muted/50",
+              hoveredOption === `direction-${stat.direction}` && "bg-muted/50"
+            )}
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <span className={cn("w-2 h-2 rounded-full", stat.dotColor)} />
+              <span className="text-sm font-medium truncate">{stat.label}</span>
+            </div>
+            <div className="text-sm text-right w-14 font-medium">
+              {stat.tradeCount}
+            </div>
+            <div className={cn(
+              "text-sm text-right w-14 font-medium",
+              stat.tradeCount > 0 && (
+                stat.winRate >= 50 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
+              )
+            )}>
+              {stat.tradeCount > 0 ? `${stat.winRate.toFixed(0)}%` : '—'}
             </div>
             <div className={cn(
               "text-sm text-right w-16 font-bold",
