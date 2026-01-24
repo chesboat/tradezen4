@@ -1,12 +1,10 @@
 /**
  * Classification Store - Manages trade classification categories and options
- * Syncs with Firestore for cross-device persistence
+ * Uses localStorage for persistence (Firestore sync disabled until rules configured)
  */
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { db } from '@/lib/firebase';
-import { doc, setDoc, getDoc, onSnapshot } from 'firebase/firestore';
 import { 
   ClassificationCategory, 
   ClassificationOption,
@@ -17,7 +15,6 @@ interface ClassificationState {
   categories: ClassificationCategory[];
   isLoading: boolean;
   userId: string | null;
-  unsubscribe: (() => void) | null;
 
   // Actions
   initialize: (userId: string) => Promise<void>;
@@ -39,9 +36,6 @@ interface ClassificationState {
   getCategory: (categoryId: string) => ClassificationCategory | undefined;
   getOption: (categoryId: string, optionId: string) => ClassificationOption | undefined;
   getActiveCategories: () => ClassificationCategory[];
-  
-  // Sync
-  syncToFirestore: () => Promise<void>;
 }
 
 // Generate unique ID
@@ -66,68 +60,21 @@ export const useClassificationStore = create<ClassificationState>()(
       categories: [],
       isLoading: false,
       userId: null,
-      unsubscribe: null,
 
       initialize: async (userId: string) => {
         set({ isLoading: true, userId });
 
-        // Try to load from Firestore first
-        try {
-          const docRef = doc(db, 'users', userId, 'settings', 'classifications');
-          const docSnap = await getDoc(docRef);
-
-          if (docSnap.exists()) {
-            const data = docSnap.data();
-            set({ categories: data.categories || [], isLoading: false });
-          } else {
-            // Seed with defaults for new users
-            const defaults = seedDefaultCategories();
-            set({ categories: defaults, isLoading: false });
-            // Save to Firestore
-            await setDoc(docRef, { categories: defaults });
-          }
-
-          // Set up real-time listener
-          const unsub = onSnapshot(docRef, (snap) => {
-            if (snap.exists()) {
-              const data = snap.data();
-              set({ categories: data.categories || [] });
-            }
-          });
-
-          set({ unsubscribe: unsub });
-        } catch (error) {
-          // Firestore permissions not set up - fallback to localStorage only
-          // This is expected if Firestore rules don't include the settings subcollection
-          console.warn('Classifications: Using localStorage (Firestore unavailable)');
-          // Fall back to localStorage or defaults
-          const stored = get().categories;
-          if (stored.length === 0) {
-            set({ categories: seedDefaultCategories() });
-          }
-          set({ isLoading: false });
+        // Use localStorage persistence (handled by zustand persist middleware)
+        // Seed defaults if no categories exist
+        const stored = get().categories;
+        if (stored.length === 0) {
+          set({ categories: seedDefaultCategories() });
         }
+        set({ isLoading: false });
       },
 
       cleanup: () => {
-        const { unsubscribe } = get();
-        if (unsubscribe) {
-          unsubscribe();
-        }
-        set({ unsubscribe: null, userId: null });
-      },
-
-      syncToFirestore: async () => {
-        const { userId, categories } = get();
-        if (!userId) return;
-
-        try {
-          const docRef = doc(db, 'users', userId, 'settings', 'classifications');
-          await setDoc(docRef, { categories });
-        } catch (error) {
-          // Silently fail - localStorage is the primary storage anyway
-          // Firestore sync is optional for cross-device support
-        }
+        set({ userId: null });
       },
 
       addCategory: async (category) => {
@@ -141,7 +88,6 @@ export const useClassificationStore = create<ClassificationState>()(
         };
 
         set({ categories: [...categories, newCategory] });
-        await get().syncToFirestore();
       },
 
       updateCategory: async (categoryId, updates) => {
@@ -150,7 +96,6 @@ export const useClassificationStore = create<ClassificationState>()(
           cat.id === categoryId ? { ...cat, ...updates } : cat
         );
         set({ categories: updated });
-        await get().syncToFirestore();
       },
 
       deleteCategory: async (categoryId) => {
@@ -159,7 +104,6 @@ export const useClassificationStore = create<ClassificationState>()(
         // Reorder remaining
         const reordered = filtered.map((cat, idx) => ({ ...cat, order: idx }));
         set({ categories: reordered });
-        await get().syncToFirestore();
       },
 
       reorderCategories: async (categoryIds) => {
@@ -169,7 +113,6 @@ export const useClassificationStore = create<ClassificationState>()(
           return cat ? { ...cat, order: idx } : null;
         }).filter(Boolean) as ClassificationCategory[];
         set({ categories: reordered });
-        await get().syncToFirestore();
       },
 
       addOption: async (categoryId, option) => {
@@ -186,7 +129,6 @@ export const useClassificationStore = create<ClassificationState>()(
           return cat;
         });
         set({ categories: updated });
-        await get().syncToFirestore();
       },
 
       updateOption: async (categoryId, optionId, updates) => {
@@ -201,7 +143,6 @@ export const useClassificationStore = create<ClassificationState>()(
           return cat;
         });
         set({ categories: updated });
-        await get().syncToFirestore();
       },
 
       deleteOption: async (categoryId, optionId) => {
@@ -215,7 +156,6 @@ export const useClassificationStore = create<ClassificationState>()(
           return cat;
         });
         set({ categories: updated });
-        await get().syncToFirestore();
       },
 
       reorderOptions: async (categoryId, optionIds) => {
@@ -231,7 +171,6 @@ export const useClassificationStore = create<ClassificationState>()(
           return cat;
         });
         set({ categories: updated });
-        await get().syncToFirestore();
       },
 
       getCategory: (categoryId) => {
