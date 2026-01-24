@@ -13,7 +13,7 @@ import {
   Hash,
   Grid3X3
 } from 'lucide-react';
-import { useTradeActions } from '@/store/useTradeStore';
+import { useTradeActions, useTradeStore } from '@/store/useTradeStore';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
 import { useActivityLogStore } from '@/store/useActivityLogStore';
 import { useClassificationStore } from '@/store/useClassificationStore';
@@ -39,6 +39,7 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
   const { selectedAccountId } = useAccountFilterStore();
   const { addActivity } = useActivityLogStore();
   const { getActiveCategories } = useClassificationStore();
+  const trades = useTradeStore((state) => state.trades); // Subscribe to live trade updates
   
   // Form state
   const [symbol, setSymbol] = useState('');
@@ -65,6 +66,11 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
   
   const symbolInputRef = useRef<HTMLInputElement>(null);
   const pnlInputRef = useRef<HTMLInputElement>(null);
+
+  // Get the latest trade from store if editing
+  const latestEditingTrade = editingTrade && editingTrade.id 
+    ? trades.find(t => t.id === editingTrade.id) || editingTrade
+    : editingTrade;
 
   // Load recent symbols
   useEffect(() => {
@@ -100,35 +106,36 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
 
   // Load editing trade
   useEffect(() => {
-    if (editingTrade && isOpen) {
-      setSymbol(editingTrade.symbol);
-      setDirection(editingTrade.direction);
-      setResult(editingTrade.result || null);
-      setPnl(Math.abs(editingTrade.pnl || 0).toString());
-      setLossRR((editingTrade.lossRR || 1).toString());
-      setTags(editingTrade.tags || []);
-      setClassifications(editingTrade.classifications || {});
-      setNotes(editingTrade.notes || '');
+    if (latestEditingTrade && isOpen) {
+      console.log('📝 Loading trade data for editing:', latestEditingTrade.id, 'classifications:', Object.keys(latestEditingTrade.classifications || {}).length);
+      setSymbol(latestEditingTrade.symbol);
+      setDirection(latestEditingTrade.direction);
+      setResult(latestEditingTrade.result || null);
+      setPnl(Math.abs(latestEditingTrade.pnl || 0).toString());
+      setLossRR((latestEditingTrade.lossRR || 1).toString());
+      setTags(latestEditingTrade.tags || []);
+      setClassifications(latestEditingTrade.classifications || {});
+      setNotes(latestEditingTrade.notes || '');
       
       // Load date and time from editing trade
-      const entryDate = new Date(editingTrade.entryTime);
+      const entryDate = new Date(latestEditingTrade.entryTime);
       setTradeDate(entryDate.toISOString().split('T')[0]);
       const hours = entryDate.getHours().toString().padStart(2, '0');
       const minutes = entryDate.getMinutes().toString().padStart(2, '0');
       setTradeTime(`${hours}:${minutes}`);
       
       // Show tag/notes/classifications inputs if they have values
-      if (editingTrade.tags && editingTrade.tags.length > 0) {
+      if (latestEditingTrade.tags && latestEditingTrade.tags.length > 0) {
         setShowTagInput(true);
       }
-      if (editingTrade.classifications && Object.keys(editingTrade.classifications).length > 0) {
+      if (latestEditingTrade.classifications && Object.keys(latestEditingTrade.classifications).length > 0) {
         setShowClassifications(true);
       }
-      if (editingTrade.notes) {
+      if (latestEditingTrade.notes) {
         setShowNotesInput(true);
       }
     }
-  }, [editingTrade, isOpen]);
+  }, [latestEditingTrade, isOpen]);
 
   const handleSubmit = async () => {
     if (!symbol || !result || !selectedAccountId) return;
