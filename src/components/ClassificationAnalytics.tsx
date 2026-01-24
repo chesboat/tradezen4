@@ -161,8 +161,12 @@ const MONTH_NAMES = [
  * - Wins: positive RR (use stored value)
  * - Losses: negative RR (use stored lossRR if available, otherwise default to -1)
  * - Scratch: 0
+ * - Excluded trades: 0 (don't count toward RR)
  */
 const getSignedRR = (trade: Trade): number => {
+  // Excluded trades don't count toward RR stats
+  if (trade.excludeFromAnalytics) return 0;
+  
   const pnl = trade.pnl || 0;
   const rr = trade.riskRewardRatio || trade.rrRatio || 1;
   
@@ -174,6 +178,14 @@ const getSignedRR = (trade: Trade): number => {
     return -1;
   }
   return 0;
+};
+
+/**
+ * Check if a trade should count toward win rate calculations
+ * Excluded trades don't count toward win/loss statistics
+ */
+const shouldCountForWinRate = (trade: Trade): boolean => {
+  return !trade.excludeFromAnalytics;
 };
 
 /**
@@ -263,8 +275,10 @@ export const ClassificationAnalytics: React.FC<ClassificationAnalyticsProps> = (
         );
 
         const tradeCount = matchingTrades.length;
-        const wins = matchingTrades.filter(t => (t.pnl || 0) > 0).length;
-        const winRate = tradeCount > 0 ? (wins / tradeCount) * 100 : 0;
+        // Only count non-excluded trades for win rate
+        const countableTrades = matchingTrades.filter(shouldCountForWinRate);
+        const wins = countableTrades.filter(t => (t.pnl || 0) > 0).length;
+        const winRate = countableTrades.length > 0 ? (wins / countableTrades.length) * 100 : 0;
         const totalPnL = matchingTrades.reduce((sum, t) => sum + (t.pnl || 0), 0);
         const totalRR = matchingTrades.reduce((sum, t) => sum + getSignedRR(t), 0);
         const avgRR = tradeCount > 0 ? totalRR / tradeCount : 0;
@@ -305,8 +319,9 @@ export const ClassificationAnalytics: React.FC<ClassificationAnalyticsProps> = (
 
     const stats: TimeStats[] = [];
     yearMap.forEach((yearTrades, year) => {
-      const wins = yearTrades.filter(t => (t.pnl || 0) > 0).length;
-      const winRate = yearTrades.length > 0 ? (wins / yearTrades.length) * 100 : 0;
+      const countableTrades = yearTrades.filter(shouldCountForWinRate);
+      const wins = countableTrades.filter(t => (t.pnl || 0) > 0).length;
+      const winRate = countableTrades.length > 0 ? (wins / countableTrades.length) * 100 : 0;
       const totalRR = yearTrades.reduce((sum, t) => sum + getSignedRR(t), 0);
       const totalPnL = yearTrades.reduce((sum, t) => sum + (t.pnl || 0), 0);
       
@@ -336,8 +351,9 @@ export const ClassificationAnalytics: React.FC<ClassificationAnalyticsProps> = (
     const stats: TimeStats[] = [];
     MONTH_NAMES.forEach(month => {
       const monthTrades = monthMap.get(month) || [];
-      const wins = monthTrades.filter(t => (t.pnl || 0) > 0).length;
-      const winRate = monthTrades.length > 0 ? (wins / monthTrades.length) * 100 : 0;
+      const countableTrades = monthTrades.filter(shouldCountForWinRate);
+      const wins = countableTrades.filter(t => (t.pnl || 0) > 0).length;
+      const winRate = countableTrades.length > 0 ? (wins / countableTrades.length) * 100 : 0;
       const totalRR = monthTrades.reduce((sum, t) => sum + getSignedRR(t), 0);
       const totalPnL = monthTrades.reduce((sum, t) => sum + (t.pnl || 0), 0);
       
@@ -365,8 +381,9 @@ export const ClassificationAnalytics: React.FC<ClassificationAnalyticsProps> = (
 
     const stats: PairStats[] = [];
     pairMap.forEach((pairTrades, symbol) => {
-      const wins = pairTrades.filter(t => (t.pnl || 0) > 0).length;
-      const winRate = pairTrades.length > 0 ? (wins / pairTrades.length) * 100 : 0;
+      const countableTrades = pairTrades.filter(shouldCountForWinRate);
+      const wins = countableTrades.filter(t => (t.pnl || 0) > 0).length;
+      const winRate = countableTrades.length > 0 ? (wins / countableTrades.length) * 100 : 0;
       const totalRR = pairTrades.reduce((sum, t) => sum + getSignedRR(t), 0);
       const avgRR = pairTrades.length > 0 ? totalRR / pairTrades.length : 0;
       
@@ -383,11 +400,12 @@ export const ClassificationAnalytics: React.FC<ClassificationAnalyticsProps> = (
     return stats.sort((a, b) => b.tradeCount - a.tradeCount);
   }, [trades]);
 
-  // Calculate result stats
+  // Calculate result stats (only count non-excluded trades)
   const resultStats = useMemo((): ResultStats[] => {
-    const wins = trades.filter(t => (t.pnl || 0) > 0);
-    const losses = trades.filter(t => (t.pnl || 0) < 0);
-    const scratches = trades.filter(t => (t.pnl || 0) === 0);
+    const countableTrades = trades.filter(shouldCountForWinRate);
+    const wins = countableTrades.filter(t => (t.pnl || 0) > 0);
+    const losses = countableTrades.filter(t => (t.pnl || 0) < 0);
+    const scratches = countableTrades.filter(t => (t.pnl || 0) === 0);
 
     const calcStats = (tradeset: Trade[]): { avgRR: number; totalRR: number } => {
       const totalRR = tradeset.reduce((sum, t) => sum + getSignedRR(t), 0);

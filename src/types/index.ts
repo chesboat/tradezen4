@@ -54,6 +54,8 @@ export interface Trade extends FirestoreDocument {
   potentialR?: number; // Actual R value that price reached (for wins only)
   // Trade classifications (structured categories)
   classifications?: TradeClassifications; // categoryId -> optionId mapping
+  // Analytics exclusion - trade still counts for P&L but not win rate or RR stats
+  excludeFromAnalytics?: boolean;
 }
 
 export interface QuickNote extends FirestoreDocument {

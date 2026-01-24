@@ -199,6 +199,7 @@ export function classifyTradeResult(trade: Trade, options: ClassificationOptions
 
 // Renamed from summarizeWinLossScratch - no more scratches!
 // All trades are either wins or losses. Simple, honest, reliable.
+// Trades with excludeFromAnalytics=true are not counted.
 export function summarizeWinLoss(
   trades: Trade[],
   options: ClassificationOptions = {}
@@ -206,6 +207,9 @@ export function summarizeWinLoss(
   let wins = 0, losses = 0;
   
   for (const t of trades) {
+    // Skip trades excluded from analytics
+    if (t.excludeFromAnalytics) continue;
+    
     const r = classifyTradeResult(t, options);
     if (r === 'win') wins++; else losses++;
   }

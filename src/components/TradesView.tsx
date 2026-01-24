@@ -13,6 +13,7 @@ import {
   Target, 
   BarChart3, 
   Eye, 
+  EyeOff,
   Edit, 
   Trash2, 
   Download, 
@@ -1440,60 +1441,74 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                         </div>
                       </div>
                     </td>
-                    <td 
-                      className="p-3"
-                      onClick={() => handlePnlDoubleClick(trade)}
-                    >
-                      {editingPnlId === trade.id ? (
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={editingPnlValue}
-                          onChange={(e) => setEditingPnlValue(e.target.value)}
-                          onBlur={() => handlePnlSave(trade.id, trade)}
-                          onKeyDown={(e) => handlePnlKeyDown(e, trade.id, trade)}
-                          className="w-24 px-2 py-1 bg-primary/10 border border-primary rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                          autoFocus
-                        />
-                      ) : (
-                        <span className={cn(
-                          'font-medium cursor-pointer hover:text-primary transition-colors',
-                          (trade.pnl || 0) >= 0 ? 'text-green-500' : 'text-red-500'
-                        )} title="Tap to edit">
-                          {formatCurrency(trade.pnl || 0)}
-                        </span>
-                      )}
-                    </td>
-                    <td 
-                      className="p-3"
-                      onClick={() => handleRRDoubleClick(trade)}
-                    >
-                      {editingRRId === trade.id ? (
-                        <input
-                          type="number"
-                          step="0.1"
-                          value={editingRRValue}
-                          onChange={(e) => setEditingRRValue(e.target.value)}
-                          onBlur={() => handleRRSave(trade.id, trade)}
-                          onKeyDown={(e) => handleRRKeyDown(e, trade.id, trade)}
-                          className="w-16 px-2 py-1 bg-primary/10 border border-primary rounded text-base md:text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                          autoFocus
-                        />
-                      ) : (
-                        <span className="cursor-pointer hover:text-primary transition-colors" title="Tap to edit">
-                          {(trade.riskRewardRatio ?? 0).toFixed(2)}
-                        </span>
-                      )}
-                    </td>
-                    <td className="p-3">
-                      <div className="flex items-center gap-2">
-                        {trade.result && getResultIcon(trade.result)}
-                        <span className={cn('text-sm capitalize', trade.result && getResultColor(trade.result))}>
-                          {trade.result || 'Pending'}
-                        </span>
-                        {/* No scratch badges - every trade is simply a win or loss */}
-                      </div>
-                    </td>
+<td 
+                                      className="p-3"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handlePnlDoubleClick(trade);
+                                      }}
+                                    >
+                                      {editingPnlId === trade.id ? (
+                                        <input
+                                          type="number"
+                                          step="0.01"
+                                          value={editingPnlValue}
+                                          onChange={(e) => setEditingPnlValue(e.target.value)}
+                                          onBlur={() => handlePnlSave(trade.id, trade)}
+                                          onKeyDown={(e) => handlePnlKeyDown(e, trade.id, trade)}
+                                          className="w-24 px-2 py-1 bg-primary/10 border border-primary rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                          autoFocus
+                                        />
+                                      ) : (
+                                        <span className={cn(
+                                          'font-medium cursor-pointer hover:text-primary transition-colors',
+                                          (trade.pnl || 0) >= 0 ? 'text-green-500' : 'text-red-500'
+                                        )} title="Tap to edit">
+                                          {formatCurrency(trade.pnl || 0)}
+                                        </span>
+                                      )}
+                                    </td>
+<td 
+                                      className="p-3"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleRRDoubleClick(trade);
+                                      }}
+                                    >
+                                      {editingRRId === trade.id ? (
+                                        <input
+                                          type="number"
+                                          step="0.1"
+                                          value={editingRRValue}
+                                          onChange={(e) => setEditingRRValue(e.target.value)}
+                                          onBlur={() => handleRRSave(trade.id, trade)}
+                                          onKeyDown={(e) => handleRRKeyDown(e, trade.id, trade)}
+                                          className="w-16 px-2 py-1 bg-primary/10 border border-primary rounded text-base md:text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                          autoFocus
+                                        />
+                                      ) : (
+                                        <span className="cursor-pointer hover:text-primary transition-colors" title="Tap to edit">
+                                          {(trade.riskRewardRatio ?? 0).toFixed(2)}
+                                        </span>
+                                      )}
+                                    </td>
+<td className="p-3">
+                                      <div className="flex items-center gap-2">
+                                        {trade.result && getResultIcon(trade.result)}
+                                        <span className={cn('text-sm capitalize', trade.result && getResultColor(trade.result))}>
+                                          {trade.result || 'Pending'}
+                                        </span>
+                                        {/* Excluded indicator */}
+                                        {trade.excludeFromAnalytics && (
+                                          <span 
+                                            className="text-xs text-orange-500 bg-orange-500/10 px-1.5 py-0.5 rounded"
+                                            title="Excluded from win rate & RR stats"
+                                          >
+                                            excl.
+                                          </span>
+                                        )}
+                                      </div>
+                                    </td>
                     <td className="p-3 relative">
                       <span 
                         className={cn('text-lg cursor-pointer hover:scale-110 transition-transform', getMoodColor(trade.mood))}
@@ -1578,24 +1593,52 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                                 {trade.markedForReview ? 'Unmark for Review' : 'Mark for Review'}
                               </span>
                             </button>
-                            {trade.result === 'win' && (
-                              <>
-                                <div className="h-px bg-border my-1" />
-                                <button
-                                  onClick={() => {
-                                    handlePotentialRClick(trade);
-                                    setOpenMenuId(null);
-                                  }}
-                                  className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-muted/50 transition-colors text-left"
-                                >
-                                  <Target className="w-4 h-4 text-blue-500" />
-                                  <span className="text-sm">
-                                    {trade.potentialR ? `Potential R: ${trade.potentialR.toFixed(2)}` : 'Add Potential R'}
-                                  </span>
-                                </button>
-                              </>
-                            )}
-                            <div className="h-px bg-border my-1" />
+{trade.result === 'win' && (
+                                              <>
+                                                <div className="h-px bg-border my-1" />
+                                                <button
+                                                  onClick={() => {
+                                                    handlePotentialRClick(trade);
+                                                    setOpenMenuId(null);
+                                                  }}
+                                                  className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-muted/50 transition-colors text-left"
+                                                >
+                                                  <Target className="w-4 h-4 text-blue-500" />
+                                                  <span className="text-sm">
+                                                    {trade.potentialR ? `Potential R: ${trade.potentialR.toFixed(2)}` : 'Add Potential R'}
+                                                  </span>
+                                                </button>
+                                              </>
+                                            )}
+                                            <div className="h-px bg-border my-1" />
+                                            <button
+                                              onClick={async () => {
+                                                await updateTrade(trade.id, { excludeFromAnalytics: !trade.excludeFromAnalytics });
+                                                const toast = document.createElement('div');
+                                                toast.className = 'fixed bottom-4 left-1/2 -translate-x-1/2 z-50 px-4 py-3 bg-card border border-border rounded-xl shadow-lg flex items-center gap-3';
+                                                toast.innerHTML = `
+                                                  <div class="w-2 h-2 rounded-full ${trade.excludeFromAnalytics ? 'bg-green-500' : 'bg-orange-500'}"></div>
+                                                  <span class="text-sm font-medium">${trade.excludeFromAnalytics ? 'Included in analytics' : 'Excluded from analytics'}</span>
+                                                `;
+                                                document.body.appendChild(toast);
+                                                setTimeout(() => toast.remove(), 2000);
+                                                setOpenMenuId(null);
+                                              }}
+                                              className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-muted/50 transition-colors text-left"
+                                            >
+                                              {trade.excludeFromAnalytics ? (
+                                                <>
+                                                  <Eye className="w-4 h-4 text-green-500" />
+                                                  <span className="text-sm">Include in Analytics</span>
+                                                </>
+                                              ) : (
+                                                <>
+                                                  <EyeOff className="w-4 h-4 text-orange-500" />
+                                                  <span className="text-sm">Exclude from Analytics</span>
+                                                </>
+                                              )}
+                                            </button>
+                                            <div className="h-px bg-border my-1" />
                             <button
                               onClick={() => {
                                 if (window.confirm('Are you sure you want to delete this trade?')) {
@@ -1757,7 +1800,15 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                   <span className={cn('text-sm capitalize', trade.result && getResultColor(trade.result))}>
                     {trade.result || 'Pending'}
                   </span>
-                  {/* No scratch badges - every trade is simply a win or loss */}
+                  {/* Excluded indicator */}
+                  {trade.excludeFromAnalytics && (
+                    <span 
+                      className="text-xs text-orange-500 bg-orange-500/10 px-1.5 py-0.5 rounded"
+                      title="Excluded from win rate & RR stats"
+                    >
+                      excl.
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center gap-2 relative">
                   <span 
