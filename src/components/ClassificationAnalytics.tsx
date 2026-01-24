@@ -20,6 +20,10 @@ import {
   EyeOff,
   ChevronDown,
   Clock,
+  CalendarDays,
+  Coins,
+  PieChart,
+  Layers,
 } from 'lucide-react';
 import { Trade, ClassificationCategory } from '@/types';
 import { useClassificationStore } from '@/store/useClassificationStore';
@@ -75,7 +79,7 @@ interface PairStats {
 interface ResultStats {
   result: 'win' | 'loss' | 'scratch';
   label: string;
-  emoji: string;
+  dotColor: string;
   color: string;
   tradeCount: number;
   avgRR: number;
@@ -421,7 +425,7 @@ export const ClassificationAnalytics: React.FC<ClassificationAnalyticsProps> = (
       {
         result: 'win',
         label: 'Win',
-        emoji: '🟢',
+        dotColor: 'bg-green-500',
         color: 'text-green-600 dark:text-green-400',
         tradeCount: wins.length,
         avgRR: winStats.avgRR,
@@ -430,7 +434,7 @@ export const ClassificationAnalytics: React.FC<ClassificationAnalyticsProps> = (
       {
         result: 'loss',
         label: 'Loss',
-        emoji: '🔴',
+        dotColor: 'bg-red-500',
         color: 'text-red-600 dark:text-red-400',
         tradeCount: losses.length,
         avgRR: lossStats.avgRR,
@@ -439,7 +443,7 @@ export const ClassificationAnalytics: React.FC<ClassificationAnalyticsProps> = (
       {
         result: 'scratch',
         label: 'BE',
-        emoji: '🟡',
+        dotColor: 'bg-yellow-500',
         color: 'text-yellow-600 dark:text-yellow-400',
         tradeCount: scratches.length,
         avgRR: scratchStats.avgRR,
@@ -537,13 +541,13 @@ export const ClassificationAnalytics: React.FC<ClassificationAnalyticsProps> = (
                     </div>
                     <VisibilityToggle
                       label="Year"
-                      emoji="🗓️"
+                      icon={<Calendar className="w-4 h-4" />}
                       isVisible={cardVisibility.year}
                       onToggle={() => toggleVisibility('year')}
                     />
                     <VisibilityToggle
                       label="Month Stats"
-                      emoji="📅"
+                      icon={<CalendarDays className="w-4 h-4" />}
                       isVisible={cardVisibility.month}
                       onToggle={() => toggleVisibility('month')}
                     />
@@ -554,13 +558,13 @@ export const ClassificationAnalytics: React.FC<ClassificationAnalyticsProps> = (
                     </div>
                     <VisibilityToggle
                       label="Pair Stats"
-                      emoji="💰"
+                      icon={<Coins className="w-4 h-4" />}
                       isVisible={cardVisibility.pairs}
                       onToggle={() => toggleVisibility('pairs')}
                     />
                     <VisibilityToggle
                       label="Result Stats"
-                      emoji="⚙️"
+                      icon={<PieChart className="w-4 h-4" />}
                       isVisible={cardVisibility.results}
                       onToggle={() => toggleVisibility('results')}
                     />
@@ -575,7 +579,7 @@ export const ClassificationAnalytics: React.FC<ClassificationAnalyticsProps> = (
                           <VisibilityToggle
                             key={cat.id}
                             label={cat.name}
-                            emoji={cat.emoji}
+                            icon={<Layers className="w-4 h-4" />}
                             isVisible={cardVisibility[cat.id] ?? true}
                             onToggle={() => toggleVisibility(cat.id)}
                           />
@@ -629,7 +633,7 @@ export const ClassificationAnalytics: React.FC<ClassificationAnalyticsProps> = (
             {cardVisibility.year && yearStats.length > 0 && (
               <TimeStatsCard
                 title="Year"
-                emoji="🗓️"
+                icon={<Calendar className="w-5 h-5 text-muted-foreground" />}
                 stats={yearStats}
                 colorIndex={0}
                 hoveredOption={hoveredOption}
@@ -641,7 +645,7 @@ export const ClassificationAnalytics: React.FC<ClassificationAnalyticsProps> = (
             {cardVisibility.month && (
               <TimeStatsCard
                 title="Month Stats"
-                emoji="📅"
+                icon={<CalendarDays className="w-5 h-5 text-muted-foreground" />}
                 stats={monthStats}
                 colorIndex={1}
                 hoveredOption={hoveredOption}
@@ -698,14 +702,14 @@ export const ClassificationAnalytics: React.FC<ClassificationAnalyticsProps> = (
 // Visibility toggle item
 interface VisibilityToggleProps {
   label: string;
-  emoji?: string;
+  icon?: React.ReactNode;
   isVisible: boolean;
   onToggle: () => void;
 }
 
 const VisibilityToggle: React.FC<VisibilityToggleProps> = ({
   label,
-  emoji,
+  icon,
   isVisible,
   onToggle,
 }) => (
@@ -717,7 +721,7 @@ const VisibilityToggle: React.FC<VisibilityToggleProps> = ({
       !isVisible && "opacity-50"
     )}
   >
-    {emoji && <span>{emoji}</span>}
+    {icon && <span className="text-muted-foreground">{icon}</span>}
     <span className="flex-1 text-left">{label}</span>
     {isVisible ? (
       <Eye className="w-4 h-4 text-primary" />
@@ -730,7 +734,7 @@ const VisibilityToggle: React.FC<VisibilityToggleProps> = ({
 // Time-based stats card (Year/Month)
 interface TimeStatsCardProps {
   title: string;
-  emoji: string;
+  icon: React.ReactNode;
   stats: TimeStats[];
   colorIndex: number;
   hoveredOption: string | null;
@@ -739,7 +743,7 @@ interface TimeStatsCardProps {
 
 const TimeStatsCard: React.FC<TimeStatsCardProps> = ({
   title,
-  emoji,
+  icon,
   stats,
   colorIndex,
   hoveredOption,
@@ -759,7 +763,7 @@ const TimeStatsCard: React.FC<TimeStatsCardProps> = ({
       )}
     >
       <div className="flex items-center gap-2 mb-4">
-        <span className="text-xl">{emoji}</span>
+        {icon}
         <h3 className="font-semibold text-base">{title}</h3>
       </div>
 
@@ -786,7 +790,6 @@ const TimeStatsCard: React.FC<TimeStatsCardProps> = ({
             )}
           >
             <div className="flex items-center gap-2 min-w-0">
-              <span className="text-sm">📄</span>
               <span className="text-sm font-medium truncate">{stat.label}</span>
             </div>
             <div className="text-sm text-right w-14 font-medium">
@@ -845,7 +848,7 @@ const PairStatsCard: React.FC<PairStatsCardProps> = ({
       )}
     >
       <div className="flex items-center gap-2 mb-4">
-        <span className="text-xl">💰</span>
+        <Coins className="w-5 h-5 text-muted-foreground" />
         <h3 className="font-semibold text-base">Pair Stats</h3>
       </div>
 
@@ -872,7 +875,6 @@ const PairStatsCard: React.FC<PairStatsCardProps> = ({
             )}
           >
             <div className="flex items-center gap-2 min-w-0">
-              <span className="text-sm">💰</span>
               <span className="text-sm font-medium truncate">{stat.symbol}</span>
             </div>
             <div className="text-sm text-right w-14 font-medium">
@@ -931,7 +933,7 @@ const ResultStatsCard: React.FC<ResultStatsCardProps> = ({
       )}
     >
       <div className="flex items-center gap-2 mb-4">
-        <span className="text-xl">⚙️</span>
+        <PieChart className="w-5 h-5 text-muted-foreground" />
         <h3 className="font-semibold text-base">Result Stats</h3>
       </div>
 
@@ -958,7 +960,7 @@ const ResultStatsCard: React.FC<ResultStatsCardProps> = ({
             )}
           >
             <div className="flex items-center gap-2 min-w-0">
-              <span className="text-sm">{stat.emoji}</span>
+              <span className={cn("w-2 h-2 rounded-full", stat.dotColor)} />
               <span className="text-sm font-medium truncate">{stat.label}</span>
             </div>
             <div className="text-sm text-right w-14 font-medium">
@@ -1019,7 +1021,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
       )}
     >
       <div className="flex items-center gap-2 mb-4">
-        <span className="text-xl">{stats.category.emoji}</span>
+        <Layers className="w-5 h-5 text-muted-foreground" />
         <h3 className="font-semibold text-base">{stats.category.name}</h3>
       </div>
 
@@ -1046,7 +1048,6 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
             )}
           >
             <div className="flex items-center gap-2 min-w-0">
-              <span className="text-sm">{option.emoji}</span>
               <span className="text-sm font-medium truncate">{option.optionName}</span>
             </div>
             <div className="text-sm text-right w-14 font-medium">
