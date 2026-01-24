@@ -443,7 +443,21 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
     setCurrentPage(1); // Reset to first page when filtering
   };
 
-  const handleTradeClick = (tradeId: string) => {
+  const handleTradeClick = (tradeId: string, e?: React.MouseEvent) => {
+    // Don't open edit if clicking on an interactive element
+    if (e) {
+      const target = e.target as HTMLElement;
+      if (
+        target.closest('button') ||
+        target.closest('input') ||
+        target.closest('[data-no-click]') ||
+        target.tagName === 'BUTTON' ||
+        target.tagName === 'INPUT'
+      ) {
+        return;
+      }
+    }
+
     if (selectionMode) {
       // Toggle selection
       setSelectedTrades(prev => {
@@ -459,6 +473,12 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
         }
         return newSet;
       });
+    } else {
+      // Open edit modal when clicking a trade row
+      const trade = trades.find(t => t.id === tradeId);
+      if (trade && onOpenTradeModal) {
+        onOpenTradeModal(trade);
+      }
     }
   };
 
@@ -1236,7 +1256,7 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                     onMouseLeave={handleLongPressEnd}
                     onTouchStart={() => handleLongPressStart(trade.id)}
                     onTouchEnd={handleLongPressEnd}
-                    onClick={() => handleTradeClick(trade.id)}
+                    onClick={(e) => handleTradeClick(trade.id, e)}
                   >
                     {selectionMode && (
                       <td className="p-3">
@@ -1651,7 +1671,10 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                 }}
                 className="bg-muted/30 rounded-lg p-4 space-y-3 relative z-10"
               >
-              <div className="flex items-center justify-between">
+              <div 
+                className="flex items-center justify-between cursor-pointer"
+                onClick={() => onOpenTradeModal && onOpenTradeModal(trade)}
+              >
                 <div className="flex items-center gap-2">
                   <span className="font-medium">{trade.symbol}</span>
                   <span className={cn(
@@ -1661,7 +1684,7 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
                     {trade.direction?.toUpperCase() || 'N/A'}
                   </span>
                 </div>
-                <span className="text-xs text-muted-foreground">← Swipe</span>
+                <span className="text-xs text-muted-foreground">Tap to edit</span>
               </div>
 
               <div className="grid grid-cols-2 gap-2 text-sm">
