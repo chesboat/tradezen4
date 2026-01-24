@@ -1,6 +1,6 @@
 /**
  * Classification Analytics - Bento grid stats page
- * Shows performance breakdown by classification categories, year, and month
+ * Shows performance breakdown by classification categories, year, month, pairs, and results
  * Inspired by the Notion-style statistics layout
  */
 
@@ -19,6 +19,7 @@ import {
   Eye,
   EyeOff,
   ChevronDown,
+  Clock,
 } from 'lucide-react';
 import { Trade, ClassificationCategory } from '@/types';
 import { useClassificationStore } from '@/store/useClassificationStore';
@@ -45,7 +46,7 @@ interface OptionStats {
   winRate: number;
   totalPnL: number;
   totalRR: number;
-  avgPnL: number;
+  avgRR: number;
 }
 
 interface CategoryStats {
@@ -60,6 +61,25 @@ interface TimeStats {
   winRate: number;
   totalRR: number;
   totalPnL: number;
+  avgRR?: number;
+}
+
+interface PairStats {
+  symbol: string;
+  tradeCount: number;
+  winRate: number;
+  totalRR: number;
+  avgRR: number;
+}
+
+interface ResultStats {
+  result: 'win' | 'loss' | 'scratch';
+  label: string;
+  emoji: string;
+  color: string;
+  tradeCount: number;
+  avgRR: number;
+  totalRR: number;
 }
 
 // Color palette for categories
@@ -72,17 +92,31 @@ const CATEGORY_COLORS = [
   { bg: 'bg-cyan-500/10', border: 'border-cyan-500/20', accent: 'bg-cyan-500', text: 'text-cyan-600' },
 ];
 
+// Time filter options
+type TimeFilter = 'all' | '7d' | '30d' | '90d' | 'ytd';
+
+const TIME_FILTERS: { value: TimeFilter; label: string }[] = [
+  { value: 'all', label: 'All Time' },
+  { value: '7d', label: 'Last 7 Days' },
+  { value: '30d', label: 'Last 30 Days' },
+  { value: '90d', label: 'Last 90 Days' },
+  { value: 'ytd', label: 'Year to Date' },
+];
+
 // Card visibility storage key
 const CARD_VISIBILITY_KEY = 'statistics-card-visibility';
+const TIME_FILTER_KEY = 'statistics-time-filter';
 
 interface CardVisibility {
   year: boolean;
   month: boolean;
+  pairs: boolean;
+  results: boolean;
   [categoryId: string]: boolean;
 }
 
 const getDefaultVisibility = (categoryIds: string[]): CardVisibility => {
-  const visibility: CardVisibility = { year: true, month: true };
+  const visibility: CardVisibility = { year: true, month: true, pairs: true, results: true };
   categoryIds.forEach(id => { visibility[id] = true; });
   return visibility;
 };
@@ -92,7 +126,6 @@ const loadVisibility = (categoryIds: string[]): CardVisibility => {
     const stored = localStorage.getItem(CARD_VISIBILITY_KEY);
     if (stored) {
       const parsed = JSON.parse(stored);
-      // Merge with defaults to handle new categories
       return { ...getDefaultVisibility(categoryIds), ...parsed };
     }
   } catch {}
@@ -101,6 +134,20 @@ const loadVisibility = (categoryIds: string[]): CardVisibility => {
 
 const saveVisibility = (visibility: CardVisibility) => {
   localStorage.setItem(CARD_VISIBILITY_KEY, JSON.stringify(visibility));
+};
+
+const loadTimeFilter = (): TimeFilter => {
+  try {
+    const stored = localStorage.getItem(TIME_FILTER_KEY);
+    if (stored && TIME_FILTERS.some(f => f.value === stored)) {
+      return stored as TimeFilter;
+    }
+  } catch {}
+  return 'all';
+};
+
+const saveTimeFilter = (filter: TimeFilter) => {
+  localStorage.setItem(TIME_FILTER_KEY, filter);
 };
 
 // Month names for display
@@ -120,23 +167,49 @@ const getSignedRR = (trade: Trade): number => {
   const rr = trade.riskRewardRatio || trade.rrRatio || 1;
   
   if (pnl > 0) {
-    // Win - use positive RR
     return Math.abs(rr);
   } else if (pnl < 0) {
-    // Loss - use lossRR if specified, otherwise default to -1R
-    // If riskRewardRatio is stored as negative, use it directly
     if (rr < 0) return rr;
-    // Check for lossRR field
     if (trade.lossRR !== undefined) return -Math.abs(trade.lossRR);
-    // Default loss is -1R
     return -1;
   }
-  // Scratch trade
   return 0;
 };
 
+/**
+ * Filter trades by time period
+ */
+const filterTradesByTime = (trades: Trade[], filter: TimeFilter): Trade[] => {
+  if (filter === 'all') return trades;
+  
+  const now = new Date();
+  let cutoffDate: Date;
+  
+  switch (filter) {
+    case '7d':
+      cutoffDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      break;
+    case '30d':
+      cutoffDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      break;
+    case '90d':
+      cutoffDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+      break;
+    case 'ytd':
+      cutoffDate = new Date(now.getFullYear(), 0, 1); // Jan 1 of current year
+      break;
+    default:
+      return trades;
+  }
+  
+  return trades.filter(trade => {
+    const tradeDate = new Date(trade.entryTime);
+    return tradeDate >= cutoffDate;
+  });
+};
+
 export const ClassificationAnalytics: React.FC<ClassificationAnalyticsProps> = ({
-  trades,
+  trades: allTrades,
   isPremium = true,
   onManageCategories,
   className,
@@ -144,6 +217,8 @@ export const ClassificationAnalytics: React.FC<ClassificationAnalyticsProps> = (
   const { getActiveCategories } = useClassificationStore();
   const [hoveredOption, setHoveredOption] = useState<string | null>(null);
   const [showVisibilityMenu, setShowVisibilityMenu] = useState(false);
+  const [showTimeFilterMenu, setShowTimeFilterMenu] = useState(false);
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>(() => loadTimeFilter());
   
   const categories = getActiveCategories();
   const categoryIds = categories.map(c => c.id);
@@ -152,10 +227,23 @@ export const ClassificationAnalytics: React.FC<ClassificationAnalyticsProps> = (
     loadVisibility(categoryIds)
   );
 
+  // Filter trades by time
+  const trades = useMemo(() => 
+    filterTradesByTime(allTrades, timeFilter),
+    [allTrades, timeFilter]
+  );
+
   // Update visibility when categories change
   useEffect(() => {
     setCardVisibility(prev => ({ ...getDefaultVisibility(categoryIds), ...prev }));
   }, [categoryIds.join(',')]);
+
+  // Save time filter on change
+  const handleTimeFilterChange = (filter: TimeFilter) => {
+    setTimeFilter(filter);
+    saveTimeFilter(filter);
+    setShowTimeFilterMenu(false);
+  };
 
   // Save visibility on change
   const toggleVisibility = (key: string) => {
@@ -170,7 +258,6 @@ export const ClassificationAnalytics: React.FC<ClassificationAnalyticsProps> = (
   const categoryStats = useMemo((): CategoryStats[] => {
     return categories.map(category => {
       const optionStats: OptionStats[] = category.options.map(option => {
-        // Get trades with this classification
         const matchingTrades = trades.filter(trade => 
           trade.classifications?.[category.id] === option.id
         );
@@ -180,7 +267,7 @@ export const ClassificationAnalytics: React.FC<ClassificationAnalyticsProps> = (
         const winRate = tradeCount > 0 ? (wins / tradeCount) * 100 : 0;
         const totalPnL = matchingTrades.reduce((sum, t) => sum + (t.pnl || 0), 0);
         const totalRR = matchingTrades.reduce((sum, t) => sum + getSignedRR(t), 0);
-        const avgPnL = tradeCount > 0 ? totalPnL / tradeCount : 0;
+        const avgRR = tradeCount > 0 ? totalRR / tradeCount : 0;
 
         return {
           optionId: option.id,
@@ -191,7 +278,7 @@ export const ClassificationAnalytics: React.FC<ClassificationAnalyticsProps> = (
           winRate,
           totalPnL,
           totalRR,
-          avgPnL,
+          avgRR,
         };
       });
 
@@ -232,10 +319,10 @@ export const ClassificationAnalytics: React.FC<ClassificationAnalyticsProps> = (
       });
     });
 
-    return stats.sort((a, b) => parseInt(b.label) - parseInt(a.label)); // Most recent first
+    return stats.sort((a, b) => parseInt(b.label) - parseInt(a.label));
   }, [trades]);
 
-  // Calculate month stats (for current year or all time)
+  // Calculate month stats
   const monthStats = useMemo((): TimeStats[] => {
     const monthMap = new Map<string, Trade[]>();
     
@@ -266,12 +353,87 @@ export const ClassificationAnalytics: React.FC<ClassificationAnalyticsProps> = (
     return stats;
   }, [trades]);
 
-  // Check if any trades have classifications
+  // Calculate pair/symbol stats
+  const pairStats = useMemo((): PairStats[] => {
+    const pairMap = new Map<string, Trade[]>();
+    
+    trades.forEach(trade => {
+      const symbol = trade.symbol.toUpperCase();
+      if (!pairMap.has(symbol)) pairMap.set(symbol, []);
+      pairMap.get(symbol)!.push(trade);
+    });
+
+    const stats: PairStats[] = [];
+    pairMap.forEach((pairTrades, symbol) => {
+      const wins = pairTrades.filter(t => (t.pnl || 0) > 0).length;
+      const winRate = pairTrades.length > 0 ? (wins / pairTrades.length) * 100 : 0;
+      const totalRR = pairTrades.reduce((sum, t) => sum + getSignedRR(t), 0);
+      const avgRR = pairTrades.length > 0 ? totalRR / pairTrades.length : 0;
+      
+      stats.push({
+        symbol,
+        tradeCount: pairTrades.length,
+        winRate,
+        totalRR,
+        avgRR,
+      });
+    });
+
+    // Sort by trade count descending
+    return stats.sort((a, b) => b.tradeCount - a.tradeCount);
+  }, [trades]);
+
+  // Calculate result stats
+  const resultStats = useMemo((): ResultStats[] => {
+    const wins = trades.filter(t => (t.pnl || 0) > 0);
+    const losses = trades.filter(t => (t.pnl || 0) < 0);
+    const scratches = trades.filter(t => (t.pnl || 0) === 0);
+
+    const calcStats = (tradeset: Trade[]): { avgRR: number; totalRR: number } => {
+      const totalRR = tradeset.reduce((sum, t) => sum + getSignedRR(t), 0);
+      const avgRR = tradeset.length > 0 ? totalRR / tradeset.length : 0;
+      return { avgRR, totalRR };
+    };
+
+    const winStats = calcStats(wins);
+    const lossStats = calcStats(losses);
+    const scratchStats = calcStats(scratches);
+
+    return [
+      {
+        result: 'win',
+        label: 'Win',
+        emoji: '🟢',
+        color: 'text-green-600 dark:text-green-400',
+        tradeCount: wins.length,
+        avgRR: winStats.avgRR,
+        totalRR: winStats.totalRR,
+      },
+      {
+        result: 'loss',
+        label: 'Loss',
+        emoji: '🔴',
+        color: 'text-red-600 dark:text-red-400',
+        tradeCount: losses.length,
+        avgRR: lossStats.avgRR,
+        totalRR: lossStats.totalRR,
+      },
+      {
+        result: 'scratch',
+        label: 'BE',
+        emoji: '🟡',
+        color: 'text-yellow-600 dark:text-yellow-400',
+        tradeCount: scratches.length,
+        avgRR: scratchStats.avgRR,
+        totalRR: scratchStats.totalRR,
+      },
+    ];
+  }, [trades]);
+
   const hasClassifiedTrades = trades.some(t => t.classifications && Object.keys(t.classifications).length > 0);
   const hasTrades = trades.length > 0;
-
-  // Count visible cards
   const visibleCount = Object.values(cardVisibility).filter(Boolean).length;
+  const currentFilterLabel = TIME_FILTERS.find(f => f.value === timeFilter)?.label || 'All Time';
 
   return (
     <div className={cn("space-y-6", className)}>
@@ -280,10 +442,54 @@ export const ClassificationAnalytics: React.FC<ClassificationAnalyticsProps> = (
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Statistics</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Performance breakdown by time and classification
+            Performance breakdown • {trades.length} trades {timeFilter !== 'all' && `(${currentFilterLabel})`}
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {/* Time Filter */}
+          <div className="relative">
+            <button
+              onClick={() => setShowTimeFilterMenu(!showTimeFilterMenu)}
+              className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg
+                       bg-muted/50 hover:bg-muted transition-colors"
+            >
+              <Clock className="w-4 h-4" />
+              {currentFilterLabel}
+              <ChevronDown className={cn(
+                "w-4 h-4 transition-transform",
+                showTimeFilterMenu && "rotate-180"
+              )} />
+            </button>
+            
+            <AnimatePresence>
+              {showTimeFilterMenu && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="absolute right-0 top-full mt-2 w-44 bg-popover border border-border rounded-xl shadow-lg z-50 overflow-hidden"
+                >
+                  <div className="p-1">
+                    {TIME_FILTERS.map(filter => (
+                      <button
+                        key={filter.value}
+                        onClick={() => handleTimeFilterChange(filter.value)}
+                        className={cn(
+                          "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors",
+                          timeFilter === filter.value
+                            ? "bg-primary text-primary-foreground"
+                            : "hover:bg-muted"
+                        )}
+                      >
+                        {filter.label}
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
           {/* Visibility Toggle */}
           <div className="relative">
             <button
@@ -305,7 +511,7 @@ export const ClassificationAnalytics: React.FC<ClassificationAnalyticsProps> = (
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="absolute right-0 top-full mt-2 w-56 bg-popover border border-border rounded-xl shadow-lg z-50 overflow-hidden"
+                  className="absolute right-0 top-full mt-2 w-56 bg-popover border border-border rounded-xl shadow-lg z-50 overflow-hidden max-h-80 overflow-y-auto"
                 >
                   <div className="p-2 space-y-1">
                     <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
@@ -322,6 +528,23 @@ export const ClassificationAnalytics: React.FC<ClassificationAnalyticsProps> = (
                       emoji="📅"
                       isVisible={cardVisibility.month}
                       onToggle={() => toggleVisibility('month')}
+                    />
+                    
+                    <div className="border-t border-border my-2" />
+                    <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                      Trade Stats
+                    </div>
+                    <VisibilityToggle
+                      label="Pair Stats"
+                      emoji="💰"
+                      isVisible={cardVisibility.pairs}
+                      onToggle={() => toggleVisibility('pairs')}
+                    />
+                    <VisibilityToggle
+                      label="Result Stats"
+                      emoji="⚙️"
+                      isVisible={cardVisibility.results}
+                      onToggle={() => toggleVisibility('results')}
                     />
                     
                     {categories.length > 0 && (
@@ -354,24 +577,30 @@ export const ClassificationAnalytics: React.FC<ClassificationAnalyticsProps> = (
                        bg-muted/50 hover:bg-muted transition-colors"
             >
               <Settings className="w-4 h-4" />
-              Manage Categories
+              Manage
             </button>
           )}
         </div>
       </div>
 
-      {/* Close menu when clicking outside */}
-      {showVisibilityMenu && (
+      {/* Close menus when clicking outside */}
+      {(showVisibilityMenu || showTimeFilterMenu) && (
         <div 
           className="fixed inset-0 z-40" 
-          onClick={() => setShowVisibilityMenu(false)} 
+          onClick={() => {
+            setShowVisibilityMenu(false);
+            setShowTimeFilterMenu(false);
+          }} 
         />
       )}
 
       {!hasTrades ? (
         <EmptyState
           title="No Trades Yet"
-          description="Start logging trades to see your performance statistics."
+          description={timeFilter !== 'all' 
+            ? `No trades found for ${currentFilterLabel.toLowerCase()}. Try a different time range.`
+            : "Start logging trades to see your performance statistics."
+          }
           icon={<BarChart3 className="w-8 h-8" />}
         />
       ) : (
@@ -402,13 +631,33 @@ export const ClassificationAnalytics: React.FC<ClassificationAnalyticsProps> = (
               />
             )}
 
+            {/* Pair Stats Card */}
+            {cardVisibility.pairs && pairStats.length > 0 && (
+              <PairStatsCard
+                stats={pairStats}
+                colorIndex={2}
+                hoveredOption={hoveredOption}
+                onHoverOption={setHoveredOption}
+              />
+            )}
+
+            {/* Result Stats Card */}
+            {cardVisibility.results && (
+              <ResultStatsCard
+                stats={resultStats}
+                colorIndex={3}
+                hoveredOption={hoveredOption}
+                onHoverOption={setHoveredOption}
+              />
+            )}
+
             {/* Classification Category Cards */}
             {categoryStats.map((stats, idx) => (
               cardVisibility[stats.category.id] !== false && (
                 <CategoryCard
                   key={stats.category.id}
                   stats={stats}
-                  colorIndex={idx + 2}
+                  colorIndex={idx + 4}
                   hoveredOption={hoveredOption}
                   onHoverOption={setHoveredOption}
                 />
@@ -416,7 +665,6 @@ export const ClassificationAnalytics: React.FC<ClassificationAnalyticsProps> = (
             ))}
           </div>
 
-          {/* Show message if all cards are hidden */}
           {visibleCount === 0 && (
             <div className="text-center py-12 text-muted-foreground">
               <EyeOff className="w-8 h-8 mx-auto mb-3 opacity-50" />
@@ -492,13 +740,11 @@ const TimeStatsCard: React.FC<TimeStatsCardProps> = ({
         "bg-card"
       )}
     >
-      {/* Header */}
       <div className="flex items-center gap-2 mb-4">
         <span className="text-xl">{emoji}</span>
         <h3 className="font-semibold text-base">{title}</h3>
       </div>
 
-      {/* Table Header */}
       <div className="grid grid-cols-[1fr,auto,auto,auto] gap-2 text-xs text-muted-foreground mb-2 px-1">
         <div>{title === 'Year' ? 'Year' : 'Month'}</div>
         <div className="text-right w-14">Trades</div>
@@ -506,7 +752,6 @@ const TimeStatsCard: React.FC<TimeStatsCardProps> = ({
         <div className="text-right w-16">Total RR</div>
       </div>
 
-      {/* Stats rows */}
       <div className="space-y-1 max-h-[320px] overflow-y-auto">
         {stats.map((stat, idx) => (
           <motion.div
@@ -522,18 +767,13 @@ const TimeStatsCard: React.FC<TimeStatsCardProps> = ({
               hoveredOption === `time-${stat.label}` && "bg-muted/50"
             )}
           >
-            {/* Label */}
             <div className="flex items-center gap-2 min-w-0">
               <span className="text-sm">📄</span>
               <span className="text-sm font-medium truncate">{stat.label}</span>
             </div>
-
-            {/* Trade Count */}
             <div className="text-sm text-right w-14 font-medium">
               {stat.tradeCount}
             </div>
-
-            {/* Win Rate */}
             <div className={cn(
               "text-sm text-right w-14 font-medium",
               stat.tradeCount > 0 && (
@@ -542,8 +782,180 @@ const TimeStatsCard: React.FC<TimeStatsCardProps> = ({
             )}>
               {stat.tradeCount > 0 ? `${stat.winRate.toFixed(0)}%` : '—'}
             </div>
+            <div className={cn(
+              "text-sm text-right w-16 font-bold",
+              stat.totalRR > 0 
+                ? "text-green-600 dark:text-green-400" 
+                : stat.totalRR < 0 
+                ? "text-red-600 dark:text-red-400"
+                : ""
+            )}>
+              {stat.tradeCount > 0 ? stat.totalRR.toFixed(1) : '—'}
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    </motion.div>
+  );
+};
 
-            {/* Total RR */}
+// Pair Stats Card
+interface PairStatsCardProps {
+  stats: PairStats[];
+  colorIndex: number;
+  hoveredOption: string | null;
+  onHoverOption: (id: string | null) => void;
+}
+
+const PairStatsCard: React.FC<PairStatsCardProps> = ({
+  stats,
+  colorIndex,
+  hoveredOption,
+  onHoverOption,
+}) => {
+  const colors = CATEGORY_COLORS[colorIndex % CATEGORY_COLORS.length];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: colorIndex * 0.05 }}
+      className={cn(
+        "rounded-2xl border p-4",
+        colors.border,
+        "bg-card"
+      )}
+    >
+      <div className="flex items-center gap-2 mb-4">
+        <span className="text-xl">💰</span>
+        <h3 className="font-semibold text-base">Pair Stats</h3>
+      </div>
+
+      <div className="grid grid-cols-[1fr,auto,auto,auto] gap-2 text-xs text-muted-foreground mb-2 px-1">
+        <div>Pair</div>
+        <div className="text-right w-14">Trades</div>
+        <div className="text-right w-14">Win %</div>
+        <div className="text-right w-16">Total RR</div>
+      </div>
+
+      <div className="space-y-1 max-h-[320px] overflow-y-auto">
+        {stats.map((stat, idx) => (
+          <motion.div
+            key={stat.symbol}
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: colorIndex * 0.05 + idx * 0.02 }}
+            onMouseEnter={() => onHoverOption(`pair-${stat.symbol}`)}
+            onMouseLeave={() => onHoverOption(null)}
+            className={cn(
+              "grid grid-cols-[1fr,auto,auto,auto] gap-2 items-center px-2 py-2 rounded-lg transition-colors",
+              "hover:bg-muted/50",
+              hoveredOption === `pair-${stat.symbol}` && "bg-muted/50"
+            )}
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-sm">💰</span>
+              <span className="text-sm font-medium truncate">{stat.symbol}</span>
+            </div>
+            <div className="text-sm text-right w-14 font-medium">
+              {stat.tradeCount}
+            </div>
+            <div className={cn(
+              "text-sm text-right w-14 font-medium",
+              stat.tradeCount > 0 && (
+                stat.winRate >= 50 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
+              )
+            )}>
+              {stat.tradeCount > 0 ? `${stat.winRate.toFixed(0)}%` : '—'}
+            </div>
+            <div className={cn(
+              "text-sm text-right w-16 font-bold",
+              stat.totalRR > 0 
+                ? "text-green-600 dark:text-green-400" 
+                : stat.totalRR < 0 
+                ? "text-red-600 dark:text-red-400"
+                : ""
+            )}>
+              {stat.tradeCount > 0 ? stat.totalRR.toFixed(1) : '—'}
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    </motion.div>
+  );
+};
+
+// Result Stats Card
+interface ResultStatsCardProps {
+  stats: ResultStats[];
+  colorIndex: number;
+  hoveredOption: string | null;
+  onHoverOption: (id: string | null) => void;
+}
+
+const ResultStatsCard: React.FC<ResultStatsCardProps> = ({
+  stats,
+  colorIndex,
+  hoveredOption,
+  onHoverOption,
+}) => {
+  const colors = CATEGORY_COLORS[colorIndex % CATEGORY_COLORS.length];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: colorIndex * 0.05 }}
+      className={cn(
+        "rounded-2xl border p-4",
+        colors.border,
+        "bg-card"
+      )}
+    >
+      <div className="flex items-center gap-2 mb-4">
+        <span className="text-xl">⚙️</span>
+        <h3 className="font-semibold text-base">Result Stats</h3>
+      </div>
+
+      <div className="grid grid-cols-[1fr,auto,auto,auto] gap-2 text-xs text-muted-foreground mb-2 px-1">
+        <div>Result</div>
+        <div className="text-right w-14">Trades</div>
+        <div className="text-right w-14">Avg RR</div>
+        <div className="text-right w-16">Total RR</div>
+      </div>
+
+      <div className="space-y-1">
+        {stats.map((stat, idx) => (
+          <motion.div
+            key={stat.result}
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: colorIndex * 0.05 + idx * 0.02 }}
+            onMouseEnter={() => onHoverOption(`result-${stat.result}`)}
+            onMouseLeave={() => onHoverOption(null)}
+            className={cn(
+              "grid grid-cols-[1fr,auto,auto,auto] gap-2 items-center px-2 py-2 rounded-lg transition-colors",
+              "hover:bg-muted/50",
+              hoveredOption === `result-${stat.result}` && "bg-muted/50"
+            )}
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-sm">{stat.emoji}</span>
+              <span className="text-sm font-medium truncate">{stat.label}</span>
+            </div>
+            <div className="text-sm text-right w-14 font-medium">
+              {stat.tradeCount}
+            </div>
+            <div className={cn(
+              "text-sm text-right w-14 font-medium",
+              stat.avgRR > 0 
+                ? "text-green-600 dark:text-green-400" 
+                : stat.avgRR < 0 
+                ? "text-red-600 dark:text-red-400"
+                : ""
+            )}>
+              {stat.tradeCount > 0 ? stat.avgRR.toFixed(2) : '—'}
+            </div>
             <div className={cn(
               "text-sm text-right w-16 font-bold",
               stat.totalRR > 0 
@@ -588,13 +1000,11 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
         "bg-card"
       )}
     >
-      {/* Category Header */}
       <div className="flex items-center gap-2 mb-4">
         <span className="text-xl">{stats.category.emoji}</span>
         <h3 className="font-semibold text-base">{stats.category.name}</h3>
       </div>
 
-      {/* Table Header */}
       <div className="grid grid-cols-[1fr,auto,auto,auto] gap-2 text-xs text-muted-foreground mb-2 px-1">
         <div>Name</div>
         <div className="text-right w-14">Trades</div>
@@ -602,7 +1012,6 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
         <div className="text-right w-16">Total RR</div>
       </div>
 
-      {/* Options */}
       <div className="space-y-1">
         {stats.options.map((option, optIdx) => (
           <motion.div
@@ -618,18 +1027,13 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
               hoveredOption === option.optionId && "bg-muted/50"
             )}
           >
-            {/* Name with emoji */}
             <div className="flex items-center gap-2 min-w-0">
               <span className="text-sm">{option.emoji}</span>
               <span className="text-sm font-medium truncate">{option.optionName}</span>
             </div>
-
-            {/* Trade Count */}
             <div className="text-sm text-right w-14 font-medium">
               {option.tradeCount}
             </div>
-
-            {/* Win Rate */}
             <div className={cn(
               "text-sm text-right w-14 font-medium",
               option.tradeCount > 0 && (
@@ -638,8 +1042,6 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
             )}>
               {option.tradeCount > 0 ? `${option.winRate.toFixed(0)}%` : '—'}
             </div>
-
-            {/* Total RR */}
             <div className={cn(
               "text-sm text-right w-16 font-bold",
               option.totalRR > 0 
@@ -692,7 +1094,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({
   </div>
 );
 
-// Full page wrapper component - fetches trades from store
+// Full page wrapper component
 interface ClassificationAnalyticsPageProps {
   onManageCategories?: () => void;
 }
@@ -704,7 +1106,6 @@ export const ClassificationAnalyticsPage: React.FC<ClassificationAnalyticsPagePr
   const { selectedAccountId } = useAccountFilterStore();
   const { isPremium, isTrial } = useSubscription();
   
-  // Filter trades by selected account(s)
   const filteredTrades = useMemo(() => {
     const accountIds = getAccountIdsForSelection(selectedAccountId);
     return trades.filter((trade: Trade) => accountIds.includes(trade.accountId));
