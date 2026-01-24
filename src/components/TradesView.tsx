@@ -45,7 +45,6 @@ import { formatCurrency, formatRelativeTime, getMoodColor, getMoodEmoji } from '
 import { cn } from '@/lib/utils';
 import { TagPill, TagInput } from './TagInput';
 import { useTagStore } from '@/store/useTagStore';
-import toast from 'react-hot-toast';
 
 interface TradeFilters {
   search: string;
@@ -73,7 +72,7 @@ interface TradesViewProps {
 }
 
 export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
-  const { trades, deleteTrade, updateTrade, toggleMarkForReview, getMarkedForReview, forceRefresh } = useTradeStore();
+  const { trades, deleteTrade, updateTrade, toggleMarkForReview, getMarkedForReview } = useTradeStore();
   const { accounts, selectedAccountId } = useAccountFilterStore();
   
   // Default to cards on mobile, table on desktop
@@ -102,7 +101,6 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
   });
   
   const [showFilters, setShowFilters] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedTrades, setSelectedTrades] = useState<Set<string>>(new Set());
   const [showImageImport, setShowImageImport] = useState(false);
   const [bulkMood, setBulkMood] = useState<MoodType | ''>('');
@@ -827,30 +825,6 @@ export const TradesView: React.FC<TradesViewProps> = ({ onOpenTradeModal }) => {
           >
             <CheckSquare className="w-4 h-4" />
             <span className="hidden sm:inline">{selectionMode ? 'Cancel' : 'Select'}</span>
-          </button>
-          
-          {/* Refresh button - helps with sync issues */}
-          <button
-            onClick={async () => {
-              setIsRefreshing(true);
-              try {
-                await forceRefresh();
-                toast.success('Trades refreshed');
-              } catch (error) {
-                toast.error('Failed to refresh');
-              } finally {
-                setIsRefreshing(false);
-              }
-            }}
-            disabled={isRefreshing}
-            className={cn(
-              "flex items-center gap-2 px-3 py-2 rounded-lg transition-colors",
-              isRefreshing ? "bg-muted/30 cursor-not-allowed" : "bg-muted/50 hover:bg-muted/70"
-            )}
-            title="Refresh trades from server"
-          >
-            <RefreshCw className={cn("w-4 h-4", isRefreshing && "animate-spin")} />
-            <span className="hidden sm:inline">Refresh</span>
           </button>
           
           {/* Mobile: Hide view mode toggle on small screens, default to cards */}

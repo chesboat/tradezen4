@@ -107,6 +107,20 @@ export class FirestoreService<T extends FirestoreDocument> {
       ...data,
       updatedAt: new Date().toISOString(),
     }) as Partial<T> as unknown as { [x: string]: any };
+    
+    // Debug log the update data to catch malformed requests
+    if (Object.keys(updateData).length === 0) {
+      console.warn('FirestoreService: Update contains no data after cleaning undefined values');
+      return; // Skip empty updates
+    }
+    
+    console.log('FirestoreService: Sending update to Firestore:', {
+      docId: id,
+      updateKeys: Object.keys(updateData),
+      hasClassifications: 'classifications' in updateData,
+      classificationsValue: (updateData as any).classifications,
+    });
+    
     await updateDoc(docRef, updateData);
   }
 
