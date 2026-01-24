@@ -322,7 +322,7 @@ export const ClassificationAnalyticsPage: React.FC<ClassificationAnalyticsPagePr
 }) => {
   const { trades } = useTradeStore();
   const { selectedAccountId } = useAccountFilterStore();
-  const { hasAccess } = useSubscription();
+  const { isPremium, isTrial } = useSubscription();
   
   // Filter trades by selected account(s)
   const filteredTrades = useMemo(() => {
@@ -335,7 +335,7 @@ export const ClassificationAnalyticsPage: React.FC<ClassificationAnalyticsPagePr
       <div className="max-w-7xl mx-auto px-4 py-8">
         <ClassificationAnalytics
           trades={filteredTrades}
-          isPremium={hasAccess('setup-analytics')}
+          isPremium={isPremium || isTrial}
           onManageCategories={onManageCategories}
         />
       </div>
