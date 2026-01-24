@@ -33,6 +33,7 @@ interface OptionStats {
   optionId: string;
   optionName: string;
   emoji?: string;
+  order: number;
   tradeCount: number;
   winRate: number;
   totalPnL: number;
@@ -87,6 +88,7 @@ export const ClassificationAnalytics: React.FC<ClassificationAnalyticsProps> = (
           optionId: option.id,
           optionName: option.name,
           emoji: option.emoji,
+          order: option.order,
           tradeCount,
           winRate,
           totalPnL,
