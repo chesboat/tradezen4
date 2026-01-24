@@ -19,10 +19,11 @@ const app = initializeApp(firebaseConfig);
 
 // Get Auth and Firestore instances
 export const auth = getAuth(app);
-// Use auto-detected long polling to improve reliability on iOS Safari/mobile networks
+// Try WebSocket by default, fall back to long polling on mobile
+const isIOSSafari = /iPad|iPhone|iPod/.test(navigator.userAgent);
 export const db = initializeFirestore(app, {
-  // Force long polling to avoid blocked streams; use in-memory cache to avoid IndexedDB issues
-  experimentalForceLongPolling: true as any,
+  // Use long polling only on iOS Safari where WebSocket has issues
+  experimentalForceLongPolling: isIOSSafari as any,
   localCache: memoryLocalCache() as any,
 });
 

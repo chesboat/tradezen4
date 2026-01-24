@@ -78,61 +78,82 @@ export const useTradeStore = create<TradeState>((set, get) => ({
         if (userId) {
           const colRef = collection(db as any, `users/${userId}/trades`);
           const q = query(colRef, orderBy('createdAt', 'desc'));
-          const unsub = onSnapshot(q, async (snap) => {
-            console.log('📊 Trades realtime update received:', snap.docs.length, 'trades');
-            const docs = snap.docs.map((d) => {
-              const data = d.data();
-              // Debug: Log if any trade has classifications
-              if (data.classifications && Object.keys(data.classifications).length > 0) {
-                console.log('📊 Trade with classifications:', d.id, 'classifications:', Object.keys(data.classifications).length, 'keys');
-              }
-              return { id: d.id, ...data } as any;
-            }) as Trade[];
-            
-            // Debug: Log the first trade's updatedAt timestamp to track freshness
-            if (docs.length > 0) {
-              console.log('📊 Most recent trade updatedAt:', docs[0].updatedAt);
-            }
-            
-            const formatted = docs.map(trade => ({
-              ...trade,
-              createdAt: new Date(trade.createdAt),
-              updatedAt: new Date(trade.updatedAt),
-              entryTime: new Date(trade.entryTime as any),
-              exitTime: (trade as any).exitTime ? new Date((trade as any).exitTime) : undefined,
-              // Ensure classifications are preserved
-              classifications: trade.classifications || {},
-            }));
-            let filteredRealtime = formatted;
-            try {
-              const mod = await import('./useAccountFilterStore');
-              const { accounts } = mod.useAccountFilterStore.getState();
-              const { getAccountStatus } = mod;
-              if (accounts && accounts.length > 0) {
-                const validIds = new Set(
-                  accounts
-                    .filter(a => getAccountStatus(a) !== 'deleted')
-                    .map(a => a.id)
-                );
-                filteredRealtime = formatted.filter(t => validIds.has((t as any).accountId));
-                console.log('📊 Filtered trades:', filteredRealtime.length, 'of', formatted.length, 'valid accounts:', validIds.size);
+          
+          let retryCount = 0;
+          const maxRetries = 3;
+          
+          const setupListener = () => {
+            const unsub = onSnapshot(q, 
+              async (snap) => {
+                console.log('📊 Trades realtime update received:', snap.docs.length, 'trades');
+                retryCount = 0; // Reset on successful connection
                 
-                // Safety check: if we have trades but filtering removed them all, keep the unfiltered trades
-                // This prevents the "no trades" bug when accounts haven't loaded yet
-                if (formatted.length > 0 && filteredRealtime.length === 0 && validIds.size === 0) {
-                  console.warn('⚠️ Account filter would remove all trades but no valid accounts found - keeping unfiltered');
-                  filteredRealtime = formatted;
+                const docs = snap.docs.map((d) => {
+                  const data = d.data();
+                  // Debug: Log if any trade has classifications
+                  if (data.classifications && Object.keys(data.classifications).length > 0) {
+                    console.log('📊 Trade with classifications:', d.id, 'classifications:', Object.keys(data.classifications).length, 'keys');
+                  }
+                  return { id: d.id, ...data } as any;
+                }) as Trade[];
+                
+                // Debug: Log the first trade's updatedAt timestamp to track freshness
+                if (docs.length > 0) {
+                  console.log('📊 Most recent trade updatedAt:', docs[0].updatedAt);
+                }
+                
+                const formatted = docs.map(trade => ({
+                  ...trade,
+                  createdAt: new Date(trade.createdAt),
+                  updatedAt: new Date(trade.updatedAt),
+                  entryTime: new Date(trade.entryTime as any),
+                  exitTime: (trade as any).exitTime ? new Date((trade as any).exitTime) : undefined,
+                  // Ensure classifications are preserved
+                  classifications: trade.classifications || {},
+                }));
+                let filteredRealtime = formatted;
+                try {
+                  const mod = await import('./useAccountFilterStore');
+                  const { accounts } = mod.useAccountFilterStore.getState();
+                  const { getAccountStatus } = mod;
+                  if (accounts && accounts.length > 0) {
+                    const validIds = new Set(
+                      accounts
+                        .filter(a => getAccountStatus(a) !== 'deleted')
+                        .map(a => a.id)
+                    );
+                    filteredRealtime = formatted.filter(t => validIds.has((t as any).accountId));
+                    console.log('📊 Filtered trades:', filteredRealtime.length, 'of', formatted.length, 'valid accounts:', validIds.size);
+                    
+                    // Safety check: if we have trades but filtering removed them all, keep the unfiltered trades
+                    // This prevents the "no trades" bug when accounts haven't loaded yet
+                    if (formatted.length > 0 && filteredRealtime.length === 0 && validIds.size === 0) {
+                      console.warn('⚠️ Account filter would remove all trades but no valid accounts found - keeping unfiltered');
+                      filteredRealtime = formatted;
+                    }
+                  }
+                } catch (e) {
+                  console.warn('Account filtering failed in realtime listener:', e);
+                }
+                set({ trades: filteredRealtime });
+                try { (window as any).__tradesReady = true; } catch {}
+              },
+              (error) => {
+                console.error('📊 Trades realtime listener error:', error);
+                // Attempt retry on connection errors
+                if (retryCount < maxRetries) {
+                  retryCount++;
+                  console.log(`📊 Retrying trades listener (attempt ${retryCount}/${maxRetries})...`);
+                  setTimeout(setupListener, 1000 * retryCount); // Exponential backoff
+                } else {
+                  console.error('📊 Trades listener failed after max retries');
                 }
               }
-            } catch (e) {
-              console.warn('Account filtering failed in realtime listener:', e);
-            }
-            set({ trades: filteredRealtime });
-            try { (window as any).__tradesReady = true; } catch {}
-          }, (error) => {
-            console.error('Trades snapshot error:', error);
-          });
-          (window as any).__tradesUnsub = unsub;
+            );
+            (window as any).__tradesUnsub = unsub;
+          };
+          
+          setupListener();
         }
       } catch (e) {
         console.warn('Trades realtime subscription failed (fallback to one-time load):', e);
