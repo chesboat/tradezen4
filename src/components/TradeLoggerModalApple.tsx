@@ -10,15 +10,18 @@ import {
   ChevronDown,
   Check,
   Info,
-  Hash
+  Hash,
+  Grid3X3
 } from 'lucide-react';
 import { useTradeActions } from '@/store/useTradeStore';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
 import { useActivityLogStore } from '@/store/useActivityLogStore';
-import { Trade, TradeDirection, TradeResult } from '@/types';
+import { useClassificationStore } from '@/store/useClassificationStore';
+import { Trade, TradeDirection, TradeResult, TradeClassifications } from '@/types';
 import { formatCurrency, getRecentSymbols, addRecentSymbol } from '@/lib/localStorageUtils';
 import { cn } from '@/lib/utils';
 import { TagInput } from './TagInput';
+import { ClassificationPicker } from './ClassificationPicker';
 import { invalidateCacheImmediate } from '@/lib/cacheInvalidation';
 
 interface TradeLoggerModalAppleProps {
@@ -35,6 +38,7 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
   const { addTrade, updateTrade } = useTradeActions();
   const { selectedAccountId } = useAccountFilterStore();
   const { addActivity } = useActivityLogStore();
+  const { getActiveCategories } = useClassificationStore();
   
   // Form state
   const [symbol, setSymbol] = useState('');
@@ -42,13 +46,18 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
   const [result, setResult] = useState<TradeResult | null>(null);
   const [pnl, setPnl] = useState('');
   const [tags, setTags] = useState<string[]>([]);
+  const [classifications, setClassifications] = useState<TradeClassifications>({});
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tradeDate, setTradeDate] = useState<string>(new Date().toISOString().split('T')[0]); // YYYY-MM-DD
   const [tradeTime, setTradeTime] = useState<string>(''); // HH:MM (empty = use current time)
   const [showDateTimePicker, setShowDateTimePicker] = useState(false);
   const [showTagInput, setShowTagInput] = useState(false);
+  const [showClassifications, setShowClassifications] = useState(false);
   const [showNotesInput, setShowNotesInput] = useState(false);
+  
+  // Check if there are any categories to show
+  const hasCategories = getActiveCategories().length > 0;
   
   const [recentSymbols, setRecentSymbols] = useState<string[]>([]);
   const [showSymbolPicker, setShowSymbolPicker] = useState(false);
@@ -74,12 +83,14 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
         setResult(null);
         setPnl('');
         setTags([]);
+        setClassifications({});
         setNotes('');
         setTradeDate(new Date().toISOString().split('T')[0]);
         setTradeTime('');
         setShowSymbolPicker(false);
         setShowDateTimePicker(false);
         setShowTagInput(false);
+        setShowClassifications(false);
         setShowNotesInput(false);
       }, 300);
     }
@@ -93,6 +104,7 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
       setResult(editingTrade.result || null);
       setPnl(Math.abs(editingTrade.pnl || 0).toString());
       setTags(editingTrade.tags || []);
+      setClassifications(editingTrade.classifications || {});
       setNotes(editingTrade.notes || '');
       
       // Load date and time from editing trade
@@ -102,9 +114,12 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
       const minutes = entryDate.getMinutes().toString().padStart(2, '0');
       setTradeTime(`${hours}:${minutes}`);
       
-      // Show tag/notes inputs if they have values
+      // Show tag/notes/classifications inputs if they have values
       if (editingTrade.tags && editingTrade.tags.length > 0) {
         setShowTagInput(true);
+      }
+      if (editingTrade.classifications && Object.keys(editingTrade.classifications).length > 0) {
+        setShowClassifications(true);
       }
       if (editingTrade.notes) {
         setShowNotesInput(true);
@@ -161,6 +176,7 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
         tags: allTags,
         notes: notes,
         accountId: selectedAccountId,
+        classifications: Object.keys(classifications).length > 0 ? classifications : undefined,
       };
 
       let tradeId: string | undefined;
@@ -554,6 +570,49 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
                   )}
                 </AnimatePresence>
               </div>
+
+              {/* Classifications (Optional - Apple-style collapsed) */}
+              {hasCategories && (
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowClassifications(!showClassifications)}
+                    className="w-full flex items-center justify-between px-4 py-2.5 bg-muted/20 hover:bg-muted/30 rounded-lg transition-colors text-sm"
+                  >
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Grid3X3 className="w-4 h-4" />
+                      <span>
+                        {Object.keys(classifications).length > 0 
+                          ? `${Object.keys(classifications).length} ${Object.keys(classifications).length === 1 ? 'classification' : 'classifications'}` 
+                          : 'Add Classifications'}
+                      </span>
+                    </div>
+                    <ChevronDown className={cn(
+                      "w-4 h-4 transition-transform",
+                      showClassifications && "rotate-180"
+                    )} />
+                  </button>
+
+                  <AnimatePresence>
+                    {showClassifications && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="pt-2"
+                      >
+                        <ClassificationPicker
+                          value={classifications}
+                          onChange={setClassifications}
+                        />
+                        <p className="text-xs text-muted-foreground mt-2 px-1">
+                          Classify trades to see stats by category
+                        </p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
 
               {/* Notes (Optional - Apple-style collapsed) */}
               <div className="space-y-2">
