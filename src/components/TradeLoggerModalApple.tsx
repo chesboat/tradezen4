@@ -242,7 +242,7 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
               "top-[5rem]", // 80px (top-20 equivalent)
               // Desktop: Perfectly centered modal (Apple style) - !important forces override
               "md:!top-1/2 md:!left-1/2 md:!-translate-x-1/2 md:!-translate-y-1/2 md:!bottom-auto md:!right-auto",
-              "md:w-full md:max-w-md md:rounded-2xl md:border md:border-border/50 md:shadow-2xl"
+              "md:w-full md:max-w-md md:max-h-[85vh] md:rounded-2xl md:border md:border-border/50 md:shadow-2xl"
             )}
             initial={{ 
               opacity: 0,
@@ -275,8 +275,8 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
               </button>
             </div>
 
-            {/* Content - No scroll needed */}
-            <div className="p-4 md:p-6 space-y-5">
+            {/* Content - Scrollable */}
+            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-5">
               
               {/* Symbol */}
               <div className="space-y-2">

@@ -18,6 +18,9 @@ import {
 } from 'lucide-react';
 import { Trade, ClassificationCategory } from '@/types';
 import { useClassificationStore } from '@/store/useClassificationStore';
+import { useTradeStore } from '@/store/useTradeStore';
+import { useAccountFilterStore, getAccountIdsForSelection } from '@/store/useAccountFilterStore';
+import { useSubscription } from '@/hooks/useSubscription';
 import { formatCurrency } from '@/lib/localStorageUtils';
 import { cn } from '@/lib/utils';
 import { PremiumBadge } from './PremiumBadge';
@@ -317,11 +320,6 @@ interface ClassificationAnalyticsPageProps {
 export const ClassificationAnalyticsPage: React.FC<ClassificationAnalyticsPageProps> = ({
   onManageCategories,
 }) => {
-  // Import hooks dynamically to avoid circular dependencies
-  const { useTradeStore } = require('@/store/useTradeStore');
-  const { useAccountFilterStore, getAccountIdsForSelection } = require('@/store/useAccountFilterStore');
-  const { useSubscription } = require('@/hooks/useSubscription');
-  
   const { trades } = useTradeStore();
   const { selectedAccountId } = useAccountFilterStore();
   const { hasAccess } = useSubscription();
