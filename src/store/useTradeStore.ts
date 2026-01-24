@@ -23,6 +23,7 @@ interface TradeState {
   getRecentTrades: () => Trade[];
   getFilteredByTier: (tier: 'trial' | 'basic' | 'premium') => Trade[]; // NEW: Filter by tier limits
   initializeTrades: (userIdOverride?: string) => Promise<void>;
+  forceRefresh: () => Promise<void>; // Force re-fetch from Firestore
   // Review system
   toggleMarkForReview: (id: string) => Promise<boolean>; // Returns new state
   getMarkedForReview: () => Trade[];
@@ -44,6 +45,8 @@ export const useTradeStore = create<TradeState>((set, get) => ({
         updatedAt: new Date(trade.updatedAt),
         entryTime: new Date(trade.entryTime),
         exitTime: trade.exitTime ? new Date(trade.exitTime) : undefined,
+        // Ensure classifications are preserved
+        classifications: trade.classifications || {},
       }));
       // Exclude trades belonging to deleted accounts (keep active AND archived)
       let filtered = formattedTrades;
@@ -77,13 +80,22 @@ export const useTradeStore = create<TradeState>((set, get) => ({
           const q = query(colRef, orderBy('createdAt', 'desc'));
           const unsub = onSnapshot(q, async (snap) => {
             console.log('📊 Trades realtime update received:', snap.docs.length, 'trades');
-            const docs = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as Trade[];
+            const docs = snap.docs.map((d) => {
+              const data = d.data();
+              // Debug: Log if any trade has classifications
+              if (data.classifications && Object.keys(data.classifications).length > 0) {
+                console.log('📊 Trade with classifications:', d.id, data.classifications);
+              }
+              return { id: d.id, ...data } as any;
+            }) as Trade[];
             const formatted = docs.map(trade => ({
               ...trade,
               createdAt: new Date(trade.createdAt),
               updatedAt: new Date(trade.updatedAt),
               entryTime: new Date(trade.entryTime as any),
               exitTime: (trade as any).exitTime ? new Date((trade as any).exitTime) : undefined,
+              // Ensure classifications are preserved
+              classifications: trade.classifications || {},
             }));
             let filteredRealtime = formatted;
             try {
@@ -362,6 +374,54 @@ export const useTradeStore = create<TradeState>((set, get) => ({
   // Get trades marked for review
   getMarkedForReview: () => {
     return get().trades.filter(trade => trade.markedForReview && !trade.reviewedAt);
+  },
+
+  // Force refresh trades from Firestore (useful for sync issues)
+  forceRefresh: async () => {
+    console.log('📊 Force refreshing trades from Firestore...');
+    try {
+      const trades = await tradeService.getAll();
+      console.log('📊 Force refresh: Got', trades.length, 'trades from Firestore');
+      
+      const formattedTrades = trades.map(trade => {
+        // Debug: Log trades with classifications
+        if (trade.classifications && Object.keys(trade.classifications).length > 0) {
+          console.log('📊 Force refresh - Trade with classifications:', trade.id, trade.classifications);
+        }
+        return {
+          ...trade,
+          createdAt: new Date(trade.createdAt),
+          updatedAt: new Date(trade.updatedAt),
+          entryTime: new Date(trade.entryTime),
+          exitTime: trade.exitTime ? new Date(trade.exitTime) : undefined,
+          classifications: trade.classifications || {},
+        };
+      });
+
+      // Filter by valid accounts
+      let filtered = formattedTrades;
+      try {
+        const mod = await import('./useAccountFilterStore');
+        const { getAccountStatus } = mod;
+        const accountState = mod.useAccountFilterStore.getState();
+        if (accountState.accounts && accountState.accounts.length > 0) {
+          const validIds = new Set(
+            accountState.accounts
+              .filter(a => getAccountStatus(a) !== 'deleted')
+              .map(a => a.id)
+          );
+          filtered = formattedTrades.filter(t => validIds.has(t.accountId));
+        }
+      } catch (_e) {
+        // If account store is not ready yet, fall back to unfiltered
+      }
+      
+      set({ trades: filtered.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()) });
+      console.log('📊 Force refresh complete:', filtered.length, 'trades loaded');
+    } catch (error) {
+      console.error('📊 Force refresh failed:', error);
+      throw error;
+    }
   },
 }));
 
