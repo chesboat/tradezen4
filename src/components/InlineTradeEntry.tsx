@@ -175,6 +175,8 @@ export const InlineTradeEntry: React.FC<InlineTradeEntryProps> = ({ onClose, onS
       const sharesNum = parseFloat(shares) || 1;
       const rrNum = parseFloat(rr) || 1;
       
+      const isLoss = finalPnl < 0;
+      
       const newTrade: Omit<Trade, 'id' | 'createdAt' | 'updatedAt'> = {
         symbol: symbol.toUpperCase().trim(),
         direction,
@@ -182,7 +184,8 @@ export const InlineTradeEntry: React.FC<InlineTradeEntryProps> = ({ onClose, onS
         exitPrice: exitPriceNum,
         quantity: sharesNum,
         pnl: finalPnl,
-        riskRewardRatio: rrNum,
+        riskRewardRatio: isLoss ? 1 : rrNum, // For losses, RR is 1 (lossRR tracks actual loss)
+        lossRR: isLoss ? rrNum : undefined, // Only set for losses
         result: getTradeResult(finalPnl),
         entryTime: tradeDateObj.toISOString(),
         exitTime: tradeDateObj.toISOString(),

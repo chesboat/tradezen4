@@ -43,6 +43,7 @@ export interface Trade extends FirestoreDocument {
   accountBalance?: number; // Account balance at time of trade (for risk % calculation)
   timestamp?: string | Date; // Alternative timestamp field (some trades use this instead of entryTime)
   rrRatio?: number; // Alternative field name for riskRewardRatio
+  lossRR?: number; // For partial losses (e.g., 0.5 for -0.5R stop), defaults to 1 if not set
   // Review system
   markedForReview?: boolean;
   reviewNote?: string;

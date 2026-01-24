@@ -45,6 +45,7 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
   const [direction, setDirection] = useState<TradeDirection>('long');
   const [result, setResult] = useState<TradeResult | null>(null);
   const [pnl, setPnl] = useState('');
+  const [lossRR, setLossRR] = useState<string>('1'); // Default full 1R loss
   const [tags, setTags] = useState<string[]>([]);
   const [classifications, setClassifications] = useState<TradeClassifications>({});
   const [notes, setNotes] = useState('');
@@ -82,6 +83,7 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
         setDirection('long');
         setResult(null);
         setPnl('');
+        setLossRR('1');
         setTags([]);
         setClassifications({});
         setNotes('');
@@ -103,6 +105,7 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
       setDirection(editingTrade.direction);
       setResult(editingTrade.result || null);
       setPnl(Math.abs(editingTrade.pnl || 0).toString());
+      setLossRR((editingTrade.lossRR || 1).toString());
       setTags(editingTrade.tags || []);
       setClassifications(editingTrade.classifications || {});
       setNotes(editingTrade.notes || '');
@@ -171,6 +174,7 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
         quantity: 1,
         riskAmount: calculatedRiskAmount,
         riskRewardRatio: defaultRR,
+        lossRR: result === 'loss' ? parseFloat(lossRR) || 1 : undefined, // Only for losses
         entryTime: entryTime.toISOString(),
         mood: 'neutral' as const,
         tags: allTags,
@@ -438,6 +442,49 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
                           Enter net P&L after fees
                         </p>
                       </div>
+
+                      {/* Loss RR - Only for losses */}
+                      {result === 'loss' && (
+                        <div className="mt-3 p-3 bg-red-500/5 border border-red-500/20 rounded-xl">
+                          <label className="text-xs text-muted-foreground mb-1.5 block">
+                            Risk taken (R)
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 flex gap-1">
+                              {[0.25, 0.5, 0.75, 1].map(r => (
+                                <button
+                                  key={r}
+                                  type="button"
+                                  onClick={() => setLossRR(r.toString())}
+                                  className={cn(
+                                    "flex-1 py-1.5 rounded-lg text-sm font-medium transition-all",
+                                    parseFloat(lossRR) === r
+                                      ? "bg-red-500 text-white"
+                                      : "bg-muted/50 hover:bg-muted text-foreground"
+                                  )}
+                                >
+                                  {r}R
+                                </button>
+                              ))}
+                            </div>
+                            <input
+                              type="number"
+                              value={lossRR}
+                              onChange={(e) => setLossRR(e.target.value)}
+                              className="w-16 px-2 py-1.5 bg-muted/30 border border-border/50 rounded-lg text-center text-sm font-medium focus:border-primary focus:outline-none"
+                              step="0.1"
+                              min="0.1"
+                              max="2"
+                              placeholder="1"
+                            />
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1.5">
+                            {parseFloat(lossRR) === 1 ? 'Full stop hit' : 
+                             parseFloat(lossRR) < 1 ? 'Partial loss (early exit)' : 
+                             'Extended loss (past stop)'}
+                          </p>
+                        </div>
+                      )}
                     </motion.div>
                   )}
                 </AnimatePresence>

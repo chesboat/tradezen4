@@ -109,6 +109,32 @@ const MONTH_NAMES = [
   'July', 'August', 'September', 'October', 'November', 'December'
 ];
 
+/**
+ * Calculate the signed RR for a trade
+ * - Wins: positive RR (use stored value)
+ * - Losses: negative RR (use stored lossRR if available, otherwise default to -1)
+ * - Scratch: 0
+ */
+const getSignedRR = (trade: Trade): number => {
+  const pnl = trade.pnl || 0;
+  const rr = trade.riskRewardRatio || trade.rrRatio || 1;
+  
+  if (pnl > 0) {
+    // Win - use positive RR
+    return Math.abs(rr);
+  } else if (pnl < 0) {
+    // Loss - use lossRR if specified, otherwise default to -1R
+    // If riskRewardRatio is stored as negative, use it directly
+    if (rr < 0) return rr;
+    // Check for lossRR field
+    if (trade.lossRR !== undefined) return -Math.abs(trade.lossRR);
+    // Default loss is -1R
+    return -1;
+  }
+  // Scratch trade
+  return 0;
+};
+
 export const ClassificationAnalytics: React.FC<ClassificationAnalyticsProps> = ({
   trades,
   isPremium = true,
@@ -153,7 +179,7 @@ export const ClassificationAnalytics: React.FC<ClassificationAnalyticsProps> = (
         const wins = matchingTrades.filter(t => (t.pnl || 0) > 0).length;
         const winRate = tradeCount > 0 ? (wins / tradeCount) * 100 : 0;
         const totalPnL = matchingTrades.reduce((sum, t) => sum + (t.pnl || 0), 0);
-        const totalRR = matchingTrades.reduce((sum, t) => sum + (t.riskRewardRatio || t.rrRatio || 0), 0);
+        const totalRR = matchingTrades.reduce((sum, t) => sum + getSignedRR(t), 0);
         const avgPnL = tradeCount > 0 ? totalPnL / tradeCount : 0;
 
         return {
@@ -194,7 +220,7 @@ export const ClassificationAnalytics: React.FC<ClassificationAnalyticsProps> = (
     yearMap.forEach((yearTrades, year) => {
       const wins = yearTrades.filter(t => (t.pnl || 0) > 0).length;
       const winRate = yearTrades.length > 0 ? (wins / yearTrades.length) * 100 : 0;
-      const totalRR = yearTrades.reduce((sum, t) => sum + (t.riskRewardRatio || t.rrRatio || 0), 0);
+      const totalRR = yearTrades.reduce((sum, t) => sum + getSignedRR(t), 0);
       const totalPnL = yearTrades.reduce((sum, t) => sum + (t.pnl || 0), 0);
       
       stats.push({
@@ -225,7 +251,7 @@ export const ClassificationAnalytics: React.FC<ClassificationAnalyticsProps> = (
       const monthTrades = monthMap.get(month) || [];
       const wins = monthTrades.filter(t => (t.pnl || 0) > 0).length;
       const winRate = monthTrades.length > 0 ? (wins / monthTrades.length) * 100 : 0;
-      const totalRR = monthTrades.reduce((sum, t) => sum + (t.riskRewardRatio || t.rrRatio || 0), 0);
+      const totalRR = monthTrades.reduce((sum, t) => sum + getSignedRR(t), 0);
       const totalPnL = monthTrades.reduce((sum, t) => sum + (t.pnl || 0), 0);
       
       stats.push({
