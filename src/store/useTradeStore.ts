@@ -84,10 +84,16 @@ export const useTradeStore = create<TradeState>((set, get) => ({
               const data = d.data();
               // Debug: Log if any trade has classifications
               if (data.classifications && Object.keys(data.classifications).length > 0) {
-                console.log('📊 Trade with classifications:', d.id, data.classifications);
+                console.log('📊 Trade with classifications:', d.id, 'classifications:', Object.keys(data.classifications).length, 'keys');
               }
               return { id: d.id, ...data } as any;
             }) as Trade[];
+            
+            // Debug: Log the first trade's updatedAt timestamp to track freshness
+            if (docs.length > 0) {
+              console.log('📊 Most recent trade updatedAt:', docs[0].updatedAt);
+            }
+            
             const formatted = docs.map(trade => ({
               ...trade,
               createdAt: new Date(trade.createdAt),
@@ -197,14 +203,25 @@ export const useTradeStore = create<TradeState>((set, get) => ({
   // Update existing trade
   updateTrade: async (id: string, updates: Partial<Trade>) => {
     try {
+      console.log('📊 updateTrade called for trade:', id, 'updates keys:', Object.keys(updates));
+      
       const updateData = {
         ...updates,
         updatedAt: new Date().toISOString(),
         entryTime: updates.entryTime instanceof Date ? updates.entryTime.toISOString() : updates.entryTime,
         exitTime: updates.exitTime instanceof Date ? updates.exitTime.toISOString() : updates.exitTime,
       };
-      await tradeService.update(id, updateData);
       
+      console.log('📊 updateTrade sending to Firestore:', {
+        tradeId: id,
+        hasClassifications: 'classifications' in updateData,
+        classificationKeys: (updateData as any).classifications ? Object.keys((updateData as any).classifications) : []
+      });
+      
+      await tradeService.update(id, updateData);
+      console.log('✅ updateTrade successfully sent to Firestore');
+      
+      // Update local state immediately for UI feedback
       const currentTrades = get().trades;
       const updatedTrades = currentTrades.map(trade => 
         trade.id === id 
@@ -214,12 +231,15 @@ export const useTradeStore = create<TradeState>((set, get) => ({
               updatedAt: new Date(),
               entryTime: updates.entryTime ? new Date(updates.entryTime) : trade.entryTime,
               exitTime: updates.exitTime ? new Date(updates.exitTime) : trade.exitTime,
+              // Preserve classifications if not in updates
+              classifications: updates.classifications !== undefined ? updates.classifications : trade.classifications,
             }
           : trade
       );
       set({ trades: updatedTrades });
+      console.log('✅ Local state updated for trade:', id);
     } catch (error) {
-      console.error('Failed to update trade:', error);
+      console.error('❌ Failed to update trade:', error);
       throw error;
     }
   },
