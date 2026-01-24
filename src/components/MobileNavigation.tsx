@@ -20,7 +20,9 @@ import {
   LogOut,
   Zap,
   CheckSquare,
-  CheckCircle2
+  CheckCircle2,
+  Grid3X3,
+  Lightbulb
 } from 'lucide-react';
 import { useNavigationStore } from '@/store/useNavigationStore';
 import { useQuickNoteModal } from '@/store/useQuickNoteStore';
@@ -60,9 +62,9 @@ const navItems: NavItem[] = [
   },
   // Center button (+ for quick trade) handled separately
   {
-    id: 'analytics',
-    label: 'Analytics',
-    icon: BarChart3,
+    id: 'statistics',
+    label: 'Stats',
+    icon: Grid3X3,
   },
   {
     id: 'more',
@@ -74,9 +76,19 @@ const navItems: NavItem[] = [
 // Items shown in the "More" tab
 const moreTabItems: NavItem[] = [
   {
+    id: 'health',
+    label: 'Trading Health',
+    icon: Zap,
+  },
+  {
     id: 'trades',
     label: 'Trades',
     icon: TrendingUp,
+  },
+  {
+    id: 'analytics',
+    label: 'Insights',
+    icon: Lightbulb,
   },
   {
     id: 'notes',

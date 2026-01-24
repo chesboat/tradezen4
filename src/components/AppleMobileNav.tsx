@@ -20,7 +20,9 @@ import {
   Zap,
   Plus,
   Users,
-  HelpCircle
+  HelpCircle,
+  Grid3X3,
+  Lightbulb
 } from 'lucide-react';
 import { useNavigationStore } from '@/store/useNavigationStore';
 import { useUserProfileStore, getUserDisplayName } from '@/store/useUserProfileStore';
@@ -48,7 +50,7 @@ const bottomNavItems: NavItem[] = [
   { id: 'dashboard', label: 'Today', icon: Home },
   { id: 'calendar', label: 'Journal', icon: Calendar },
   // Center + button handled separately
-  { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+  { id: 'statistics', label: 'Stats', icon: Grid3X3 },
   { id: 'more', label: 'More', icon: Menu },
 ];
 
@@ -56,6 +58,7 @@ const bottomNavItems: NavItem[] = [
 const moreTabItems: NavItem[] = [
   { id: 'health', label: 'Trading Health', icon: Zap },
   { id: 'trades', label: 'Trades', icon: TrendingUp },
+  { id: 'analytics', label: 'Insights', icon: Lightbulb },
   { id: 'notes', label: 'Notes', icon: FileText },
   { id: 'habits', label: 'Habits', icon: Target },
   { id: 'quests', label: 'Quests', icon: Trophy },
