@@ -41,6 +41,7 @@ import DisciplineModeToggle from '@/components/discipline/DisciplineModeToggle';
 import { setDisciplineMode } from '@/lib/discipline';
 import { UpgradeModal } from './UpgradeModal';
 import { ColorPicker, ColorSwatch } from './ColorPicker';
+import { ClassificationManager } from './ClassificationManager';
 
 export const SettingsPage: React.FC = () => {
   const { profile, updateProfile, updateDisplayName, refreshStats } = useUserProfileStore();
@@ -952,6 +953,16 @@ export const SettingsPage: React.FC = () => {
               </motion.div>
             )}
           </div>
+        </motion.div>
+
+        {/* Trade Classifications Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+          className="bg-card rounded-xl border p-6"
+        >
+          <ClassificationManager />
         </motion.div>
 
         {/* Data & Sync Section */}

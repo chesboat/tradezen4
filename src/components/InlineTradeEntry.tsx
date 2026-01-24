@@ -1,11 +1,13 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Check, Plus, Calendar, ChevronDown } from 'lucide-react';
+import { X, Check, Plus, Calendar, ChevronDown, Grid3X3 } from 'lucide-react';
 import { useTradeStore } from '@/store/useTradeStore';
 import { useAccountFilterStore } from '@/store/useAccountFilterStore';
 import { useTagStore } from '@/store/useTagStore';
+import { useClassificationStore } from '@/store/useClassificationStore';
 import { cn } from '@/lib/utils';
-import { Trade, TradeResult, MoodType } from '@/types';
+import { Trade, TradeResult, MoodType, TradeClassifications } from '@/types';
+import { ClassificationPicker } from './ClassificationPicker';
 import toast from 'react-hot-toast';
 
 interface InlineTradeEntryProps {
@@ -32,6 +34,7 @@ export const InlineTradeEntry: React.FC<InlineTradeEntryProps> = ({ onClose, onS
   const { addTrade } = useTradeStore();
   const { selectedAccountId, accounts } = useAccountFilterStore();
   const { getAllTags } = useTagStore();
+  const { getActiveCategories } = useClassificationStore();
   
   // Form state
   const [direction, setDirection] = useState<'long' | 'short'>('long');
@@ -44,7 +47,12 @@ export const InlineTradeEntry: React.FC<InlineTradeEntryProps> = ({ onClose, onS
   const [mood, setMood] = useState<MoodType | ''>('');
   const [tagInput, setTagInput] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [classifications, setClassifications] = useState<TradeClassifications>({});
+  const [showClassifications, setShowClassifications] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  
+  // Check if there are any categories to show
+  const hasCategories = getActiveCategories().length > 0;
   const [tradeDate, setTradeDate] = useState(() => {
     // Use defaultDate if provided (for journal page entries), otherwise use current time
     if (defaultDate) {
@@ -183,6 +191,7 @@ export const InlineTradeEntry: React.FC<InlineTradeEntryProps> = ({ onClose, onS
         accountId,
         riskAmount: Math.abs(finalPnl) || 100,
         tags: selectedTags,
+        classifications: Object.keys(classifications).length > 0 ? classifications : undefined,
       };
       
       await addTrade(newTrade);
@@ -198,6 +207,7 @@ export const InlineTradeEntry: React.FC<InlineTradeEntryProps> = ({ onClose, onS
       setMood('');
       setTagInput('');
       setSelectedTags([]);
+      setClassifications({});
       symbolRef.current?.focus();
       
       onSuccess?.();
@@ -416,6 +426,29 @@ export const InlineTradeEntry: React.FC<InlineTradeEntryProps> = ({ onClose, onS
           )}
         </div>
         
+        {/* Classifications Toggle */}
+        {hasCategories && (
+          <div className="flex-shrink-0 px-1 border-r border-border/30">
+            <button
+              onClick={() => setShowClassifications(!showClassifications)}
+              className={cn(
+                "p-1.5 rounded transition-colors flex items-center gap-1",
+                showClassifications 
+                  ? "bg-primary/20 text-primary" 
+                  : Object.keys(classifications).length > 0
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              )}
+              title="Trade classifications"
+            >
+              <Grid3X3 className="w-4 h-4" />
+              {Object.keys(classifications).length > 0 && (
+                <span className="text-[10px] font-medium">{Object.keys(classifications).length}</span>
+              )}
+            </button>
+          </div>
+        )}
+        
         {/* Date/Time Toggle */}
         <div className="flex-shrink-0 px-2">
           <button
@@ -430,6 +463,28 @@ export const InlineTradeEntry: React.FC<InlineTradeEntryProps> = ({ onClose, onS
           </button>
         </div>
       </div>
+      
+      {/* Classifications Picker (expandable) */}
+      <AnimatePresence>
+        {showClassifications && hasCategories && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="px-3 py-3 border-t border-border/30 bg-muted/30"
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <Grid3X3 className="w-3.5 h-3.5 text-muted-foreground" />
+              <label className="text-xs font-medium text-muted-foreground">Classifications</label>
+            </div>
+            <ClassificationPicker
+              value={classifications}
+              onChange={setClassifications}
+              compact
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
       
       {/* Date/Time Picker (expandable) */}
       <AnimatePresence>

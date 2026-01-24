@@ -26,6 +26,7 @@ import { QuestsView } from './components/QuestsView';
 import { WellnessView } from './components/WellnessView';
 import { TradesView } from './components/TradesView';
 import { AppleAnalyticsDashboard } from './components/AppleAnalyticsDashboard';
+import { ClassificationAnalyticsPage } from './components/ClassificationAnalytics';
 import { CoachView } from './components/CoachView';
 import { JournalViewApple as JournalView } from './components/JournalViewApple';
 import { NotesView } from './components/NotesView';
@@ -58,6 +59,7 @@ import { initializeQuickNoteStore } from './store/useQuickNoteStore';
 import { initializeRuleTallyStore } from './store/useRuleTallyStore';
 import { useAccountFilterStore } from './store/useAccountFilterStore';
 import { useTradeStore } from './store/useTradeStore';
+import { useClassificationStore } from './store/useClassificationStore';
 import { CoachChat } from './components/CoachChat';
 import { NudgeToast } from './components/NudgeToast';
 import { TodoDrawer } from './components/TodoDrawer';
@@ -257,6 +259,8 @@ function AppContent() {
           await initializeTradeStore();
           await initializeRuleTallyStore();
           await initializeQuickNoteStore();
+          // Initialize classification store for trade classifications
+          await useClassificationStore.getState().initialize(currentUser.uid);
           // Start daily reflections real-time subscription
           try {
             const drStore = useDailyReflectionStore.getState();
@@ -398,6 +402,8 @@ function AppContent() {
         return <NotesView />;
       case 'analytics':
         return <AppleAnalyticsDashboard />;
+      case 'statistics':
+        return <ClassificationAnalyticsPage onManageCategories={() => setCurrentView('settings')} />;
       case 'quests':
         return <QuestsView />;
       case 'wellness':

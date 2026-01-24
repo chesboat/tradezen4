@@ -20,6 +20,9 @@ export interface FirestoreDocument {
   updatedAt: string | Date;
 }
 
+// Forward declaration for Trade classifications
+export type TradeClassifications = Record<string, string>;
+
 export interface Trade extends FirestoreDocument {
   symbol: string;
   direction: TradeDirection;
@@ -48,6 +51,8 @@ export interface Trade extends FirestoreDocument {
   reviewImages?: string[]; // Chart screenshots/annotations
   // Potential R tracking (how far price actually ran past target)
   potentialR?: number; // Actual R value that price reached (for wins only)
+  // Trade classifications (structured categories)
+  classifications?: TradeClassifications; // categoryId -> optionId mapping
 }
 
 export interface QuickNote extends FirestoreDocument {
@@ -417,3 +422,104 @@ export interface WeeklyReview extends FirestoreDocument {
   };
   accountId: string;
 }
+
+// ==========================================
+// Trade Classification System
+// ==========================================
+// Structured categories for tracking trade characteristics
+// Each category has multiple options, and a trade can have one option per category
+
+export interface ClassificationOption {
+  id: string;
+  name: string;
+  emoji?: string;
+  color?: string; // hex color for display
+  order: number;
+}
+
+export interface ClassificationCategory {
+  id: string;
+  name: string;
+  emoji?: string;
+  description?: string;
+  options: ClassificationOption[];
+  order: number;
+  isActive: boolean;
+}
+
+// Default categories to seed for new users
+export const DEFAULT_CLASSIFICATION_CATEGORIES: Omit<ClassificationCategory, 'id'>[] = [
+  {
+    name: 'Day of Week',
+    emoji: '📅',
+    description: 'Which day the trade was taken',
+    options: [
+      { id: 'monday', name: 'Monday', emoji: '🌅', order: 0 },
+      { id: 'tuesday', name: 'Tuesday', emoji: '🌄', order: 1 },
+      { id: 'wednesday', name: 'Wednesday', emoji: '🌞', order: 2 },
+      { id: 'thursday', name: 'Thursday', emoji: '🌤️', order: 3 },
+      { id: 'friday', name: 'Friday', emoji: '🌅', order: 4 },
+    ],
+    order: 0,
+    isActive: true,
+  },
+  {
+    name: 'Daily Candle',
+    emoji: '🕯️',
+    description: 'Daily candle pattern/type',
+    options: [
+      { id: 'retracement', name: 'Retracement', emoji: '↑', order: 0 },
+      { id: 'reversal', name: 'Reversal', emoji: '↓', order: 1 },
+      { id: 'continuation', name: 'Continuation', emoji: '→', order: 2 },
+    ],
+    order: 1,
+    isActive: true,
+  },
+  {
+    name: 'Daily Profile',
+    emoji: '📊',
+    description: 'Daily profile classification',
+    options: [
+      { id: 'ny_reversal', name: 'NY Reversal', emoji: '🗽', order: 0 },
+      { id: 'ny_continuation', name: 'NY Continuation', emoji: '🏙️', order: 1 },
+    ],
+    order: 2,
+    isActive: true,
+  },
+  {
+    name: 'H4 Level',
+    emoji: '📈',
+    description: 'H4 timeframe level type',
+    options: [
+      { id: 'ob', name: 'OB', emoji: '🟦', order: 0 },
+      { id: 'swing', name: 'SWING', emoji: '🟪', order: 1 },
+      { id: 'fvg', name: 'FVG', emoji: '🟧', order: 2 },
+    ],
+    order: 3,
+    isActive: true,
+  },
+  {
+    name: 'H4 Candle',
+    emoji: '⏰',
+    description: 'H4 candle timing',
+    options: [
+      { id: '6am', name: '6AM', emoji: '🌅', order: 0 },
+      { id: '10am', name: '10AM', emoji: '☀️', order: 1 },
+      { id: '2pm', name: '2PM', emoji: '🌤️', order: 2 },
+    ],
+    order: 4,
+    isActive: true,
+  },
+  {
+    name: 'H4 Profile',
+    emoji: '🎯',
+    description: 'H4 profile classification',
+    options: [
+      { id: 'c2_close', name: 'C2 Close', emoji: '✖️', order: 0 },
+      { id: 'c3_close', name: 'C3 Close', emoji: '✖️', order: 1 },
+      { id: 'c2_rie', name: 'C2 RIE', emoji: '✖️', order: 2 },
+    ],
+    order: 5,
+    isActive: true,
+  },
+];
