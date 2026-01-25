@@ -30,6 +30,7 @@ import { useSidebarStore } from '@/store/useSidebarStore';
 import { useActivityLogStore } from '@/store/useActivityLogStore';
 import { useTodoStore } from '@/store/useTodoStore';
 import { useAppSettingsStore } from '@/store/useAppSettingsStore';
+import { useUserProfileStore } from '@/store/useUserProfileStore';
 import { CalendarDay, WeeklySummary, MoodType, WeeklyReview } from '@/types';
 import { formatCurrency, formatDate, getMoodColor } from '@/lib/localStorageUtils';
 import { cn } from '@/lib/utils';
@@ -95,16 +96,21 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
   const [selectedDay, setSelectedDay] = useState<CalendarDay | null>(null);
   const [hoveredDay, setHoveredDay] = useState<CalendarDay | null>(null);
   
-  // Display mode: dollar ($) or R:R (R) - persisted to localStorage
-  const [displayMode, setDisplayMode] = useState<'dollar' | 'rr'>(() => {
-    const saved = localStorage.getItem('calendar-display-mode');
-    return saved === 'rr' ? 'rr' : 'dollar';
-  });
+  // Display mode: dollar ($) or R:R (R) - synced via Firebase
+  const { profile, updateProfile } = useUserProfileStore();
+  const displayMode = profile?.preferences?.calendarDisplayMode || 'dollar';
   
-  // Persist display mode changes
-  useEffect(() => {
-    localStorage.setItem('calendar-display-mode', displayMode);
-  }, [displayMode]);
+  const setDisplayMode = useCallback((mode: 'dollar' | 'rr') => {
+    updateProfile({
+      preferences: {
+        ...profile?.preferences,
+        theme: profile?.preferences?.theme || 'system',
+        notifications: profile?.preferences?.notifications ?? true,
+        autoBackup: profile?.preferences?.autoBackup ?? true,
+        calendarDisplayMode: mode,
+      }
+    });
+  }, [profile, updateProfile]);
 
   // Advanced responsive system based on available space
   const [viewportWidth, setViewportWidth] = useState<number>(typeof window !== 'undefined' ? window.innerWidth : 1920);

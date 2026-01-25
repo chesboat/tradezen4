@@ -47,6 +47,7 @@ export interface UserProfile {
     autoBackup: boolean;
     accentColor?: 'blue' | 'indigo' | 'purple' | 'green' | 'orange' | 'red' | 'pink' | 'mono';
     styleTheme?: 'default' | 'botanical';
+    calendarDisplayMode?: 'dollar' | 'rr'; // Calendar P&L display: dollar or R:R
     customColors?: {
       // New format: separate colors for light and dark mode
       light?: { background: string | null; accent: string | null };
