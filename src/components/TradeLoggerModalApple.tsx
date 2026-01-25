@@ -70,9 +70,21 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
   const pnlInputRef = useRef<HTMLInputElement>(null);
 
   // Get the latest trade from store if editing
+  const tradeFromStore = editingTrade?.id ? trades.find(t => t.id === editingTrade.id) : null;
   const latestEditingTrade = editingTrade && editingTrade.id 
-    ? trades.find(t => t.id === editingTrade.id) || editingTrade
+    ? tradeFromStore || editingTrade
     : editingTrade;
+  
+  // Debug: Compare prop vs store
+  if (editingTrade && isOpen) {
+    console.log('📝 Trade source comparison:', {
+      propId: editingTrade.id,
+      propClassifications: editingTrade.classifications,
+      storeHasTrade: !!tradeFromStore,
+      storeClassifications: tradeFromStore?.classifications,
+      usingSource: tradeFromStore ? 'store' : 'prop',
+    });
+  }
 
   // Load recent symbols
   useEffect(() => {
@@ -113,8 +125,10 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
     if (latestEditingTrade && isOpen) {
       console.log('📝 Loading trade data for editing:', latestEditingTrade.id, {
         classifications: Object.keys(latestEditingTrade.classifications || {}).length,
+        classificationsData: latestEditingTrade.classifications,
         riskRewardRatio: latestEditingTrade.riskRewardRatio,
-        mood: latestEditingTrade.mood
+        mood: latestEditingTrade.mood,
+        storeTradeCount: trades.length,
       });
       setSymbol(latestEditingTrade.symbol);
       setDirection(latestEditingTrade.direction);

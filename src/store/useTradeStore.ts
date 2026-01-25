@@ -83,9 +83,10 @@ export const useTradeStore = create<TradeState>((set, get) => ({
           const maxRetries = 3;
           
           const setupListener = () => {
+            console.log('📊 Setting up trades listener for userId:', userId);
             const unsub = onSnapshot(q, 
               async (snap) => {
-                console.log('📊 Trades realtime update received:', snap.docs.length, 'trades', 'fromCache:', snap.metadata.fromCache);
+                console.log('📊 Trades realtime update received:', snap.docs.length, 'trades', 'fromCache:', snap.metadata.fromCache, 'userId:', userId);
                 retryCount = 0; // Reset on successful connection
                 
                 const docs = snap.docs.map((d) => {
