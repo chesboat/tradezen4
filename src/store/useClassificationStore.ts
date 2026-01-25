@@ -74,11 +74,9 @@ const migrateToStableIds = (stored: ClassificationCategory[]): { categories: Cla
   const needsMigration = Object.keys(migrationMap).length > 0;
   
   if (needsMigration) {
-    console.log('🔄 Migrating classification categories to stable IDs...', migrationMap);
     const migratedCategories = stored.map(cat => {
       const stableId = nameToStableId[cat.name];
       if (stableId && cat.id !== stableId) {
-        console.log(`  - Migrating "${cat.name}" from ${cat.id} to ${stableId}`);
         return { ...cat, id: stableId };
       }
       return cat;
@@ -104,7 +102,6 @@ export const useClassificationStore = create<ClassificationState>()(
         
         if (stored.length === 0) {
           // Seed with default categories using stable IDs
-          console.log('📚 Seeding default classification categories with stable IDs');
           set({ categories: getDefaultCategories() });
           // No migration needed for fresh install
         } else {
@@ -125,7 +122,6 @@ export const useClassificationStore = create<ClassificationState>()(
           const existingIds = new Set(migrated.map(c => c.id));
           const missing = defaults.filter(d => !existingIds.has(d.id));
           if (missing.length > 0) {
-            console.log('📚 Adding missing default categories:', missing.map(c => c.name));
             set({ categories: [...migrated, ...missing] });
           }
         }

@@ -103,35 +103,17 @@ export class FirestoreService<T extends FirestoreDocument> {
 
   async update(id: string, data: Partial<T>): Promise<void> {
     const docRef = doc(this.getCollection(), id);
-    
-    // Debug: Log data BEFORE removeUndefined
-    console.log('FirestoreService: Data BEFORE removeUndefined:', {
-      docId: id,
-      hasClassifications: 'classifications' in data,
-      classificationsRaw: (data as any).classifications,
-    });
-    
     const updateData = removeUndefined({
       ...data,
       updatedAt: new Date().toISOString(),
     }) as Partial<T> as unknown as { [x: string]: any };
     
-    // Debug log the update data to catch malformed requests
+    // Skip empty updates
     if (Object.keys(updateData).length === 0) {
-      console.warn('FirestoreService: Update contains no data after cleaning undefined values');
-      return; // Skip empty updates
+      return;
     }
     
-    console.log('FirestoreService: Sending update to Firestore AFTER removeUndefined:', {
-      docId: id,
-      updateKeys: Object.keys(updateData),
-      hasClassifications: 'classifications' in updateData,
-      classificationsValue: (updateData as any).classifications,
-      fullPath: docRef.path,
-    });
-    
     await updateDoc(docRef, updateData);
-    console.log('FirestoreService: updateDoc completed for:', id);
   }
 
   async delete(id: string): Promise<void> {

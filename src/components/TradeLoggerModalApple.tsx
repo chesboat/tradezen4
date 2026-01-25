@@ -74,17 +74,6 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
   const latestEditingTrade = editingTrade && editingTrade.id 
     ? tradeFromStore || editingTrade
     : editingTrade;
-  
-  // Debug: Compare prop vs store
-  if (editingTrade && isOpen) {
-    console.log('📝 Trade source comparison:', {
-      propId: editingTrade.id,
-      propClassifications: editingTrade.classifications,
-      storeHasTrade: !!tradeFromStore,
-      storeClassifications: tradeFromStore?.classifications,
-      usingSource: tradeFromStore ? 'store' : 'prop',
-    });
-  }
 
   // Load recent symbols
   useEffect(() => {
@@ -123,13 +112,6 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
   // Load editing trade - only on initial open or when trade ID changes
   useEffect(() => {
     if (latestEditingTrade && isOpen) {
-      console.log('📝 Loading trade data for editing:', latestEditingTrade.id, {
-        classifications: Object.keys(latestEditingTrade.classifications || {}).length,
-        classificationsData: latestEditingTrade.classifications,
-        riskRewardRatio: latestEditingTrade.riskRewardRatio,
-        mood: latestEditingTrade.mood,
-        storeTradeCount: trades.length,
-      });
       setSymbol(latestEditingTrade.symbol);
       setDirection(latestEditingTrade.direction);
       setResult(latestEditingTrade.result || null);
@@ -195,13 +177,6 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
         .map(t => t.slice(1).toLowerCase());
       const allTags = [...new Set([...tags, ...noteTags])]; // Merge and dedupe
       
-      // When editing, use state values (loaded when modal opened); when creating, use defaults
-      console.log('📝 Save trade - using state values:', {
-        riskRewardRatio: riskRewardRatio,
-        mood: mood,
-        isEditing: !!latestEditingTrade
-      });
-      
       const tradeData = {
         symbol: symbol.toUpperCase(),
         direction,
@@ -220,14 +195,6 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
         accountId: selectedAccountId,
         classifications: Object.keys(classifications).length > 0 ? classifications : undefined,
       };
-      
-      console.log('📝 Trade data being saved:', {
-        riskRewardRatio: tradeData.riskRewardRatio,
-        mood: tradeData.mood,
-        classificationCount: Object.keys(classifications).length,
-        classificationsData: classifications,
-        tradeDataClassifications: tradeData.classifications,
-      });
 
       let tradeId: string | undefined;
       

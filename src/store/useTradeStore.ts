@@ -15,7 +15,6 @@ let categoryMigrationMap: Record<string, string> = {};
 // Function to set the migration map (called from useClassificationStore)
 export const setClassificationMigrationMap = (map: Record<string, string>) => {
   categoryMigrationMap = map;
-  console.log('📦 Classification migration map set:', Object.keys(map).length, 'mappings');
 };
 
 // Migrate trade classifications from old IDs to new stable IDs
@@ -35,10 +34,6 @@ const migrateTradeClassifications = (classifications: TradeClassifications | und
       // Keep as-is (either already migrated or a custom category)
       migrated[categoryId] = optionId;
     }
-  }
-  
-  if (hasMigrated) {
-    console.log('🔄 Migrated trade classifications:', { original: classifications, migrated });
   }
   
   return migrated;
@@ -119,28 +114,14 @@ export const useTradeStore = create<TradeState>((set, get) => ({
           const maxRetries = 3;
           
           const setupListener = () => {
-            console.log('📊 Setting up trades listener for userId:', userId);
             const unsub = onSnapshot(q, 
               async (snap) => {
-                console.log('📊 Trades realtime update received:', snap.docs.length, 'trades', 'fromCache:', snap.metadata.fromCache, 'userId:', userId);
                 retryCount = 0; // Reset on successful connection
                 
                 const docs = snap.docs.map((d) => {
                   const data = d.data();
-                  // Debug: Log classifications for EVERY trade to trace sync issues
-                  console.log('📊 Trade loaded:', d.id, {
-                    classifications: data.classifications ? Object.keys(data.classifications) : 'none',
-                    classificationsData: data.classifications,
-                    updatedAt: data.updatedAt,
-                    fromCache: snap.metadata.fromCache
-                  });
                   return { id: d.id, ...data } as any;
                 }) as Trade[];
-                
-                // Debug: Log the first trade's updatedAt timestamp to track freshness
-                if (docs.length > 0) {
-                  console.log('📊 Most recent trade updatedAt:', docs[0].updatedAt);
-                }
                 
                 const formatted = docs.map(trade => ({
                   ...trade,
@@ -163,7 +144,6 @@ export const useTradeStore = create<TradeState>((set, get) => ({
                         .map(a => a.id)
                     );
                     filteredRealtime = formatted.filter(t => validIds.has((t as any).accountId));
-                    console.log('📊 Filtered trades:', filteredRealtime.length, 'of', formatted.length, 'valid accounts:', validIds.size);
                     
                     // Safety check: if we have trades but filtering removed them all, keep the unfiltered trades
                     // This prevents the "no trades" bug when accounts haven't loaded yet
@@ -264,8 +244,6 @@ export const useTradeStore = create<TradeState>((set, get) => ({
   // Update existing trade
   updateTrade: async (id: string, updates: Partial<Trade>) => {
     try {
-      console.log('📊 updateTrade called for trade:', id, 'updates keys:', Object.keys(updates));
-      
       const updateData = {
         ...updates,
         updatedAt: new Date().toISOString(),
@@ -273,14 +251,7 @@ export const useTradeStore = create<TradeState>((set, get) => ({
         exitTime: updates.exitTime instanceof Date ? updates.exitTime.toISOString() : updates.exitTime,
       };
       
-      console.log('📊 updateTrade sending to Firestore:', {
-        tradeId: id,
-        hasClassifications: 'classifications' in updateData,
-        classificationKeys: (updateData as any).classifications ? Object.keys((updateData as any).classifications) : []
-      });
-      
       await tradeService.update(id, updateData);
-      console.log('✅ updateTrade successfully sent to Firestore');
       
       // Update local state immediately for UI feedback
       const currentTrades = get().trades;
@@ -298,7 +269,6 @@ export const useTradeStore = create<TradeState>((set, get) => ({
           : trade
       );
       set({ trades: updatedTrades });
-      console.log('✅ Local state updated for trade:', id);
     } catch (error) {
       console.error('❌ Failed to update trade:', error);
       throw error;
@@ -459,25 +429,17 @@ export const useTradeStore = create<TradeState>((set, get) => ({
 
   // Force refresh trades from Firestore (useful for sync issues)
   forceRefresh: async () => {
-    console.log('📊 Force refreshing trades from Firestore...');
     try {
       const trades = await tradeService.getAll();
-      console.log('📊 Force refresh: Got', trades.length, 'trades from Firestore');
       
-      const formattedTrades = trades.map(trade => {
-        // Debug: Log trades with classifications
-        if (trade.classifications && Object.keys(trade.classifications).length > 0) {
-          console.log('📊 Force refresh - Trade with classifications:', trade.id, trade.classifications);
-        }
-        return {
-          ...trade,
-          createdAt: new Date(trade.createdAt),
-          updatedAt: new Date(trade.updatedAt),
-          entryTime: new Date(trade.entryTime),
-          exitTime: trade.exitTime ? new Date(trade.exitTime) : undefined,
-          classifications: trade.classifications || {},
-        };
-      });
+      const formattedTrades = trades.map(trade => ({
+        ...trade,
+        createdAt: new Date(trade.createdAt),
+        updatedAt: new Date(trade.updatedAt),
+        entryTime: new Date(trade.entryTime),
+        exitTime: trade.exitTime ? new Date(trade.exitTime) : undefined,
+        classifications: migrateTradeClassifications(trade.classifications) || {},
+      }));
 
       // Filter by valid accounts
       let filtered = formattedTrades;
@@ -498,9 +460,8 @@ export const useTradeStore = create<TradeState>((set, get) => ({
       }
       
       set({ trades: filtered.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()) });
-      console.log('📊 Force refresh complete:', filtered.length, 'trades loaded');
     } catch (error) {
-      console.error('📊 Force refresh failed:', error);
+      console.error('Failed to refresh trades:', error);
       throw error;
     }
   },
