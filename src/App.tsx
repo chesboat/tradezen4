@@ -70,8 +70,6 @@ import { UpgradeModal } from './components/UpgradeModal';
 import { WelcomeToPremium } from './components/WelcomeToPremium';
 import { ExpiredSubscriptionModal } from './components/ExpiredSubscriptionModal';
 import { useTodoStore } from './store/useTodoStore';
-import { collection, getDocs, limit, query } from 'firebase/firestore';
-import { db } from './lib/firebase';
 import { checkAndAddWeeklyReviewTodo } from './lib/weeklyReviewTodo';
 import { initializeWeeklyReviewStore } from './store/useWeeklyReviewStore';
 import { useDailyReflectionStore } from './store/useDailyReflectionStore';
@@ -95,18 +93,15 @@ function AppContent() {
   const { tier, hasAccess, isExpired } = useSubscription();
   const { profile } = useUserProfileStore();
   
-  // 🎨 ROBUST THEME APPLICATION: Apply theme settings when profile loads
-  // This is a fallback to ensure themes are applied even if the hooks miss the update
+  // Apply theme settings when profile loads (fallback for hooks)
   const profilePrefsRef = React.useRef<string | null>(null);
   React.useEffect(() => {
     if (!profile?.preferences) return;
     
     const currentPrefsJson = JSON.stringify(profile.preferences);
-    // Only apply if preferences actually changed (prevents infinite loops)
     if (profilePrefsRef.current === currentPrefsJson) return;
     profilePrefsRef.current = currentPrefsJson;
     
-    console.log('🎨 App: Profile preferences loaded, applying theme settings...');
     const root = document.documentElement;
     const isDark = root.classList.contains('dark');
     
@@ -119,7 +114,6 @@ function AppContent() {
       root.style.setProperty('--primary', colors.primary, 'important');
       root.style.setProperty('--primary-foreground', colors.primaryForeground, 'important');
       root.style.setProperty('--ring', colors.ring, 'important');
-      console.log('🎨 App: Applied accent color:', accentColor);
     }
     
     // Apply style theme
@@ -132,7 +126,6 @@ function AppContent() {
       root.classList.add(`style-${styleTheme}`);
       root.style.setProperty('--font-primary', config.fontFamily);
       root.style.setProperty('--font-mono', config.fontFamilyMono);
-      console.log('🎨 App: Applied style theme:', styleTheme);
     }
   }, [profile?.preferences]);
 
@@ -144,17 +137,14 @@ function AppContent() {
   const [bootHydrating, setBootHydrating] = React.useState(false);
   const hydratingRef = React.useRef(false);
   const initializedUidRef = React.useRef<string | null>(null);
-  const remoteExpectedRef = React.useRef(false);
-  const [bootReloadTick, setBootReloadTick] = React.useState(0);
   const [showUpgradeModal, setShowUpgradeModal] = React.useState(false);
   
   // 🍎 APPLE WAY: Show expired subscription modal
   const [showExpiredModal, setShowExpiredModal] = React.useState(false);
 
-  // 🍎 APPLE WAY: Check for expired subscriptions
+  // Check for expired subscriptions
   React.useEffect(() => {
     if (!loading && currentUser && !hasAccess && isExpired) {
-      console.log('⛔ Subscription expired - showing paywall');
       setShowExpiredModal(true);
     } else if (hasAccess) {
       setShowExpiredModal(false);
@@ -209,171 +199,104 @@ function AppContent() {
   // Cleanup on logout
   React.useEffect(() => {
     if (!loading && !currentUser) {
-      // User logged out, cleanup all subscriptions
-      console.log('User logged out, cleaning up activity log...');
       const activityLogStore = useActivityLogStore.getState();
       activityLogStore.cleanup();
     }
   }, [loading, currentUser]);
 
-  // Initialize data when user is authenticated
+  // Initialize data when user is authenticated - FAST & RESILIENT
   React.useEffect(() => {
     const initializeData = async () => {
       if (!loading && currentUser) {
-        // 🍎 APPLE-STYLE: Skip initialization if user needs to see pricing first
+        // Skip initialization if user needs to see pricing first
         if (sessionStorage.getItem('show_pricing_after_auth') === 'true') {
-          console.log('⏸️ Skipping initialization - user needs to see pricing page first');
           return;
         }
         
+        // Prevent duplicate init for same user
         if (initializedUidRef.current === currentUser.uid && !hydratingRef.current) {
-          return; // prevent duplicate init for same user
+          return;
         }
-        console.log('Starting app initialization for user:', currentUser.uid);
+        
+        initializedUidRef.current = currentUser.uid;
+        setBootHydrating(true);
+        hydratingRef.current = true;
+        
+        // HARD TIMEOUT: Always release UI after 5 seconds no matter what
+        const hardTimeout = setTimeout(() => {
+          if (hydratingRef.current) {
+            console.warn('Hard timeout reached - releasing UI');
+            setBootHydrating(false);
+            hydratingRef.current = false;
+          }
+        }, 5000);
+        
         try {
-          setBootHydrating(true);
-          hydratingRef.current = true;
-          initializedUidRef.current = currentUser.uid;
-          // For authenticated users, expect remote data by default (profile/accounts/trades/notes)
-          remoteExpectedRef.current = true;
-          // Absolute safety timer to avoid indefinite loader
-          const abortTimer = setTimeout(() => {
-            if (hydratingRef.current) {
-              console.warn('Hydration abort timer fired');
-              // Only release UI if we do NOT expect remote data
-              if (!remoteExpectedRef.current) {
-                console.warn('No remote data expected; releasing UI.');
-                setBootHydrating(false);
-                hydratingRef.current = false;
-              } else {
-                console.warn('Remote data expected; keeping loader visible and retrying.');
-                // kick a retry
-                setBootReloadTick((x) => x + 1);
-              }
-            }
-          }, 15000);
-          // Load profile first so other stores can rely on it
-          await initializeProfile(currentUser.uid, currentUser.email || undefined);
-          await initializeDefaultAccounts();
-          await initializeDefaultQuests();
-          await initializeTradeStore();
-          await initializeRuleTallyStore();
-          await initializeQuickNoteStore();
-          // Initialize classification store for trade classifications
-          await useClassificationStore.getState().initialize(currentUser.uid);
-          // Start daily reflections real-time subscription
+          // Initialize critical stores in parallel for speed
+          await Promise.all([
+            initializeProfile(currentUser.uid, currentUser.email || undefined),
+            initializeDefaultAccounts(),
+            initializeTradeStore(),
+          ]);
+          
+          // Initialize secondary stores (can fail without breaking UI)
+          await Promise.allSettled([
+            initializeDefaultQuests(),
+            initializeRuleTallyStore(),
+            initializeQuickNoteStore(),
+            useClassificationStore.getState().initialize(currentUser.uid),
+            initializeWeeklyReviewStore(),
+          ]);
+          
+          // Initialize subscriptions (non-blocking)
           try {
             const drStore = useDailyReflectionStore.getState();
-            // Migrate legacy local data once, then subscribe
             await drStore.migrateLegacyLocalToFirestore?.();
             const unsub = drStore.subscribeRemote?.();
             (window as any).__dailyReflectionsUnsub = unsub;
           } catch (e) {
-            console.warn('Failed to subscribe to daily reflections:', e);
+            // Non-critical, continue
           }
           
-          // Initialize weekly review store with real-time Firebase subscription
-          await initializeWeeklyReviewStore();
-          
-          // Initialize activity log with real-time Firebase subscription
-          const activityLogStore = useActivityLogStore.getState();
-          activityLogStore.initializeActivityLog(currentUser.uid);
-          
-          // Check for weekly review todo after all stores are initialized
-          await checkAndAddWeeklyReviewTodo();
-          console.log('App initialization completed successfully');
-
-          // Verify remote presence and wait for subscriptions to populate stores
+          // Initialize activity log
           try {
-            const profileDoc = collection(db as any, `userProfiles`);
-            const tradesCol = collection(db as any, `users/${currentUser.uid}/trades`);
-            const accountsCol = collection(db as any, `users/${currentUser.uid}/tradingAccounts`);
-            const quickNotesCol = collection(db as any, `users/${currentUser.uid}/quickNotes`);
-            const [tradesSnap, accountsSnap, notesSnap] = await Promise.all([
-              getDocs(query(tradesCol, limit(1))),
-              getDocs(query(accountsCol, limit(1))),
-              getDocs(query(quickNotesCol, limit(1)))
-            ]);
-            const remoteHasTrades = !tradesSnap.empty;
-            const remoteHasAccounts = !accountsSnap.empty;
-            const remoteHasNotes = !notesSnap.empty;
-            // Treat existing user profile as signal via store state
-            const hasProfile = !!useUserProfileStore.getState().profile;
-            remoteExpectedRef.current = hasProfile || remoteHasAccounts || remoteHasTrades || remoteHasNotes;
-
-            const waitUntil = async (predicate: () => boolean, ms: number, attempts: number) => {
-              for (let i = 0; i < attempts; i++) {
-                if (predicate()) return true;
-                await new Promise((r) => setTimeout(r, ms));
-              }
-              return predicate();
-            };
-
-            const ok = await waitUntil(() => {
-              const { accounts } = useAccountFilterStore.getState();
-              const { trades } = useTradeStore.getState();
-              if (remoteHasAccounts && (accounts?.length || 0) > 0) return true;
-              if (remoteHasTrades && (trades?.length || 0) > 0) return true;
-              if (!remoteHasAccounts && !remoteHasTrades) return true; // nothing remote to wait for
-              return false;
-            }, 150, 40); // up to ~6s
-
-            if (!ok) {
-              console.warn('Hydration verification timed out, retrying store initializers');
-              await initializeDefaultAccounts();
-              await initializeTradeStore();
-            }
+            const activityLogStore = useActivityLogStore.getState();
+            activityLogStore.initializeActivityLog(currentUser.uid);
           } catch (e) {
-            console.warn('Hydration verification failed (keeping loader):', e);
-            // Keep loader instead of releasing UI on verification failure
-            setBootHydrating(true);
-            hydratingRef.current = true;
-          } finally {
-            if (!remoteExpectedRef.current) {
-              setBootHydrating(false);
-              hydratingRef.current = false;
-            } else {
-              // If remote expected, only release if stores are now populated
-              const { accounts } = useAccountFilterStore.getState();
-              const { trades } = useTradeStore.getState();
-              const notesCount = (await import('./store/useQuickNoteStore')).useQuickNoteStore.getState().notes.length;
-              const anyReadyFlag = (window as any).__accountsReady || (window as any).__tradesReady || (window as any).__notesReady;
-              const ready = anyReadyFlag || (accounts?.length || 0) > 0 || (trades?.length || 0) > 0 || notesCount > 0;
-              setBootHydrating(!ready);
-              hydratingRef.current = !ready;
-            }
-            clearTimeout(abortTimer);
+            // Non-critical, continue
           }
+          
+          // Check weekly review (non-blocking)
+          checkAndAddWeeklyReviewTodo().catch(() => {});
+          
         } catch (error) {
           console.error('Error during app initialization:', error);
+          // Still allow app to render - user can retry actions manually
+        } finally {
+          clearTimeout(hardTimeout);
           setBootHydrating(false);
           hydratingRef.current = false;
-          initializedUidRef.current = null; // allow retry on next render
         }
       }
     };
     
     initializeData();
-  }, [loading, currentUser, initializeProfile, bootReloadTick]);
+  }, [loading, currentUser, initializeProfile]);
 
-  // Recovery: if user is present but stores are empty (e.g., after returning from /share demo), re-init
+  // Recovery: if stores are empty after returning from public pages, re-init
   React.useEffect(() => {
-    if (!loading && currentUser) {
+    if (!loading && currentUser && !bootHydrating) {
       const { accounts } = useAccountFilterStore.getState();
       const { trades } = useTradeStore.getState();
-      if ((accounts?.length || 0) === 0 || (trades?.length || 0) === 0) {
-        (async () => {
-          try {
-            await initializeDefaultAccounts();
-            await initializeTradeStore();
-            await initializeQuickNoteStore();
-          } catch (e) {
-            console.warn('Recovery initialization failed:', e);
-          }
-        })();
+      if ((accounts?.length || 0) === 0 && (trades?.length || 0) === 0) {
+        Promise.all([
+          initializeDefaultAccounts(),
+          initializeTradeStore(),
+          initializeQuickNoteStore(),
+        ]).catch(() => {});
       }
     }
-  }, [loading, currentUser]);
+  }, [loading, currentUser, bootHydrating]);
 
   // Render current view
   const renderCurrentView = () => {
@@ -509,22 +432,11 @@ function AppContent() {
     );
   }
 
-  // Block UI until hydration completes to avoid flashing an empty dashboard when data exists remotely
+  // Brief loading indicator while critical stores initialize
   if (bootHydrating) {
     return (
       <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4 text-muted-foreground">
-          <div className="flex items-center gap-3">
-            <div className="w-6 h-6 border-2 border-current border-t-transparent rounded-full animate-spin" />
-            <span>Loading your workspace…</span>
-          </div>
-          <button
-            onClick={() => setBootReloadTick((x) => x + 1)}
-            className="px-3 py-1.5 text-xs rounded bg-muted hover:bg-muted/80 text-foreground border border-border"
-          >
-            Retry
-          </button>
-        </div>
+        <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -641,18 +553,16 @@ function AppWithPricingCheck() {
     }
   }, [loading, currentUser]);
   
-  // 🚧 HARD GUARD: Block app when user is logged in but has no access
+  // Block app when user is logged in but has no access
   if (!loading && currentUser && hasAccess === false) {
-    console.log('🔒 Access blocked - forcing pricing page (root wrapper)');
     return <PricingPage />;
   }
 
-  // 🍎 APPLE-STYLE: Show Welcome Flow first for new signups
+  // Show Welcome Flow first for new signups
   if (!loading && currentUser && sessionStorage.getItem('show_pricing_after_auth') === 'true') {
     const hasSeenWelcome = sessionStorage.getItem('has_seen_welcome_flow') === 'true';
     
     if (!hasSeenWelcome) {
-      console.log('🍎 New signup - showing Welcome Flow');
       return (
         <WelcomeFlow 
           onComplete={() => {
@@ -664,7 +574,6 @@ function AppWithPricingCheck() {
     }
     
     // Welcome flow complete, show pricing
-    console.log('🎯 Welcome complete - showing pricing page');
     return <PricingPage />;
   }
   
