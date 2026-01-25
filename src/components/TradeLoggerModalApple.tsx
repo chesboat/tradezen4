@@ -210,7 +210,9 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
       console.log('📝 Trade data being saved:', {
         riskRewardRatio: tradeData.riskRewardRatio,
         mood: tradeData.mood,
-        classificationCount: Object.keys(classifications).length
+        classificationCount: Object.keys(classifications).length,
+        classificationsData: classifications,
+        tradeDataClassifications: tradeData.classifications,
       });
 
       let tradeId: string | undefined;

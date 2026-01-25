@@ -85,15 +85,18 @@ export const useTradeStore = create<TradeState>((set, get) => ({
           const setupListener = () => {
             const unsub = onSnapshot(q, 
               async (snap) => {
-                console.log('📊 Trades realtime update received:', snap.docs.length, 'trades');
+                console.log('📊 Trades realtime update received:', snap.docs.length, 'trades', 'fromCache:', snap.metadata.fromCache);
                 retryCount = 0; // Reset on successful connection
                 
                 const docs = snap.docs.map((d) => {
                   const data = d.data();
-                  // Debug: Log if any trade has classifications
-                  if (data.classifications && Object.keys(data.classifications).length > 0) {
-                    console.log('📊 Trade with classifications:', d.id, 'classifications:', Object.keys(data.classifications).length, 'keys');
-                  }
+                  // Debug: Log classifications for EVERY trade to trace sync issues
+                  console.log('📊 Trade loaded:', d.id, {
+                    classifications: data.classifications ? Object.keys(data.classifications) : 'none',
+                    classificationsData: data.classifications,
+                    updatedAt: data.updatedAt,
+                    fromCache: snap.metadata.fromCache
+                  });
                   return { id: d.id, ...data } as any;
                 }) as Trade[];
                 
