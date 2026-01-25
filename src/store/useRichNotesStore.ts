@@ -59,7 +59,7 @@ const service = new FirestoreService<RichNote>('richNotes');
 // Debounce map to prevent activity log spam during autosave
 // Key: noteId, Value: timestamp of last activity log
 const lastActivityLogTime = new Map<string, number>();
-const ACTIVITY_LOG_DEBOUNCE_MS = 60000; // 1 minute between activity logs for same note
+const ACTIVITY_LOG_DEBOUNCE_MS = 15 * 60 * 1000; // 15 minutes between activity logs for same note
 
 const shouldLogActivity = (noteId: string): boolean => {
   const lastLog = lastActivityLogTime.get(noteId);
