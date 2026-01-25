@@ -1151,12 +1151,12 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
               
             <motion.button
               onClick={() => setIsShareModalOpen(true)}
-              className="px-3 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all flex items-center gap-2"
+              className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              title="Share Calendar"
             >
-              <Share2 className="w-4 h-4" />
-              Share Calendar
+              <Share2 className="w-5 h-5" />
             </motion.button>
             <motion.button
               className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors"
