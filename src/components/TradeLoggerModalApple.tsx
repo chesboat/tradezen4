@@ -50,6 +50,8 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
   const [tags, setTags] = useState<string[]>([]);
   const [classifications, setClassifications] = useState<TradeClassifications>({});
   const [notes, setNotes] = useState('');
+  const [riskRewardRatio, setRiskRewardRatio] = useState<number>(1); // Preserve R:R when editing
+  const [mood, setMood] = useState<'excellent' | 'good' | 'neutral' | 'poor' | 'terrible'>('neutral'); // Preserve mood when editing
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tradeDate, setTradeDate] = useState<string>(new Date().toISOString().split('T')[0]); // YYYY-MM-DD
   const [tradeTime, setTradeTime] = useState<string>(''); // HH:MM (empty = use current time)
@@ -93,6 +95,8 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
         setTags([]);
         setClassifications({});
         setNotes('');
+        setRiskRewardRatio(1); // Reset R:R to default
+        setMood('neutral'); // Reset mood to default
         setTradeDate(new Date().toISOString().split('T')[0]);
         setTradeTime('');
         setShowSymbolPicker(false);
@@ -107,7 +111,11 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
   // Load editing trade - only on initial open or when trade ID changes
   useEffect(() => {
     if (latestEditingTrade && isOpen) {
-      console.log('📝 Loading trade data for editing:', latestEditingTrade.id, 'classifications:', Object.keys(latestEditingTrade.classifications || {}).length);
+      console.log('📝 Loading trade data for editing:', latestEditingTrade.id, {
+        classifications: Object.keys(latestEditingTrade.classifications || {}).length,
+        riskRewardRatio: latestEditingTrade.riskRewardRatio,
+        mood: latestEditingTrade.mood
+      });
       setSymbol(latestEditingTrade.symbol);
       setDirection(latestEditingTrade.direction);
       setResult(latestEditingTrade.result || null);
@@ -116,6 +124,8 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
       setTags(latestEditingTrade.tags || []);
       setClassifications(latestEditingTrade.classifications || {});
       setNotes(latestEditingTrade.notes || '');
+      setRiskRewardRatio(latestEditingTrade.riskRewardRatio || 1); // Load R:R into state
+      setMood(latestEditingTrade.mood || 'neutral'); // Load mood into state
       
       // Load date and time from editing trade
       const entryDate = new Date(latestEditingTrade.entryTime);
@@ -171,7 +181,13 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
         .map(t => t.slice(1).toLowerCase());
       const allTags = [...new Set([...tags, ...noteTags])]; // Merge and dedupe
       
-      // When editing, preserve existing fields; when creating, use defaults
+      // When editing, use state values (loaded when modal opened); when creating, use defaults
+      console.log('📝 Save trade - using state values:', {
+        riskRewardRatio: riskRewardRatio,
+        mood: mood,
+        isEditing: !!latestEditingTrade
+      });
+      
       const tradeData = {
         symbol: symbol.toUpperCase(),
         direction,
@@ -181,15 +197,21 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
         exitPrice: result === 'win' ? Math.abs(pnlValue) : 0,
         quantity: 1,
         riskAmount: calculatedRiskAmount,
-        riskRewardRatio: latestEditingTrade?.riskRewardRatio ?? 1, // Preserve existing R:R when editing
+        riskRewardRatio: riskRewardRatio, // Use state value (loaded from trade when editing)
         lossRR: result === 'loss' ? parseFloat(lossRR) || 1 : undefined, // Only for losses
         entryTime: entryTime.toISOString(),
-        mood: latestEditingTrade?.mood || 'neutral', // Preserve existing mood when editing
+        mood: mood, // Use state value (loaded from trade when editing)
         tags: allTags,
         notes: notes,
         accountId: selectedAccountId,
         classifications: Object.keys(classifications).length > 0 ? classifications : undefined,
       };
+      
+      console.log('📝 Trade data being saved:', {
+        riskRewardRatio: tradeData.riskRewardRatio,
+        mood: tradeData.mood,
+        classificationCount: Object.keys(classifications).length
+      });
 
       let tradeId: string | undefined;
       
