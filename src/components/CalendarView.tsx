@@ -95,8 +95,16 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
   const [selectedDay, setSelectedDay] = useState<CalendarDay | null>(null);
   const [hoveredDay, setHoveredDay] = useState<CalendarDay | null>(null);
   
-  // Display mode: dollar ($) or R:R (R)
-  const [displayMode, setDisplayMode] = useState<'dollar' | 'rr'>('dollar');
+  // Display mode: dollar ($) or R:R (R) - persisted to localStorage
+  const [displayMode, setDisplayMode] = useState<'dollar' | 'rr'>(() => {
+    const saved = localStorage.getItem('calendar-display-mode');
+    return saved === 'rr' ? 'rr' : 'dollar';
+  });
+  
+  // Persist display mode changes
+  useEffect(() => {
+    localStorage.setItem('calendar-display-mode', displayMode);
+  }, [displayMode]);
 
   // Advanced responsive system based on available space
   const [viewportWidth, setViewportWidth] = useState<number>(typeof window !== 'undefined' ? window.innerWidth : 1920);
