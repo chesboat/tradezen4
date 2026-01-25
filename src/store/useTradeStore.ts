@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Trade, TradeResult } from '@/types';
+import { Trade, TradeResult, TradeClassifications } from '@/types';
 import { classifyTradeResult } from '@/lib/utils';
 import { FirestoreService } from '@/lib/firestore';
 import { onSnapshot, query, orderBy, collection } from 'firebase/firestore';
@@ -7,6 +7,42 @@ import { db, auth } from '@/lib/firebase';
 import { filterByRetention } from '@/lib/tierLimits';
 
 const tradeService = new FirestoreService<Trade>('trades');
+
+// Map old random category IDs to new stable IDs based on category name
+// This gets populated when the classification store initializes
+let categoryMigrationMap: Record<string, string> = {};
+
+// Function to set the migration map (called from useClassificationStore)
+export const setClassificationMigrationMap = (map: Record<string, string>) => {
+  categoryMigrationMap = map;
+  console.log('📦 Classification migration map set:', Object.keys(map).length, 'mappings');
+};
+
+// Migrate trade classifications from old IDs to new stable IDs
+const migrateTradeClassifications = (classifications: TradeClassifications | undefined): TradeClassifications | undefined => {
+  if (!classifications || Object.keys(classifications).length === 0) return classifications;
+  if (Object.keys(categoryMigrationMap).length === 0) return classifications;
+  
+  const migrated: TradeClassifications = {};
+  let hasMigrated = false;
+  
+  for (const [categoryId, optionId] of Object.entries(classifications)) {
+    if (categoryMigrationMap[categoryId]) {
+      // This is an old ID that needs migration
+      migrated[categoryMigrationMap[categoryId]] = optionId;
+      hasMigrated = true;
+    } else {
+      // Keep as-is (either already migrated or a custom category)
+      migrated[categoryId] = optionId;
+    }
+  }
+  
+  if (hasMigrated) {
+    console.log('🔄 Migrated trade classifications:', { original: classifications, migrated });
+  }
+  
+  return migrated;
+};
 
 interface TradeState {
   trades: Trade[];
@@ -45,8 +81,8 @@ export const useTradeStore = create<TradeState>((set, get) => ({
         updatedAt: new Date(trade.updatedAt),
         entryTime: new Date(trade.entryTime),
         exitTime: trade.exitTime ? new Date(trade.exitTime) : undefined,
-        // Ensure classifications are preserved
-        classifications: trade.classifications || {},
+        // Migrate classifications to stable IDs if needed
+        classifications: migrateTradeClassifications(trade.classifications) || {},
       }));
       // Exclude trades belonging to deleted accounts (keep active AND archived)
       let filtered = formattedTrades;
@@ -112,8 +148,8 @@ export const useTradeStore = create<TradeState>((set, get) => ({
                   updatedAt: new Date(trade.updatedAt),
                   entryTime: new Date(trade.entryTime as any),
                   exitTime: (trade as any).exitTime ? new Date((trade as any).exitTime) : undefined,
-                  // Ensure classifications are preserved
-                  classifications: trade.classifications || {},
+                  // Migrate classifications to stable IDs if needed
+                  classifications: migrateTradeClassifications(trade.classifications) || {},
                 }));
                 let filteredRealtime = formatted;
                 try {

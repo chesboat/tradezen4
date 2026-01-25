@@ -450,9 +450,11 @@ export interface ClassificationCategory {
   isActive: boolean;
 }
 
-// Default categories to seed for new users
-export const DEFAULT_CLASSIFICATION_CATEGORIES: Omit<ClassificationCategory, 'id'>[] = [
+// Default categories with STABLE IDs - must be consistent across all devices!
+// Never change these IDs once set, as they're used to link trades to categories
+export const DEFAULT_CLASSIFICATION_CATEGORIES: ClassificationCategory[] = [
   {
+    id: 'cat_day_of_week', // Stable ID
     name: 'Day of Week',
     emoji: '📅',
     description: 'Which day the trade was taken',
@@ -467,6 +469,7 @@ export const DEFAULT_CLASSIFICATION_CATEGORIES: Omit<ClassificationCategory, 'id
     isActive: true,
   },
   {
+    id: 'cat_daily_candle', // Stable ID
     name: 'Daily Candle',
     emoji: '🕯️',
     description: 'Daily candle pattern/type',
@@ -479,6 +482,7 @@ export const DEFAULT_CLASSIFICATION_CATEGORIES: Omit<ClassificationCategory, 'id
     isActive: true,
   },
   {
+    id: 'cat_daily_profile', // Stable ID
     name: 'Daily Profile',
     emoji: '📊',
     description: 'Daily profile classification',
@@ -490,6 +494,7 @@ export const DEFAULT_CLASSIFICATION_CATEGORIES: Omit<ClassificationCategory, 'id
     isActive: true,
   },
   {
+    id: 'cat_h4_level', // Stable ID
     name: 'H4 Level',
     emoji: '📈',
     description: 'H4 timeframe level type',
@@ -502,6 +507,7 @@ export const DEFAULT_CLASSIFICATION_CATEGORIES: Omit<ClassificationCategory, 'id
     isActive: true,
   },
   {
+    id: 'cat_h4_candle', // Stable ID
     name: 'H4 Candle',
     emoji: '⏰',
     description: 'H4 candle timing',
@@ -514,6 +520,7 @@ export const DEFAULT_CLASSIFICATION_CATEGORIES: Omit<ClassificationCategory, 'id
     isActive: true,
   },
   {
+    id: 'cat_h4_profile', // Stable ID
     name: 'H4 Profile',
     emoji: '🎯',
     description: 'H4 profile classification',

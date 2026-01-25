@@ -1,6 +1,6 @@
 /**
  * Classification Store - Manages trade classification categories and options
- * Uses localStorage for persistence (Firestore sync disabled until rules configured)
+ * Uses localStorage for persistence with stable IDs for cross-device sync
  */
 
 import { create } from 'zustand';
@@ -10,6 +10,7 @@ import {
   ClassificationOption,
   DEFAULT_CLASSIFICATION_CATEGORIES 
 } from '@/types';
+import { setClassificationMigrationMap } from './useTradeStore';
 
 interface ClassificationState {
   categories: ClassificationCategory[];
@@ -38,20 +39,54 @@ interface ClassificationState {
   getActiveCategories: () => ClassificationCategory[];
 }
 
-// Generate unique ID
+// Generate unique ID (only for user-created categories)
 const generateId = () => `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
-// Seed default categories with IDs
-const seedDefaultCategories = (): ClassificationCategory[] => {
-  return DEFAULT_CLASSIFICATION_CATEGORIES.map((cat, index) => ({
-    ...cat,
-    id: generateId(),
-    order: index,
-    options: cat.options.map(opt => ({
-      ...opt,
-      id: opt.id, // Keep the predefined IDs for consistency
-    })),
-  }));
+// Get default categories with stable IDs (already defined in types)
+const getDefaultCategories = (): ClassificationCategory[] => {
+  return DEFAULT_CLASSIFICATION_CATEGORIES.map(cat => ({ ...cat }));
+};
+
+// Migration: Check if stored categories use old random IDs and need migration
+// Also builds a migration map for trade classifications
+const migrateToStableIds = (stored: ClassificationCategory[]): { categories: ClassificationCategory[], migrationMap: Record<string, string> } => {
+  // Map old category names to new stable IDs
+  const nameToStableId: Record<string, string> = {
+    'Day of Week': 'cat_day_of_week',
+    'Daily Candle': 'cat_daily_candle',
+    'Daily Profile': 'cat_daily_profile',
+    'H4 Level': 'cat_h4_level',
+    'H4 Candle': 'cat_h4_candle',
+    'H4 Profile': 'cat_h4_profile',
+  };
+  
+  const migrationMap: Record<string, string> = {};
+  
+  // Build migration map for all default categories (old ID -> new stable ID)
+  stored.forEach(cat => {
+    const stableId = nameToStableId[cat.name];
+    if (stableId && cat.id !== stableId) {
+      migrationMap[cat.id] = stableId;
+    }
+  });
+  
+  // Check if any default category has an old-style ID (timestamp-based)
+  const needsMigration = Object.keys(migrationMap).length > 0;
+  
+  if (needsMigration) {
+    console.log('🔄 Migrating classification categories to stable IDs...', migrationMap);
+    const migratedCategories = stored.map(cat => {
+      const stableId = nameToStableId[cat.name];
+      if (stableId && cat.id !== stableId) {
+        console.log(`  - Migrating "${cat.name}" from ${cat.id} to ${stableId}`);
+        return { ...cat, id: stableId };
+      }
+      return cat;
+    });
+    return { categories: migratedCategories, migrationMap };
+  }
+  
+  return { categories: stored, migrationMap };
 };
 
 export const useClassificationStore = create<ClassificationState>()(
@@ -65,11 +100,36 @@ export const useClassificationStore = create<ClassificationState>()(
         set({ isLoading: true, userId });
 
         // Use localStorage persistence (handled by zustand persist middleware)
-        // Seed defaults if no categories exist
         const stored = get().categories;
+        
         if (stored.length === 0) {
-          set({ categories: seedDefaultCategories() });
+          // Seed with default categories using stable IDs
+          console.log('📚 Seeding default classification categories with stable IDs');
+          set({ categories: getDefaultCategories() });
+          // No migration needed for fresh install
+        } else {
+          // Migrate existing categories to stable IDs if needed
+          const { categories: migrated, migrationMap } = migrateToStableIds(stored);
+          
+          // Set the migration map for trade classifications
+          if (Object.keys(migrationMap).length > 0) {
+            setClassificationMigrationMap(migrationMap);
+          }
+          
+          if (migrated !== stored) {
+            set({ categories: migrated });
+          }
+          
+          // Ensure all default categories exist (in case new ones were added)
+          const defaults = getDefaultCategories();
+          const existingIds = new Set(migrated.map(c => c.id));
+          const missing = defaults.filter(d => !existingIds.has(d.id));
+          if (missing.length > 0) {
+            console.log('📚 Adding missing default categories:', missing.map(c => c.name));
+            set({ categories: [...migrated, ...missing] });
+          }
         }
+        
         set({ isLoading: false });
       },
 
