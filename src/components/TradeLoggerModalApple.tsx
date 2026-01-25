@@ -104,7 +104,7 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
     }
   }, [isOpen]);
 
-  // Load editing trade
+  // Load editing trade - only on initial open or when trade ID changes
   useEffect(() => {
     if (latestEditingTrade && isOpen) {
       console.log('📝 Loading trade data for editing:', latestEditingTrade.id, 'classifications:', Object.keys(latestEditingTrade.classifications || {}).length);
@@ -135,7 +135,7 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
         setShowNotesInput(true);
       }
     }
-  }, [latestEditingTrade, isOpen]);
+  }, [latestEditingTrade?.id, isOpen]);
 
   const handleSubmit = async () => {
     if (!symbol || !result || !selectedAccountId) return;
@@ -171,6 +171,7 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
         .map(t => t.slice(1).toLowerCase());
       const allTags = [...new Set([...tags, ...noteTags])]; // Merge and dedupe
       
+      // When editing, preserve existing fields; when creating, use defaults
       const tradeData = {
         symbol: symbol.toUpperCase(),
         direction,
@@ -180,10 +181,10 @@ export const TradeLoggerModalApple: React.FC<TradeLoggerModalAppleProps> = ({
         exitPrice: result === 'win' ? Math.abs(pnlValue) : 0,
         quantity: 1,
         riskAmount: calculatedRiskAmount,
-        riskRewardRatio: defaultRR,
+        riskRewardRatio: latestEditingTrade?.riskRewardRatio ?? 1, // Preserve existing R:R when editing
         lossRR: result === 'loss' ? parseFloat(lossRR) || 1 : undefined, // Only for losses
         entryTime: entryTime.toISOString(),
-        mood: 'neutral' as const,
+        mood: latestEditingTrade?.mood || 'neutral', // Preserve existing mood when editing
         tags: allTags,
         notes: notes,
         accountId: selectedAccountId,
