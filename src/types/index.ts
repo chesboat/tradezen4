@@ -238,6 +238,7 @@ export interface CalendarDay {
   pnl: number;
   tradesCount: number;
   avgRR: number;
+  totalRR: number; // Net R:R for the day (wins add R:R, losses subtract lossRR or 1R)
   xpEarned: number;
   mood: MoodType;
   quickNotesCount: number;
@@ -251,6 +252,7 @@ export interface WeeklySummary {
   weekStart: Date;
   weekEnd: Date;
   totalPnl: number;
+  totalRR: number; // Net R:R for the week
   totalXP: number;
   avgMood: MoodType;
   tradesCount: number;

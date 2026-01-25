@@ -16,7 +16,9 @@ import {
   FileText,
   CheckCircle2,
   Clock,
-  Flame
+  Flame,
+  DollarSign,
+  Percent
 } from 'lucide-react';
 import { useTradeStore } from '@/store/useTradeStore';
 import { useAccountFilterStore, getAccountIdsForSelection } from '@/store/useAccountFilterStore';
@@ -92,6 +94,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState<CalendarDay | null>(null);
   const [hoveredDay, setHoveredDay] = useState<CalendarDay | null>(null);
+  
+  // Display mode: dollar ($) or R:R (R)
+  const [displayMode, setDisplayMode] = useState<'dollar' | 'rr'>('dollar');
 
   // Advanced responsive system based on available space
   const [viewportWidth, setViewportWidth] = useState<number>(typeof window !== 'undefined' ? window.innerWidth : 1920);
@@ -282,6 +287,19 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
       ? dayTrades.reduce((sum, trade) => sum + trade.riskRewardRatio, 0) / tradesCount 
       : 0;
     
+    // Calculate total R:R for the day
+    // Wins: +R:R value, Losses: -lossRR (or -1R if not set)
+    const totalRR = dayTrades.reduce((sum, trade) => {
+      if (trade.excludeFromAnalytics) return sum; // Skip excluded trades
+      const isWin = (trade.pnl || 0) > 0;
+      if (isWin) {
+        return sum + (trade.riskRewardRatio || 1);
+      } else {
+        // For losses, use lossRR if set (for partial losses), otherwise -1R
+        return sum - (trade.lossRR || 1);
+      }
+    }, 0);
+    
     const winningTrades = dayTrades.filter(trade => (trade.pnl || 0) > 0);
     const winRate = tradesCount > 0 ? (winningTrades.length / tradesCount) * 100 : 0;
     
@@ -367,6 +385,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
       pnl,
       tradesCount,
       avgRR,
+      totalRR,
       xpEarned: dayTrades.reduce((sum, trade) => sum + 10, 0), // Base XP calculation
       mood,
       quickNotesCount: dayNotes.length,
@@ -430,6 +449,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
       // Only include days visible in the current month to avoid leaking next/prev month totals
       const weekDays = week.filter(day => !day.isOtherMonth);
       const totalPnl = weekDays.reduce((sum, day) => sum + day.pnl, 0);
+      const totalRR = weekDays.reduce((sum, day) => sum + (day.totalRR || 0), 0);
       const totalXP = weekDays.reduce((sum, day) => sum + day.xpEarned, 0);
       const totalTrades = weekDays.reduce((sum, day) => sum + day.tradesCount, 0);
       
@@ -457,6 +477,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
         weekStart: week[0].date,
         weekEnd: week[6].date,
         totalPnl,
+        totalRR,
         totalXP,
         avgMood,
         tradesCount: totalTrades,
@@ -524,6 +545,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
     return shareCalendarData.weeks.map((week, index) => {
       const weekDays = week.filter(day => !day.isOtherMonth);
       const totalPnl = weekDays.reduce((sum, day) => sum + day.pnl, 0);
+      const totalRR = weekDays.reduce((sum, day) => sum + (day.totalRR || 0), 0);
       const totalXP = weekDays.reduce((sum, day) => sum + day.xpEarned, 0);
       const totalTrades = weekDays.reduce((sum, day) => sum + day.tradesCount, 0);
       
@@ -551,6 +573,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
         weekStart: week[0].date,
         weekEnd: week[6].date,
         totalPnl,
+        totalRR,
         totalXP,
         avgMood,
         tradesCount: totalTrades,
@@ -846,6 +869,23 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
     return `${sign}$${Math.round(pnl)}`;                                  // +$543
   };
 
+  // Format R:R value (e.g., +2.5R, -1R)
+  const formatRRSmart = (rr: number): string => {
+    if (rr === 0) return '0R';
+    const sign = rr > 0 ? '+' : '';
+    // Round to 1 decimal if not a whole number
+    const formatted = Number.isInteger(rr) ? rr.toString() : rr.toFixed(1);
+    return `${sign}${formatted}R`;
+  };
+
+  // Get display value based on current mode
+  const getDisplayValue = (pnl: number, totalRR: number): string => {
+    if (displayMode === 'rr') {
+      return formatRRSmart(totalRR);
+    }
+    return formatPnLSmart(pnl);
+  };
+
   const formatPnL = (pnl: number, isCompact: boolean = false) => {
     if (pnl === 0) return null;
     
@@ -950,8 +990,41 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
           
           {/* Bottom row: Stats and actions */}
           <div className="flex items-center justify-between">
-            <div className="text-xs sm:text-sm text-muted-foreground">
-              <span className="font-semibold text-green-500">{formatCurrency(weeklyData.reduce((sum, week) => sum + week.totalPnl, 0))}</span>
+            <div className="flex items-center gap-2">
+              {/* Display Mode Toggle */}
+              <div className="flex items-center bg-muted rounded-lg p-0.5">
+                <button
+                  onClick={() => setDisplayMode('dollar')}
+                  className={cn(
+                    'px-2 py-1 rounded text-xs font-medium transition-colors',
+                    displayMode === 'dollar' 
+                      ? 'bg-background text-foreground shadow-sm' 
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  <DollarSign className="w-3 h-3" />
+                </button>
+                <button
+                  onClick={() => setDisplayMode('rr')}
+                  className={cn(
+                    'px-2 py-1 rounded text-xs font-medium transition-colors',
+                    displayMode === 'rr' 
+                      ? 'bg-background text-foreground shadow-sm' 
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  R
+                </button>
+              </div>
+              <span className={cn(
+                'text-xs sm:text-sm font-semibold',
+                weeklyData.reduce((sum, week) => sum + week.totalPnl, 0) >= 0 ? 'text-green-500' : 'text-red-500'
+              )}>
+                {displayMode === 'rr' 
+                  ? formatRRSmart(weeklyData.reduce((sum, week) => sum + week.totalRR, 0))
+                  : formatCurrency(weeklyData.reduce((sum, week) => sum + week.totalPnl, 0))
+                }
+              </span>
             </div>
             <div className="flex items-center gap-1">
               {/* Removed global weekly review button - now handled per week tile */}
@@ -1020,8 +1093,44 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
         </div>
 
         <div className="flex items-center gap-4">
+          {/* Display Mode Toggle */}
+          <div className="flex items-center bg-muted rounded-lg p-0.5">
+            <button
+              onClick={() => setDisplayMode('dollar')}
+              className={cn(
+                'px-3 py-1.5 rounded text-sm font-medium transition-colors flex items-center gap-1',
+                displayMode === 'dollar' 
+                  ? 'bg-background text-foreground shadow-sm' 
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <DollarSign className="w-4 h-4" />
+              <span className="hidden xl:inline">Dollar</span>
+            </button>
+            <button
+              onClick={() => setDisplayMode('rr')}
+              className={cn(
+                'px-3 py-1.5 rounded text-sm font-medium transition-colors flex items-center gap-1',
+                displayMode === 'rr' 
+                  ? 'bg-background text-foreground shadow-sm' 
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <Target className="w-4 h-4" />
+              <span className="hidden xl:inline">R:R</span>
+            </button>
+          </div>
+          
           <div className="text-sm text-muted-foreground">
-            Monthly stats: <span className="font-semibold text-green-500">{formatCurrency(weeklyData.reduce((sum, week) => sum + week.totalPnl, 0))}</span>
+            Monthly: <span className={cn(
+              'font-semibold',
+              weeklyData.reduce((sum, week) => sum + week.totalPnl, 0) >= 0 ? 'text-green-500' : 'text-red-500'
+            )}>
+              {displayMode === 'rr' 
+                ? formatRRSmart(weeklyData.reduce((sum, week) => sum + week.totalRR, 0))
+                : formatCurrency(weeklyData.reduce((sum, week) => sum + week.totalPnl, 0))
+              }
+            </span>
           </div>
           <div className="flex items-center gap-2">
               {/* Removed global weekly review button - now handled per week tile */}
@@ -1148,16 +1257,18 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                               <div className="text-xs font-medium text-muted-foreground truncate">
                                 W{weekSummary?.weekNumber || weekIndex + 1}
                               </div>
-                              {weekSummary && (
+                                {weekSummary && (
                                 <>
                                   <div className={cn(
                                     'text-xs font-bold leading-none truncate whitespace-nowrap',
-                                    weekSummary.totalPnl > 0 ? 'text-green-500' : 
-                                    weekSummary.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
+                                    (displayMode === 'rr' ? weekSummary.totalRR : weekSummary.totalPnl) > 0 ? 'text-green-500' : 
+                                    (displayMode === 'rr' ? weekSummary.totalRR : weekSummary.totalPnl) < 0 ? 'text-red-500' : 'text-muted-foreground'
                                   )}>
-                                    {Math.abs(weekSummary.totalPnl) >= 1000 
-                                      ? `${weekSummary.totalPnl > 0 ? '+' : ''}${(weekSummary.totalPnl/1000).toFixed(1)}k`
-                                      : `${weekSummary.totalPnl > 0 ? '+' : ''}${Math.round(weekSummary.totalPnl)}`
+                                    {displayMode === 'rr' 
+                                      ? formatRRSmart(weekSummary.totalRR)
+                                      : (Math.abs(weekSummary.totalPnl) >= 1000 
+                                        ? `${weekSummary.totalPnl > 0 ? '+' : ''}${(weekSummary.totalPnl/1000).toFixed(1)}k`
+                                        : `${weekSummary.totalPnl > 0 ? '+' : ''}${Math.round(weekSummary.totalPnl)}`)
                                     }
                                   </div>
                                   <div className="text-xs leading-none text-muted-foreground">
@@ -1418,13 +1529,14 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                           fullWidth
                         >
                           <div className="flex-1 flex flex-col items-center justify-center space-y-0.5 sm:space-y-1">
-                            {/* P&L - Mobile-optimized, then scales up (only show if trades exist) */}
+                            {/* P&L or R:R - Mobile-optimized, then scales up (only show if trades exist) */}
                             {day.tradesCount > 0 && (
                               <div className={cn(
                                 'text-xs sm:text-sm lg:text-lg 2xl:text-xl 3xl:text-2xl font-bold leading-tight tracking-tight',
-                                day.pnl > 0 ? 'text-green-500' : day.pnl < 0 ? 'text-red-500' : 'text-muted-foreground'
+                                (displayMode === 'rr' ? day.totalRR : day.pnl) > 0 ? 'text-green-500' : 
+                                (displayMode === 'rr' ? day.totalRR : day.pnl) < 0 ? 'text-red-500' : 'text-muted-foreground'
                               )}>
-                                {formatPnLSmart(day.pnl)}
+                                {getDisplayValue(day.pnl, day.totalRR)}
                               </div>
                             )}
                             
@@ -1492,12 +1604,14 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                       <div className={cn(
                         textSizes.weekPnl,
                         'font-bold leading-tight',
-                        weeklyData[weekIndex]?.totalPnl > 0 ? 'text-green-500' : 
-                        weeklyData[weekIndex]?.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
+                        (displayMode === 'rr' ? weeklyData[weekIndex]?.totalRR : weeklyData[weekIndex]?.totalPnl) > 0 ? 'text-green-500' : 
+                        (displayMode === 'rr' ? weeklyData[weekIndex]?.totalRR : weeklyData[weekIndex]?.totalPnl) < 0 ? 'text-red-500' : 'text-muted-foreground'
                       )}>
-                        {weeklyData[weekIndex]?.totalPnl && Math.abs(weeklyData[weekIndex].totalPnl) >= 1000 
-                          ? `${weeklyData[weekIndex].totalPnl > 0 ? '+' : ''}${(weeklyData[weekIndex].totalPnl / 1000).toFixed(1)}k`
-                          : formatCurrency(weeklyData[weekIndex]?.totalPnl || 0)
+                        {displayMode === 'rr'
+                          ? formatRRSmart(weeklyData[weekIndex]?.totalRR || 0)
+                          : (weeklyData[weekIndex]?.totalPnl && Math.abs(weeklyData[weekIndex].totalPnl) >= 1000 
+                            ? `${weeklyData[weekIndex].totalPnl > 0 ? '+' : ''}${(weeklyData[weekIndex].totalPnl / 1000).toFixed(1)}k`
+                            : formatCurrency(weeklyData[weekIndex]?.totalPnl || 0))
                         }
                       </div>
                       <div className={cn(textSizes.weekDays, 'text-muted-foreground leading-tight')}>
@@ -1513,10 +1627,13 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ className }) => {
                     </div>
                     <div className={cn(
                       'text-xs sm:text-sm lg:text-lg 2xl:text-xl 3xl:text-2xl font-bold leading-tight',
-                      weeklyData[weekIndex]?.totalPnl > 0 ? 'text-green-500' : 
-                      weeklyData[weekIndex]?.totalPnl < 0 ? 'text-red-500' : 'text-muted-foreground'
+                      (displayMode === 'rr' ? weeklyData[weekIndex]?.totalRR : weeklyData[weekIndex]?.totalPnl) > 0 ? 'text-green-500' : 
+                      (displayMode === 'rr' ? weeklyData[weekIndex]?.totalRR : weeklyData[weekIndex]?.totalPnl) < 0 ? 'text-red-500' : 'text-muted-foreground'
                     )}>
-                      {formatPnLSmart(weeklyData[weekIndex]?.totalPnl || 0)}
+                      {displayMode === 'rr'
+                        ? formatRRSmart(weeklyData[weekIndex]?.totalRR || 0)
+                        : formatPnLSmart(weeklyData[weekIndex]?.totalPnl || 0)
+                      }
                     </div>
                     <div className="text-[9px] sm:text-[10px] lg:text-sm 2xl:text-base 3xl:text-lg text-muted-foreground leading-tight">
                       {weeklyData[weekIndex]?.activeDays || 0} days
