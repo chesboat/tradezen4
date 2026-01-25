@@ -507,8 +507,8 @@ export const RichNoteEditorModal: React.FC<RichNoteEditorModalProps> = ({
             )}
           </div>
 
-          {/* Editor */}
-          <div className="flex-1 overflow-y-auto">
+          {/* Editor - toolbar stays fixed, content scrolls */}
+          <div className="flex-1 min-h-0">
             <EnhancedRichTextEditor
               content={content}
               onChange={setContent}

@@ -270,10 +270,10 @@ export const EnhancedRichTextEditor: React.FC<EnhancedRichTextEditorProps> = ({
   if (!editor) return null;
 
   return (
-    <div className={cn("relative border border-border rounded-lg bg-background", className)}>
-      {/* Pinned Toolbar */}
-      <div className="editor-toolbar sticky top-0 z-50 px-2 pt-2">
-        <div className="flex items-center gap-1 p-2 bg-card/95 backdrop-blur-sm border border-border rounded-lg shadow-lg">
+    <div className={cn("flex flex-col border border-border rounded-lg bg-background", className)}>
+      {/* Fixed Toolbar - Apple Notes style */}
+      <div className="editor-toolbar flex-shrink-0 px-2 pt-2 bg-background z-10">
+        <div className="flex items-center gap-1 p-2 bg-card/95 backdrop-blur-sm border border-border rounded-lg shadow-sm">
               {/* Text Formatting */}
               <div className="flex items-center gap-1 pr-2 border-r border-border">
                 <ToolbarButton
@@ -373,27 +373,29 @@ export const EnhancedRichTextEditor: React.FC<EnhancedRichTextEditorProps> = ({
         </div>
       </div>
 
-      {/* Editor */}
-      <div
-        className="relative"
-        style={{ marginTop: '8px' }}
-        onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragOver(true); }}
-        onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); dragCounter.current += 1; setIsDragOver(true); }}
-        onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); dragCounter.current -= 1; if (dragCounter.current <= 0) { setIsDragOver(false); dragCounter.current = 0; } }}
-        onDrop={handleDrop}
-      >
-        <EditorContent 
-          editor={editor} 
-          className="prose-headings:font-semibold prose-h1:text-xl prose-h1:mb-2 prose-h2:text-lg prose-h2:mb-2 prose-h3:text-base prose-h3:mb-1 transition-all duration-200"
-        />
+      {/* Scrollable Editor Content - Apple Notes style */}
+      <div className="flex-1 overflow-y-auto min-h-0">
+        <div
+          className="relative"
+          style={{ marginTop: '8px' }}
+          onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragOver(true); }}
+          onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); dragCounter.current += 1; setIsDragOver(true); }}
+          onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); dragCounter.current -= 1; if (dragCounter.current <= 0) { setIsDragOver(false); dragCounter.current = 0; } }}
+          onDrop={handleDrop}
+        >
+          <EditorContent 
+            editor={editor} 
+            className="prose-headings:font-semibold prose-h1:text-xl prose-h1:mb-2 prose-h2:text-lg prose-h2:mb-2 prose-h3:text-base prose-h3:mb-1 transition-all duration-200"
+          />
 
-        {isDragOver && (
-          <div className="pointer-events-none absolute inset-0 rounded-lg border-2 border-dashed border-primary/50 bg-primary/10 flex items-center justify-center">
-            <div className="px-3 py-1.5 rounded-full bg-card/90 text-foreground text-sm shadow">
-              Drop image to insert
+          {isDragOver && (
+            <div className="pointer-events-none absolute inset-0 rounded-lg border-2 border-dashed border-primary/50 bg-primary/10 flex items-center justify-center">
+              <div className="px-3 py-1.5 rounded-full bg-card/90 text-foreground text-sm shadow">
+                Drop image to insert
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
