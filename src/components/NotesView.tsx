@@ -598,7 +598,7 @@ export const NotesView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="h-screen flex flex-col bg-background overflow-hidden">
       {/* Top Search Bar (Apple-style - always visible) */}
       <div className="border-b border-border bg-card/50 backdrop-blur-sm">
         <div className="px-4 py-3 flex items-center gap-3">
