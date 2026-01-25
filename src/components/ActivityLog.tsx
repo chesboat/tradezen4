@@ -168,17 +168,8 @@ const groupLabels = {
   older: 'Last 30 Days',
 };
 
-// Priority-based sorting (critical > high > medium > routine, then by time)
-const sortByPriority = (a: ActivityLogEntry, b: ActivityLogEntry) => {
-  const priorityOrder = { critical: 0, high: 1, medium: 2, routine: 3 };
-  const aPriority = priorityOrder[a.priority || 'routine'];
-  const bPriority = priorityOrder[b.priority || 'routine'];
-  
-  if (aPriority !== bPriority) {
-    return aPriority - bPriority;
-  }
-  
-  // Same priority, sort by time (newest first)
+// Chronological sorting (newest first) - simple and consistent
+const sortByTime = (a: ActivityLogEntry, b: ActivityLogEntry) => {
   return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
 };
 
@@ -364,13 +355,13 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ className }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [visibleActivities, setVisibleActivities] = useState(20);
 
-  // Filter and sort activities (priority first within each time group, then by time)
+  // Filter and sort activities chronologically (newest first)
   const filteredActivities = activities
     .filter(activity => {
       if (filter === 'all') return true;
       return activity.type === filter;
     })
-    .sort(sortByPriority)
+    .sort(sortByTime)
     .slice(0, visibleActivities);
 
   // Group activities by time (Apple Time Machine style)
