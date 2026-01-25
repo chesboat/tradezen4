@@ -86,8 +86,15 @@ export const useActivityLogStore = create<ActivityLogState>((set, get) => ({
               accountId: data.accountId,
               priority: data.priority,
               metadata: data.metadata,
-              createdAt: data.createdAt?.toDate?.() || new Date(),
-              updatedAt: data.updatedAt?.toDate?.() || new Date(),
+              // Handle Firestore Timestamps, ISO strings, or Date objects
+              createdAt: data.createdAt?.toDate?.() 
+                || (typeof data.createdAt === 'string' ? new Date(data.createdAt) : null)
+                || data.createdAt
+                || new Date(),
+              updatedAt: data.updatedAt?.toDate?.() 
+                || (typeof data.updatedAt === 'string' ? new Date(data.updatedAt) : null)
+                || data.updatedAt
+                || new Date(),
             } as ActivityLogEntry;
           });
 

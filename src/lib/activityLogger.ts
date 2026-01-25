@@ -1,10 +1,11 @@
 /**
  * Trading Health Activity Logger
  * 
- * Apple-style: Intelligent, contextual, actionable
+ * CLEANED UP: Removed auto-generated AI insights that were inaccurate/noisy.
+ * Now only logs genuine user milestones and achievements.
  * 
- * Automatically logs meaningful Trading Health events to the Activity Log
- * with proper priority, metadata, and deep links.
+ * Removed: ring_change, health_warning, health_suggestion, daily_summary
+ * Kept: streak milestones, achievements
  */
 
 import { useActivityLogStore } from '@/store/useActivityLogStore';
@@ -12,62 +13,18 @@ import type { ActivityPriority } from '@/types';
 
 export const logTradingHealthActivity = {
   /**
-   * Log ring score changes (Edge, Consistency, Risk Control)
+   * Log ring score changes - DISABLED (too noisy, not accurate)
+   * Kept for backwards compatibility but no-ops
    */
-  ringChange: (params: {
+  ringChange: (_params: {
     ringType: 'edge' | 'consistency' | 'riskControl';
     oldValue: number;
     newValue: number;
     expectancy?: number;
   }) => {
-    const { ringType, oldValue, newValue, expectancy } = params;
-    const change = newValue - oldValue;
-    const trend = change > 0 ? 'improving' : change < 0 ? 'declining' : 'stable';
-    
-    console.log('[Activity Logger] Logging ring change:', {
-      ringType,
-      oldValue,
-      newValue,
-      change,
-      trend,
-      expectancy
-    });
-    
-    // Determine priority based on severity
-    let priority: ActivityPriority = 'medium';
-    if (Math.abs(change) >= 15) priority = 'high';
-    if (trend === 'declining' && newValue < 50) priority = 'critical';
-
-    const ringEmoji = {
-      edge: '💰',
-      consistency: '🎯',
-      riskControl: '⚠️',
-    };
-
-    const ringName = {
-      edge: 'Edge',
-      consistency: 'Consistency',
-      riskControl: 'Risk Control',
-    };
-
-    let description = `${oldValue} → ${newValue} (${change > 0 ? '+' : ''}${change})`;
-    if (ringType === 'edge' && expectancy !== undefined) {
-      description += `. Your expectancy ${expectancy > 0 ? 'improved to' : 'dropped to'} $${expectancy.toFixed(2)} per trade`;
-    }
-
-    useActivityLogStore.getState().addActivity({
-      type: 'ring_change',
-      title: `${ringEmoji[ringType]} ${ringName[ringType]} ${trend === 'improving' ? 'Improved' : trend === 'declining' ? 'Declining' : 'Updated'}`,
-      description,
-      priority,
-      metadata: {
-        ringType,
-        oldValue,
-        newValue,
-        trend,
-        deepLink: '/health',
-      },
-    });
+    // Disabled - ring changes are auto-generated and cluttered the activity log
+    // Users can see their current scores on the Health dashboard
+    return;
   },
 
   /**
@@ -129,71 +86,40 @@ export const logTradingHealthActivity = {
   },
 
   /**
-   * Log rule violations
+   * Log rule violations - DISABLED (noisy auto-generated content)
    */
-  ruleViolation: (params: {
+  ruleViolation: (_params: {
     ruleId: string;
     ruleName: string;
     details: string;
   }) => {
-    const { ruleId, ruleName, details } = params;
-
-    useActivityLogStore.getState().addActivity({
-      type: 'rule_violation',
-      title: `⚠️ Broke ${ruleName}`,
-      description: details,
-      priority: 'medium',
-      metadata: {
-        ruleId,
-        ruleName,
-        deepLink: '/health',
-      },
-    });
+    // Disabled - rule violations are tracked elsewhere, don't need activity log spam
+    return;
   },
 
   /**
-   * Log health warnings (critical issues)
+   * Log health warnings - DISABLED (AI-generated, often inaccurate)
    */
-  healthWarning: (params: {
+  healthWarning: (_params: {
     title: string;
     description: string;
     ringType?: 'edge' | 'consistency' | 'riskControl';
   }) => {
-    const { title, description, ringType } = params;
-
-    useActivityLogStore.getState().addActivity({
-      type: 'health_warning',
-      title: `🚨 ${title}`,
-      description,
-      priority: 'critical',
-      metadata: {
-        ringType,
-        deepLink: '/health',
-      },
-    });
+    // Disabled - these auto-generated warnings cluttered the activity log
+    // Critical info is shown directly on the Health dashboard
+    return;
   },
 
   /**
-   * Log "For You" suggestions
+   * Log "For You" suggestions - DISABLED (AI-generated, often not helpful)
    */
-  healthSuggestion: (params: {
+  healthSuggestion: (_params: {
     suggestionType: string;
     title: string;
     description: string;
   }) => {
-    const { suggestionType, title, description } = params;
-
-    useActivityLogStore.getState().addActivity({
-      type: 'health_suggestion',
-      title: `💡 ${title}`,
-      description,
-      priority: 'high',
-      metadata: {
-        suggestionType,
-        actionable: true,
-        deepLink: '/health',
-      },
-    });
+    // Disabled - AI suggestions were inaccurate and unhelpful
+    return;
   },
 
   /**
@@ -222,33 +148,14 @@ export const logTradingHealthActivity = {
   },
 
   /**
-   * Log daily summary (morning recap)
+   * Log daily summary - DISABLED (auto-generated, redundant with dashboard)
    */
-  dailySummary: (params: {
+  dailySummary: (_params: {
     edge: { value: number; trend: 'improving' | 'stable' | 'declining' };
     consistency: { value: number; trend: 'improving' | 'stable' | 'declining' };
     riskControl: { value: number; trend: 'improving' | 'stable' | 'declining' };
   }) => {
-    const { edge, consistency, riskControl } = params;
-
-    const trendIcon = (trend: string) => {
-      switch (trend) {
-        case 'improving': return '↗';
-        case 'declining': return '↘';
-        default: return '→';
-      }
-    };
-
-    const description = `Edge: ${edge.value}/80 (${trendIcon(edge.trend)}) • Consistency: ${consistency.value}/80 (${trendIcon(consistency.trend)}) • Risk: ${riskControl.value}/80 (${trendIcon(riskControl.trend)})`;
-
-    useActivityLogStore.getState().addActivity({
-      type: 'daily_summary',
-      title: "📊 Yesterday's Trading Health",
-      description,
-      priority: 'high',
-      metadata: {
-        deepLink: '/health',
-      },
-    });
+    // Disabled - daily summaries are redundant with the Health dashboard
+    return;
   },
 };

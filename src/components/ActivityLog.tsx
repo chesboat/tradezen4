@@ -11,7 +11,6 @@ import {
   Heart, 
   Zap,
   Clock,
-  Filter,
   MoreVertical,
   Edit,
   Target,
@@ -28,7 +27,7 @@ import {
 import { useActivityLogStore } from '@/store/useActivityLogStore';
 import { useNavigationStore } from '@/store/useNavigationStore';
 import { ActivityLogEntry, ActivityType } from '@/types';
-import { formatRelativeTime, getMoodEmoji } from '@/lib/localStorageUtils';
+import { formatRelativeTime } from '@/lib/localStorageUtils';
 import { useScrollShadows } from '@/hooks/useScrollShadows';
 
 interface ActivityLogProps {
@@ -36,7 +35,7 @@ interface ActivityLogProps {
 }
 
 const activityIcons: Record<ActivityType, React.ComponentType<{ className?: string }>> = {
-  // Original types
+  // Core activity types
   trade: TrendingUp,
   note: BookOpen,
   quest: Trophy,
@@ -48,13 +47,14 @@ const activityIcons: Record<ActivityType, React.ComponentType<{ className?: stri
   weekly_review: FileText,
   todo: CheckCircle2,
   rich_note: FileEdit,
-  // Trading Health types
-  ring_change: BarChart3,
+  // Achievement types (kept - these are genuine milestones)
   streak_event: Flame,
+  milestone: Award,
+  // Legacy types (kept for backwards compatibility with existing data)
+  ring_change: BarChart3,
   rule_violation: AlertTriangle,
   health_suggestion: Lightbulb,
   health_warning: Shield,
-  milestone: Award,
   daily_summary: Activity,
 };
 
@@ -359,18 +359,15 @@ const ActivityItem: React.FC<{ activity: ActivityLogEntry; isExpanded: boolean }
 
 export const ActivityLog: React.FC<ActivityLogProps> = ({ className }) => {
   const { isExpanded, activities, toggleActivityLog, addActivity } = useActivityLogStore();
-  const [filter, setFilter] = useState<ActivityType | 'all' | 'health'>('all');
+  const [filter, setFilter] = useState<ActivityType | 'all'>('all');
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [visibleActivities, setVisibleActivities] = useState(20);
 
-  // Filter and sort activities (Apple-style: priority first, then time)
-  const tradingHealthTypes: ActivityType[] = ['ring_change', 'streak_event', 'rule_violation', 'health_suggestion', 'health_warning', 'milestone', 'daily_summary'];
-  
+  // Filter and sort activities (priority first within each time group, then by time)
   const filteredActivities = activities
     .filter(activity => {
       if (filter === 'all') return true;
-      if (filter === 'health') return tradingHealthTypes.includes(activity.type);
       return activity.type === filter;
     })
     .sort(sortByPriority)
@@ -410,7 +407,6 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ className }) => {
 
   const filterOptions = [
     { value: 'all', label: 'All', icon: Activity },
-    { value: 'health', label: 'Health', icon: Zap }, // Trading Health (flagship feature)
     { value: 'trade', label: 'Trades', icon: TrendingUp },
     { value: 'note', label: 'Notes', icon: BookOpen },
     { value: 'rich_note', label: 'Rich Notes', icon: FileEdit },
@@ -419,6 +415,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ className }) => {
     { value: 'xp', label: 'XP', icon: Zap },
     { value: 'weekly_review', label: 'Reviews', icon: FileText },
     { value: 'todo', label: 'Tasks', icon: CheckCircle2 },
+    { value: 'milestone', label: 'Milestones', icon: Award },
   ];
 
   return (
@@ -487,7 +484,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ className }) => {
                         ? 'bg-primary text-primary-foreground' 
                         : 'bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                     }`}
-                    onClick={() => setFilter(option.value as ActivityType | 'all' | 'health')}
+                    onClick={() => setFilter(option.value as ActivityType | 'all')}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
