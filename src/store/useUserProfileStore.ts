@@ -142,11 +142,19 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
             longestStreak: 0,
           };
 
+          // Preserve local preferences to avoid overwriting optimistic updates
+          // (e.g., calendar display mode toggle) before they sync to Firestore
+          const mergedPreferences = {
+            ...(data as any).preferences,
+            ...current?.preferences, // Local state takes priority for optimistic updates
+          };
+
           const nextProfile: UserProfile = {
             id: userId, // ensure id is always present for downstream writes
             ...(data as any),
             stats: safeStats,
             joinedAt: (data as any).joinedAt ? new Date((data as any).joinedAt) : new Date(),
+            preferences: mergedPreferences,
             xp: current?.xp || {
               total: 0,
               seasonXp: 0,
