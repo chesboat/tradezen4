@@ -56,6 +56,22 @@ const countWords = (html: string): number => {
 
 const service = new FirestoreService<RichNote>('richNotes');
 
+// Debounce map to prevent activity log spam during autosave
+// Key: noteId, Value: timestamp of last activity log
+const lastActivityLogTime = new Map<string, number>();
+const ACTIVITY_LOG_DEBOUNCE_MS = 60000; // 1 minute between activity logs for same note
+
+const shouldLogActivity = (noteId: string): boolean => {
+  const lastLog = lastActivityLogTime.get(noteId);
+  const now = Date.now();
+  
+  if (!lastLog || (now - lastLog) >= ACTIVITY_LOG_DEBOUNCE_MS) {
+    lastActivityLogTime.set(noteId, now);
+    return true;
+  }
+  return false;
+};
+
 export const useRichNotesStore = create<RichNotesState>((set, get) => ({
   notes: [],
   isLoading: false,
@@ -161,7 +177,8 @@ export const useRichNotesStore = create<RichNotesState>((set, get) => ({
       }));
 
       // Award XP and add activity log entry for significant updates
-      if (updates.content || updates.title) {
+      // Debounced to prevent spam during autosave (max once per minute per note)
+      if ((updates.content || updates.title) && shouldLogActivity(id)) {
         await awardXp.richNoteUpdate(id, updatedNote.wordCount);
         
         const { addActivity } = useActivityLogStore.getState();
